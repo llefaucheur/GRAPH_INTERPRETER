@@ -1,0 +1,212 @@
+0x00000033,   // 000 000 preliminary offset to instances (graph+graph[0])
+0x0000001A,   // 004 001 Word 1 : offset to formats 
+0x00000018,   // 008 002 Word 2 : offset to io_configuration 
+0x000000F8,   // 00C 003 Word 3 : long address of arc descriptors (final)
+0x000000CC,   // 010 004 Word 4 : long address of Stream instances (final) + control bits 
+0x1000008C,   // 014 005 Word 5 : long address of the Script + nb_io=2 (final)
+0x00000148,   // 018 006 Word 6 : long address of the debug area (final)
+0x00000000,   // 01C 007 Word 7 : long address of the graph (final)
+0x0801000A,   // 020 008 -arm_audio_codec, arcs=0,1 swc=A------------ LINKED LIST
+0x00000170,   // 024 009    instance (one memory bank : NBALLOC_INST=0)
+0x00000002,   // 028 00A    bootparam : just a preset=2:IMADPCM
+0xC00C2042,   // 02C 00B -arm_format_converter,arcs=1,2 swc=2 preset=3 (q15->f32)
+0x28030206,   // 030 00C -arm_filter, TCM arcs=2,3 swc=6 preset=1:cascade DF2T_F32 
+0x08000160,   // 034 00D    instance to the static data (NBALLOC_INST=1)
+0x00000180,   // 038 00E       TCM address +FastDMEM
+0x00006001,   // 03C 00F    Bootparam header : preset 1=DF2T_F32, all param, N32LENGTH=6 
+0xBBDC01FF,   // 040 010    FF=-allparams,byte stream,numStages=1 (uint8_t)
+0xA6833F63,   // 044 011    byte stream one stage 
+0xBBDCBFD1,   // 048 012    byte stream 
+0x9BD83F63,   // 04C 013    Coefs [B,A] = cheby2(2,0.5,1/11) (notch at 1kHz/Fs=16kHz)
+0x6261BFDE,   // 050 014    
+0x00003F61,   // 054 015    end of byte stream 
+0xC01040C2,   // 058 016 -arm_format_converter,arcs=3,4 swc=2 preset=4 (f32->q15)
+0x000000FF,   // 05C 017 -----  End of the linked-list SWCID=0xFFF
+0x00400000,   // 060 018 stream_format_io ---------------------------- IO CONFIG
+0x05208004,   // 064 019    ^--Input RX0 _SET_BUFFER_RX=1(arc=0)  Output TX1 _DATA_MOVE_TX=4(arc=4) fw_io_idx=1
+0x30000000,   // 068 01A [0]------------------------------------------ FORMATS
+0x00000000,   // 06C 01B    Bytes input data
+0x00000000,   // 070 01C    
+0x4C000000,   // 074 01D [1]
+0x00000000,   // 078 01E    int16 samples
+0x00000000,   // 07C 01F    
+0x6C000000,   // 080 020 [2]
+0x00000000,   // 084 021    float samples
+0x00000000,   // 088 022    
+0x00000000,   // 08C 023 --------------------------------------------- SCRIPT
+0x00000000,   // 090 024
+0x00000000,   // 094 025 Provision for Byte-Codes
+0x00000000,   // 098 026
+0x00000000,   // 09C 027
+0x00000000,   // 0A0 028
+0x00000000,   // 0A4 029
+0x00000000,   // 0A8 02A
+0x00000000,   // 0AC 02B
+0x00000000,   // 0B0 02C
+0x00000000,   // 0B4 02D
+0x00000000,   // 0B8 02E
+0x00000000,   // 0BC 02F
+0x00000000,   // 0C0 030
+0x00000000,   // 0C4 031
+0x00000000,   // 0C8 032
+0x00000000,   // 0CC 033======================== RAM AREA ==========STREAM INSTANCES== 
+0x00000000,   // 0D0 034 ^^ *graph address  MBANK_DMEM_EXT=0,    filled at reset on computer ONLY      
+0x00000000,   // 0D4 035    MBANK_DMEM=1,        filled by YML->BIN tools 
+0x00000000,   // 0D8 036    MBANK_DMEMPRIV=2,    
+0x00000000,   // 0DC 037    MBANK_DMEMFAST=3,    
+0x00000000,   // 0E0 038    MBANK_BACKUP=4,      
+0x00000000,   // 0E4 039    MBANK_HWIODMEM=5,    
+0x00000000,   // 0E8 03A    MBANK_PMEM=6,        
+0x00000000,   // 0EC 03B    whoami_ports : PACKWHOAMI(INST,PROCIDX,ARCH,BOUNDARIES)
+0x00000000,   // 0F0 03C    platform_al to fill at reset 
+0x00000000,   // 0F4 03D    node_entry to fill at reset
+0x000001AC,   // 0F8 03E [0] input -> AUDIO_DECODE ---------------- ARC descriptors
+0x00000020,   // 0FC 03F    32 Bytes
+0x00000000,   // 100 040 
+0x00000000,   // 104 041 
+0x000001CC,   // 108 042 [1] AUDIO_DECODE -> conversion node
+0x00000040,   // 10C 043    64 Bytes
+0x00000000,   // 110 044 
+0x00000000,   // 114 045 
+0x0000020C,   // 118 046 [2] conversion node -> AUDIO_EQU
+0x00000080,   // 11C 047    128 Bytes
+0x00000000,   // 120 048 
+0x00000000,   // 124 049 
+0x0000028C,   // 128 04A [3] AUDIO_EQU -> conversion node
+0x00000080,   // 12C 04B    128 Bytes
+0x00000000,   // 130 04C 
+0x00000000,   // 134 04D 
+0x0000030C,   // 138 04E [4] conversion node -> output
+0x00000040,   // 13C 04F    64 Bytes
+0x00000000,   // 140 050 
+0x00000000,   // 144 051 
+0x0000033C,   // 148 052 [5] ----
+0x00000010,   // 14C 053    ---
+0x00000000,   // 150 054 
+0x00000000,   // 154 055  
+0x0000034C,   // 158 056 [6] --- 
+0x00000040,   // 15C 057    
+0x00000000,   // 160 058 
+0x00000000,   // 164 059  
+0x00000000,   // 168 05A ARC DEBUG registers
+0x00000000,   // 16C 05B
+0x00000000,   // 170 05C ------------ SWC instances ----------------------------
+0x00000000,   // 174 05D arm_audio_codec instance (4 words)
+0x00000000,   // 178 05E 
+0x00000000,   // 17C 05F 
+0x00000160,   // 180 060 arm_filter instance : array of filter state, length 2*numStages
+0x00000000,   // 184 061  ^-TCM pointer Z(-1) filter state
+0x00000000,   // 188 062                Z(-2) filter state
+0x0003BBDC,   // 18C 063  B0 Coefs [B,A] = cheby2(2,0.5,1/11) (notch at 1kHz/Fs=16kHz)
+0x0001A683,   // 190 064  B1
+0x0003BBDC,   // 194 065  B2
+0x000E9BD8,   // 198 066  A1
+0x00016261,   // 19C 067  A2
+0x00000180,   // 1A0 068   <-(test of TCM memory)
+0x00000040,   // 1A4 069
+0x00000000,   // 1A8 06A ------------ ARC BUFFERS ------------------------------
+0x000001AC,   // 1AC 06B ARC-0 buffer : 8 words 16 Bytes (32 bytes)
+0x00000000,   // 1B0 06C
+0x00000000,   // 1B4 06D
+0x00000000,   // 1B8 06E 
+0x00000000,   // 1BC 06F 
+0x00000000,   // 1C0 070
+0x00000000,   // 1C4 071
+0x00000000,   // 1C8 072
+0x000001CC,   // 1CC 073 ARC-1 buffer : 16 words 64 Bytes (32 samples Q15)
+0x00000000,   // 1D0 074
+0x00000000,   // 1D4 075
+0x00000000,   // 1D8 076
+0x00000000,   // 1DC 077
+0x00000000,   // 1E0 078
+0x00000000,   // 1E4 079
+0x00000000,   // 1E8 07A
+0x00000000,   // 1EC 07B
+0x00000000,   // 1F0 07C
+0x00000000,   // 1F4 07D
+0x00000000,   // 1F8 07E
+0x00000000,   // 1FC 07F 
+0x00000000,   // 200 080
+0x00000000,   // 204 081
+0x00000000,   // 208 082
+0x0000020C,   // 20C 083 ARC-2 buffer : 32 words 128 Bytes (32 samples float32)
+0x00000000,   // 210 084
+0x00000000,   // 214 085
+0x00000000,   // 218 086
+0x00000000,   // 21C 087
+0x00000000,   // 220 088
+0x00000000,   // 224 089
+0x00000000,   // 228 08A
+0x00000000,   // 22C 08B
+0x00000000,   // 230 08C
+0x00000000,   // 234 08D
+0x00000000,   // 238 08E
+0x00000000,   // 23C 08F
+0x00000000,   // 240 090
+0x00000000,   // 244 091
+0x00000000,   // 248 092
+0x00000000,   // 24C 093
+0x00000000,   // 250 094
+0x00000000,   // 254 095
+0x00000000,   // 258 096
+0x00000000,   // 25C 097
+0x00000000,   // 260 098
+0x00000000,   // 264 099
+0x00000000,   // 268 09A
+0x00000000,   // 26C 09B
+0x00000000,   // 270 09C
+0x00000000,   // 274 09D
+0x00000000,   // 278 09E
+0x00000000,   // 27C 09F  
+0x00000000,   // 280 0A0
+0x00000000,   // 284 0A1
+0x00000000,   // 288 0A2
+0x0000028C,   // 28C 0A3 ARC-3 buffer : 32 words 128 Bytes (32 samples float32)
+0x00000000,   // 290 0A4
+0x00000000,   // 294 0A5
+0x00000000,   // 298 0A6
+0x00000000,   // 29C 0A7
+0x00000000,   // 2A0 0A8
+0x00000000,   // 2A4 0A9
+0x00000000,   // 2A8 0AA
+0x00000000,   // 2AC 0AB
+0x00000000,   // 2B0 0AC
+0x00000000,   // 2B4 0AD
+0x00000000,   // 2B8 0AE
+0x00000000,   // 2BC 0AF
+0x00000000,   // 2C0 0B0
+0x00000000,   // 2C4 0B1
+0x00000000,   // 2C8 0B2
+0x00000000,   // 2CC 0B3
+0x00000000,   // 2D0 0B4
+0x00000000,   // 2D4 0B5
+0x00000000,   // 2D8 0B6
+0x00000000,   // 2DC 0B7
+0x00000000,   // 2E0 0B8
+0x00000000,   // 2E4 0B9
+0x00000000,   // 2E8 0BA
+0x00000000,   // 2EC 0BB
+0x00000000,   // 2F0 0BC
+0x00000000,   // 2F4 0BD
+0x00000000,   // 2F8 0BE
+0x00000000,   // 2FC 0BF  
+0x00000000,   // 300 0C0
+0x00000000,   // 304 0C1
+0x00000000,   // 308 0C2
+0x0000030C,   // 30C 0C3 ARC-4 buffer : 16 words 64 Bytes (32 samples Q15)
+0x00000000,   // 310 0C4
+0x00000000,   // 314 0C5
+0x00000000,   // 318 0C6
+0x00000000,   // 31C 0C7
+0x00000000,   // 320 0C8
+0x00000000,   // 324 0C9
+0x00000000,   // 328 0CA
+0x00000000,   // 32C 0CB
+0x00000000,   // 330 0CC
+0x00000000,   // 334 0CD
+0x00000000,   // 338 0CE
+0x00000000,   // 338 0CE      
+0x00000000,   // 33C 0CF
+0x00000000,   // 340 0D0
+0x00000000,   // 344 0D1
+0x00000000

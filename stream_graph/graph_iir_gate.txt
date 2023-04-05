@@ -1,0 +1,145 @@
+/*
+               +----------------------+         +------------------------+
+    ADC        | noise removal filter |         | detector with decision |       GPIO
+    +--------->+ IIR notch, 2nd order +-------->+ hold for 1000ms        +------>
+               | (int16,16kHz)        |         | (int16)                |
+               +----------------------+         +------------------------+
+*/
+0x00000031,   // 000 000 preliminary offset_w32 to instances (graph+graph[0])
+0x00000018,   // 004 001 Word 1 : offset_w32 to formats 
+0x00000016,   // 008 002 Word 2 : offset_w32 to io_configuration 
+0x000000F0,   // 00C 003 Word 3 : long address of arc descriptors (final)
+0x000000C4,   // 010 004 Word 4 : long address of Stream instances (final) + control bits 
+0x10000084,   // 014 005 Word 5 : long address of the Script + nb_io=2 (final)
+0x00000120,   // 018 006 Word 6 : long address of the debug area (final)
+0x00000000,   // 01C 007 Word 7 : long address of the graph (final)
+/*
+  ------------------------------- LINKED LIST ------------------------------------------
+*/
+0x28010006,   // 020 008 -arm_filter, TCM arcs=0,1 swc=8 preset=1:cascade DF2T_F32 
+0x08000160,   // 024 009    instance to the static data (NBALLOC_INST=1)
+0x00000180,   // 028 00A       TCM 
+0x00006001,   // 02C 00B    Bootparam header : preset 1=DF2T_F32, all param, N32LENGTH=6 
+0xBBDC01FF,   // 030 00C    FF=-allparams,byte stream,numStages=1 (uint8_t)
+0xA6833F63,   // 034 00D    byte stream one stage 
+0xBBDCBFD1,   // 038 00E    byte stream 
+0x9BD83F63,   // 03C 00F    Coefs [B,A] = cheby2(2,0.5,1/11) (notch at 1kHz/Fs=16kHz)
+0x6261BFDE,   // 040 010    
+0x00003F61,   // 044 011    end of byte stream 
+0x28030206,   // 048 012 -arm_stream_gating, arcs=1,2 swc=9 
+0x00000150,   // 04C 013    instance to the static data (NBALLOC_INST=0)
+0x00000002,   // 050 014    Bootparam header : preset=2:audio detection in noise
+0x000000FF,   // 054 015  -----  End of the linked-list SWCID=0xFFF
+/* 
+  -------------stream_format_io----- IO CONFIG---------------------------------------
+*/
+0x00400000,   // 058 016  Input RX0 _SET_BUFFER_RX=1(arc=0)
+0x05208004,   // 05C 017  Output TX1 _DATA_MOVE_TX=4(arc=4) fw_io_idx=1
+/* 
+  ------------------------------------- FORMATS--------------------------------------
+*/
+0x30000000,   // 060 018 [0]
+0x00000000,   // 064 019    Bytes input data
+0x00000000,   // 068 01A    
+0x4C000000,   // 06C 01B [1]
+0x00000000,   // 070 01C    int16 samples
+0x00000000,   // 074 01D    
+0x6C000000,   // 078 01E [2]
+0x00000000,   // 07C 01F    float samples
+0x00000000,   // 080 020    
+/*
+ ------------------------------------- SCRIPT ---------------------------------------
+*/
+0x00000000,   // 084 021 
+0x00000000,   // 088 022
+0x00000000,   // 08C 023 Provision for Byte-Codes
+0x00000000,   // 090 024
+0x00000000,   // 094 025
+0x00000000,   // 098 026
+0x00000000,   // 09C 027
+0x00000000,   // 0A0 028
+0x00000000,   // 0A4 029
+0x00000000,   // 0A8 02A
+0x00000000,   // 0AC 02B
+0x00000000,   // 0B0 02C
+0x00000000,   // 0B4 02D
+0x00000000,   // 0B8 02E
+0x00000000,   // 0BC 02F
+0x00000000,   // 0C0 030
+/*
+  ======================== RAM AREA ==========STREAM INSTANCES====================
+*/
+0x00000000,   // 0C4 031
+0x00000000,   // 0C8 032 ^^ *graph address  MBANK_DMEM_EXT=0,    filled at reset on computer ONLY      
+0x00000000,   // 0CC 033    MBANK_DMEM=1,        filled by YML->BIN tools 
+0x00000000,   // 0D0 034    MBANK_DMEMPRIV=2,    
+0x00000000,   // 0D4 035    MBANK_DMEMFAST=3,    
+0x00000000,   // 0D8 036    MBANK_BACKUP=4,      
+0x00000000,   // 0DC 037    MBANK_HWIODMEM=5,    
+0x00000000,   // 0E0 038    MBANK_PMEM=6,        
+0x00000000,   // 0E4 039    whoami_ports : PACKWHOAMI(INST,PROCIDX,ARCH,BOUNDARIES)
+0x00000000,   // 0E8 03A    platform_al to fill at reset 
+0x00000000,   // 0EC 03B    node_entry to fill at reset
+/*
+  ------------------------------ARC descriptors-----------------------------------
+*/
+0x0000015C,   // 0F0 03C [0] input -> FILTER 
+0x00000020,   // 0F4 03D    32 Bytes
+0x00000000,   // 0F8 03E 
+0x00000000,   // 0FC 03F 
+0x0000017C,   // 100 040 [1] FILTER -> detector
+0x00000020,   // 104 041    32 Bytes
+0x00000000,   // 108 042 
+0x00000000,   // 10C 043 
+0x0000019C,   // 110 044 [2] detector -> output
+0x00000020,   // 114 045    32 Bytes
+0x00000000,   // 118 046 
+0x00000000,   // 11C 047 
+0x11111111,   // 120 048 ARC DEBUG registers
+0x11111111,   // 124 049
+/*
+  ---------------------------------- SWC instances -------------------------------
+*/
+0x00000128,   // 128 04A arm_filter instance / TCM pointer in first position
+0x00000000,   // 12C 04B    Z(-1) filter state
+0x00000000,   // 130 04C    Z(-2) filter state
+0x00000000,   // 134 04D    B0 Coefs [B,A] = cheby2(2,0.5,1/11) (notch at 1kHz/Fs=16kHz)
+0x00000000,   // 138 04E    B1
+0x00000000,   // 13C 04F    B2
+0x00000000,   // 140 050    A1
+0x00000000,   // 144 051    A2
+0x00000000,   // 148 052     <-(test of TCM memory)
+0x00000000,   // 14C 053
+0x00000160,   // 150 054 stream_gating : instance of 15bytes (4 int32)
+0x00000000,   // 154 055 
+0x00000000,   // 158 056 
+0x00000000,   // 15C 057 
+
+/*      
+   ---------------------------------ARC BUFFERS ---------------------------------
+*/
+0x0000015C,   // 15C 057 ARC-0 buffer : 8 words 16 Bytes (32 bytes)
+0x00000000,   // 160 058
+0x00000000,   // 164 059
+0x00000000,   // 168 05A 
+0x00000000,   // 16C 05B 
+0x00000000,   // 170 05C
+0x00000000,   // 174 05D
+0x00000000,   // 178 05E
+0x0000017C,   // 17C 05F ARC-1 buffer : 8 words 16 Bytes (32 bytes)
+0x00000000,   // 180 060
+0x00000000,   // 184 061
+0x00000000,   // 188 062 
+0x00000000,   // 18C 063 
+0x00000000,   // 190 064
+0x00000000,   // 194 065
+0x00000000,   // 198 066
+0x0000019C,   // 19C 067 ARC-2 buffer : 8 words 16 Bytes (32 bytes)
+0x00000000,   // 1A0 068
+0x00000000,   // 1A4 069
+0x00000000,   // 1A8 06A 
+0x00000000,   // 1AC 06B 
+0x00000000,   // 1B0 06C
+0x00000000,   // 1B4 06D
+0x00000000   // 1B8 06E
+                

@@ -1,0 +1,61 @@
+
+-- YAML ---------------------------------------------------------------------------
+#                              +------------------------------+
+#                              |                              | 
+# __PLATFORM_DATA_FROM_APP__ ----> AUDIO_DECODE ==> AUDIO_EQU ==> __PLATFORM_AUDIO_RENDER__
+#                              |                              |
+#                              +------------------------------+
+#
+cstream:
+  description: Audio decoder with post-processing 
+
+  nodes:
+    - node:
+      # node names with double underscores are reserved for the platform definition
+      #   optional "subname" when there are several streams (application flows, I2S, ..)
+      #   YML to GraphBin translation gives the IO indexes of the platform
+      name: __PLATFORM_DATA_FROM_APP__
+      # configuration preset "N" or "0" = default
+      preset: 1
+
+    - node:
+      name: AUDIO_DECODE
+      #in case of confusions with identical names, use the company's ID    
+      devid : 0123456
+      preset : 0
+      # the producer node is automatically followed by format conversion 
+      #   to match the format of the next consumer (if needed)
+      #   here "AUDIO_DECODE" generates int16 when "AUDIO_EQU" is consuming
+      #   floating point sample
+      # static load balancing to a Stream instance documented by the platform
+      #   designer
+      load_balancing: 0
+
+    - node:
+      # here "AUDIO_EQU" generates float32 when "__PLATFORM_AUDIO_RENDER__" is 
+      #   consuming int16 samples
+      name: AUDIO_EQU
+      preset : 3
+
+    - node:
+      name: __PLATFORM_AUDIO_RENDER__
+      preset: 0
+
+  arcs:
+    - arc:
+      from: __PLATFORM_DATA__
+      to:   AUDIO_DECODE
+      # jitter management with a FIFO: NONE (simple arc) / RINGx2 / RINGx4 
+      #    the larger the buffer the safer it is against CPU/stream jitters
+      jitter: NONE
+
+    - arc:
+      # the nodes and arcs associated to format conversions are hidden here
+      from: AUDIO_DECODE
+      to:   AUDIO_EQU
+      jitter: NONE
+
+    - arc:
+      from: AUDIO_EQU
+      to: __PLATFORM_AUDIO_PLAY__
+      jitter: NONE

@@ -1,0 +1,49 @@
+﻿  platform_al.c
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_types.h(291,117): warning C4028: formal parameter 1 different from declaration
+  platform_io.c
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_types.h(291,117): warning C4028: formal parameter 1 different from declaration
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_al\platform_io.c(162,86): warning C4312: 'type cast': conversion from 'uint32_t' to 'uint8_t *' of greater size
+  main.c
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_types.h(291,117): warning C4028: formal parameter 1 different from declaration
+  stream_demo.c
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_types.h(291,117): warning C4028: formal parameter 1 different from declaration
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_demo\stream_demo.c(186,58): warning C4133: '=': incompatible types - from 'intPtr_t *' to 'uint32_t *'
+  arm_code_imadpcm.c
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_types.h(291,117): warning C4028: formal parameter 1 different from declaration
+  arm_format_converter.c
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_types.h(291,117): warning C4028: formal parameter 1 different from declaration
+  arm_equ_f32.c
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_types.h(291,117): warning C4028: formal parameter 1 different from declaration
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_nodes\arm\dsp_filter\equalizer\arm_equ_f32.c(67,80): warning C4312: 'type cast': conversion from 'uint32_t' to 'arm_filters_instance *' of greater size
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_nodes\arm\dsp_filter\equalizer\arm_equ_f32.c(68,52): warning C4312: 'type cast': conversion from 'uint32_t' to 'uint32_t *' of greater size
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_nodes\arm\dsp_filter\equalizer\arm_equ_f32.c(68,52): warning C4133: '=': incompatible types - from 'uint32_t *' to 'intPtr_t *'
+  stream_nodes.c
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_types.h(291,117): warning C4028: formal parameter 1 different from declaration
+  stream_io.c
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_types.h(291,117): warning C4028: formal parameter 1 different from declaration
+  stream_main.c
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_types.h(291,117): warning C4028: formal parameter 1 different from declaration
+  stream_ptr_int.c
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_types.h(291,117): warning C4028: formal parameter 1 different from declaration
+  stream_scheduler.c
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_types.h(291,117): warning C4028: formal parameter 1 different from declaration
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(52,44): warning C4133: 'function': incompatible types - from 'uint32_t *' to 'intPtr_t *'
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(54,45): warning C4133: 'function': incompatible types - from 'uint32_t *' to 'intPtr_t *'
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(358,63): warning C4244: '=': conversion from 'intPtr_t' to 'uint32_t', possible loss of data
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(361,67): warning C4244: '=': conversion from 'intPtr_t' to 'uint32_t', possible loss of data
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(427,87): warning C4244: '=': conversion from 'intPtr_t' to 'uint32_t', possible loss of data
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(436,89): warning C4244: '=': conversion from 'intPtr_t' to 'uint32_t', possible loss of data
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(575,77): warning C4133: 'function': incompatible types - from 'uint32_t *' to 'intPtr_t *'
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(580,58): warning C4133: '=': incompatible types - from 'intPtr_t *' to 'uint32_t *'
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(582,54): warning C4133: '=': incompatible types - from 'intPtr_t *' to 'uint32_t *'
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(660,70): warning C4244: '=': conversion from 'intPtr_t' to 'uint32_t', possible loss of data
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(706,53): warning C4312: 'type cast': conversion from 'uint32_t' to 'uint32_t *' of greater size
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(722,57): warning C4312: 'type cast': conversion from 'uint32_t' to 'uint32_t *' of greater size
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(743,45): warning C4312: 'type cast': conversion from 'uint32_t' to 'uint32_t *' of greater size
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(769,50): warning C4133: 'function': incompatible types - from 'uint32_t *' to 'intPtr_t *'
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(781,65): warning C4312: 'type cast': conversion from 'uint32_t' to 'intPtr_t *' of greater size
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_scheduler.c(789,92): warning C4312: 'type cast': conversion from 'uint32_t' to 'uint32_t *' of greater size
+  stream_services.c
+C:\Work\stm32u5\EW\CMSIS-Stream\stream_src\stream_types.h(291,117): warning C4028: formal parameter 1 different from declaration
+  Generating Code...
+  STREAM.vcxproj -> C:\Work\stm32u5\EW\CMSIS-Stream\makefile\windows\STREAM\x64\Debug\STREAM.exe
