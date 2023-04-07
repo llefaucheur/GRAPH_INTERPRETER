@@ -389,7 +389,8 @@ static void check_graph_boundaries(
         struct stream_local_instance *pstream_inst, 
         uint32_t *pio, 
         uint8_t nio, 
-        uint32_t *arcs)
+        uint32_t *arcs,
+        intPtr_t *long_offset)
 {
     uint32_t iio;
     uint32_t io_mask;
@@ -398,10 +399,7 @@ static void check_graph_boundaries(
     uint32_t size;
     uint8_t *buffer;
     struct platform_control_stream p_data_move;
-    intPtr_t *long_offset;
 
-
-    long_offset = pstream_inst->offset;
     io_mask = EXTRACT_FIELD(pstream_inst->whoami_ports, BOUNDARY_PARCH);
     for (iio = 0u; iio < nio; iio++)
     {
@@ -454,7 +452,7 @@ static void check_graph_boundaries(
             /* using the address of the ring buffer */
             p_data_move.buffer.address = buffer;
             p_data_move.buffer.size = size;
-            pstream_inst->platform_al(PLATFORM_IO_DATA, (uint8_t *)&p_data_move, 0u, 0u);
+            platform_al(PLATFORM_IO_DATA, (uint8_t *)&p_data_move, 0u, 0u);
         }
     }
 }
@@ -574,7 +572,7 @@ void stream_scan_graph (stream_parameters_t *parameters, int8_t return_option,
     {   struct stream_local_instance *ptmp;
         ptmp = convert_intp_to_instancep(GRAPH_STREAM_INST_ADDR_FLASH(graph));
         ptmp = &(ptmp[parameters->instance_idx]);
-        long_offset = ptmp->offset;
+        platform_al (PLATFORM_OFFSETS,&long_offset,0,0);
         pinst = (struct stream_local_instance *)GRAPH_STREAM_INST_ADDR_RAM(graph,long_offset);
     }
     all_arcs = GRAPH_ARC_LIST_ADDR_RAM(graph,long_offset);
@@ -598,7 +596,7 @@ void stream_scan_graph (stream_parameters_t *parameters, int8_t return_option,
 	    while (GRAPH_LAST_WORD != RD(*linked_list_ptr,SWC_IDX_GI)) 
         {   
             /* check the boundaries of the graph, not during end/stop periods */
-            if (reset_option == 0) { check_graph_boundaries(pinst, pio, nio, all_arcs); }
+            if (reset_option == 0) { check_graph_boundaries(pinst, pio, nio, all_arcs, long_offset); }
             
             /* check this node can be executed on this processor */
             linked_list_ptr_header = linked_list_ptr;
@@ -661,14 +659,23 @@ void stream_scan_graph (stream_parameters_t *parameters, int8_t return_option,
             swc_instance = pack2linaddr_int(swc_instance,long_offset);
             swc_instance_ptr = (uint32_t *)convert_int_to_voidp(swc_instance);
 
-            /* ------------------- reset phase of the graph ? ----------------- */
+            /* ==========================================================================*/
+            /* ------------------------- reset phase of the graph ? -------------------- */
             if (reset_option > 0)
             {   intPtr_t memreq_physical[MAX_NB_MEM_REQ_PER_NODE];
                 uint16_t nbmem;
+                uint8_t i;
+                uint8_t nparam;
+                uint8_t *ptr_param8b;
+                uint32_t x;
 
                 if (SWC_LONG_FORMAT == TEST_SWC_FORMAT(swc_header))
                 {   uint8_t i;
                     uint32_t *memreq;
+                    ptr_param8b = (uint8_t *)linked_list_ptr_bootparam;
+                    nparam = *ptr_param8b;
+                    ptr_param8b++;
+
                     memreq = &(linked_list_ptr_header[1]);
                     nbmem = (uint16_t)RD(memreq[0],NBALLOC_INST);
                     memreq_physical[0] = swc_instance;
@@ -681,29 +688,9 @@ void stream_scan_graph (stream_parameters_t *parameters, int8_t return_option,
                     /*
                     @@@ TODO : add for each arc : nb channel, sampling rate, interleaving, time-stamp format
                     */
-                }
-                { uint32_t x = stream_calls_swc (address_swc, STREAM_RESET, (uint32_t *)memreq_physical, 
-                  (data_buffer_t *)arm_stream_services, (uint32_t *)convert_int_to_voidp(preset));
-                }
-            
-                /* SWC is unlocked */
-                WR_BYTE_MP_(pt8b_collision_arc_1, 0u);
-                continue;
-            }
+                    x = stream_calls_swc (address_swc, STREAM_RESET, (uint32_t *)memreq_physical, 
+                            (data_buffer_t *)arm_stream_services, (uint32_t *)convert_int_to_voidp(preset));
 
-
-            /* ---------------- check new parameters------------------------- */
-
-            if (0u != TEST_BIT(*linked_list_ptr_header, NEWPARAM_GIS_LSB))
-            {   uint8_t i;
-                uint8_t nparam;
-                uint8_t *ptr_param8b;
-
-                if (SWC_LONG_FORMAT == TEST_SWC_FORMAT(swc_header))
-                {   ptr_param8b = (uint8_t *)linked_list_ptr_bootparam;
-                    nparam = *ptr_param8b;
-                    ptr_param8b++;
-                
                     /* do we load the full set of parameters ? */
                     if (nparam == ALLPARAM_)
                     {   uint32_t x;
@@ -731,15 +718,23 @@ void stream_scan_graph (stream_parameters_t *parameters, int8_t return_option,
                         }
                     }
                 }
+                /* set parameters for the format short */
                 else
                 {   uint32_t x;
+                    x = stream_calls_swc (address_swc, STREAM_RESET, (uint32_t *)memreq_physical, 
+                        (data_buffer_t *)arm_stream_services, (uint32_t *)convert_int_to_voidp(preset));
+
                     /* parameter format : preset on MSB */
                     x = stream_calls_swc (address_swc, STREAM_SET_PARAMETER, 0u, 0u, 
                             (uint32_t *)convert_int_to_voidp(PACKPARAMTAG(0,preset)));
                 }
 
-                CLEAR_BIT(*linked_list_ptr_header, NEWPARAM_GIS_LSB);
+            
+                /* SWC is unlocked */
+                WR_BYTE_MP_(pt8b_collision_arc_1, 0u);
+                continue;
             }
+
             
             /* end of graph */
             if (reset_option < 0)
@@ -747,7 +742,7 @@ void stream_scan_graph (stream_parameters_t *parameters, int8_t return_option,
                 x = stream_calls_swc (address_swc, STREAM_END, 
                     (uint32_t *)swc_instance, 0u, 0u);
             }
-            
+            /* ==========================================================================*/
             
             /* several iterations to benefit from the hot cache */
             {   uint8_t iswc_repeat;
@@ -784,7 +779,7 @@ void stream_scan_graph (stream_parameters_t *parameters, int8_t return_option,
                         in the first address of its instance */
                     if (0u != RD(swc_header, TCM_INST_GI))
                     {   intPtr_t *tmp = (intPtr_t *)swc_instance;
-                        *tmp = pinst->offset[MBANK_DMEMFAST];
+                        *tmp = long_offset[MBANK_DMEMFAST];
                     }
 
                     if (script_option == STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC) {stream_execute_script(parameters, script); }

@@ -53,7 +53,7 @@ void arm_stream_io (uint32_t fw_io_idx,
     uint32_t *pio;
 
     graph = stream_instance->graph;
-    long_offset = stream_instance->offset;
+    platform_al (PLATFORM_OFFSETS,&long_offset,0,0);
     pio = (uint32_t *)GRAPH_IO_CONFIG_ADDR_FLASH(graph);
     pio = &(pio[fw_io_idx]);
     arc = GRAPH_ARC_LIST_ADDR_RAM(graph,long_offset);
@@ -74,7 +74,7 @@ void arm_stream_io (uint32_t fw_io_idx,
             if (free_area < data_size)
             {   /* overflow issue */
                 flow_error = (uint8_t) EXTRACT_FIELD(arc[RDFLOW_ARCW2], OVERFLRD_ARCW2);
-                stream_instance->platform_al(PLATFORM_ERROR, 0,0,0);
+                platform_al(PLATFORM_ERROR, 0,0,0);
                 /* TODO : implement the flow management desired for "flow_error" */
                 size = free_area;
             }

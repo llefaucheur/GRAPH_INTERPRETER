@@ -95,6 +95,14 @@
 /* for MISRA-2012 compliance to Rule 10.4 */
 #define U(x) ((uint32_t)(x)) 
 
+#define GRAPH_NB_IO(graph) (uint8_t)(0xFF & (graph)[0])
+#define GRAPH_SHARED_MEM(graph) (uint8_t)(0x1 & ((graph)[0] >> 8))
+
+#define GRAPH_COPY_ALL_IN_RAM 0
+#define GRAPH_COPY_PARTIALLY 1
+#define GRAPH_ALREADY_IN_RAM 2
+#define GRAPH_COPY_IN_RAM_CONFIG(graph) (uint8_t)(0x3 & ((graph)[0] >> 9))
+
 
 #define GRAPH_STREAM_INST_ADDR_FLASH(graph) (&((graph)[(graph)[0]]))
 #define GRAPH_FORMAT_ADDR_FLASH(graph) (&((graph)[(graph)[1]]))
@@ -113,14 +121,14 @@
 //#define GRAPH_HEADER_BASEIDXOFF_LSB BASEIDXOFFARCW0_LSB
 #define GRAPH_PARTIALLY_COPIED_IN_RAM(graph)  TEST_BIT((graph)[4],GRAPH_HEADER_SPLIT_IN_RAM_LSB)
 #define GRAPH_STREAM_INST_ADDR_RAM_p(graph,long_offset) pack2linaddr_ptr((graph)[4],(long_offset))
-#define GRAPH_STREAM_INST_ADDR_RAM(graph,long_offset) ((graph)[4],(long_offset))
+#define GRAPH_STREAM_INST_ADDR_RAM(graph,long_offset) pack2linaddr_int((graph)[4],(long_offset))
 
 #define GRAPH_SCRIPT_ADDR_RAM(graph,long_offset) pack2linaddr_ptr((graph)[5],(long_offset))
-#define GRAPH_NB_IO(graph) (uint8_t)(RD((graph)[5],FORMATIDX_ARCW0))  /* last 5 bits */
+
 
 #define GRAPH_DEBUG_ADDR(graph,long_offset) pack2linaddr_ptr((graph)[6],(long_offset))
 
-#define GRAPH_FULL_ADDR_RAM(graph,long_offset) pack2linaddr_ptr((graph)[7],(long_offset))
+#define GRAPH_ADDR_RAM(graph,long_offset) pack2linaddr_ptr((graph)[7],(long_offset))
 
 /* start of the graph */
 #define GRAPH_LINKED_LIST_OFFSET 8u   
@@ -138,8 +146,8 @@
 #define STREAM_LIST_GI_SHORT_FORMAT (MSB = 1)
 #define SHORTFMT_GIS_MSB U(31)
 #define SHORTFMT_GIS_LSB U(31) /* 1  MSB=1 : no instance, parameter fixed */
-#define NEWPARAM_GIS_MSB U(30) 
-#define NEWPARAM_GIS_LSB U(30) /* 1  new parameters common position with the long format*/
+#define   UNUSED_GIS_MSB U(30) 
+#define   UNUSED_GIS_LSB U(30) /* 1  */
 #define   PRESET_GIS_MSB U(29)       
 #define   PRESET_GIS_LSB U(18) /* 12 parameter */
 #define   ARCOUT_GIS_MSB U(17) 
@@ -157,10 +165,8 @@
 #define STREAM_LIST_GI_LONG_FORMAT_WORD_0  (MSB = 0) /* header */
 #define  LONGFMT_GI_MSB U(31)
 #define  LONGFMT_GI_LSB U(31) /* 1  MSB=0 : instance and parameter pointer */
-#define NEWPARAM_GI_MSB U(30) 
-#define NEWPARAM_GI_LSB U(30) /* 1  new parameters common position with the short format */
-#define   UNUSED_GI_MSB U(29) 
-#define   UNUSED_GI_LSB U(28) /* 2 --------*/
+#define   UNUSED_GI_MSB U(30) 
+#define   UNUSED_GI_LSB U(28) /* 3 --------*/
 #define  VERBOSE_GI_MSB U(27)
 #define  VERBOSE_GI_LSB U(27) /* 1 verbose debug trace */
 #define TCM_INST_GI_MSB U(26) /*   SWC has a relocatable bank to TCM (working area)  the scheduler reloads the first */

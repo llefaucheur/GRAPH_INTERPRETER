@@ -102,7 +102,7 @@ uint32_t audio_ap_rx_size;
 
 void audio_ap_rx_transfer_done (uint8_t *data, uint32_t size) 
 {   
-    platform_AL(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_APPLICATION_DATA_IN, data, (uint8_t *)(uint64_t)size);
+    platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_APPLICATION_DATA_IN, data, (uint8_t *)(uint64_t)size);
 }
 
 
@@ -159,7 +159,7 @@ uint32_t audio_render_size;
 /* --------------------------------------------------------------------------------------- */
 void audio_render_transfer_done (uint8_t *data, uint32_t size) 
 {   
-    platform_AL(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_AUDIO_OUT, data, (uint8_t *)size);
+    platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_AUDIO_OUT, data, (uint8_t *)size);
 }
 
 

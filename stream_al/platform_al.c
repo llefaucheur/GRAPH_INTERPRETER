@@ -36,8 +36,50 @@
 #include "stream_types.h"  
 #include "platform_types.h"
 
+/*-------------------PLATFORM MANIFEST-----------------------
+                  +-----------------+
+                  | static |working |
+   +--------------------------------+
+   |external RAM  |        |        |
+   +--------------------------------+
+   |internal RAM  |        |        |
+   +--------------------------------+
+   |fast TCM      |  N/A   |        |
+   +--------------+--------+--------+
+*/
+#define SIZE_MBANK_DMEM_EXT   0x20000  /* external */
+#define SIZE_MBANK_DMEM       0x8000    /* internal */
+#define SIZE_MBANK_DMEMFAST   0x4000    /* TCM */
+#define SIZE_MBANK_BACKUP     0x10      /* BACKUP */
+#define SIZE_MBANK_HWIODMEM   0x1000    /* DMA buffer */
+#define SIZE_MBANK_PMEM       0x100     /* patch */
 
+uint32_t MEXT[SIZE_MBANK_DMEM_EXT];
+uint32_t RAM1[SIZE_MBANK_DMEM/4];
+uint32_t RAM2[SIZE_MBANK_DMEM/4];
+uint32_t RAM3[SIZE_MBANK_DMEM/4];
+uint32_t RAM4[SIZE_MBANK_DMEM/4];
+uint32_t TCM1[SIZE_MBANK_DMEMFAST]; 
+uint32_t TCM2[SIZE_MBANK_DMEMFAST]; 
+uint32_t BKUP[SIZE_MBANK_BACKUP]; 
+uint32_t HWIO[SIZE_MBANK_HWIODMEM];
+uint32_t PMEM[SIZE_MBANK_PMEM];
 
+#define PROC_ID 0 
+
+#if PROC_ID == 0
+intPtr_t long_offsets[NB_MEMINST_OFFSET] = 
+{
+    (intPtr_t)&(MEXT[10]), // MBANK_DMEM_EXT
+    (intPtr_t)&(RAM1[11]), // MBANK_DMEM    
+    (intPtr_t)&(RAM1[12]), // MBANK_DMEMPRIV
+    (intPtr_t)&(TCM1[13]), // MBANK_DMEMFAST
+    (intPtr_t)&(BKUP[14]), // MBANK_BACKUP  
+    (intPtr_t)&(HWIO[15]), // MBANK_HWIODMEM
+    (intPtr_t)&(PMEM[16]), // MBANK_PMEM    
+};
+#endif
+  
 
 #if MULTIPROCESS == 1
 static uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
@@ -58,7 +100,7 @@ static uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
  * --- platform abstraction layer -------------------------------------------------------
  */
 
-void platform_AL(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
+void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
 {
     static uint8_t stream_boot_lock;        
     static uint8_t stream_initialization_done;
@@ -82,6 +124,15 @@ void platform_AL(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
         *proc = 0;
         break;
     }
+
+    case PLATFORM_OFFSETS: /* platform_al (PLATFORM_OFFSETS, intPtr_t **,0,0); */
+    {
+        *ptr1 = (uint8_t *) long_offsets;
+        break;
+    }
+
+
+
     case PLATFORM_MP_GRAPH_SHARED: /* platform_al (PLATFORM_MP_GRAPH_SHARED, start_address,end_address,0); */
     {
         /* define MPU_RBAR[Region] */

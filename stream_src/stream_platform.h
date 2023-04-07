@@ -53,6 +53,7 @@
 #define PLATFORM_TIME_SET          17u
 #define PLATFORM_TIMER_SET         18u
 #define PLATFORM_TIME_READ         19u
+#define PLATFORM_OFFSETS           20u
 
 
 //enum error_codes 

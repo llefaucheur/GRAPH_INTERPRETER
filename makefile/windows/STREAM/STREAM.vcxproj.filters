@@ -78,9 +78,6 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_src\arm_rate_converter.c">
       <Filter>Source Files\nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_gating.c">
-      <Filter>Source Files\nodes</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\arm\merge\arm_stream_merge.c">
       <Filter>Source Files\nodes</Filter>
     </ClCompile>
@@ -96,7 +93,7 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\mixer\arm_stream_mixer.c">
       <Filter>Source Files\nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\arm\vad\arm_tiny_vad.c">
+    <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector.c">
       <Filter>Source Files\nodes</Filter>
     </ClCompile>
   </ItemGroup>

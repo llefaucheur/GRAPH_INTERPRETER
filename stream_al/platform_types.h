@@ -32,7 +32,7 @@ extern uint8_t proc_state[STREAM_NB_PROCESSES];
 
 
 
-extern void platform_AL(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3);
+extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3);
 
 /*
  * ----------- data access --------------------------------------------------------------

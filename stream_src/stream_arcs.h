@@ -169,6 +169,7 @@
 
     #define PACKSTREAMFORMAT2(HASH,DIRECTION,MAP) ((U(HASH)<<25)|(U(DIRECTION)<<24)|U(MAP))
 
+#define SELECT_BASE_ARCW0   U(27) /*   at graph boot time: select the Flash or the long_offsets[] */
 
 #define SIZEOF_ARCDESC_W32 U(4)
 
@@ -194,7 +195,7 @@
 //#define DEBUG_REG_ARCW1_MSB U(25)
 //#define DEBUG_REG_ARCW1_LSB U(22) /* 4  debug result index for debug_arcs[0..15] */
 #define BUFF_SIZE_ARCW1_MSB U(21) 
-#define BUFF_SIZE_ARCW1_LSB U( 0) /* 22 Byte-acurate up to 4MBytes starting from base address */
+#define BUFF_SIZE_ARCW1_LSB U( 0)  /* 22 Byte-acurate up to 4MBytes */
 
 /*----*/
 #define RDFLOW_ARCW2        U( 2)  /* write access only from the SWC consumer */

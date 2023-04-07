@@ -105,7 +105,7 @@ extern p_stream_node arm_stream_rate_converter;
 extern p_stream_node arm_stream_amplitude; 
 extern p_stream_node arm_stream_mixer; 
 extern p_stream_node arm_stream_filter; 
-extern p_stream_node arm_stream_gating; 
+extern p_stream_node arm_stream_detector; 
 extern p_stream_node arm_stream_compression; 
 extern p_stream_node arm_stream_decompression; 
 
@@ -123,7 +123,7 @@ p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
     /*  6*/ (void *)&arm_stream_amplitude,                        
     /*  7*/ (void *)&arm_stream_mixer, 
     /*  8*/ (void *)&arm_stream_filter,                        
-    /*  9*/ (void *)&arm_stream_gating,                        
+    /*  9*/ (void *)&arm_stream_detector,                        
     /* 10*/ (void *)&arm_stream_compression,                        
     /* 11*/ (void *)&arm_stream_decompression, 
     /* 12*/ TBD, 

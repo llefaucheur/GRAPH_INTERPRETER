@@ -152,12 +152,11 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_convert\arm_format_converter.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_filter\arm_filter.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_src\arm_rate_converter.c" />
-    <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_gating.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\merge\arm_stream_merge.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\mixer\arm_stream_mixer.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\route\arm_stream_route.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\split\arm_stream_split.c" />
-    <ClCompile Include="..\..\..\stream_nodes\arm\vad\arm_tiny_vad.c" />
     <ClCompile Include="..\..\..\stream_nodes\stream_nodes.c" />
     <ClCompile Include="..\..\..\stream_src\stream_io.c" />
     <ClCompile Include="..\..\..\stream_src\stream_main.c" />

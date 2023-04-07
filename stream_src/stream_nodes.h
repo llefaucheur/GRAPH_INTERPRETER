@@ -125,19 +125,19 @@
 
 #define PACKSWCPARAM(PSZ,NBPST) (((PSZ)<<6)|(NBPST))
 
-//enum idx_memory_base_offset    /* maximum 4, see DATAOFF_ARCW0 */
-#define MBANK_DMEM_EXT  U(0)   /* external shared memory space, used for arcs offsets */
-#define MBANK_DMEM      U(1)       /* internal shared memory space, used for arcs offsets */
+//enum idx_memory_base_offset   /* maximum 4, see DATAOFF_ARCW0 */
+#define MBANK_DMEM_EXT  U(0)    /* external shared memory space, used for arcs offsets */
+#define MBANK_DMEM      U(1)    /* internal shared memory space, used for arcs offsets */
 
 #define NB_ARC_OFFSET   U(2) /* arc offsets for the shared internal / external mem */
 
-#define MBANK_DMEMPRIV  U(2)   /* not shared memory space, (MP without cache) */
-#define MBANK_DMEMFAST  U(3)   /* DTCM Cortex-M/LLRAM Cortex-R, swapped between SWC calls if static */
-#define MBANK_BACKUP    U(4)     /* backup SRAM addressed only by STREAM */
-#define MBANK_HWIODMEM  U(5)   /* memory space for I/O and DMA buffers */
-#define MBANK_PMEM      U(6)       /* program */
+#define MBANK_DMEMPRIV  U(2)    /* not shared memory space, (MP without cache) */
+#define MBANK_DMEMFAST  U(3)    /* DTCM Cortex-M/LLRAM Cortex-R, swapped between SWC calls if static */
+#define MBANK_BACKUP    U(4)    /* backup SRAM addressed only by STREAM */
+#define MBANK_HWIODMEM  U(5)    /* memory space for I/O and DMA buffers */
+#define MBANK_PMEM      U(6)    /* program RAM */
 
-#define NB_MEMINST_OFFSET U(7) /* offsets of stream instances */
+#define NB_MEMINST_OFFSET U(7)  /* offsets */
 
 /* upon STREAM_MEMREQ commands the swc can return up to 6 memory requests for its instance 
     scratch fast, DTCM, static fast, internal L2, external */

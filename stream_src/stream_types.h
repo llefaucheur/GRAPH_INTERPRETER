@@ -231,15 +231,12 @@ struct stream_local_instance  /* structure allocated to each STREAM instance */
 {
     uint32_t *graph;        /* base address of the graph processed by this Stream instance */
 
-    intPtr_t offset[NB_MEMINST_OFFSET];     /* base addresses, idx_memory_base_offset*/
-
     uint32_t whoami_ports;  /* PACKWHOAMI : 16bits list of graph io ports this processor must check + who am I */
-
-    stream_entrance *platform_al; /* who am I, device driver control (set,start,stop,*ACK), init/memory banks */
 
     p_stream_node *node_entry_points;     /* all the nodes visible from this processor */
    
-
+    //intPtr_t offset[NB_MEMINST_OFFSET];     /* base addresses, idx_memory_base_offset*/
+    //stream_entrance *platform_al; /* who am I, device driver control (set,start,stop,*ACK), init/memory banks */
 };
 
 /* stream parameters */
@@ -268,7 +265,7 @@ typedef struct
 /* ---- REFERENCES --------------------------------------------*/
 
 extern intPtr_t arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3);
-extern void platform_AL(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3);
+extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3);
 void stream_scan_graph (stream_parameters_t *parameters, int8_t return_option, 
     int8_t script_option, int8_t reset_option);
 
