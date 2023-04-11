@@ -1,0 +1,143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\src">
+      <UniqueIdentifier>{1e5cf4e3-8d20-49e7-89b8-b60fb496fe6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\graph">
+      <UniqueIdentifier>{976f6ec3-cd4d-4400-aad5-8177280aa728}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nodes">
+      <UniqueIdentifier>{320b6c89-6d68-4380-93be-eb135dabab82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\demo">
+      <UniqueIdentifier>{208059ea-8c4e-448d-87cb-c0897f33a5bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\AL">
+      <UniqueIdentifier>{e763854b-c459-4ee6-a11c-04b9436661ad}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\stream_demo\stream_demo.c">
+      <Filter>Source Files\demo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_demo\main.c">
+      <Filter>Source Files\demo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\stream_nodes.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_src\stream_io.c">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_src\stream_main.c">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_src\stream_scheduler.c">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_al\platform_al.c">
+      <Filter>Source Files\AL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_al\platform_io.c">
+      <Filter>Source Files\AL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_src\stream_services.c">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_src\stream_ptr_int.c">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\audio_codec\audio_codec_imadpcm\arm_code_imadpcm.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\dsp_src\arm_rate_converter.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\merge\arm_stream_merge.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\route\arm_stream_route.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\split\arm_stream_split.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\dsp_amp\arm_stream_amplitude.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\mixer\arm_stream_mixer.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_script.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\data_conditioning\arm_data_conditioning.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\audio_codec\arm_codec.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\dsp_convert\arm_stream_converter.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\dsp_filter\arm_dsp_filter.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\generator\arm_stream_generator.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\stream_graph\graph_iir_gate.txt">
+      <Filter>Source Files\graph</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\graph_imadpcm.txt">
+      <Filter>Source Files\graph</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\stream_src\stream_arcs.h">
+      <Filter>Source Files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_graph.h">
+      <Filter>Source Files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_macro.h">
+      <Filter>Source Files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_platform.h">
+      <Filter>Source Files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_nodes.h">
+      <Filter>Source Files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_types.h">
+      <Filter>Source Files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_al\platform_types.h">
+      <Filter>Source Files\AL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_al\platform_const.h">
+      <Filter>Source Files\AL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_const.h">
+      <Filter>Source Files\src</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

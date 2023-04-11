@@ -69,7 +69,7 @@ uint32_t PMEM[SIZE_MBANK_PMEM];
 extern const uint32_t graph_input[];
 
 #if PROC_ID == 0
-intPtr_t long_offsets[NB_MEMINST_OFFSET] = 
+intPtr_t long_offset[NB_MEMINST_OFFSET] = 
 {
     (intPtr_t)&(MEXT[10]), // MBANK_DMEM_EXT
     (intPtr_t)&(RAM1[11]), // MBANK_DMEM    
@@ -129,7 +129,7 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
 
     case PLATFORM_OFFSETS: /* platform_al (PLATFORM_OFFSETS, intPtr_t **,0,0); */
     {
-        *ptr1 = (uint8_t *) long_offsets;
+        ptr1 = (uint8_t *) &(long_offset[0]);
         break;
     }
 
@@ -206,9 +206,11 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
     {
         uint32_t fw_idx;
         uint32_t size;
-        fw_idx = (uint32_t)convert_voidp_to_int(ptr1);
-        size = (uint32_t)convert_voidp_to_int(ptr3);
-        arm_stream_io (fw_idx, (struct stream_local_instance *)convert_int_to_voidp(platform_io_callback_parameter[fw_idx]), ptr2, size);
+        uint32_t *graph;
+        fw_idx = (uint32_t)convert_ptr_to_int(ptr1);
+        size = (uint32_t)convert_ptr_to_int(ptr3);
+        graph = platform_io_callback_parameter[fw_idx];
+        arm_stream_io (fw_idx, graph, ptr2, size);
         break;
     }
 
@@ -233,7 +235,7 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
         switch (command)
         {
         case PLATFORM_IO_SET_STREAM:
-            platform_io_callback_parameter [parameters->fw_idx] = convert_voidp_to_int((void*)(parameters->stream_instance));
+            platform_io_callback_parameter [parameters->fw_idx] = parameters->graph;
             io_func = io_manifest->io_set;
             (*io_func)(settings, buffer->address, (uint32_t)(buffer->size));
             break;

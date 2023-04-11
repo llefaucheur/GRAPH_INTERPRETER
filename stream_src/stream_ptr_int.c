@@ -31,42 +31,46 @@
    MISRA 2012 RULES 11.XX
  */
 
-void * convert_intp_to_voidp (intPtr_t *in)
-{   
-    return (void *) in;
-}
+//void * convert_intp_to_voidp (intPtr_t *in)
+//{   
+//    return (void *) in;
+//}
 
-struct stream_local_instance * convert_intp_to_instancep (intPtr_t *in)
-{   
-    return (struct stream_local_instance *) in;
-}
-
-void * convert_int_to_voidp (intPtr_t in)
-{   
-    return (void *) in;
-}
-
-void * convert_sdata_to_voidp (data_buffer_t *in)
-{   
-    return (void *) in;
-}
-
-stream_parameters_t * convert_voidp_to_sparam (void *in)
-{
-    return (stream_parameters_t *)in;
-}
-
-intPtr_t convert_voidp_to_int (void *in)
-{
-    return (intPtr_t)in;
-}
-
-intPtr_t convert_charp_to_int (uint8_t *in)
+///* struct stream_local_instance */uint32_t * convert_intp_to_instancep (intPtr_t *in)
+//{   
+//    return (/* struct stream_local_instance */uint32_t *) in;
+//}
+//
+//void * convert_int_to_ptr (intPtr_t in)
+//{   
+//    return (void *) in;
+//}
+//
+//void * convert_sdata_to_voidp (data_buffer_t *in)
+//{   
+//    return (void *) in;
+//}
+//
+////intPtr_t * convert_voidp_to_sparam (void *in)
+////{
+////    return (intPtr_t *)in;
+////}
+//
+intPtr_t convert_ptr_to_int (void *in)
 {
     return (intPtr_t)in;
 }
-
-data_buffer_t * convert_charp_to_xdm (uint8_t *in)
+void * convert_int_to_ptr (intPtr_t in)
 {
-    return (data_buffer_t *)in;
+    return (void *)in;
 }
+//
+//intPtr_t convert_ptr_to_int (uint8_t *in)
+//{
+//    return (intPtr_t)in;
+//}
+
+//data_buffer_t * convert_charp_to_xdm (uint8_t *in)
+//{
+//    return (data_buffer_t *)in;
+//}

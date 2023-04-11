@@ -129,9 +129,9 @@
 
 #define PACKSWCPARAM(PSZ,NBPST) (((PSZ)<<6)|(NBPST))
 
-//enum idx_memory_base_offset   /* maximum 4, see DATAOFF_ARCW0 */
-#define MBANK_DMEM_EXT  U(0)    /* external shared memory space, used for arcs offsets */
-#define MBANK_DMEM      U(1)    /* internal shared memory space, used for arcs offsets */
+//enum idx_memory_base_offset   
+#define MBANK_DMEM_EXT  U(0)    /* external shared memory, index [0] for graph */
+#define MBANK_DMEM      U(1)    /* internal shared memory, index [0] for graph */
 
 #define NB_ARC_OFFSET   U(2) /* arc offsets for the shared internal / external mem */
 
@@ -140,7 +140,7 @@
 #define MBANK_BACKUP    U(4)    /* backup SRAM addressed only by STREAM */
 #define MBANK_HWIODMEM  U(5)    /* memory space for I/O and DMA buffers */
 #define MBANK_PMEM      U(6)    /* program RAM */
-#define MBANK_FLASH     U(7)    /* Internal Flash */
+#define MBANK_FLASH     U(7)    /* shared internal Flash, index [0] for graph */
 
 #define NB_MEMINST_OFFSET U(8)  /* offsets */
 

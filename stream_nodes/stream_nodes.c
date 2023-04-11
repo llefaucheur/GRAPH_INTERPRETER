@@ -98,7 +98,7 @@ for debouncing and LED / user-interface).
 Parameters : select rising/falling detection, signal to noise ratio in voltage decibels, 
 time-constant in [ms] for the energy integration time, time-constant to gate the output.
 
-10.	stream_compression, stream_decompression
+10.	stream_codec, stream_decompression
 Operation : simple wave compression using Alaw (8bits/sample), IMADPCM(4bits/sample) and 
 LPC10(1bit/sample) de/encoding.
 Parameters : coding scheme 
@@ -123,7 +123,7 @@ extern p_stream_node arm_stream_amplitude;
 extern p_stream_node arm_stream_mixer; 
 extern p_stream_node arm_stream_dsp_filter; 
 extern p_stream_node arm_stream_detector; 
-extern p_stream_node arm_stream_compression; 
+extern p_stream_node arm_stream_codec; 
 extern p_stream_node arm_stream_decompression; 
 extern p_stream_node arm_data_conditioning;
 extern p_stream_node arm_stream_generator;
@@ -144,7 +144,7 @@ p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
     /*  7*/ (void *)&arm_stream_mixer, 
     /*  8*/ (void *)&arm_stream_dsp_filter,                        
     /*  9*/ (void *)&arm_stream_detector,                        
-    /* 10*/ (void *)&arm_stream_compression,                        
+    /* 10*/ (void *)&arm_stream_codec,                        
     /* 11*/ (void *)&arm_data_conditioning,  
     /* 12*/ (void *)&arm_stream_generator, 
     /* 13*/ TBD, //(void *)&arm_stream_classifier, 

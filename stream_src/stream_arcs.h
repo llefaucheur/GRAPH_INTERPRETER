@@ -169,7 +169,6 @@
 
     #define PACKSTREAMFORMAT2(HASH,DIRECTION,MAP) ((U(HASH)<<25)|(U(DIRECTION)<<24)|U(MAP))
 
-#define SELECT_BASE_ARCW0   U(27) /*   at graph boot time: select the Flash or the long_offsets[] */
 
 #define SIZEOF_ARCDESC_W32 U(4)
 

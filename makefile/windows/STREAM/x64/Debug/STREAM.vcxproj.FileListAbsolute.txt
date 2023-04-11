@@ -1,0 +1,2 @@
+C:\Work\stm32u5\EW\CMSIS-Stream\makefile\windows\STREAM\x64\Debug\STREAM.exe
+C:\Work\stm32u5\EW\CMSIS-Stream\makefile\windows\STREAM\x64\Debug\STREAM.pdb

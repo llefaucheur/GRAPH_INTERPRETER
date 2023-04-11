@@ -42,13 +42,13 @@
  */
 void arm_stream (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
 {   
-    stream_parameters_t *parameters;
+    intPtr_t *parameters;
     uint8_t scheduling;
     uint8_t script;
 
-    parameters = convert_voidp_to_sparam(ptr1);
-    scheduling = U8(convert_voidp_to_int(ptr2));
-    script = U8(convert_voidp_to_int(ptr3));
+    parameters = (intPtr_t *)ptr1;
+    scheduling = U8(convert_ptr_to_int(ptr2));
+    script = U8(convert_ptr_to_int(ptr3));
 
 	switch (command)
     {

@@ -37,12 +37,11 @@
   */
 
 void arm_stream_io (uint32_t fw_io_idx, 
-            struct stream_local_instance *stream_instance, 
+            uint32_t *graph,
             uint8_t *data, uint32_t data_size)
 {   
     uint32_t arc_idx;
     intPtr_t *arc;
-    uint32_t *graph;
     uint32_t free_area;
     uint32_t amount_of_data;
     uint32_t size;
@@ -52,11 +51,10 @@ void arm_stream_io (uint32_t fw_io_idx,
     intPtr_t *long_offset;
     uint32_t *pio;
 
-    graph = stream_instance->graph;
-    platform_al (PLATFORM_OFFSETS,&long_offset,0,0);
-    pio = (uint32_t *)GRAPH_IO_CONFIG_ADDR_FLASH(graph);
+    platform_al (PLATFORM_OFFSETS, (uint8_t *)&long_offset,0,0);
+    pio = (uint32_t *)GRAPH_IO_CONFIG_ADDR(graph,long_offset);
     pio = &(pio[fw_io_idx]);
-    arc = GRAPH_ARC_LIST_ADDR_RAM(graph,long_offset);
+    arc = GRAPH_ARC_LIST_ADDR(graph,long_offset);
     arc_idx = EXTRACT_FIELD(*pio, IOARCID_IOFMT);
     arc = &(arc[SIZEOF_ARCDESC_W32 * arc_idx]);
     rx0tx1 = (uint8_t) EXTRACT_FIELD(*pio, RX0TX1_IOFMT);

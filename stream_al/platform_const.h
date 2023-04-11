@@ -65,7 +65,7 @@
 /*
    list of possible IO ports for the graph
    see stream_local_instance : whoami_ports [BOUNDARY_PARCH]
-      and GRAPH_IO_CONFIG_ADDR_FLASH
+      and GRAPH_IO_CONFIG_ADDR
  */
 
 //enum stream_io_domain                 

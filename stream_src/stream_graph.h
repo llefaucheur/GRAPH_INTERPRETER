@@ -35,7 +35,7 @@
         [1] offset to formats (Flash)
         [2] offset to IO configuration (Flash)
         [3] address of arc descriptors (RAM) (GRAPH_ARC_LIST_ADDR_RAM)
-        [4] address of the Stream instances(RAM) (GRAPH_STREAM_INST_ADDR_RAM)
+        [4] address of the Stream instances(RAM) (GRAPH_STREAM_INST)
         [5] parameters (nb_io) and script address (RAM) (GRAPH_SCRIPT_ADDR)
         [6] address of arc debug (RAM)
         [7] address of of the graph base address (RAM) when 0=GRAPH_HEADER_SPLIT_IN_RAM_LSB
@@ -81,15 +81,7 @@
              and used for initializations, list of PACKSWCMEM results with fields
                 SIZE, ALIGNMT, SPEED, zero on last field 
     ...
-                        
-//0x00000102,   // 000 000 copyInRAM bits + SharedMem bit + nb-io (8bits)
-//0x00000020,   // 004 001 long address to IO config  
-//0x00000028,   // 008 002 long address to formats     
-//0x00000058,   // 014 005 long address to Linked-list 
-//  
-//0x0000004C,   // 010 004 long address to Stream instances 
-//0x00000090,   // 018 006 long address to arc descriptors
-//0x000000C0,   // 01C 007 long address to debug area
+
 */
 
 /* max number of instances simultaneously reading the graph
@@ -100,9 +92,7 @@
 /* special case of short format script */
 #define SCRIPT_SW_IDX 0u            /* index of node_entry_point_table[SCRIPT_SW_IDX] = arm_script*/
 
-/* for MISRA-2012 compliance to Rule 10.4 */
-#define U(x) ((uint32_t)(x)) 
-
+/* -------- GRAPH[0]--CONFIG---- */
 #define COPY_CONF_GRAPH0_COPY_ALL_IN_RAM 0
 #define COPY_CONF_GRAPH0_COPY_PARTIALLY  1
 #define COPY_CONF_GRAPH0_ALREADY_IN_RAM  2
@@ -114,61 +104,30 @@
 #define COPY_CONF_GRAPH0_MSB U( 7) 
 #define COPY_CONF_GRAPH0_LSB U( 6) /* 2  total, partial or no copy in RAM */
 #define SHAREDMEM_GRAPH0_MSB U( 5) 
-#define SHAREDMEM_GRAPH0_LSB U( 5) /* 1  tells is the graph RAM is "shareable" */
+#define SHAREDMEM_GRAPH0_LSB U( 5) /* 1  tells if the graph RAM is "shareable" */
 #define      NBIO_GRAPH0_MSB U( 4)       
 #define      NBIO_GRAPH0_LSB U( 0) /* 5  nb of external boundaries of the graph */
 
-#define GRAPH_NB_IO(graph) RD((graph)[0],NBIO_GRAPH0)
+/* -------- GRAPH[1]--RAM-OFFSET---- */
+#define GRAPH_RAM_OFFSET(G,L)     pack2linaddr_int((G)[1],L)
+#define GRAPH_RAM_OFFSET_PTR(G,L) pack2linaddr_ptr((G)[1],L)
+#define GRAPH_IO_CONFIG_ADDR(G,L) pack2linaddr_ptr((G)[2],L)
+#define GRAPH_FORMAT_ADDR(G,L)    pack2linaddr_ptr((G)[3],L)
+#define GRAPH_LINKDLIST_ADDR(G,L) pack2linaddr_ptr((G)[4],L)
+#define GRAPH_STREAM_INST(G,L)    pack2linaddr_ptr((G)[5],L)
+#define GRAPH_ARC_LIST_ADDR(G,L)  pack2linaddr_ptr((G)[6],L)
+#define GRAPH_DEBUG_REGISTER(G,L) pack2linaddr_ptr((G)[7],L)
+#define GRAPH_DEBUG_SCRIPT(G,L)   pack2linaddr_ptr((G)[8],L)
 
-#define    UNUSED_GRAPH1_MSB U(31) 
-#define    UNUSED_GRAPH1_LSB U(11) /* 21 total, partial or no copy in RAM */
-#define COPY_CONF_GRAPH1_MSB U(10) 
-#define COPY_CONF_GRAPH1_LSB U( 9) /* 2  total, partial or no copy in RAM */
-#define SHAREDMEM_GRAPH1_MSB U( 8) 
-#define SHAREDMEM_GRAPH1_LSB U( 8) /* 1  tells is the graph RAM is "shareable" */
-#define    INDEX_GRAPH1_MSB U( 7)       
-#define    INDEX_GRAPH1_LSB U( 0) /*   nb of external boundaries of the graph */
-
-#define GRAPH_STREAM_INST_ADDR_FLASH(graph) (&((graph)[(graph)[0]]))
-#define GRAPH_FORMAT_ADDR_FLASH(graph) (&((graph)[(graph)[1]]))
-#define GRAPH_IO_CONFIG_ADDR_FLASH(graph) (&((graph)[(graph)[2]]))
-
-#define GRAPH_ARC_LIST_ADDR_RAM(graph,long_offset) pack2linaddr_ptr((graph)[3],((intPtr_t *)(long_offset)))
-
-/*-------------------*/
-#define LINKEDLIST_IS_IN_RAM(graph) (7!=RD(graph[4],DATAOFF_ARCW0))
-
-/* instances + long address + bits : graph goes in RAM + Shareable RAM */
-#define GRAPH_HEADER
-//#define GRAPH_HEADER_SHARABLE_RAM_MSB (FORMATIDX_ARCW0_LSB+1u)
-//#define GRAPH_HEADER_SHARABLE_RAM_LSB (FORMATIDX_ARCW0_LSB+1u)
-#define GRAPH_HEADER_SPLIT_IN_RAM_MSB (FORMATIDX_ARCW0_LSB+0u)
-#define GRAPH_HEADER_SPLIT_IN_RAM_LSB (FORMATIDX_ARCW0_LSB+0u)
-//#define GRAPH_HEADER_BASEIDXOFF_MSB BASEIDXOFFARCW0_MSB
-//#define GRAPH_HEADER_BASEIDXOFF_LSB BASEIDXOFFARCW0_LSB
-#define GRAPH_PARTIALLY_COPIED_IN_RAM(graph)  TEST_BIT((graph)[4],GRAPH_HEADER_SPLIT_IN_RAM_LSB)
-#define GRAPH_STREAM_INST_ADDR_RAM_p(graph,long_offset) pack2linaddr_ptr((graph)[4],(long_offset))
-#define GRAPH_STREAM_INST_ADDR_RAM(graph,long_offset) pack2linaddr_int((graph)[4],(long_offset))
-
-#define GRAPH_SCRIPT_ADDR_RAM(graph,long_offset) pack2linaddr_ptr((graph)[5],(long_offset))
-
-
-#define GRAPH_DEBUG_ADDR(graph,long_offset) pack2linaddr_ptr((graph)[6],(long_offset))
-
-#define GRAPH_ADDR_RAM(graph,long_offset) pack2linaddr_ptr((graph)[7],(long_offset))
-
-///* start of the graph */
-//#define GRAPH_LINKED_LIST_OFFSET 8u   
+#define LINKEDLIST_IS_IN_RAM(G) (7 != RD((G)[4],DATAOFF_ARCW0))
 
 /* 
     ================================= GRAPH LINKED LIST =======================================
 */ 
+#define U(x) ((uint32_t)(x)) /* for MISRA-2012 compliance to Rule 10.4 */
 
 /* number of SWC calls in sequence */
 #define MAX_SWC_REPEAT 4u
-
-//#define ARC0_S(arc) RD(arc,ARCIN_GI)
-//#define ARC1_S(arc) RD(arc,ARCOUT_GI)
 
 /* ============================================================================== */ 
 #define   UNUSED_GI_MSB U(31)
@@ -329,7 +288,17 @@
 
 
 
-/* for stream_parameters_t */
+/* ----------- for stream_param_t -----------------*/
+#define NB_STREAM_PARAM 2
+#define STREAM_PARAM_GRAPH 0
+#define STREAM_PARAM_CTRL 1
+//typedef struct
+//{   
+//  uint32_t *graph;         
+//  uint32_t instance_control;  /* see STREAM_PARAM_BITFIELDS */
+//
+//} stream_param_t;
+
 #define STREAM_PARAM_BITFIELDS 
 #define  UNUSED_PARAM_MSB U(31)
 #define  UNUSED_PARAM_LSB U(18) /* 14      */
@@ -363,7 +332,7 @@
 /*=====================================================================================*/                          
 /*                  STREAM_FORMAT_IO 
     The graph hold a table of uint32_t "stream_format_io" [LAST_IO_FUNCTION_PLATFORM]
-    addressed from #define GRAPH_IO_CONFIG_ADDR_FLASH(graph) (graph+graph[2])
+    addressed from #define GRAPH_IO_CONFIG_ADDR(graph) (graph+graph[2])
         0x000XXXXX,   // 008 002 Word 2 : offset to io_configuration 
 */
 #define RX0_TO_GRAPH 0u
@@ -414,7 +383,7 @@
 #define  PRESET_CMD_LSB U( 8) /* 8 preset */
 #define COMMAND_CMD_MSB U( 7)       
 #define COMMAND_CMD_LSB U( 0) /* 8 command */
-#define PACK_COMMAND(I,O,T,P,CMD) (((I)<<28)| ((O)<<24)| (T)<<16)| (P)<<8)| (CMD))
+#define PACK_COMMAND(I,O,T,P,CMD) (((I)<<28)| ((O)<<24)| ((T)<<16)| ((P)<<8)| (CMD))
 
 //enum stream_command 
 //{

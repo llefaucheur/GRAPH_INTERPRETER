@@ -6,14 +6,15 @@
                +----------------------+         +------------------------+
 */
                          /* FLASH/RAM */
-0x00000102,   // 000 000 copyInRAM bits + SharedMem bit + nb-io (8bits)
-0x00000020,   // 004 001 long address to IO config  
-0x00000028,   // 008 002 long address to formats     
-0x00000058,   // 014 005 long address to Linked-list 
-                         /* RAM */
-0x0000004C,   // 010 004 long address to Stream instances 
+0x00000102,   // 000 000 Offset/LenRAM copyInRAMConfig bits + SharedMem bit + nb-io (8bits)
+0x00000058,   // 014 001 long address to RAM
+0x00000020,   // 004 002 long address to IO config  
+0x00000028,   // 008 003 long address to formats     
+0x00000058,   // 014 004 long address to Linked-list 
+0x0000004C,   // 010 005 long address to Stream instances 
 0x00000090,   // 018 006 long address to arc descriptors
 0x000000C0,   // 01C 007 long address to debug area
+
 /* 
   -------------stream_format_io----- IO CONFIG---------------------------------------
 */
@@ -51,15 +52,15 @@
 /*           
   ------------------------------- Bytes codes --------------------------------
 */
-0x11111111,   // 0C8 032 [3] Debug Script addressed from FIFO [0]
-0x11111111,   // 0CC 033      
+0x11111111,   // 0C8 032 Debug Script 
+0x11111111,   // 0CC 033  
 0x11111111,   // 0C8 032 
-0x11111111,   // 0C8 032 [3] Script #0 addressed from FIFO [4]
-0x11111111,   // 0CC 033      
+0x11111111,   // 0C8 032 Script #0 addressed from FIFO [4]
+0x11111111,   // 0CC 033  
 0x11111111,   // 0C8 032 
-0x11111111,   // 0CC 033      
-0x11111111,   // 0C8 032 [4] Script #1 addressed from FIFO [5]
-0x11111111,   // 0CC 033      
+0x11111111,   // 0CC 033  
+0x11111111,   // 0C8 032 Script #1 addressed from FIFO [5]
+0x11111111,   // 0CC 033  
 0x11111111,   // 0D0 034
 
 /*
@@ -67,16 +68,11 @@
 
   ------------------------------- STREAM INSTANCES -------------------------------
 */
-0x00000000,   // 04C 013    Graph base address  stream_local_instance
 0x00000000,   // 050 014    whoami_ports : PACKWHOAMI(INST,PROCIDX,ARCH,BOUNDARIES)
 0x00000000,   // 054 015    node_entry to fill (two words if aarch64 is used)
 /*           
   ------------------------------- ARC descriptors --------------------------------
 */
-0x0000019C,   // 0B0 02C [0] FIFO of byte codes for debug script (FIFO #0)
-0x00000010,   // 0B4 02D    12 Bytes
-0x00000000,   // 0B8 02E 
-0x00000000,   // 0BC 02F 
 0x0000015C,   // 090 024 [1] input -> FILTER 
 0x00000020,   // 094 025    32 Bytes
 0x00000000,   // 098 026 

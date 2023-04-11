@@ -37,13 +37,13 @@
 
 intPtr_t arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
 {   
-    stream_parameters_t *parameters;
+    intPtr_t *parameters;
 
-    parameters = convert_voidp_to_sparam (ptr1);
+    parameters = (intPtr_t *)ptr1;
     {   intPtr_t a;
         intPtr_t b;
-        a = convert_voidp_to_int(ptr2);
-        b = convert_voidp_to_int(ptr3);
+        a = convert_ptr_to_int(ptr2);
+        b = convert_ptr_to_int(ptr3);
     }
 	switch (command)
     {

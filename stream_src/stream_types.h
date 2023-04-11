@@ -198,7 +198,7 @@ struct platform_proc_identification{    /* who am I ? */
 
 struct platform_control_stream
 {   
-    struct stream_local_instance *stream_instance;   // instance originator of this stream
+    uint32_t *graph;        
     uint32_t domain_settings[IO_SETTINGS_64bits];
     uint8_t fw_idx;
     data_buffer_t buffer;    // [{void *; int}]
@@ -209,17 +209,15 @@ struct platform_control_stream
     SWC manifests tell if instances are relocatable or if SWC are assigned to specific Stream instance
       for example : MP TCM usage with different base addresses
 */
-struct stream_local_instance  /* structure allocated to each STREAM instance */
-{
-    uint32_t *graph;        /* linear base address of the graph processed by this Stream instance */
-
-    uint32_t whoami_ports;  /* PACKWHOAMI : 16bits list of graph io ports this processor must check + who am I */
-
-    p_stream_node *node_entry_points;     /* all the nodes visible from this processor */
-   
-    //intPtr_t offset[NB_MEMINST_OFFSET];     /* base addresses, idx_memory_base_offset*/
-    //stream_entrance *platform_al; /* who am I, device driver control (set,start,stop,*ACK), init/memory banks */
-};
+///* struct stream_local_instance */uint32_t  /* structure allocated to each STREAM instance */
+//{
+//    uint32_t whoami_ports;  /* PACKWHOAMI : 16bits list of graph io ports this processor must check + who am I */
+//
+//    p_stream_node *node_entry_points;     /* all the nodes visible from this processor */
+//};
+#define STREAM_INSTANCE_SIZE 2
+#define STREAM_INSTANCE_WHOAMI_PORTS 0
+#define STREAM_INSTANCE_NODE_ENTRY_POINTS 1
 
 /* stream parameters */
 struct stream_control 
@@ -234,41 +232,33 @@ extern p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS];
 extern void arm_stream (uint32_t command, 
         void *ptr1, void *ptr2, void *ptr3);
 extern void arm_stream_io (uint32_t fw_io_idx, 
-        struct stream_local_instance *stream_instance, 
+        uint32_t *graph,
         uint8_t *data, uint32_t length);
-
-
-typedef struct
-{   
-    uint32_t *graph;         
-    uint32_t instance_control;  /* see STREAM_PARAM_BITFIELDS */
-
-} stream_parameters_t;
 
 /* ---- REFERENCES --------------------------------------------*/
 
 extern intPtr_t arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3);
 extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3);
-void stream_scan_graph (stream_parameters_t *parameters, int8_t return_option, 
+void stream_scan_graph (intPtr_t *parameters, int8_t return_option, 
     int8_t script_option, int8_t reset_option);
 
-extern void * convert_intp_to_voidp (intPtr_t *in);
-extern void * convert_sdata_to_voidp (data_buffer_t *in);
-extern void * convert_int_to_voidp (intPtr_t in);
-extern stream_parameters_t * convert_voidp_to_sparam (void *in);
-extern intPtr_t convert_voidp_to_int (void *in);
-extern intPtr_t convert_charp_to_int (uint8_t *in);
-extern struct stream_local_instance * convert_intp_to_instancep (intPtr_t *in);
-extern data_buffer_t * convert_charp_to_xdm (uint8_t *in);
+//extern void * convert_intp_to_voidp (intPtr_t *in);
+//extern void * convert_sdata_to_voidp (data_buffer_t *in);
+//extern void * convert_int_to_ptr (intPtr_t in);
+//
+//extern intPtr_t convert_ptr_to_int (void *in);
+//extern intPtr_t convert_ptr_to_int (uint8_t *in);
+extern intPtr_t convert_ptr_to_int (void *in);
+extern void * convert_int_to_ptr (intPtr_t in);
 
 extern intPtr_t * pack2linaddr_ptr(uint32_t data, intPtr_t *offsets);
 extern intPtr_t pack2linaddr_int(uint32_t data, intPtr_t *offsets);
 
 extern intPtr_t arc_extract_info_int (uint32_t *arc, uint8_t tag, intPtr_t *offsets);
 extern intPtr_t * arc_extract_info_pt (uint32_t *arc, uint8_t tag, intPtr_t *offsets);
-extern int stream_execute_script(stream_parameters_t *parameters, uint32_t *script);
-extern uint32_t physical_to_offset (uint8_t *buffer, intPtr_t *long_offsets);
-extern void arc_data_operations (intPtr_t *arc, uint8_t tag, intPtr_t *long_offsets, uint8_t *buffer, uint32_t size);
-extern void stream_scan_graph (stream_parameters_t *parameters, int8_t return_option, int8_t script_option, int8_t reset_option);
+extern int stream_execute_script(intPtr_t *parameters);
+extern uint32_t physical_to_offset (uint8_t *buffer, intPtr_t *long_offset);
+extern void arc_data_operations (intPtr_t *arc, uint8_t tag, intPtr_t *long_offset, uint8_t *buffer, uint32_t size);
+extern void stream_scan_graph (intPtr_t *parameters, int8_t return_option, int8_t script_option, int8_t reset_option);
 
 #endif /* #ifndef cSTREAM_TYPES_H */

@@ -89,10 +89,10 @@ struct platform_io_manifest platform_io [LAST_IO_FUNCTION_PLATFORM] =
  
  /*  
     data in RAM : a single Stream instance is in charge of one io
-    the only extra SRAM area needed to interface with Stream is the address of the Stream instance
+    the only extra SRAM area needed to interface with Stream is the address of the graph
 
  */
-intPtr_t platform_io_callback_parameter [LAST_IO_FUNCTION_PLATFORM];
+uint32_t * platform_io_callback_parameter [LAST_IO_FUNCTION_PLATFORM];
 
 
 /* --------------------------------------------------------------------------------------- */

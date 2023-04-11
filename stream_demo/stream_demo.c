@@ -41,7 +41,7 @@ intPtr_t pack2linaddr_int(uint32_t data, intPtr_t *offsets)
     tmp0 = EXTRACT_FIELD(data, DATAOFF_ARCW0);      tmp3 = (intPtr_t)tmp0;
 
     tmp4 = tmp1 << (tmp2 << U(2));
-    tmp5 = *(offsets + tmp3);
+    tmp5 = offsets[tmp3];
     tmp6 = tmp4 + tmp5;
 
     return tmp6;
@@ -49,22 +49,23 @@ intPtr_t pack2linaddr_int(uint32_t data, intPtr_t *offsets)
 
 intPtr_t * pack2linaddr_ptr(uint32_t data, intPtr_t *offsets)
 {
-    return convert_int_to_voidp (pack2linaddr_int(data, offsets));
+    return convert_int_to_ptr (pack2linaddr_int(data, offsets));
 }
+
 
 /*---------------------------------------------------------------------------
  * Application execution
  *---------------------------------------------------------------------------*/
 void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
-            const uint32_t *graph, 
+            uint32_t *graph, 
             uint32_t graph_size,
-            stream_parameters_t *parameters
+            intPtr_t *parameters
             )
 {
     uint32_t nio;
     uint32_t iio; 
     uint32_t fw_idx;
-    struct stream_local_instance *pinst;
+    /* struct stream_local_instance */uint32_t *pinst;
     uint32_t *pio;
     uint32_t stream_format_io;
     struct platform_control_stream set_stream;
@@ -73,12 +74,11 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     uint32_t *all_arcs; 
     uint32_t *graph_src;
     uint32_t *graph_dst; 
-    uint32_t graph_len_in_ram; 
     uint32_t graph_bytes_in_ram;
     uint8_t procID;
     uint8_t archID;
-    uint8_t copy_to_do;
     intPtr_t *long_offset;
+    uint32_t tmp32;
 
     /* 
         start copying the graph in RAM 
@@ -87,76 +87,84 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     */
 
     /* read the processors' long_offset table */
-    platform_al (PLATFORM_OFFSETS,&long_offset,0,0);
-
-    /* read the graph memory mapping configuration (copy in RAM, partial copy, no copy) */
-    parameters->graph = graph;
-
-    graph_src = graph;
-    graph_dst = graph;
-
-    switch (RD(graph,COPY_CONF_GRAPH0))
-    {
-    case COPY_CONF_GRAPH0_COPY_ALL_IN_RAM:
-        graph_bytes_in_ram = graph_size;
-        break;
-
-    case COPY_CONF_GRAPH0_COPY_PARTIALLY:
-        { void *x = MEMCPY((char *)graph_dst, (char *)graph, graph_size); }             
-        break;
-
-    case COPY_CONF_GRAPH0_ALREADY_IN_RAM:
-    default:
-        graph_bytes_in_ram = 0;
-        break;
-    }
-
-    { void *x = MEMCPY((char *)graph_dst, (char *)graph_src, graph_bytes_in_ram); }             
-
-
-    parameters->graph = GRAPH_ADDR_RAM(graph,long_offset);
-    parameters->instance_control = stream_instance;    
-
-    //TEST_BIT(ZZ,SELECT_BASE_ARCW0);
+    platform_al (PLATFORM_OFFSETS, (uint8_t *)(&long_offset),0,0);
 
     /* read the instance long_offset table */
-    pinst = (struct stream_local_instance *)GRAPH_STREAM_INST_ADDR_FLASH(graph);
+    pinst = (/* struct stream_local_instance */uint32_t *)GRAPH_STREAM_INST(graph,long_offset);
     pinst = &(pinst[stream_instance]);
-    platform_al (PLATFORM_OFFSETS,long_offset,0,0);
+    graph_src = graph_dst = graph; 
 
     /* if I am the master processor (archID=1 + procID=0), copy the graph, or wait */
     platform_al (PLATFORM_PROC_ID, &procID, &archID,0);
     if ((archID == 1U) && (procID == 0U))
     {
-        platform_al (PLATFORM_MP_BOOT_SYNCHRO, &stream_instance, &copy_to_do, 0);
-        if (0 != copy_to_do)
+        switch (RD(graph,COPY_CONF_GRAPH0))
         {
-            /* 
-                check if only a portion of the graph is copied in RAM 
+        /*
+           Graph is read from Flash and copied in RAM, 
+           for speed, ability to patch the parameters of each SWC at boot time
+           and on-the-fly with the bit NEWPARAM_GI
 
-            */
-            if (0 != GRAPH_PARTIALLY_COPIED_IN_RAM(graph))
-            {   
-                /* the second word gives the target address of the graph 
-                which is the split section or the full graph */
-                graph_bytes_in_ram = graph_size - (graph[0]<<2);
-                graph_src = GRAPH_STREAM_INST_ADDR_FLASH(graph);
-                graph_dst = (uint32_t *)GRAPH_STREAM_INST_ADDR_RAM_p(graph,long_offset);
-            }
-            else
-            {
-                /* copy from Flash to RAM, "graph" points to the RAM address */
-                graph_bytes_in_ram = graph_size;
-                graph_src = graph;
-                graph_dst = (uint32_t *)GRAPH_ADDR_RAM(graph,long_offset);
-            }
-            
-            { void *x = MEMCPY((char *)graph_dst, (char *)graph_src, graph_bytes_in_ram); }
+           data move: 
+            graph_src = parameter const uint32_t *graph
+            graph_dst = pack2linaddr(parameter *graph[2] RAM)
+            graph_size= parameter uint32_t graph_size,
+            parameters->graph = graph_dst;
+        */
+        case COPY_CONF_GRAPH0_COPY_ALL_IN_RAM:
 
-            /* this graph memory area is shareable */
-            platform_al (PLATFORM_MP_GRAPH_SHARED, (uint8_t *)graph,(uint8_t *)&(graph[graph_bytes_in_ram]),0);
-            platform_al (PLATFORM_MP_BOOT_DONE,0,0,0);
+            graph_src = graph;
+            graph_dst = GRAPH_RAM_OFFSET_PTR(graph,long_offset);
+            graph_bytes_in_ram = graph_size;
+
+            MEMCPY((char *)graph_dst, (char *)graph_src, graph_bytes_in_ram);
+            parameters[STREAM_PARAM_GRAPH] = convert_ptr_to_int(graph_dst);
+            break;
+
+        /*
+           Graph is read from Flash and a small part is copied in RAM
+           to save RAM (for example Cortex-M0 with 2kB of SRAM)
+
+            graph_src = parameter const uint32_t *graph  +  graph[0].OFFSET_GRAPH0
+            graph_dst = pack2linaddr(parameter *graph[2] RAM)
+            graph_size= graph[0].LENGTHRAM_GRAPH0
+            parameters->graph = graph_src;
+        */
+        case COPY_CONF_GRAPH0_COPY_PARTIALLY:
+            tmp32 = RD(graph[0], OFFSET_GRAPH0);
+            graph_src = (&(graph[tmp32]));
+            graph_dst = GRAPH_RAM_OFFSET_PTR(graph,long_offset);
+            graph_bytes_in_ram = sizeof(uint32_t) * RD(graph[0], LENGTHRAM_GRAPH0);
+
+            MEMCPY((char *)graph_dst, (char *)graph_src, graph_bytes_in_ram);
+
+            parameters[STREAM_PARAM_GRAPH] = convert_ptr_to_int(graph);
+            break;
+
+        /*
+            Graph is already in RAM, possibly not in the right memory banks
+            but relative offset are still valid. Absolute offset are recomputed
+
+            No data move
+            Absolute offset graph[1] "Flash" and graph[2] "RAM" are identical and reloaded 
+            with the value recomputed using physical_to_offset(const uint32_t *graph)
+            parameters->graph = graph_src;
+        */
+        default:
+        case COPY_CONF_GRAPH0_ALREADY_IN_RAM:
+            graph_src = graph;
+            graph_src[1] = GRAPH_RAM_OFFSET(graph,long_offset);
+            graph_src[2] = graph_src[1];
+            graph_dst = &(graph_src[graph_size/sizeof(uint32_t)]);
+
+            parameters[STREAM_PARAM_GRAPH] = GRAPH_RAM_OFFSET(graph,long_offset);
+            break;
         }
+    }
+
+    /* declare the graph memory as shared */
+    if (RD(graph,SHAREDMEM_GRAPH0))
+    {   platform_al (PLATFORM_MP_GRAPH_SHARED, (uint8_t *)graph_src, (uint8_t *)graph_dst,0);
     }
 
     /* I wait the graph is copied in RAM */
@@ -166,17 +174,15 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
         } while (0u != wait);
     }
 
-
+    parameters[STREAM_PARAM_CTRL] = stream_instance;  
 
     /*-------------------------------------------*/
 
     /* local stream instance initialization */
-    pinst = (struct stream_local_instance *)GRAPH_STREAM_INST_ADDR_RAM(graph, long_offset);
+    pinst = (/* struct stream_local_instance */uint32_t *)GRAPH_STREAM_INST(graph, long_offset);
     pinst = &(pinst[stream_instance]);
-    pinst->node_entry_points = node_entry_point_table;
-    //pinst->platform_al = platform_al;
-    pinst->graph = graph;
-    pinst->whoami_ports = PACKWHOAMI(stream_instance,procID,archID,0x003); // scan 2 io ports
+    pinst[STREAM_INSTANCE_NODE_ENTRY_POINTS] = convert_ptr_to_int(node_entry_point_table);
+    pinst[STREAM_INSTANCE_WHOAMI_PORTS] = PACKWHOAMI(stream_instance,procID,archID,0x003); // scan 2 io ports
 
     /* 
         initialization of all the SWC 
@@ -192,13 +198,14 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
         } while (wait);
     }
 
+    /*-------------------------------------------*/
     /* 
         initialization of the graph IO ports 
     */     
-    io_mask = EXTRACT_FIELD(pinst->whoami_ports, BOUNDARY_PARCH);
-    pio = GRAPH_IO_CONFIG_ADDR_FLASH(graph);
-    nio = GRAPH_NB_IO(graph);
-    all_arcs = GRAPH_ARC_LIST_ADDR_RAM(graph,long_offset);
+    io_mask = EXTRACT_FIELD(pinst[STREAM_INSTANCE_WHOAMI_PORTS], BOUNDARY_PARCH);
+    pio = GRAPH_IO_CONFIG_ADDR(graph,long_offset);
+    nio = RD(graph,NBIO_GRAPH0);
+    all_arcs = GRAPH_ARC_LIST_ADDR(graph,long_offset);
 
 
     for (iio = 0; iio < nio; iio++)
@@ -230,7 +237,7 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
                 (uint32_t)RD(all_arcs[iarc + BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
         }
         /* the Stream instance holds the memory offsets */
-        set_stream.stream_instance = pinst;
+        set_stream.graph = convert_int_to_ptr(parameters[STREAM_PARAM_GRAPH]);
         platform_al (PLATFORM_IO_SET_STREAM, (uint8_t *)&set_stream, 0, 0);
     }
 

@@ -38,7 +38,7 @@
 
 #define MIN(a, b) (((a) > (b))?(b):(a))
 #define MAX(a, b) (((a) < (b))?(b):(a))
-#define MEMCPY(dst,src,n) memcpy((dst),(src),(n))
+#define MEMCPY(dst,src,n) {void *x; x=memcpy((dst),(src),(n));}
 
 
 /* bit-field manipulations */

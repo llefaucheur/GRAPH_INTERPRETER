@@ -43,16 +43,16 @@ const uint32_t graph_input[] =
 
 int main(void)
 {
-    stream_parameters_t parameters;
+    intPtr_t parameters[NB_STREAM_PARAM];
 
     extern void stream_demo_init(uint8_t stream_instance, 
             uint8_t total_nb_stream_instance,
             const uint32_t *graph_input, 
             uint32_t graph_size,
-            stream_parameters_t *parameters
+            intPtr_t *parameters
             );
 
-    stream_demo_init(0, 1, graph_input, sizeof(graph_input), &parameters);
+    stream_demo_init(0, 1, graph_input, sizeof(graph_input), parameters);
 
     /* run the graph */
 	for (int i = 0; i < 10; i++)

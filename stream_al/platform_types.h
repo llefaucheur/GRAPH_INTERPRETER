@@ -39,7 +39,7 @@ extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t 
  */
 
 
-extern intPtr_t platform_io_callback_parameter [LAST_IO_FUNCTION_PLATFORM];
+extern uint32_t * platform_io_callback_parameter [LAST_IO_FUNCTION_PLATFORM];
 
 extern uint32_t audio_render_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) ;
 extern uint32_t audio_render_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size) ;
