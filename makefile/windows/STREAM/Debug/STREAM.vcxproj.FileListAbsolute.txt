@@ -1,4 +1,0 @@
-C:\Work\stm32u5\EW\CMSIS-Stream\makefile\windows\STREAM\Debug\STREAM.exe
-C:\Work\stm32u5\EW\CMSIS-Stream\makefile\windows\STREAM\Debug\STREAM.pdb
-C:\Work\GITHUB_LLF\CMSIS-Stream\makefile\windows\STREAM\Debug\STREAM.exe
-C:\Work\GITHUB_LLF\CMSIS-Stream\makefile\windows\STREAM\Debug\STREAM.pdb
