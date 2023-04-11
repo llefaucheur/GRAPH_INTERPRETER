@@ -148,6 +148,7 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\audio_codec\arm_compress.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\audio_codec\arm_decompress.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\audio_codec\audio_codec_imadpcm\arm_code_imadpcm.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\data_conditioning\arm_data_conditioning.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_amp\arm_stream_amplitude.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_convert\arm_format_converter.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_filter\arm_filter.c" />
@@ -156,6 +157,7 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\merge\arm_stream_merge.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\mixer\arm_stream_mixer.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\route\arm_stream_route.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_script.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\split\arm_stream_split.c" />
     <ClCompile Include="..\..\..\stream_nodes\stream_nodes.c" />
     <ClCompile Include="..\..\..\stream_src\stream_io.c" />

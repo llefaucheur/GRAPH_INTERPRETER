@@ -96,6 +96,12 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector.c">
       <Filter>Source Files\nodes</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_script.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\data_conditioning\arm_data_conditioning.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\stream_graph\graph_iir_gate.txt">

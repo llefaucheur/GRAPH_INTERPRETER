@@ -41,11 +41,9 @@
         [7] address of of the graph base address (RAM) when 0=GRAPH_HEADER_SPLIT_IN_RAM_LSB
     ...
     Word q : LINKED-LIST of SWC
-             short format : SWCID, arc0/arc1, Preset, new Preset (init)
-             long format : minimum 3 words/SWC
-             Word0: SWCID, arc0/arc1, TCM, verbose, new Preset (init)
-             Word1: pack address of instance, nb memreq
-                nb memreq words 
+             minimum 3 words/SWC
+             Word0: SWCID, arc0/arc1. arc++, TCM, verbose, new param
+             Word1: pack address of instance to nb memreq words, nb memreq, 
              Word2: Preset, Arc/Proc, Skip (0='no param')
                 byte stream: nbparams (255='all'), {tag, nbbytes, params}
              Word3: extension for arc2/arc3, in/out, HQoS
@@ -83,6 +81,15 @@
              and used for initializations, list of PACKSWCMEM results with fields
                 SIZE, ALIGNMT, SPEED, zero on last field 
     ...
+                        
+//0x00000102,   // 000 000 copyInRAM bits + SharedMem bit + nb-io (8bits)
+//0x00000020,   // 004 001 long address to IO config  
+//0x00000028,   // 008 002 long address to formats     
+//0x00000058,   // 014 005 long address to Linked-list 
+//  
+//0x0000004C,   // 010 004 long address to Stream instances 
+//0x00000090,   // 018 006 long address to arc descriptors
+//0x000000C0,   // 01C 007 long address to debug area
 */
 
 /* max number of instances simultaneously reading the graph
@@ -90,19 +97,37 @@
 #define MAX_NB_STREAM_INSTANCES 4 
 
 #define NB_NODE_ENTRY_POINTS 20
-
+/* special case of short format script */
+#define SCRIPT_SW_IDX 0u            /* index of node_entry_point_table[SCRIPT_SW_IDX] = arm_script*/
 
 /* for MISRA-2012 compliance to Rule 10.4 */
 #define U(x) ((uint32_t)(x)) 
 
-#define GRAPH_NB_IO(graph) (uint8_t)(0xFF & (graph)[0])
-#define GRAPH_SHARED_MEM(graph) (uint8_t)(0x1 & ((graph)[0] >> 8))
+#define COPY_CONF_GRAPH0_COPY_ALL_IN_RAM 0
+#define COPY_CONF_GRAPH0_COPY_PARTIALLY  1
+#define COPY_CONF_GRAPH0_ALREADY_IN_RAM  2
 
-#define GRAPH_COPY_ALL_IN_RAM 0
-#define GRAPH_COPY_PARTIALLY 1
-#define GRAPH_ALREADY_IN_RAM 2
-#define GRAPH_COPY_IN_RAM_CONFIG(graph) (uint8_t)(0x3 & ((graph)[0] >> 9))
+#define LENGTHRAM_GRAPH0_MSB U(31) /*    4kB of initialized RAM, without the buffers */
+#define LENGTHRAM_GRAPH0_LSB U(20) /* 10 nbW32 to copy in RAM */
+#define    OFFSET_GRAPH0_MSB U(19) /*    64kB can stay in Flash and 4kB in RAM */
+#define    OFFSET_GRAPH0_LSB U( 8) /* 14 nbW32 offset to the area to put int RAM */
+#define COPY_CONF_GRAPH0_MSB U( 7) 
+#define COPY_CONF_GRAPH0_LSB U( 6) /* 2  total, partial or no copy in RAM */
+#define SHAREDMEM_GRAPH0_MSB U( 5) 
+#define SHAREDMEM_GRAPH0_LSB U( 5) /* 1  tells is the graph RAM is "shareable" */
+#define      NBIO_GRAPH0_MSB U( 4)       
+#define      NBIO_GRAPH0_LSB U( 0) /* 5  nb of external boundaries of the graph */
 
+#define GRAPH_NB_IO(graph) RD((graph)[0],NBIO_GRAPH0)
+
+#define    UNUSED_GRAPH1_MSB U(31) 
+#define    UNUSED_GRAPH1_LSB U(11) /* 21 total, partial or no copy in RAM */
+#define COPY_CONF_GRAPH1_MSB U(10) 
+#define COPY_CONF_GRAPH1_LSB U( 9) /* 2  total, partial or no copy in RAM */
+#define SHAREDMEM_GRAPH1_MSB U( 8) 
+#define SHAREDMEM_GRAPH1_LSB U( 8) /* 1  tells is the graph RAM is "shareable" */
+#define    INDEX_GRAPH1_MSB U( 7)       
+#define    INDEX_GRAPH1_LSB U( 0) /*   nb of external boundaries of the graph */
 
 #define GRAPH_STREAM_INST_ADDR_FLASH(graph) (&((graph)[(graph)[0]]))
 #define GRAPH_FORMAT_ADDR_FLASH(graph) (&((graph)[(graph)[1]]))
@@ -110,6 +135,8 @@
 
 #define GRAPH_ARC_LIST_ADDR_RAM(graph,long_offset) pack2linaddr_ptr((graph)[3],((intPtr_t *)(long_offset)))
 
+/*-------------------*/
+#define LINKEDLIST_IS_IN_RAM(graph) (7!=RD(graph[4],DATAOFF_ARCW0))
 
 /* instances + long address + bits : graph goes in RAM + Shareable RAM */
 #define GRAPH_HEADER
@@ -130,8 +157,8 @@
 
 #define GRAPH_ADDR_RAM(graph,long_offset) pack2linaddr_ptr((graph)[7],(long_offset))
 
-/* start of the graph */
-#define GRAPH_LINKED_LIST_OFFSET 8u   
+///* start of the graph */
+//#define GRAPH_LINKED_LIST_OFFSET 8u   
 
 /* 
     ================================= GRAPH LINKED LIST =======================================
@@ -140,33 +167,16 @@
 /* number of SWC calls in sequence */
 #define MAX_SWC_REPEAT 4u
 
-#define TEST_SWC_FORMAT(SWC) U(U(1) & U((SWC)>>U(31)))
-#define SWC_LONG_FORMAT (uint32_t)0
-/* ================================= */
-#define STREAM_LIST_GI_SHORT_FORMAT (MSB = 1)
-#define SHORTFMT_GIS_MSB U(31)
-#define SHORTFMT_GIS_LSB U(31) /* 1  MSB=1 : no instance, parameter fixed */
-#define   UNUSED_GIS_MSB U(30) 
-#define   UNUSED_GIS_LSB U(30) /* 1  */
-#define   PRESET_GIS_MSB U(29)       
-#define   PRESET_GIS_LSB U(18) /* 12 parameter */
-#define   ARCOUT_GIS_MSB U(17) 
-#define   ARCOUT_GIS_LSB U(12) /* 6  OUT */
-#define    ARCIN_GIS_MSB U(11) 
-#define    ARCIN_GIS_LSB U( 6) /* 6  IN */
-#define  SWC_IDX_GIS_MSB U( 5) 
-#define  SWC_IDX_GIS_LSB U( 0) /* 6  0<>nothing, swc index of node_entry_points[][] */
+//#define ARC0_S(arc) RD(arc,ARCIN_GI)
+//#define ARC1_S(arc) RD(arc,ARCOUT_GI)
 
-#define ARC0_S(arc) RD(arc,ARCIN_GIS)
-#define ARC1_S(arc) RD(arc,ARCOUT_GIS)
-
-/* ================================= */ 
-
-#define STREAM_LIST_GI_LONG_FORMAT_WORD_0  (MSB = 0) /* header */
-#define  LONGFMT_GI_MSB U(31)
-#define  LONGFMT_GI_LSB U(31) /* 1  MSB=0 : instance and parameter pointer */
-#define   UNUSED_GI_MSB U(30) 
-#define   UNUSED_GI_LSB U(28) /* 3 --------*/
+/* ============================================================================== */ 
+#define   UNUSED_GI_MSB U(31)
+#define   UNUSED_GI_LSB U(29) /* 2 -------  */
+#define SEQUENCE_GI_MSB U(31) /*   overlay the buffer when processing is done in sequences */
+#define SEQUENCE_GI_LSB U(29) /* 1 save the linked_list_ptr to process next SWC from this point */
+#define NEWPARAM_GI_MSB U(28) 
+#define NEWPARAM_GI_LSB U(28) /* 1 new param when the list is in RAM */
 #define  VERBOSE_GI_MSB U(27)
 #define  VERBOSE_GI_LSB U(27) /* 1 verbose debug trace */
 #define TCM_INST_GI_MSB U(26) /*   SWC has a relocatable bank to TCM (working area)  the scheduler reloads the first */
@@ -178,7 +188,7 @@
 #define    ARCIN_GI_MSB U(15) 
 #define    ARCIN_GI_LSB U( 8) /* 8  IN */
 #define  SWC_IDX_GI_MSB U( 7) 
-#define  SWC_IDX_GI_LSB U( 0) /* 8 0<>nothing, swc index of node_entry_points[][] */
+#define  SWC_IDX_GI_LSB U( 0) /* 8 0<>nothing, swc index of node_entry_points[] */
 
 //#define ARC0(arc) RD(arc,ARCIN_GI)
 //#define ARC1(arc) RD(arc,ARCOUT_GI)
@@ -202,10 +212,11 @@
 
 /*----------------------------------------
   BOOTPARAMS Word0 : 
-    preset LSB  :12; preset index (SWC delivery)
+    preset LSB  : 8; preset index (SWC delivery)
+    unused      : 4; 
     skip        :12  nb of word32 to skip at run time
     architecture: 3
-    processor id: 5
+    processor id: 3
 
   if Skip == 0 
     only preset is used for compatibility with the short format
@@ -225,7 +236,7 @@
 
 #define    UNUSED_BP_MSB U(31)
 #define    UNUSED_BP_LSB U(30) /*  2  */
-#define    PROCID_BP_MSB U(29)  
+#define    PROCID_BP_MSB U(29) /*    same as PROCID_PARCH (stream instance) */
 #define    PROCID_BP_LSB U(27) /*  3 processor index [0..7] for this architecture 0="master processor" */  
 #define    ARCHID_BP_MSB U(26)
 #define    ARCHID_BP_LSB U(24) /*  3 [1..7] processor architectures 0="any" 1="master processor architecture" */
@@ -301,14 +312,14 @@
 /*---- processor's information ----*/
             /* synchronization BYTE, used for locking SWC on arc1 */
 #define  INST_ID_PARCH_MSB U(31)
-//#define INSTANCE_PARCH_MSB U(31)  /* avoid locking an arc by the same processor, but different RTOS instances*/
-//#define INSTANCE_PARCH_LSB U(30)  /* 2 [0..3] up to 4 instances per processors */
-//#define   WHOAMI_PARCH_MSB U(29)
-//#define   PROCID_PARCH_MSB U(29)  
-//#define   PROCID_PARCH_LSB U(27)  /* 3 processor index [0..7] for this architecture 0="master processor" */  
-//#define   ARCHID_PARCH_MSB U(26)
-//#define   ARCHID_PARCH_LSB U(24)  /* 3 [1..7] processor architectures 0="any" 1="master processor architecture" */
-//#define   WHOAMI_PARCH_LSB U(24)  /*   whoami used to lock a SWC to specific processor or architecture */
+#define   WHOAMI_PARCH_MSB U(31)
+#define INSTANCE_PARCH_MSB U(31)  /* avoid locking an arc by the same processor, but different RTOS instances*/
+#define INSTANCE_PARCH_LSB U(30)  /* 2 [0..3] up to 4 instances per processors */
+#define   PROCID_PARCH_MSB U(29)  /*   indexes from Manifest(tools) and PLATFORM_PROC_ID */
+#define   PROCID_PARCH_LSB U(27)  /* 3 processor index [0..7] for this architecture 0="master processor" */  
+#define   ARCHID_PARCH_MSB U(26)
+#define   ARCHID_PARCH_LSB U(24)  /* 3 [1..7] processor architectures 0="any" 1="master processor architecture" */
+#define   WHOAMI_PARCH_LSB U(24)  /*   whoami used to lock a SWC to specific processor or architecture */
 #define  INST_ID_PARCH_LSB U(24)  /*   8 bits identification for locks */
 //                           
 #define BOUNDARY_PARCH_MSB U(23)  
@@ -317,8 +328,17 @@
 #define PACKWHOAMI(INST,PROCIDX,ARCH,BOUNDARIES) (((INST)<<30)|((PROCIDX)<<27)|((ARCH)<<24)|(BOUNDARIES))
 
 
-/*================================= STREAM CONTROL ================================*/
 
+/* for stream_parameters_t */
+#define STREAM_PARAM_BITFIELDS 
+#define  UNUSED_PARAM_MSB U(31)
+#define  UNUSED_PARAM_LSB U(18) /* 14      */
+#define LASTSWC_PARAM_MSB U(17)
+#define LASTSWC_PARAM_LSB U( 6) /* 12 index to the last position scanned by the scheduler */
+#define INSTIDX_PARAM_MSB U( 5) 
+#define INSTIDX_PARAM_LSB U( 0) /*  6 Stream instance index of the graph readers */
+
+/*================================= STREAM CONTROL ================================*/
 /* 
     Platform control (RAM) => HW IO
 */
@@ -384,6 +404,18 @@
 /*
     commands from the application, and from Stream to the SWC
 */
+#define     NIN_CMD_MSB U(31)
+#define     NIN_CMD_LSB U(28) /* 4 number of input arcs */
+#define    NOUT_CMD_MSB U(27)       
+#define    NOUT_CMD_LSB U(24) /* 4 number of output arcs */
+#define     TAG_CMD_MSB U(23)       
+#define     TAG_CMD_LSB U(16) /* 8 selection */
+#define  PRESET_CMD_MSB U(15)       
+#define  PRESET_CMD_LSB U( 8) /* 8 preset */
+#define COMMAND_CMD_MSB U( 7)       
+#define COMMAND_CMD_LSB U( 0) /* 8 command */
+#define PACK_COMMAND(I,O,T,P,CMD) (((I)<<28)| ((O)<<24)| (T)<<16)| (P)<<8)| (CMD))
+
 //enum stream_command 
 //{
 #define STREAM_RESET 1u             /* func(STREAM_RESET, *instance, * memory_results) */
@@ -391,6 +423,10 @@
 #define STREAM_READ_PARAMETER 3u    
 #define STREAM_RUN 4u               /* func(STREAM_RUN, instance, *in_out) */
 #define STREAM_END 5u               /* func(STREAM_END, instance, 0)   called at STREAM_APP_STOP_GRAPH, swc calls free() if it used stdlib's malloc */
+//#define STREAM_DELETE_NODE 
+//#define STREAM_INSERT_NODE
+//#define STREAM_INTERPRET_COMMANDS
+
 //};
 
 /*

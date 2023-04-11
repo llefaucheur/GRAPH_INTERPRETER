@@ -73,6 +73,7 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     uint32_t *all_arcs; 
     uint32_t *graph_src;
     uint32_t *graph_dst; 
+    uint32_t graph_len_in_ram; 
     uint32_t graph_bytes_in_ram;
     uint8_t procID;
     uint8_t archID;
@@ -91,19 +92,30 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     /* read the graph memory mapping configuration (copy in RAM, partial copy, no copy) */
     parameters->graph = graph;
 
-    switch (GRAPH_COPY_IN_RAM_CONFIG(graph))
+    graph_src = graph;
+    graph_dst = graph;
+
+    switch (RD(graph,COPY_CONF_GRAPH0))
     {
-    case GRAPH_COPY_ALL_IN_RAM:
-                
+    case COPY_CONF_GRAPH0_COPY_ALL_IN_RAM:
+        graph_bytes_in_ram = graph_size;
         break;
-    case GRAPH_COPY_PARTIALLY:
+
+    case COPY_CONF_GRAPH0_COPY_PARTIALLY:
+        { void *x = MEMCPY((char *)graph_dst, (char *)graph, graph_size); }             
         break;
+
+    case COPY_CONF_GRAPH0_ALREADY_IN_RAM:
     default:
+        graph_bytes_in_ram = 0;
         break;
     }
 
+    { void *x = MEMCPY((char *)graph_dst, (char *)graph_src, graph_bytes_in_ram); }             
+
+
     parameters->graph = GRAPH_ADDR_RAM(graph,long_offset);
-    parameters->instance_idx = stream_instance;    
+    parameters->instance_control = stream_instance;    
 
     //TEST_BIT(ZZ,SELECT_BASE_ARCW0);
 

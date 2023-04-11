@@ -76,43 +76,41 @@ int32_t arm_imadpcm_calls_stream (int32_t command, void *instance, void *data, v
  */
 void arm_imadpcm_run(arm_imadpcm_instance *instance, 
                      uint8_t *in, int32_t nb_data, 
-                     int16_t *outBufs, int32_t nb_samples)
+                     int16_t *outBufs)
 {
     /* fake decoder*/ 
     int i;
-    for (i = 0; i < nb_samples; i++)
+    for (i = 0; i < nb_data; i++)
     {
         outBufs[i] = (int16_t)((int16_t)(in[i])<<8);
     }
 }
 
 /**
-  @brief         Processing function for the floating-point Biquad cascade filter.
-  @param[in]     S         points to an instance of the floating-point Biquad cascade structure
-  @param[in]     pSrc      points to the block of input data
-  @param[out]    pDst      points to the block of output data
-  @param[in]     blockSize  number of samples to process
-  @return        none
+  @brief         
+  @param[in]     command    bit-field
+  @param[in]     pinst      instance of the component
+  @param[in/out] pdata      address and size of buffers
+  @param[out]    pstatus    execution state (0=processing not finished)
+  @return        status     finalized processing
  */
-int32_t arm_imadpcm (int32_t command, void *instance, void *data, void *parameters)
+void arm_imadpcm (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status)
 {
-    int32_t swc_returned_status = 0;
+    *status = 1;    /* default return status, unless processing is not finished */
 
-    switch (command)
+    switch (RD(command,COMMAND_CMD))
     { 
-        /* func(command = STREAM_RESET, 
-               instance = *memory_results,  
-               data = address of Stream
-                parameter = #preset on LSB (0x0000.0PPP)  
-                memory_results are followed by the first two words 
-                of STREAM_FORMAT_SIZE_W32 
-
-               memory pointers are in the same order as in MEMREQ, 
+        /* func(command = (STREAM_RESET, PRESET, TAG, NB ARCS IN/OUT)
+                instance = *memory_results,  
+                data = address of Stream function
+                
+                memory_results are followed by the first two words of STREAM_FORMAT_SIZE_W32 
+                memory pointers are in the same order as described in the SWC manifest
         */
         case STREAM_RESET: 
         {   stream_entrance *stream_entry = (stream_entrance *)(uint64_t)data;
-            uint32_t *memresults = (uint32_t *)instance;
-            uint16_t preset = (uint8_t)(uint64_t)parameters;
+            uint32_t *memresults = instance;
+            uint16_t preset = RD(command, PRESET_CMD);
 
             arm_imadpcm_instance *pinstance = (arm_imadpcm_instance *) memresults++;
             /* here reset */
@@ -120,11 +118,10 @@ int32_t arm_imadpcm (int32_t command, void *instance, void *data, void *paramete
             break;
         }    
 
-        /* func(command = STREAM_SET_PARAMETER, 
+        /* func(command = (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
+                    TAG of a parameter to set, 0xFF means "set all the parameters" in a raw
                 *instance, 
-                data = parameter(s) (one or all)
-                parameters = 0x00TT.0PPP : tag of a parameter to set (MSB) on top of a default preset (LSB)
-                    0xFFFF means "set all the parameters" in a raw
+                data = (one or all)
         */ 
         case STREAM_SET_PARAMETER:  
         {   
@@ -134,10 +131,10 @@ int32_t arm_imadpcm (int32_t command, void *instance, void *data, void *paramete
 
 
 
-        /* func(command = STREAM_READ_PARAMETER, 
+        /* func(command = STREAM_READ_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
+                    TAG/index of a parameter to read (Metadata, Needle), 0xFF means "read all the parameters"
                 *instance, 
-                data = *parameter(s) being read
-                Index of parameter :  tag of a parameter to set, 0xFFFF means "read all the parameters"
+                data = *parameter(s) to read
         */ 
         case STREAM_READ_PARAMETER:  
         {   
@@ -148,52 +145,53 @@ int32_t arm_imadpcm (int32_t command, void *instance, void *data, void *paramete
         
 
 
-        /* func(command = STREAM_RUN, 
+        /* func(command = STREAM_RUN, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = array of [{*input size} {*output size}]
-               parameters = preset (12bits)
 
                data format is given in the node's manifest used during the YML->graph translation
                this format can be FMT_INTERLEAVED or FMT_DEINTERLEAVED_1PTR
         */         
         case STREAM_RUN:   
         {
-            int32_t nb_samples, nb_data, data_buffer_size, bufferout_free, increment;
-            uint32_t *pt_pt;
+            int32_t nb_data, data_buffer_size, bufferout_free, increment;
+            data_buffer_t *pt_pt;
             uint8_t *inBuf_encoded_data;
             int16_t *outBuf_decoded_sample;
+            arm_imadpcm_instance *pinstance = (arm_imadpcm_instance *) instance;
 
-            pt_pt = (uint32_t *)data;
-            inBuf_encoded_data = (uint8_t *)(uint64_t)(*pt_pt++);   
-            data_buffer_size = (uint32_t )(*pt_pt++);
-            outBuf_decoded_sample = (int16_t *)(uint64_t)(*pt_pt++); 
-            bufferout_free = (uint32_t) (*pt_pt++); 
+            pt_pt = data;
+            inBuf_encoded_data  = pt_pt->address;   
+            data_buffer_size    = pt_pt->size;
+            pt_pt++;
+            outBuf_decoded_sample = (int16_t *)(pt_pt->address); 
+            bufferout_free        = pt_pt->size;
 
             nb_data = data_buffer_size / sizeof(uint8_t);
-            nb_samples = bufferout_free / sizeof(float);
-            arm_imadpcm_run(instance, 
+
+            arm_imadpcm_run(pinstance, 
                     inBuf_encoded_data, nb_data, 
-                    outBuf_decoded_sample, nb_samples );
+                    outBuf_decoded_sample);
 
             increment = (nb_data * sizeof(uint8_t));
-            pt_pt = (uint32_t *)data;
-            *pt_pt = (uint32_t)(uint64_t)(inBuf_encoded_data += increment);
-            increment = (nb_samples * sizeof(int16_t));
-            pt_pt += 2;
-            *pt_pt = (uint32_t)(uint64_t)(outBuf_decoded_sample += increment);
+            pt_pt = data;
+            *(pt_pt->address) += increment;
+            pt_pt->size       -= increment;
+            pt_pt ++;
+            increment = (nb_data * sizeof(int16_t));
+            *(pt_pt->address) += increment;
+            pt_pt->size       -= increment;
             
             break;
         }
 
 
 
-        /* func(command = STREAM_END, 
+        /* func(command = STREAM_END, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = unused
-               parameters = unused
            used to free memory allocated with the C standard library
         */  
         case STREAM_END:  break;    
     }
-    return swc_returned_status;
 }

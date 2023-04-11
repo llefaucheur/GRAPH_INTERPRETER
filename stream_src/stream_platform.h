@@ -94,6 +94,116 @@
     (((ARCH)<<23)|((PROC)<<15)|((OFFSET)<<12)|((HWBUFFER)<<11)|((MASTER)<<10)|((IOIDX)<<6)|((DOMAIN)<<0))
 
 
+
+/*
+    STREAM SERVICES
+*/
+
+enum stream_command 
+{
+    /* the 4 LSB are used for the command type selection */
+    STREAM_COMMAND_SELECT = 0x0000000F,
+#define STREAM_COMMAND_MASK 0x0000FFF0
+
+    /* Commands LSB4 = 0 ------------------------------------------------------------------- */
+    STREAM_CONTROL = 0x00000010,           
+
+ 
+    //STREAM_SET_BUFFER_NOTIFICATION,
+
+    STREAM_DEBUG_TRACE, STREAM_DEBUG_TRACE_1B, STREAM_DEBUG_TRACE_STRING,
+    STREAM_DEBUG_TRACE_STAMPS,
+    STREAM_DEBUG_ARC_CALLBACK,
+
+    STREAM_SAVE_HOT_PARAMETER, STREAM_DATA_FETCH, STREAM_CHECK_FETCH_COMPLETION,
+    /* dummy access to pre-load the cache when the algorithm is working somewhere else 
+        see draw_horiz_band() in FFMPEG */
+    /* Invalidate = flush  => clear valid bit to allow $line to be reused (no WB in memory)
+       Clean = force dirty D-$ line to be written to main memory (coherence between D-$ & mem) */
+
+    STREAM_READ_TIME, STREAM_READ_TIME_FROM_START, STREAM_TIME_DIFFERENCE, 
+    STREAM_TIME_CONVERSION,   /* linux time format conversion, ..  */
+
+    //STREAM_LOW_POWER,     /* interface to low-power platform settings, "wake-me in 24h with deep-sleep in-between" */
+    //STREAM_URGENT_TASKS,  /* from 1ms SYSTICK : call platform_io "get/put next" data stream */
+    //STREAM_PLL_SETTING,   /* tell the scheduler the processor's PLL was changed */
+
+
+    /* STREAM_STANDARD_LIBRARIES LSB4 = 1 ------------------------------------------------------------------- */
+    STREAM_STANDARD_LIBRARIES = 0x00000011,           
+
+    /* stdio.h */
+    STREAM_FEOF, STREAM_FERROR, STREAM_FFLUSH, STREAM_FGETC, STREAM_FGETS, STREAM_FOPEN, STREAM_FPRINTF, STREAM_FPUTC,
+    STREAM_FPUTS, STREAM_FREAD, STREAM_FSCANF, STREAM_FWRITE,
+
+    /* stdlib.h */
+    STREAM_ABS, STREAM_ATOF, STREAM_ATOI, STREAM_ATOL, STREAM_ATOLL, STREAM_CALLOC, STREAM_FREE, STREAM_LABS,
+    STREAM_LDIV, STREAM_LLABS, STREAM_LLDIV, STREAM_MALLOC, STREAM_RAND, STREAM_REALLOC, STREAM_SRAND, STREAM_STRTOD,
+    STREAM_STRTOF, STREAM_STRTOL, STREAM_STRTOLD, STREAM_STRTOLL, STREAM_STRTOUL, STREAM_STRTOULL,
+
+    /* string.h */
+    STREAM_MEMCHR, STREAM_MEMCMP, STREAM_MEMCPY, STREAM_MEMMOVE, STREAM_MEMSET, STREAM_STRCHR, STREAM_STRLEN,
+    STREAM_STRNCAT, STREAM_STRNCMP, STREAM_STRNCPY, STREAM_STRSTR, STREAM_STRTOK,
+
+    /* STREAM_MATH_LIBRARIES LSB4 = 2 ------------------------------------------------------------------- */
+    STREAM_MATH_LIBRARIES = 0x00000012,           
+
+    /* math.h */
+    STREAM_SIN_FP16,  STREAM_COS_FP16,   STREAM_SIN_FP32,  STREAM_COS_FP32,   STREAM_SIN_FP64,  STREAM_COS_FP64, 
+    STREAM_ASIN_FP16, STREAM_ACOS_FP16,  STREAM_ASIN_FP32, STREAM_ACOS_FP32,  STREAM_ASIN_FP64, STREAM_ACOS_FP64, 
+    STREAM_TAN_FP16,                   STREAM_TAN_FP32,                   STREAM_TAN_FP64,  
+    STREAM_ATAN_FP16, STREAM_ATAN2_FP16, STREAM_ATAN_FP32, STREAM_ATAN2_FP32, STREAM_ATAN_FP64, STREAM_ATAN2_FP64,  
+    STREAM_LOG10_FP16,STREAM_LOG2_FP16,  STREAM_LOG10_FP32,STREAM_LOG2_FP32,  STREAM_LOG10_FP64,STREAM_LOG2_FP64, 
+    STREAM_POW_FP16,  STREAM_SQRT_FP16,  STREAM_POW_FP32,  STREAM_SQRT_FP32,  STREAM_POW_FP64,  STREAM_SQRT_FP64, 
+
+    /* CMSIS-DSP/ML */
+    STREAM_SET_ACCURACY, STREAM_SET_MEMORY_CONSTRAINT, STREAM_FREE_COMPUTE_INSTANCE, 
+
+    //STREAM_CONJ,                          /* Conjugate */
+    STREAM_RFFT, STREAM_CFFT, STREAM_CIFFT,   /* FFT - there is a state and associated instance common for fft and ifft */
+
+    //STREAM_RADD, STREAM_CADD,
+    //STREAM_RSUB, STREAM_CSUB,
+    //STREAM_RMUL, STREAM_CMUL,               /* element-wise real/complex vector multiply, with conjugate */
+    //STREAM_RDIV, STREAM_CDIV,     
+    //STREAM_RABS,                          /* absolute values of real vectors, norm-1/2/Inf of complex numbers */
+    //STREAM_MAX,
+    //STREAM_CNORM,                         
+    //STREAM_RMAX,                          /* max between two vectors */
+
+    //STREAM_WINDOWS,                       /* windowing */
+    //STREAM_BIQUAD_CASCADE,                /* filters - there a state and associated instance */
+    //STREAM_FIR,
+    //STREAM_MATRIX_MULT,
+    //STREAM_2D_FILTER, 
+    //STREAM_ASRC, 
+    //STREAM_2D_DECIMATE, 
+
+    //STREAM_APPLY_GAIN, 
+    //STREAM_MATH_TABLE, 
+    //STREAM_RATE_CONVERTER, 
+    //STREAM_MIXER, 
+
+
+    /* STREAM_MULTIMEDIA_LIBRARIES LSB4 = 3 ------------------------------------------------------------------- */
+    STREAM_MULTIMEDIA_LIBRARIES = 0x00000013,           
+
+    /* audio Codecs */
+    STREAM_ALAW_ENC, STREAM_ALAW_DEC, STREAM_MULAW_ENC, STREAM_MULAW_DEC, STREAM_IMADPCM_ENC, STREAM_IMADPCM_DEC,
+    STREAM_LPC_ENC, STREAM_LPC_DEC,
+
+    /* image                   */
+    STREAM_JPEG_ENC, STREAM_JPEG_DEC, STREAM_PNG_ENC, STREAM_PNG_DEC,
+
+    /* STREAM_APPLICATION_LIBRARIES LSB4 = 4 ------------------------------------------------------------------- */
+    STREAM_APPLICATION_LIBRARIES = 0x00000014,
+
+    STREAM_RAWDATA_FORMAT_CONVERSION,
+    STREAM_RFC8428_CONVERTER,
+
+    STREAM_SECURITY_LIBRARY, 
+    STREAM_TEA,
+};
 #endif /* #ifndef cSTREAM_PLATFORM_H */
 /*
  * -----------------------------------------------------------------------

@@ -50,13 +50,13 @@ intPtr_t arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *pt
     case 0:
         break;
     /*----------------------------------------------------------------------------
-       arm_stream interface used for "special" services, examples : 
+       arm_stream interface is used for "special" services       
+       examples : 
        - access to compute libraries, data converters and compression
        - access to time, stdlib, stdio for SWC delivered in binary
        - report information of change in format of the output stream (MPEG decoder)
-       - access to platform IOs, data interface and associated services
-       - report error 
-       - report metadata
+       - access to platform IOs, data interfaces and associated services
+       - report error and metadata
 
         To avoid to have initialization steps when calling a complex LINK 
         service (rfft, ssrc, ..) the call to STREAM is made with an int32 of value 

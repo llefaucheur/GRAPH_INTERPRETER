@@ -66,6 +66,7 @@ uint32_t HWIO[SIZE_MBANK_HWIODMEM];
 uint32_t PMEM[SIZE_MBANK_PMEM];
 
 #define PROC_ID 0 
+extern const uint32_t graph_input[];
 
 #if PROC_ID == 0
 intPtr_t long_offsets[NB_MEMINST_OFFSET] = 
@@ -77,6 +78,7 @@ intPtr_t long_offsets[NB_MEMINST_OFFSET] =
     (intPtr_t)&(BKUP[14]), // MBANK_BACKUP  
     (intPtr_t)&(HWIO[15]), // MBANK_HWIODMEM
     (intPtr_t)&(PMEM[16]), // MBANK_PMEM    
+    (intPtr_t)graph_input, // MBANK_FLASH   ideally 16Bytes-aligned for arc shifter 1
 };
 #endif
   

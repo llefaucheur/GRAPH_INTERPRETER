@@ -80,26 +80,8 @@ struct platform_io_manifest
  */
 
 typedef void (stream_entrance) (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3); 
+typedef void (*p_stream_node) (uint32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *state);
 
-//typedef uint32_t (stream_node) (uint32_t command, void * instance, void * XDM, void * ptr3); 
-
-typedef uint32_t (*p_stream_node) (uint32_t command, void * instance, void * XDM, void * ptr3); 
-
-//typedef uint32_t (*p_stream_node_2ptr_n_m) (void * in, uint32_t n, 
-//                    void * out, uint32_t m, void * param); 
-//typedef uint32_t (*p_stream_node_instance_2ptr_n_m) (
-//                    void * instance, void * in, uint32_t n, 
-//                    void * out, uint32_t m, void * param); 
-//
-//typedef uint32_t (*p_stream_node_4ptr_nmpq) (void * ptr1, uint32_t n, 
-//                    void * ptr2, uint32_t m, 
-//                    void * ptr3, uint32_t p, 
-//                    void * ptr4, uint32_t q, 
-//                    void * param); 
-//typedef uint32_t (*p_stream_node_instance_4ptr_nmpq) (
-//                    void * instance, void * in, uint32_t n, 
-//                    void * out, uint32_t m, void * param); 
-//
 
 
 enum {
@@ -229,7 +211,7 @@ struct platform_control_stream
 */
 struct stream_local_instance  /* structure allocated to each STREAM instance */
 {
-    uint32_t *graph;        /* base address of the graph processed by this Stream instance */
+    uint32_t *graph;        /* linear base address of the graph processed by this Stream instance */
 
     uint32_t whoami_ports;  /* PACKWHOAMI : 16bits list of graph io ports this processor must check + who am I */
 
@@ -255,10 +237,11 @@ extern void arm_stream_io (uint32_t fw_io_idx,
         struct stream_local_instance *stream_instance, 
         uint8_t *data, uint32_t length);
 
+
 typedef struct
 {   
     uint32_t *graph;         
-    uint8_t instance_idx;
+    uint32_t instance_control;  /* see STREAM_PARAM_BITFIELDS */
 
 } stream_parameters_t;
 

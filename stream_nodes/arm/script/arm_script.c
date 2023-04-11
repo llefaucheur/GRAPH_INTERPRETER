@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        arm_stream_dsp_filter.c
- * Description:  filters
+ * Title:        arm_script.c
+ * Description:  byte code interpreter
  *
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
@@ -28,39 +28,38 @@
 #include "stream_const.h"
 #include "stream_types.h"
 
+/*
+    script 
+
+    Operation : reads the input FIFO as a list of byte codes to be interpreted
+
+
+*/
 typedef struct
 {   
-    intPtr_t *TCM;                      /* Stream provides a pointer to TCM */
-    float state[2];
-    float coef[5];
-} arm_stream_dsp_filter_instance;
+    uint8_t state[4];
+} arm_script_instance;
 
 /**
-  @brief         Processing function for the floating-point Biquad cascade filter.
-  @param[in]     S         points to an instance of the floating-point Biquad cascade structure
-  @param[in]     pSrc      points to the block of input data
-  @param[out]    pDst      points to the block of output data
-  @param[in]     blockSize  number of samples to process
+  @brief         Byte-code interpreter
+  @param[in]     S         points to an instance
+  @param[in]     pSrc      points to the byte codes
   @return        none
  */
-void arm_stream_dsp_filter_run(arm_stream_dsp_filter_instance *instance, 
-                     float *in,   
-                     int32_t nb_samples, 
-                     float *outBufs)
+void arm_script_run(arm_script_instance *instance, 
+                    uint8_t *byte_code)
 {
-    /* fake equalizer */
-    MEMCPY(outBufs, in, nb_samples * sizeof(float));
 }
 
 /**
-  @brief         Processing function for the floating-point Biquad cascade filter.
-  @param[in]     S         points to an instance of the floating-point Biquad cascade structure
+  @brief         Interpreted byte codes components 
+  @param[in]     S         points to the instance 
   @param[in]     pSrc      points to the block of input data
   @param[out]    pDst      points to the block of output data
   @param[in]     blockSize  number of samples to process
   @return        none
  */
-int32_t arm_stream_dsp_filter (int32_t command, void *instance, void *data, void *parameters)
+int32_t arm_script (int32_t command, void *instance, void *data, void *parameters)
 {
     int32_t swc_returned_status = 0;
 
@@ -78,9 +77,7 @@ int32_t arm_stream_dsp_filter (int32_t command, void *instance, void *data, void
         case STREAM_RESET: 
         {   
             uint32_t preset, *memreq = (uint32_t *)instance;
-            arm_stream_dsp_filter_instance *pinstance = (arm_stream_dsp_filter_instance *)*memreq++;
-            pinstance->TCM =  (uint32_t *)*memreq++;
-
+            arm_script_instance *pinstance = (arm_script_instance *)*memreq++;
             preset = (uint32_t)(uint64_t)parameters;
             /* here reset */
 
@@ -105,41 +102,11 @@ int32_t arm_stream_dsp_filter (int32_t command, void *instance, void *data, void
             uint8_t numStages;
             float *pCoeffs;
             float *pState;
-            arm_stream_dsp_filter_instance *pinstance = (arm_stream_dsp_filter_instance *) instance;
+            arm_script_instance *pinstance = (arm_script_instance *) instance;
 
             ptr_param8b =  (uint8_t *)data;
             preset = 0xFFF & (uint64_t)parameters;
             param_tag = 0xFF & (((uint64_t)parameters)>>16);
-
-            /* does all the parameters are set */
-            if (param_tag == ALLPARAM_)
-            {
-                numStages = *ptr_param8b;
-                pCoeffs = pinstance->coef;
-                pState = pinstance->state;
-
-                pdst = &numStages;
-                MEMCPY(pdst,ptr_param8b,1); 
-                ptr_param8b += 1;
-
-                /* copy 5 coefficients */
-                pdst = (uint8_t *) pCoeffs; 
-                MEMCPY(pdst,ptr_param8b,5*sizeof(float)); 
-                ptr_param8b += 5*sizeof(float);
-
-                /* reset 2 state registers */
-                pdst = (uint8_t *)pState;  
-                memset(pdst,0,2*sizeof(float)); 
-            }
-            else
-            {
-            }
-
-            //void arm_biquad_cascade_df2T_init_f32(
-            //        arm_biquad_cascade_df2T_instance_f32 * S,
-            //        uint8_t numStages,
-            //  const float32_t * pCoeffs,
-            //        float32_t * pState)
 
             break;
         }
@@ -185,7 +152,7 @@ int32_t arm_stream_dsp_filter (int32_t command, void *instance, void *data, void
             bufferout_free = (uint32_t) (*pt_pt++); 
 
             nb_samples = buffer_size / sizeof(float);
-            arm_stream_dsp_filter_run(instance, (float *)inBuf,  
+            arm_script_run(instance, (float *)inBuf,  
                                       nb_samples, 
                                       outBufs
                                       );

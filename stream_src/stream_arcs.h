@@ -74,7 +74,7 @@
     Frame SIZE and ring indexes are using 24bits linear (0..16MB)
 
     shifter 0 : linear space with Byte accuracy up to 4MB (1<<22)
-    shifter 1 : 16Bytes accuracy 0 .. 4MB<<4 = 64MB
+    shifter 1 : 16Bytes accuracy 0 .. 4MB<<4 = 64MB 
     shifter 2 : 256Bytes accuracy 0 .. 4MB<<8 = 1GB
     shifter 3 : 4096Bytes accuracy 0 .. 4MB<<12 = 16GB
 
@@ -144,14 +144,14 @@
 
 /*--------------- WORD 1 - sampling rate , nchan  -------------*/
 //#define   SAMPINGNCHANM1_FMT1  U( 1)
-    //#define    UNUSED_FMT1_MSB U(31)
+    //#define    UNUSED_FMT1_MSB U(31) /* 4b   */
     //#define    UNUSED_FMT1_LSB U(28)
     //#define  TIMSTAMP_FMT1_MSB U(27)
     //#define  TIMSTAMP_FMT1_LSB U(26) /* time_stamp_format_type for time-stamped streams for each interleaved frame */
-    //#define  SAMPLING_FMT1_MSB U(25) /* 21bits : mantissa [U19], exponent [U2], FS = M x 2^(-8xE), 0<=>ASYNCHRONOUS/SLAVE */
-    //#define  SAMPLING_FMT1_LSB U( 5) /* range = (E=0,1,2,3) 0x3FFFF x 2^(-4x0) .. 1 x 2^(-8*3)) [524kHz .. 1 week] */
+    //#define  SAMPLING_FMT1_MSB U(25) /* 21bits : mantissa [U19], exponent [U2], FS = M x 2^(1-(8xE)), 0<=>ASYNCHRONOUS/SLAVE */
+    //#define  SAMPLING_FMT1_LSB U( 5) /* range = (E=0,1,2,3) 0x3FFFF x 2^(1-4x0) .. 1 x 2^(1-8*3)) [524kHz .. 3 months] */
     //#define   NCHANM1_FMT1_MSB U( 4)
-    //#define   NCHANM1_FMT1_LSB U( 0) /* nb channels [1..32] */
+    //#define   NCHANM1_FMT1_LSB U( 0) /* nb channels-1 [1..32] */
 
     #define PACKSTREAMFORMAT1(TIMESTAMP,SAMPLING, NCHANM1) ((U(TIMESTAMP)<<26)|(U(SAMPLING)<<5)|U(NCHANM1))
 
@@ -173,7 +173,6 @@
 
 #define SIZEOF_ARCDESC_W32 U(4)
 
-/*----*/
 #define   BUF_PTR_ARCW0     U( 0)
 #define FORMATIDX_ARCW0_MSB U(31) /* 5 bits  32 global formats in the graph, graph (intPtr_t) +[ixSTREAM_FORMAT_SIZE_W32]  */ 
 #define FORMATIDX_ARCW0_LSB U(27) /*   Graph generator gives IN/OUT arc's frame size to be the LCM of SWC "grains" */
@@ -186,35 +185,35 @@
 #define   BASEIDX_ARCW0_LSB U( 0) /*22   base address 22bits + 2bits exponent ((base) << ((shift) << 2)) */
 #define BASEIDXOFFARCW0_LSB U( 0) 
                                 
-/*----*/
 #define  BUFSIZDBG_ARCW1    U( 1)
-//#define    UNUSED_ARCW1_MSB U(31) 
-//#define    UNUSED_ARCW1_LSB U(27) /* 5  (old: simple-arc format) */
+#define    UNUSED_ARCW1_MSB U(31) 
+#define    UNUSED_ARCW1_LSB U(28) /* 4  */
+#define SHAREDARC_ARCW1_MSB U(27) 
+#define SHAREDARC_ARCW1_LSB U(27) /* 1  null source, null sink  (no overflow, for metadata) */
 #define   MPFLUSH_ARCW1_MSB U(26) /* 1  if "1" then flush the arc's buffer after processing (MProcessing) */ 
 #define   MPFLUSH_ARCW1_LSB U(26) 
-//#define DEBUG_REG_ARCW1_MSB U(25)
-//#define DEBUG_REG_ARCW1_LSB U(22) /* 4  debug result index for debug_arcs[0..15] */
+#define DEBUG_REG_ARCW1_MSB U(25)
+#define DEBUG_REG_ARCW1_LSB U(22) /* 4  debug result index for debug_arcs[0..15] debug_arc_computation_1D */
 #define BUFF_SIZE_ARCW1_MSB U(21) 
 #define BUFF_SIZE_ARCW1_LSB U( 0)  /* 22 Byte-acurate up to 4MBytes */
 
-/*----*/
 #define RDFLOW_ARCW2        U( 2)  /* write access only from the SWC consumer */
-//#define COMPUTCMD_ARCW2_MSB U(31)       
-//#define COMPUTCMD_ARCW2_LSB U(28) /* 4  gives the debug task to proceed  (enum debug_arc_computation_1D) */
+#define COMPUTCMD_ARCW2_MSB U(31)       
+#define COMPUTCMD_ARCW2_LSB U(28) /* 4  gives the debug task to proceed  (enum debug_arc_computation_1D) */
 #define UNDERFLRD_ARCW2_MSB U(27)
 #define UNDERFLRD_ARCW2_LSB U(26) /* 2  overflow task id 0=nothing , underflow_error_service_id */
 #define  OVERFLRD_ARCW2_MSB U(25)
 #define  OVERFLRD_ARCW2_LSB U(24) /* 2  underflow task id 0=nothing, overflow_error_service_id */
 #define THRESHOLD_ARCW2_MSB U(23) 
-#define THRESHOLD_ARCW2_LSB U(23) /* 1  0:filling boudary at size/2,  1:at size/4 */
+#define THRESHOLD_ARCW2_LSB U(23) /* 1  0:filling at size/2,  1:at size/4 */
 #define   READY_W_ARCW2_MSB U(22) /*    "Buffer ready for refill" */
 #define   READY_W_ARCW2_LSB U(22) /* 1  (size-write)>size/2 (or /4) */
 #define      READ_ARCW2_MSB U(21)
 #define      READ_ARCW2_LSB U( 0) /* 22     data read index  Byte-acurate up to 4MBytes starting from base address */
-/*----*/
+
 #define WRIOCOLL_ARCW3      U( 3) /* write access only from the SWC producer */
-//#define COLLISION_ARCW3_MSB U(31) /* 8  MSB byte used to lock the access  */ 
-//#define COLLISION_ARCW3_LSB U(24) 
+#define COLLISION_ARCW3_MSB U(31) /* 8  MSB byte used to lock the SWC  */ 
+#define COLLISION_ARCW3_LSB U(24) 
 #define COLLISION_ARC_OFFSET_BYTE U(3)
 #define ALIGNBLCK_ARCW3_MSB U(23)
 #define ALIGNBLCK_ARCW3_LSB U(23) /* 1  Producer asking to realign the buffer */

@@ -49,7 +49,7 @@ enum conversion_presets
   @param[out]    out        pointer to the output buffer
   @return        none
  */
-void arm_format_converter_run(
+void arm_stream_converter_run(
                      void *in,   
                      int32_t n, 
                      void *out,
@@ -92,7 +92,7 @@ void arm_format_converter_run(
   @param[in]     parameters a 12bits field indicating the use-case configuration
   @return        int32      "1" tells the processing of this data frame is finished, "0" otherwise
  */
-int32_t arm_format_converter (int32_t command, void *instance, void *data, void *parameters)
+int32_t arm_stream_converter (int32_t command, void *instance, void *data, void *parameters)
 {
     switch (command)
     { 
@@ -159,7 +159,7 @@ int32_t arm_format_converter (int32_t command, void *instance, void *data, void 
             bufferout_free = (uint32_t) (*pt_pt++); 
 
             nb_samples = buffer_size / sizeof(float);
-            arm_format_converter_run(inBuf, nb_samples, outBufs, preset);
+            arm_stream_converter_run(inBuf, nb_samples, outBufs, preset);
 
             increment = (nb_samples * sizeof(float));
             pt_pt = (uint32_t *)data;

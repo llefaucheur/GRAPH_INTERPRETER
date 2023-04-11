@@ -95,6 +95,10 @@
 #define   UARCH_SWCID_LSB U( 0) /* 8 (stream_processor_architectures) mapped on 6b from platform_manifest */
 
 /*---------------------------------------------------------------------------------------------------*/
+/*
+    SWC manifest
+    Memory consumption estimated by interpolation = a.nb_channels + b.FS + c.frameSize
+*/
 /* SWC memory allocation constraint 32bits : memory allocation description */
 #define   OFFSET_MEMREQ_MSB U(31)
 #define   OFFSET_MEMREQ_LSB U(31) /* 1  followed by an offset (working memory in SMP) */
@@ -136,8 +140,9 @@
 #define MBANK_BACKUP    U(4)    /* backup SRAM addressed only by STREAM */
 #define MBANK_HWIODMEM  U(5)    /* memory space for I/O and DMA buffers */
 #define MBANK_PMEM      U(6)    /* program RAM */
+#define MBANK_FLASH     U(7)    /* Internal Flash */
 
-#define NB_MEMINST_OFFSET U(7)  /* offsets */
+#define NB_MEMINST_OFFSET U(8)  /* offsets */
 
 /* upon STREAM_MEMREQ commands the swc can return up to 6 memory requests for its instance 
     scratch fast, DTCM, static fast, internal L2, external */

@@ -29,7 +29,16 @@
 #include "stream_types.h"
 
 /*
- *  Main entry point 
+   Main entry point, used by the application and scripts
+
+   Interactions between the graph and its outside world :
+   - direct call to arm_stream()
+   - platform_io streams to FIFO
+
+   Commands :
+   - reset, run, end
+   - interpreter of a FIFO of commands
+
  */
 void arm_stream (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
 {   
@@ -69,6 +78,12 @@ void arm_stream (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
                 -1);
             break;
         }
+
+
+     //   case STREAM_INTERPRET_COMMANDS:
+     //{  
+     // commands have the format of SET_PARAMS
+     //}
 
         default:
             break;

@@ -17,7 +17,7 @@
 0x0801000A,   // 020 008 -arm_audio_codec, arcs=0,1 swc=A------------ LINKED LIST
 0x00000170,   // 024 009    instance (one memory bank : NBALLOC_INST=0)
 0x00000002,   // 028 00A    bootparam : just a preset=2:IMADPCM
-0xC00C2042,   // 02C 00B -arm_format_converter,arcs=1,2 swc=2 preset=3 (q15->f32)
+0xC00C2042,   // 02C 00B -arm_stream_converter,arcs=1,2 swc=2 preset=3 (q15->f32)
 0x28030206,   // 030 00C -arm_filter, TCM arcs=2,3 swc=6 preset=1:cascade DF2T_F32 
 0x08000160,   // 034 00D    instance to the static data (NBALLOC_INST=1)
 0x00000180,   // 038 00E       TCM address +FastDMEM
@@ -28,7 +28,7 @@
 0x9BD83F63,   // 04C 013    Coefs [B,A] = cheby2(2,0.5,1/11) (notch at 1kHz/Fs=16kHz)
 0x6261BFDE,   // 050 014    
 0x00003F61,   // 054 015    end of byte stream 
-0xC01040C2,   // 058 016 -arm_format_converter,arcs=3,4 swc=2 preset=4 (f32->q15)
+0xC01040C2,   // 058 016 -arm_stream_converter,arcs=3,4 swc=2 preset=4 (f32->q15)
 0x000000FF,   // 05C 017 -----  End of the linked-list SWCID=0xFFF
 0x00400000,   // 060 018 stream_format_io ---------------------------- IO CONFIG
 0x05208004,   // 064 019    ^--Input RX0 _SET_BUFFER_RX=1(arc=0)  Output TX1 _DATA_MOVE_TX=4(arc=4) fw_io_idx=1

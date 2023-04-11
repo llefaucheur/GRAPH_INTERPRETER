@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        arm_stream_dsp_filter.c
+ * Title:        arm_data_conditioning.c
  * Description:  filters
  *
  * $Date:        15 February 2023
@@ -33,17 +33,19 @@ typedef struct
     intPtr_t *TCM;                      /* Stream provides a pointer to TCM */
     float state[2];
     float coef[5];
-} arm_stream_dsp_filter_instance;
+} arm_data_conditioning_instance;
 
 /**
-  @brief         Processing function for the floating-point Biquad cascade filter.
+  @brief         https://esphome.io/components/sensor/index.html#sensor-filters
   @param[in]     S         points to an instance of the floating-point Biquad cascade structure
   @param[in]     pSrc      points to the block of input data
   @param[out]    pDst      points to the block of output data
   @param[in]     blockSize  number of samples to process
   @return        none
  */
-void arm_stream_dsp_filter_run(arm_stream_dsp_filter_instance *instance, 
+
+
+void arm_data_conditioning_run(arm_data_conditioning_instance *instance, 
                      float *in,   
                      int32_t nb_samples, 
                      float *outBufs)
@@ -60,7 +62,7 @@ void arm_stream_dsp_filter_run(arm_stream_dsp_filter_instance *instance,
   @param[in]     blockSize  number of samples to process
   @return        none
  */
-int32_t arm_stream_dsp_filter (int32_t command, void *instance, void *data, void *parameters)
+int32_t arm_data_conditioning (int32_t command, void *instance, void *data, void *parameters)
 {
     int32_t swc_returned_status = 0;
 
@@ -78,7 +80,7 @@ int32_t arm_stream_dsp_filter (int32_t command, void *instance, void *data, void
         case STREAM_RESET: 
         {   
             uint32_t preset, *memreq = (uint32_t *)instance;
-            arm_stream_dsp_filter_instance *pinstance = (arm_stream_dsp_filter_instance *)*memreq++;
+            arm_data_conditioning_instance *pinstance = (arm_data_conditioning_instance *)*memreq++;
             pinstance->TCM =  (uint32_t *)*memreq++;
 
             preset = (uint32_t)(uint64_t)parameters;
@@ -105,7 +107,7 @@ int32_t arm_stream_dsp_filter (int32_t command, void *instance, void *data, void
             uint8_t numStages;
             float *pCoeffs;
             float *pState;
-            arm_stream_dsp_filter_instance *pinstance = (arm_stream_dsp_filter_instance *) instance;
+            arm_data_conditioning_instance *pinstance = (arm_data_conditioning_instance *) instance;
 
             ptr_param8b =  (uint8_t *)data;
             preset = 0xFFF & (uint64_t)parameters;
@@ -185,7 +187,7 @@ int32_t arm_stream_dsp_filter (int32_t command, void *instance, void *data, void
             bufferout_free = (uint32_t) (*pt_pt++); 
 
             nb_samples = buffer_size / sizeof(float);
-            arm_stream_dsp_filter_run(instance, (float *)inBuf,  
+            arm_data_conditioning_run(instance, (float *)inBuf,  
                                       nb_samples, 
                                       outBufs
                                       );

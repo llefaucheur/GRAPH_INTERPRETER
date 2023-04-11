@@ -40,39 +40,6 @@
     time-constant in [ms] for the energy integration time, time-constant to gate the output.
 */
 
-/*
-  parameter format (12bits) : 
-    2 : hpf coefficient
-    2 : low-pass
-    2 : fast filter
-    2 : snr 
-    1 : edge direction
-    2 : hold time
-    1 : (free)
-*/
-#define unused_GT_MSB U(11) 
-#define unused_GT_LSB U(11) /* 1 */
-#define   HOLD_GT_MSB U(10) 
-#define   HOLD_GT_LSB U( 9) /* 2   */
-#define   EDGE_GT_MSB U( 8) 
-#define   EDGE_GT_LSB U( 8) /* 1   */
-#define    SNR_GT_MSB U( 7) 
-#define    SNR_GT_LSB U( 6) /* 2   */
-#define   FAST_GT_MSB U( 4) 
-#define   FAST_GT_LSB U( 4) /* 2  */
-#define    LPF_GT_MSB U( 3) 
-#define    LPF_GT_LSB U( 2) /* 2  */
-#define    HPF_GT_MSB U( 1) 
-#define    HPF_GT_LSB U( 0) /* 2  */
-
-
-#define GATE_HPF 0
-#define GATE_FAST 1
-#define GATE_SLOW 2
-#define GATE_DELAY 3
-
-#define fp32_format 0
-
 #define NPRESETS 4
 /* coefficients (hpf,slow,fast,timer), rising/falling, signal to noise ratio */
 typedef struct
@@ -98,149 +65,92 @@ typedef struct
     uint8_t dataFormat;     /* float/Q15 operation */
 } arm_stream_detector_instance;
 
-/**
-  @brief         Processing function for detector and decision gating.
-  @param[in]     in         input data pointer
-  @param[in]     n          number of samples to process
-  @param[out]    out        pointer to the output buffer
-  @return        none
- */
-void arm_stream_detector_run_float(arm_stream_detector_instance *instance, 
-                     float *in,   
-                     int32_t nb_samples, 
-                     float *outBufs)
-{
-    int i;
-    for (i = 0; i < nb_samples; i++)
-    {   
-        outBufs[i] = (in[i] > 0.1f)? 1.0f : 0.0f;
-    }
-}
-/**
-  @brief         Processing function for detector and decision gating.
-  @param[in]     in         input data pointer
-  @param[in]     n          number of samples to process
-  @param[out]    out        pointer to the output buffer
-  @return        none
- */
-void arm_stream_detector_run_int16(arm_stream_detector_instance *instance, 
-                     int16_t *in,   
-                     int32_t nb_samples, 
-                     int16_t *outBufs)
-{
-    int i;
-    for (i = 0; i < nb_samples; i++)
-    {   
-        outBufs[i] = (in[i] > 3000)? 32767 : 0;
-    }
 
-}
+
 
 /**
-  @brief         Processing function for the floating-point Biquad cascade filter.
-  @param[in]     command    reset, set/read parameter, run
-  @param[in]     intance    points to the memory instance of the node, during command "run"
-  @param[in]     data       pointer to the list of input and output buffers
-  @param[in]     parameters a 12bits field indicating the use-case configuration
-  @return        int32      "1" tells the processing of this data frame is finished, "0" otherwise
+  @brief         
+  @param[in]     command    bit-field
+  @param[in]     pinst      instance of the component
+  @param[in/out] pdata      address and size of buffers
+  @param[out]    pstatus    execution state (0=processing not finished)
+  @return        status     finalized processing
  */
-int32_t arm_stream_detector (int32_t command, void *instance, void *data, void *parameters)
+void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status)
 {
-    int32_t swc_returned_status = 0;
+    *status = 1;    /* default return status, unless processing is not finished */
 
     switch (command)
     { 
-        /* func(command = STREAM_RESET, 
-               instance = *memory_results,  
-               data = address of Stream
-                parameter = #preset on LSB (0x0000.0PPP)  
-                memory_results are followed by the first two words 
-                of STREAM_FORMAT_SIZE_W32 
+        /* func(command = (STREAM_RESET, PRESET, TAG, NB ARCS IN/OUT)
+                instance = *memory_results,  
+                data = address of Stream function
+                
+                memory_results are followed by the first two words of STREAM_FORMAT_SIZE_W32 
+                memory pointers are in the same order as described in the SWC manifest
         */
         case STREAM_RESET: 
-        {   
-            uint32_t preset, *memreq = (uint32_t *)instance;
-            arm_stream_detector_instance *pinstance = (arm_stream_detector_instance *)*memreq++;
-            pinstance->state[GATE_HPF] = 0;
-            pinstance->state[GATE_FAST] = 0;
-            pinstance->state[GATE_SLOW] = 0;
-            pinstance->state[GATE_DELAY] = 0;
+        {   stream_entrance *stream_entry = (stream_entrance *)(uint64_t)data;
+            uint32_t *memresults = instance;
+            uint16_t preset = RD(command, PRESET_CMD);
 
-            preset = (uint32_t)parameters;
-            pinstance->coef[GATE_HPF] = RD(preset,HPF_GT);
+            arm_stream_detector_instance *pinstance = (arm_stream_detector_instance *) memresults++;
+            /* here reset */
+
             break;
-        }    
+        }   
+  
 
-        /* func(command = STREAM_SET_PARAMETER, 
+        /* func(command = (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
+                    TAG of a parameter to set, 0xFF means "set all the parameters" in a raw
                 *instance, 
-                data = parameter(s) (one or all)
-                parameters = 0x00TT.0PPP : tag of a parameter to set (MSB) on top of a default preset (LSB)
-                xxxx = FFFF means memory_results are followed by the 
-                the sampling-rate, number of channel and interleaving scheme
+                data = (one or all)
         */ 
         case STREAM_SET_PARAMETER:  
+        {   
+            uint8_t *new_parameters = (uint8_t *)data;
             break;
+        }
 
-        /* func(command = STREAM_RUN, 
+
+ 
+        /* func(command = STREAM_RUN, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = array of [{*input size} {*output size}]
-               parameters = preset (12bits) 
 
                data format is given in the node's manifest used during the YML->graph translation
                this format can be FMT_INTERLEAVED or FMT_DEINTERLEAVED_1PTR
-        */     
+        */         
         case STREAM_RUN:   
         {
-            int32_t nb_samples;
-            int32_t buffer_size;
-            int32_t bufferout_free;
-            intPtr_t *pt_pt;
-            arm_stream_detector_instance *pinstance = (arm_stream_detector_instance *)instance;
-            pt_pt = (uint32_t *)data;
+            int32_t nb_data, data_buffer_size, bufferout_free, increment;
+            data_buffer_t *pt_pt;
+            uint8_t *inBuf_encoded_data;
+            int16_t *outBuf_decoded_sample;
+            arm_stream_detector_instance *pinstance = (arm_stream_detector_instance *) instance;
+
+            pt_pt = data;
+            inBuf_encoded_data  = pt_pt->address;   
+            data_buffer_size    = pt_pt->size;
+            pt_pt++;
+            outBuf_decoded_sample = (int16_t *)(pt_pt->address); 
+            bufferout_free        = pt_pt->size;
+
+            nb_data = data_buffer_size / sizeof(uint8_t);
+
+            //arm_imadpcm_run(pinstance, 
+            //        inBuf_encoded_data, nb_data, 
+            //        outBuf_decoded_sample);
+
+            increment = (nb_data * sizeof(uint8_t));
+            pt_pt = data;
+            *(pt_pt->address) += increment;
+            pt_pt->size       -= increment;
+            pt_pt ++;
+            increment = (nb_data * sizeof(int16_t));
+            *(pt_pt->address) += increment;
+            pt_pt->size       -= increment;
             
-            if (pinstance->dataFormat == fp32_format)
-            {
-                float *inBuf;
-                float *outBufs;
-
-                inBuf = (float *)(uint64_t)(*pt_pt++);   
-                buffer_size = (uint32_t )(*pt_pt++);
-                outBufs = (float *)(uint64_t)(*pt_pt++); 
-                bufferout_free = (uint32_t) (*pt_pt++); 
-
-                nb_samples = buffer_size / sizeof(float);
-                arm_stream_detector_run_float(instance, (float *)inBuf,  
-                                          nb_samples, 
-                                          outBufs
-                                          );
-
-                pt_pt = (uint32_t *)data;
-                *pt_pt++ = (intPtr_t)(inBuf + nb_samples);
-                *pt_pt++ = (intPtr_t)(nb_samples * sizeof(float));
-                *pt_pt++ = (intPtr_t)(outBufs + nb_samples);
-                *pt_pt++ = (intPtr_t)(bufferout_free - nb_samples * sizeof(float));
-            }
-            else
-            {
-                int16_t *inBuf;
-                int16_t *outBufs;
-
-                inBuf = (int16_t *)(uint64_t)(*pt_pt++);   
-                buffer_size = (uint32_t )(*pt_pt++);
-                outBufs = (int16_t *)(uint64_t)(*pt_pt++); 
-                bufferout_free = (uint32_t) (*pt_pt++); 
-
-                nb_samples = buffer_size / sizeof(int16_t);
-                arm_stream_detector_run_int16(instance, (int16_t *)inBuf,  
-                                          nb_samples, 
-                                          outBufs
-                                          );
-                pt_pt = (uint32_t *)data;
-                *pt_pt++ = (intPtr_t)(inBuf + nb_samples);
-                *pt_pt++ = (intPtr_t)(buffer_size - nb_samples * sizeof(int16_t));
-                *pt_pt++ = (intPtr_t)(outBufs + nb_samples);
-                *pt_pt++ = (intPtr_t)(bufferout_free - nb_samples * sizeof(int16_t));
-            }
             break;
         }
 
@@ -250,5 +160,4 @@ int32_t arm_stream_detector (int32_t command, void *instance, void *data, void *
         default:
             break;
     }
-    return swc_returned_status;
 }
