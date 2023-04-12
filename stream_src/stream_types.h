@@ -205,19 +205,6 @@ struct platform_control_stream
 };
 
 
-/*
-    SWC manifests tell if instances are relocatable or if SWC are assigned to specific Stream instance
-      for example : MP TCM usage with different base addresses
-*/
-///* struct stream_local_instance */uint32_t  /* structure allocated to each STREAM instance */
-//{
-//    uint32_t whoami_ports;  /* PACKWHOAMI : 16bits list of graph io ports this processor must check + who am I */
-//
-//    p_stream_node *node_entry_points;     /* all the nodes visible from this processor */
-//};
-#define STREAM_INSTANCE_SIZE 2
-#define STREAM_INSTANCE_WHOAMI_PORTS 0
-#define STREAM_INSTANCE_NODE_ENTRY_POINTS 1
 
 /* stream parameters */
 struct stream_control 

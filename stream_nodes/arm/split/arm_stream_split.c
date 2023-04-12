@@ -23,7 +23,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- */
+ */ 
 
 #include "stream_const.h"
 #include "stream_types.h"
@@ -176,11 +176,9 @@ void arm_stream_split (int32_t command, uint32_t *instance, data_buffer_t *data,
             increment = (nb_data * sizeof(SAMP_IN));
             pt_pt = data;
             *(pt_pt->address) += increment;
-            pt_pt->size       -= increment;
             pt_pt ++;
             increment = (nb_data * sizeof(SAMP_OUT));
             *(pt_pt->address) += increment;
-            pt_pt->size       -= increment;
             
             break;
         }

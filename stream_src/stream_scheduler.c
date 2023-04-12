@@ -594,7 +594,7 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
     all_nodes = convert_int_to_ptr(pinst[STREAM_INSTANCE_NODE_ENTRY_POINTS]);
     whoami = pinst[STREAM_INSTANCE_WHOAMI_PORTS];
     pio = (uint32_t *)(GRAPH_IO_CONFIG_ADDR(graph,long_offset));
-    nio = RD(graph,NBIO_GRAPH0);
+    nio = RD(graph[0],NBIO_GRAPH0);
     all_formats = GRAPH_FORMAT_ADDR(graph,long_offset);
 
     if (script_option == STREAM_SCHD_SCRIPT_START) { stream_execute_script(parameters);}
@@ -665,9 +665,12 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
 
             /* ---------------- reset phase of the graph ? -------------------- */
             if (reset_option > 0)
-            {   intPtr_t memreq_physical[MAX_NB_MEM_REQ_PER_NODE];
+            {   
+            #define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (SIZEOF_ARCDESC_SHORT_W32*MAX_NB_ARC_PER_SWC_V0))
+                intPtr_t memreq_physical[MAX_NB_MEM_REQ_PER_NODE + (SIZEOF_ARCDESC_SHORT_W32*MAX_NB_ARC_PER_SWC_V0)];
                 uint16_t nbmem;
                 uint8_t i;
+                uint8_t j;
                 uint32_t *memreq;
 
 
@@ -680,11 +683,24 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
                     memreq_physical[i] = (i <= nbmem) ? 
                         pack2linaddr_int(memreq[i], long_offset) : 0u;
                 }      
+
+                /* push the information related to the format of the arcs */
+                //for (j = 0; j < MAX_NB_ARC_PER_SWC_V0; j++)
+                {   uint32_t *F;
+                    F = &(all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc0,FORMATIDX_ARCW0)]);
+                    memreq_physical[i++] = *F++;    /* Word 0 SIZSFTRAW_FMT0 */
+                    memreq_physical[i++] = *F;      /* Word 1 SAMPINGNCHANM1_FMT1 */
+                    F = &(all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc1,FORMATIDX_ARCW0)]);
+                    memreq_physical[i++] = *F++;    /* Word 0 SIZSFTRAW_FMT0 */
+                    memreq_physical[i++] = *F;      /* Word 1 SAMPINGNCHANM1_FMT1 */
+                }      
                 /*
-                @@@ TODO : add for each arc : nb channel, sampling rate, interleaving, time-stamp format
+                    add for each arc : [nb channel, sampling rate, interleaving, time-stamp format]
                 */
-                stream_calls_swc (address_swc, STREAM_RESET, (uint32_t *)memreq_physical, 
-                        (data_buffer_t *)arm_stream_services, (uint32_t *)convert_int_to_ptr(preset));
+                stream_calls_swc (address_swc, PACK_COMMAND(1,1,0,preset,STREAM_RESET), 
+                    (uint32_t *)memreq_physical, 
+                    (data_buffer_t *)arm_stream_services, 
+                    &check);
             }
 
             /* ---------------- parameter was changed, or reset ? -------------------- */
@@ -696,10 +712,9 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
                 uint8_t *ptr_param8b;
 
                 /*
-                @@@ TODO : allocate a scratch area to copy the parameters, and avoid SWC have
-                            access to Stream internal data
+                    TODO : allocate a scratch area to copy the parameters, and avoid SWC 
+                        to have access to Stream internal memory area
                 */
-                                
                 ptr_param8b = (uint8_t *)linked_list_ptr_bootparam;
                 nparam = *ptr_param8b;
                 ptr_param8b++;
@@ -707,10 +722,10 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
                 /* do we load the full set of parameters ? */
                 if (nparam == ALLPARAM_)
                 {   
-                    stream_calls_swc (address_swc, STREAM_SET_PARAMETER, 
+                    stream_calls_swc (address_swc, PACK_COMMAND(1,1,ALLPARAM_,preset,STREAM_SET_PARAMETER), 
                         swc_instance_ptr,
                         (data_buffer_t *)ptr_param8b, 
-                        (uint32_t *)convert_int_to_ptr(PACKPARAMTAG(ALLPARAM_,preset)));
+                        &check);
                 }
                 else
                 /* else : load the parameters one-by-one */
@@ -722,10 +737,10 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
                         param_nb_bytes = *ptr_param8b;
                         ptr_param8b++;
                 
-                        stream_calls_swc (address_swc, STREAM_SET_PARAMETER, 
+                        stream_calls_swc (address_swc, PACK_COMMAND(1,1,param_tag,preset,STREAM_SET_PARAMETER), 
                             swc_instance_ptr,
                             (data_buffer_t *)ptr_param8b, 
-                            (uint32_t *)convert_int_to_ptr(PACKPARAMTAG(param_tag,preset)));
+                            &check);
                         ptr_param8b = &(ptr_param8b[param_nb_bytes]);
                     }
                 }
@@ -735,15 +750,18 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
                     WR_BYTE_MP_(pt8b_collision_arc_1, 0u);
                     continue;
                 }
-                /* ready to accept new parameters */
-                CLEAR_BIT_MP(swc_header, NEWPARAM_GI_LSB);
+                /* ready to accept new parameters : clear the flag */
+                if (LINKEDLIST_IS_IN_RAM(graph)) 
+                {   CLEAR_BIT_MP(swc_header, NEWPARAM_GI_LSB);
+                }
             }
 
             
             /* ==========================================================================*/
             /* end of graph ? */
             if (reset_option < 0)
-            {   stream_calls_swc (address_swc, STREAM_END, (uint32_t *)swc_instance, 0u, 0u);
+            {   stream_calls_swc (address_swc, PACK_COMMAND(1,1,0,0,STREAM_END), 
+                    (uint32_t *)swc_instance, 0u, &check);
                 /* SWC is unlocked */
                 WR_BYTE_MP_(pt8b_collision_arc_1, 0u);
                 continue;
@@ -777,7 +795,7 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
                 DATA_MEMORY_BARRIER;
             }
         
-            /* prepare the pointers to input and output buffers */
+            /* prepare the pointers to input and output buffers (MAX_NB_ARC_PER_SWC_V0) */
             read_arc_xdm (arc0, 0u, long_offset, &(xdm_data[0])/*, all_formats*/);
             read_arc_xdm (arc1, 1u, long_offset, &(xdm_data[1])/*, all_formats*/);
 
@@ -796,7 +814,8 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
                 /* call the SWC, returns the information "0 == SWC needs to be called again" 
                    to give some CPU periods for trigering data moves 
                    long SWC can be split to allow data moves without RTOS */
-                stream_calls_swc (address_swc, PACK_COMMAND(0,0,0,preset,STREAM_RUN), swc_instance_ptr, xdm_data,  &check);
+                stream_calls_swc (address_swc, PACK_COMMAND(1,1,0,preset,STREAM_RUN), 
+                    swc_instance_ptr, xdm_data,  &check);
 
                 if (SWC_TASK_NOT_COMPLETED == check)
                 {   /* check the boundaries of the graph */

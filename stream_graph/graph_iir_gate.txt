@@ -7,13 +7,13 @@
 */
                          /* FLASH/RAM */
 0x00000102,   // 000 000 Offset/LenRAM copyInRAMConfig bits + SharedMem bit + nb-io (8bits)
-0x00000058,   // 014 001 long address to RAM
-0x00000020,   // 004 002 long address to IO config  
-0x00000028,   // 008 003 long address to formats     
-0x00000058,   // 014 004 long address to Linked-list 
-0x0000004C,   // 010 005 long address to Stream instances 
-0x00000090,   // 018 006 long address to arc descriptors
-0x000000C0,   // 01C 007 long address to debug area
+0x00000000,   // 004 001 long address to RAM (use DMEM_EXT)
+0x00000020,   // 008 002 long address to IO config  
+0x00000028,   // 00C 003 long address to formats     
+0x00000040,   // 010 004 long address to Linked-list 
+0x000000C0,   // 014 005 long address to Stream instances 
+0x000000D0,   // 018 006 long address to arc descriptors
+0x00000120,   // 01C 007 long address to debug area
 
 /* 
   -------------stream_format_io----- IO CONFIG---------------------------------------
@@ -22,130 +22,142 @@
 0x05208004,   // 024 009  Output TX1 _DATA_MOVE_TX=4(arc=4) fw_io_idx=1
 /* 
   ------------------------------------- FORMATS--------------------------------------
+  stream_data_stream_data_format STREAM_FORMAT_SIZE_W32=3
 */
 0x30000000,   // 028 00A [0]
-0x00000000,   // 02C 00B    Bytes input data
+0x00000000,   // 02C 00B    int16 input data
 0x00000000,   // 030 00C    
 0x4C000000,   // 034 00D [1]
 0x00000000,   // 038 00E    int16 samples
 0x00000000,   // 03C 00F    
-0x6C000000,   // 040 010 [2]
-0x00000000,   // 044 011    float samples
-0x00000000,   // 048 012
 /*
   --------------------------------- LINKED LIST ----------------------------------
 */
-0x28010006,   // 058 016 -arm_filter, TCM arcs=0,1 swc=8 preset=1:cascade DF2T_F32 
-0x08000160,   // 05C 017    instance to the static data (NBALLOC_INST=1)
-0x00000180,   // 060 018       TCM 
-0x00006001,   // 064 019    Bootparam header : preset 1=DF2T_F32, all param, N32LENGTH=6 
-0xBBDC01FF,   // 068 01A    FF=-allparams,byte stream,numStages=1 (uint8_t)
-0xA6833F63,   // 06C 01B    byte stream one stage 
-0xBBDCBFD1,   // 070 01C    byte stream 
-0x9BD83F63,   // 074 01D    Coefs [B,A] = cheby2(2,0.5,1/11) (notch at 1kHz/Fs=16kHz)
-0x6261BFDE,   // 078 01E    
-0x00003F61,   // 07C 01F    end of byte stream 
-0x28020109,   // 080 020 -arm_stream_detector, arcs=1,2 swc=9 
-0x00000150,   // 084 021    instance to the static data (NBALLOC_INST=0)
-0x00000002,   // 088 022    Bootparam header : preset=2:audio detection in noise
-0x000000FF,   // 08C 023  -----  End of the linked-list SWCID=0xFFF
-/*           
+0x28010006,   // 040 010 -arm_filter, TCM arcs=0,1 swc=8 preset=1:cascade DF2T_F32 
+0x08000138,   // 044 011    instance to the static data (NBALLOC_INST=1)
+0x00000180,   // 048 012       TCM 
+0x00006001,   // 04C 013    Bootparam header : preset 1=DF2T_F32, all param, N32LENGTH=6 
+0xBBDC01FF,   // 050 014    FF=-allparams,byte stream,numStages=1 (uint8_t)
+0xA6833F63,   // 054 015    byte stream one stage 
+0xBBDCBFD1,   // 058 016    byte stream 
+0x9BD83F63,   // 05C 017    Coefs [B,A] = cheby2(2,0.5,1/11) (notch at 1kHz/Fs=16kHz)
+0x6261BFDE,   // 060 018    
+0x00003F61,   // 064 019    end of byte stream 
+0x28020109,   // 068 01A -arm_stream_detector, arcs=1,2 swc=9 
+0x00000160,   // 06C 01B    instance to the static data (NBALLOC_INST=0)
+0x00000002,   // 070 01C    Bootparam header : preset=2:audio detection in noise
+0x00000002,   // 074 01D    parameters
+0x00000002,   // 078 01E    parameters
+0x00000002,   // 07C 01F    parameters
+0x00000002,   // 080 020    parameters
+0x000000FF,   // 084 021  -----  End of the linked-list SWCID=0xFFF
+0x00000002,   // 088 022     unused
+0x00000002,   // 08C 023     unused
+0x00000002,   // 090 024     unused
+0x00000002,   // 094 025     unused
+/*             
   ------------------------------- Bytes codes --------------------------------
 */
-0x11111111,   // 0C8 032 Debug Script 
-0x11111111,   // 0CC 033  
-0x11111111,   // 0C8 032 
-0x11111111,   // 0C8 032 Script #0 addressed from FIFO [4]
-0x11111111,   // 0CC 033  
-0x11111111,   // 0C8 032 
-0x11111111,   // 0CC 033  
-0x11111111,   // 0C8 032 Script #1 addressed from FIFO [5]
-0x11111111,   // 0CC 033  
-0x11111111,   // 0D0 034
+0x11111111,   // 098 026 Debug Script 
+0x11111111,   // 09C 027  
+0x11111111,   // 0A0 028 
+0x11111111,   // 0A4 029 Script #0 addressed from FIFO [4]
+0x11111111,   // 0A8 02A  
+0x11111111,   // 0AC 02B 
+0x11111111,   // 0B0 02C  
+0x11111111,   // 0B4 02D Script #1 addressed from FIFO [5]
+0x11111111,   // 0B8 02E
+0x11111111,   // 0BC 02F
 
 /*
   =============================== RAM INITIALIZED ================================
 
   ------------------------------- STREAM INSTANCES -------------------------------
 */
-0x00000000,   // 050 014    whoami_ports : PACKWHOAMI(INST,PROCIDX,ARCH,BOUNDARIES)
-0x00000000,   // 054 015    node_entry to fill (two words if aarch64 is used)
+0x00000000,   // 0C0 030    whoami_ports : PACKWHOAMI(INST,PROCIDX,ARCH,BOUNDARIES)
+0x00000000,   // 0C4 031    node_entry to fill (two words if aarch64 is used)
+0xAAAAAAAA,   // 0C8 032    unused
+0xAAAAAAAA,   // 0CC 033    unused
 /*           
   ------------------------------- ARC descriptors --------------------------------
 */
-0x0000015C,   // 090 024 [1] input -> FILTER 
-0x00000020,   // 094 025    32 Bytes
-0x00000000,   // 098 026 
-0x00000000,   // 09C 027 
-0x0000017C,   // 0A0 028 [2] FILTER -> detector
-0x00000020,   // 0A4 029    32 Bytes
-0x00000000,   // 0A8 02A 
-0x00000000,   // 0AC 02B 
-0x0000019C,   // 0B0 02C [3] detector -> output
-0x00000020,   // 0B4 02D    32 Bytes
-0x00000000,   // 0B8 02E 
-0x00000000,   // 0BC 02F 
-0x0000019C,   // 0B0 02C [4] FIFO of byte codes for script #0
-0x00000010,   // 0B4 02D    16 Bytes
-0x00000000,   // 0B8 02E 
-0x00000000,   // 0BC 02F 
-0x0000019C,   // 0B0 02C [5] FIFO of byte codes of script #1
-0x0000000C,   // 0B4 02D    12 Bytes
-0x00000000,   // 0B8 02E 
-0x00000000,   // 0BC 02F 
+0x00000180,   // 0D0 034 [0] input -> FILTER 
+0x00000020,   // 0D4 035    32 Bytes
+0x00000000,   // 0D8 036 
+0x00000000,   // 0DC 037 
+0x000001A0,   // 0E0 038 [1] FILTER -> detector
+0x00000020,   // 0E4 039    32 Bytes
+0x00000000,   // 0E8 03A 
+0x00000000,   // 0EC 03B 
+0x000001C0,   // 0F0 03C [2] detector -> output
+0x00000020,   // 0F4 03D    32 Bytes
+0x00000000,   // 0F8 03E 
+0x00000000,   // 0FC 03F 
+0x000000A4,   // 100 040 [3] FIFO of byte codes for script #0
+0x00000010,   // 104 041    16 Bytes
+0x00000000,   // 108 042 
+0x00000000,   // 10C 043 
+0x000000B4,   // 110 044 [4] FIFO of byte codes of script #1
+0x0000000C,   // 114 045    12 Bytes
+0x33333333,   // 118 046 
+0x33333333,   // 11C 047
 
 /*               
   ============================ RAM NOT INITIALIZED ==============================
 
 
-0x22222222,   // 0C0 030           ARC DEBUG registers
-0x22222222,   // 0C4 031 
-0x22222222,   // 0C8 032 
-0x22222222,   // 0CC 033      
-0x22222222,   // 0D0 034
-0x22222222,   // 0D4 035
+0x22222222,   // 120 048           ARC DEBUG registers
+0x22222222,   // 124 049 
+0x22222222,   // 128 04A 
+0x22222222,   // 12C 04B      
+0x22222222,   // 130 04C
+0x22222222,   // 134 04D
 
   ------------------------------- SWC instances -------------------------------
 
-0x00000128,   // 118 046 arm_filter instance / TCM pointer in first position
-0x00000000,   // 11C 047    Z(-1) filter state
-0x00000000,   // 120 048    Z(-2) filter state
-0x00000000,   // 124 049    B0 Coefs [B,A] = cheby2(2,0.5,1/11) (notch at 1kHz/Fs=16kHz)
-0x00000000,   // 128 04A    B1
-0x00000000,   // 12C 04B    B2
-0x00000000,   // 130 04C    A1
-0x00000000,   // 134 04D    A2
-0x00000000,   // 138 04E     <-(test of TCM memory)
-0x00000000,   // 13C 04F
-0x00000160,   // 140 050 stream_gating : instance of 15bytes (4 int32)
-0x00000000,   // 144 051 
-0x00000000,   // 148 052 
-0x00000000,   // 14C 053 
+0x00000138,   // 138 04E arm_filter instance / TCM pointer in first position
+0x00000000,   // 13C 04F    Z(-1) filter state
+0x00000000,   // 140 050    Z(-2) filter state
+0x00000000,   // 144 051    B0 Coefs [B,A] = cheby2(2,0.5,1/11) (notch at 1kHz/Fs=16kHz)
+0x00000000,   // 148 052    B1
+0x00000000,   // 14C 053    B2
+0x00000000,   // 150 054    A1
+0x00000000,   // 154 055    A2
+0x00000000,   // 158 056     <-(test of TCM memory)
+0x00000000,   // 15C 057
+0x00000160,   // 160 058 stream_gating : instance of 15bytes (4 int32)
+0x00000000,   // 164 059 
+0x00000000,   // 168 05A 
+0x00000000,   // 16C 05B 
+0x00000000,   // 170 05C   
+0x00000000,   // 174 05D   
+0x00000000,   // 178 05E   
+0x00000000,   // 17C 05F
                  
    ----------------------------------ARC BUFFERS ---------------------------------
 
-0x0000015C,   // 150 054 ARC-0 buffer : 8 words 16 Bytes (32 bytes)
-0x00000000,   // 154 055
-0x00000000,   // 158 056
-0x00000000,   // 15C 057 
-0x00000000,   // 160 058 
-0x00000000,   // 164 059
-0x00000000,   // 168 05A
-0x00000000,   // 16C 05B
-0x0000017C,   // 170 05C ARC-1 buffer : 8 words 16 Bytes (32 bytes)
-0x00000000,   // 174 05D
-0x00000000,   // 178 05E
-0x00000000,   // 17C 05F 
-0x00000000,   // 180 060 
+0x00000180,   // 180 060 ARC-0 buffer : 8 words 16 Bytes (32 bytes)
 0x00000000,   // 184 061
 0x00000000,   // 188 062
-0x00000000,   // 18C 063
-0x0000019C,   // 190 064 ARC-2 buffer : 8 words 16 Bytes (32 bytes)
+0x00000000,   // 18C 063 
+0x00000000,   // 190 064 
 0x00000000,   // 194 065
 0x00000000,   // 198 066
-0x00000000,   // 19C 067 
-0x00000000,   // 1A0 068 
+0x00000000,   // 19C 067
+0x000001A0,   // 1A0 068 ARC-1 buffer : 8 words 16 Bytes (32 bytes)
 0x00000000,   // 1A4 069
 0x00000000,   // 1A8 06A
-0x00000000    // 1AC 06B
+0x00000000,   // 1AC 06B 
+0x00000000,   // 1B0 06C 
+0x00000000,   // 1B4 06D
+0x00000000,   // 1B8 06E
+0x00000000,   // 1BC 06F
+0x000001C0,   // 1C0 070 ARC-2 buffer : 8 words 16 Bytes (32 bytes)
+0x00000000,   // 1C4 071
+0x00000000,   // 1C8 072
+0x00000000,   // 1CC 073 
+0x00000000,   // 1D0 074 
+0x00000000,   // 1D4 075
+0x00000000,   // 1D8 076
+0x00000000    // 1DC 077
 */               

@@ -72,9 +72,6 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\route\arm_stream_route.c">
       <Filter>Source Files\nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\arm\split\arm_stream_split.c">
-      <Filter>Source Files\nodes</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_amp\arm_stream_amplitude.c">
       <Filter>Source Files\nodes</Filter>
     </ClCompile>
@@ -100,6 +97,9 @@
       <Filter>Source Files\nodes</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\arm\generator\arm_stream_generator.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\split\arm_stream_split.c">
       <Filter>Source Files\nodes</Filter>
     </ClCompile>
   </ItemGroup>

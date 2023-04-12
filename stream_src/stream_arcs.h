@@ -120,56 +120,56 @@
 #define STREAM_FORMAT_SIZE_W32 3            // digital, common part of the format 
 
 /*
-*   stream_data_stream_data_format (size multiple of 4 x uint32_t)
+*   stream_data_stream_data_format (size multiple of 3 x uint32_t)
 *   format (4 x uint32_t) 
 *       word 0 : common to all domains : frame size, raw format, interleaving
 *       word 1 : common to all domains : sampling rate , nchan                  << SWC flexibility 
 *       word 2 : specific to domains : hashing, direction, channel mapping 
-*       word 3 : mixed-signal interface setting (sampling, gain, filters, ..), codec setting
 */
 
 /*--------------- WORD 0 - frame size, raw format, interleaving --------------- */
-//#define SIZSFTRAW_FMT0   0
-    //#define       RAW_FMT0_MSB 31
-    //#define       RAW_FMT0_LSB 26 /* stream_raw_data 6bits (0..63)  */
-    //#define INTERLEAV_FMT0_MSB 25 
-    //#define INTERLEAV_FMT0_LSB 24 /* interleaving : frame_format_type */
-    //                              /* frame size in bytes for one deinterleaved channel Byte-acurate up to 16MBytes */
-    //#define FRAMESIZE_FMT0_MSB 23 /* raw interleaved buffer size is framesize x nb channel, max = 16MB x nchan */
-    //#define FRAMESIZE_FMT0_LSB  0 /* in swc manifests it gives the minimum input size (grain) before activating the swc
-    //                                 A "frame" is the combination of several channels sampled at the same time 
-    //                                 A value =0 means the size is any or defined by the IO AL  */
+#define SIZSFTRAW_FMT0   0
+    #define       RAW_FMT0_MSB 31
+    #define       RAW_FMT0_LSB 26 /* stream_raw_data 6bits (0..63)  */
+    #define INTERLEAV_FMT0_MSB 25 
+    #define INTERLEAV_FMT0_LSB 24 /* interleaving : frame_format_type */
+                                  /* frame size in bytes for one deinterleaved channel Byte-acurate up to 16MBytes */
+    #define FRAMESIZE_FMT0_MSB 23 /* raw interleaved buffer size is framesize x nb channel, max = 16MB x nchan */
+    #define FRAMESIZE_FMT0_LSB  0 /* in swc manifests it gives the minimum input size (grain) before activating the swc
+                                     A "frame" is the combination of several channels sampled at the same time 
+                                     A value =0 means the size is any or defined by the IO AL  */
 
     #define PACKSTREAMFORMAT0(RAW,INTERL,FRAMESIZE) ((U(RAW)<<26)|(U(INTERL)<<24)|U(FRAMESIZE))
 
 /*--------------- WORD 1 - sampling rate , nchan  -------------*/
-//#define   SAMPINGNCHANM1_FMT1  U( 1)
-    //#define    UNUSED_FMT1_MSB U(31) /* 4b   */
-    //#define    UNUSED_FMT1_LSB U(28)
-    //#define  TIMSTAMP_FMT1_MSB U(27)
-    //#define  TIMSTAMP_FMT1_LSB U(26) /* time_stamp_format_type for time-stamped streams for each interleaved frame */
-    //#define  SAMPLING_FMT1_MSB U(25) /* 21bits : mantissa [U19], exponent [U2], FS = M x 2^(1-(8xE)), 0<=>ASYNCHRONOUS/SLAVE */
-    //#define  SAMPLING_FMT1_LSB U( 5) /* range = (E=0,1,2,3) 0x3FFFF x 2^(1-4x0) .. 1 x 2^(1-8*3)) [524kHz .. 3 months] */
-    //#define   NCHANM1_FMT1_MSB U( 4)
-    //#define   NCHANM1_FMT1_LSB U( 0) /* nb channels-1 [1..32] */
+#define   SAMPINGNCHANM1_FMT1  U( 1)
+    #define    UNUSED_FMT1_MSB U(31) /* 4b   */
+    #define    UNUSED_FMT1_LSB U(28)
+    #define  TIMSTAMP_FMT1_MSB U(27)
+    #define  TIMSTAMP_FMT1_LSB U(26) /* time_stamp_format_type for time-stamped streams for each interleaved frame */
+    #define  SAMPLING_FMT1_MSB U(25) /* 21bits : mantissa [U19], exponent [U2], FS = M x 2^(1-(8xE)), 0<=>ASYNCHRONOUS/SLAVE */
+    #define  SAMPLING_FMT1_LSB U( 5) /* range = (E=0,1,2,3) 0x3FFFF x 2^(1-4x0) .. 1 x 2^(1-8*3)) [524kHz .. 3 months] */
+    #define   NCHANM1_FMT1_MSB U( 4)
+    #define   NCHANM1_FMT1_LSB U( 0) /* nb channels-1 [1..32] */
 
     #define PACKSTREAMFORMAT1(TIMESTAMP,SAMPLING, NCHANM1) ((U(TIMESTAMP)<<26)|(U(SAMPLING)<<5)|U(NCHANM1))
 
 
 /*--------------- WORD 2 -  direction, channel mapping (depends on the "domain")------*/
-//#define          MAPPING_FMT2  U( 2)
-    //#define    UNUSED_FMT2_MSB U(31)
-    //#define    UNUSED_FMT2_LSB U(27) /* 5   unused*/
-    //#define   HASHIDX_FMT2_MSB U(26)
-    //#define   HASHIDX_FMT2_LSB U(25) /* 2  index (1,2,3) of the hashing key structure */
-    //#define DIRECTION_FMT2_MSB U(24)
-    //#define DIRECTION_FMT2_LSB U(24) /* 1  0 = RX (data flows to the graph), 1 = TX */
-    //#define   MAPPING_FMT2_MSB U(23) /* 24 mapping of <24 channels example of 7.1 format (8 channels): */
-    //#define   MAPPING_FMT2_LSB U( 0) /*     FrontLeft, FrontRight, FrontCenter, LowFrequency, BackLeft, BackRight, SideLeft, SideRight ..*/
+#define          MAPPING_FMT2  U( 2)
+    #define    UNUSED_FMT2_MSB U(31)
+    #define    UNUSED_FMT2_LSB U(27) /* 5   unused*/
+    #define   HASHIDX_FMT2_MSB U(26)
+    #define   HASHIDX_FMT2_LSB U(25) /* 2  index (1,2,3) of the hashing key structure */
+    #define DIRECTION_FMT2_MSB U(24)
+    #define DIRECTION_FMT2_LSB U(24) /* 1  0 = RX (data flows to the graph), 1 = TX */
+    #define   MAPPING_FMT2_MSB U(23) /* 24 mapping of <24 channels example of 7.1 format (8 channels): */
+    #define   MAPPING_FMT2_LSB U( 0) /*     FrontLeft, FrontRight, FrontCenter, LowFrequency, BackLeft, BackRight, SideLeft, SideRight ..*/
 
     #define PACKSTREAMFORMAT2(HASH,DIRECTION,MAP) ((U(HASH)<<25)|(U(DIRECTION)<<24)|U(MAP))
 
 
+#define SIZEOF_ARCDESC_SHORT_W32 U(2)
 #define SIZEOF_ARCDESC_W32 U(4)
 
 #define   BUF_PTR_ARCW0     U( 0)

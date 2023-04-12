@@ -28,49 +28,54 @@
 #include "stream_const.h"
 #include "stream_types.h"
 
+/*
+    9.	stream_detector
+    Operation : provides a boolean output stream from the detection of a rising (of falling) edge above 
+    a tunable signal to noise ratio. A time constant in [ms] is used for the detection. 
+    A tunable delay allows to maintain the boolean value for a minimum amount of time 
+    for debouncing and LED / user-interface).
+    
+    Parameters : select rising/falling detection, signal to noise ratio in voltage decibels, 
+    time-constant in [ms] for the energy integration time, time-constant to gate the output.
+*/
 
 typedef struct
 {
-    stream_entrance *stream_entry;
-    float data0;
-    float data1;
-    float data2;
+    uint32_t debouncing_counter; /* sample counter : maintain the "detected" flag at least for this number of samples */
+    uint8_t log2decfMAX;        /* decimation will be a power of 2 (-1)*/
+    uint8_t high_pass_shifter;  /* z1 */
+    uint8_t low_pass_shifter;   /* z6 */
+    uint8_t floor_noise_shifter;/* z7 */
+    uint8_t peak_signal_shifter;/* z8 */
+} detector_configuration;
+
+typedef struct
+{
+    detector_configuration config;
+
+    int16_t z1;    /* memory of the high-pass filter (recursive part) */
+    int16_t z2;    /* memory of the high-pass filter (direct part) */
+    int16_t z3;    /* output of the high-pass filter */
+    int16_t z6;    /* memory of the first low-pass filter */
+    int16_t z7;    /* memory of the floor-noise tracking low-pass filter */
+    int16_t z8;    /* memory of the envelope tracking low-pass filter */
+    int32_t down_counter;    /* memory of the debouncing downcounter  */
 } arm_detector_instance;
 
-
-/**
-  @brief         Processing function for the floating-point Biquad cascade filter.
-  @param[in]     S         points to an instance of the floating-point Biquad cascade structure
-  @param[in]     pSrc      points to the block of input data
-  @param[out]    pDst      points to the block of output data
-  @param[in]     blockSize  number of samples to process
-  @return        none
- */
-int32_t arm_detector_calls_stream (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status)
+#define NB_PRESET 4
+const detector_configuration detector_preset [NB_PRESET] = 
 {
-    stream_entrance *STREAM; /* function pointer used for debug/trace, memory move and free, signal processing */
-    arm_detector_instance *pinstance = (arm_detector_instance *)instance;
-
-    switch (command)
-    {   
-        //case STREAM_REGISTER_ME: first command to register the SWC
-        //case STREAM_DEBUG_TRACE:
-        //{  
-        //}
-        default: 
-            return 0;
-    }
-    STREAM = pinstance->stream_entry;
-    STREAM (command, (uint8_t*)instance, (uint8_t*)data, 0);  /* single interface to STREAM for controls ! */
-    return 0;
-}
-
+    { 10000, 7, 1, 4, 7, 5},   /* preset #0 = VAD at 16kHz */
+    { 10000, 7, 1, 4, 7, 5},   /* preset #1 = VAD at 48kHz */
+    { 10000, 7, 1, 4, 7, 5},   /* preset #2 = peak detector 1 TBD */
+    { 10000, 7, 1, 4, 7, 5},   /* preset #3 = peak detector 2 TBD */
+};
 
 /**
   @brief         Processing function 
   @param[in]     S         points to an instance of the floating-point Biquad cascade structure
   @param[in]     pSrc      points to the block of input data
-  @param[out]    pDst      points to the block of output data
+  @param[out]    pDst      points to the block of output data = 0x7FFF when detected, else 0
   @param[in]     blockSize  number of samples to process
   @return        none
  */
@@ -78,7 +83,6 @@ void detector_processing (arm_detector_instance *instance,
                      uint8_t *in, int32_t nb_data, 
                      int16_t *outBufs)
 {
-    /* fake decoder*/ 
     int i;
     for (i = 0; i < nb_data; i++)
     {
@@ -113,37 +117,11 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
             uint16_t preset = RD(command, PRESET_CMD);
 
             arm_detector_instance *pinstance = (arm_detector_instance *) memresults++;
-            /* here reset */
+            
+            /* here reset : clear the instance and preload in the memory instance the preset */
 
             break;
         }    
-
-        /* func(command = (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
-                    TAG of a parameter to set, 0xFF means "set all the parameters" in a raw
-                *instance, 
-                data = (one or all)
-        */ 
-        case STREAM_SET_PARAMETER:  
-        {   
-            uint8_t *new_parameters = (uint8_t *)data;
-            break;
-        }
-
-
-
-        /* func(command = STREAM_READ_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
-                    TAG/index of a parameter to read (Metadata, Needle), 0xFF means "read all the parameters"
-                *instance, 
-                data = *parameter(s) to read
-        */ 
-        case STREAM_READ_PARAMETER:  
-        {   
-            uint8_t *new_parameters = (uint8_t *)data;
-
-            break;
-        }
-        
-
 
         /* func(command = STREAM_RUN, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
@@ -171,7 +149,7 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
 
             nb_data = data_buffer_size / sizeof(SAMP_IN);
 
-            //processing(pinstance, inBuf, nb_data, outBuf);
+            detector_processing (pinstance, inBuf, nb_data, outBuf);
 
             increment = (nb_data * sizeof(SAMP_IN));
             pt_pt = data;
@@ -179,7 +157,8 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
             pt_pt ++;
             increment = (nb_data * sizeof(SAMP_OUT));
             *(pt_pt->address) += increment;
-           
+
+            
             break;
         }
 
@@ -190,6 +169,9 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
                data = unused
            used to free memory allocated with the C standard library
         */  
-        case STREAM_END:  break;    
+
+        case STREAM_READ_PARAMETER:  
+        case STREAM_END:  
+            break;    
     }
 }

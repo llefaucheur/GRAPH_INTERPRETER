@@ -111,6 +111,7 @@
 /* -------- GRAPH[1]--RAM-OFFSET---- */
 #define GRAPH_RAM_OFFSET(G,L)     pack2linaddr_int((G)[1],L)
 #define GRAPH_RAM_OFFSET_PTR(G,L) pack2linaddr_ptr((G)[1],L)
+
 #define GRAPH_IO_CONFIG_ADDR(G,L) pack2linaddr_ptr((G)[2],L)
 #define GRAPH_FORMAT_ADDR(G,L)    pack2linaddr_ptr((G)[3],L)
 #define GRAPH_LINKDLIST_ADDR(G,L) pack2linaddr_ptr((G)[4],L)
@@ -128,6 +129,8 @@
 
 /* number of SWC calls in sequence */
 #define MAX_SWC_REPEAT 4u
+
+#define MAX_NB_ARC_PER_SWC_V0 2
 
 /* ============================================================================== */ 
 #define   UNUSED_GI_MSB U(31)
@@ -191,6 +194,10 @@
 */
 #define STREAM_LIST_GI_LONG_FORMAT_WORD_2   /* parameters */
 #define  ALLPARAM_    (uint32_t)255 //   nbparam=255 means "full set of parameters loaded from binary format"
+#define PRESET_0 0
+#define PRESET_1 1
+#define PRESET_2 2
+#define PRESET_3 3
 #define  PACKPARAMTAG(tag,preset) U((((uint32_t)(tag))<<16) | (preset))
 
 #define    UNUSED_BP_MSB U(31)
@@ -285,6 +292,20 @@
 #define BOUNDARY_PARCH_LSB U( 0) /* 24 boundary ports to scan */  
 
 #define PACKWHOAMI(INST,PROCIDX,ARCH,BOUNDARIES) (((INST)<<30)|((PROCIDX)<<27)|((ARCH)<<24)|(BOUNDARIES))
+/*
+    SWC manifests tell if instances are relocatable or if SWC are assigned to specific Stream instance
+      for example : MP TCM usage with different base addresses
+*/
+///* struct stream_local_instance */uint32_t  /* structure allocated to each STREAM instance */
+//{
+//    uint32_t whoami_ports;  /* PACKWHOAMI : 16bits list of graph io ports this processor must check + who am I */
+//
+//    p_stream_node *node_entry_points;     /* all the nodes visible from this processor */
+//};
+#define STREAM_INSTANCE_SIZE 2
+#define STREAM_INSTANCE_WHOAMI_PORTS 0
+#define STREAM_INSTANCE_NODE_ENTRY_POINTS 1
+
 
 
 

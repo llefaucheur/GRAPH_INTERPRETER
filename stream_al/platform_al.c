@@ -129,7 +129,12 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
 
     case PLATFORM_OFFSETS: /* platform_al (PLATFORM_OFFSETS, intPtr_t **,0,0); */
     {
-        ptr1 = (uint8_t *) &(long_offset[0]);
+        intPtr_t **D; 
+        intPtr_t *S;
+        D = (intPtr_t **)ptr1;
+        S = long_offset;
+
+        *D = S;
         break;
     }
 

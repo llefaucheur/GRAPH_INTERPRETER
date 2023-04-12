@@ -89,16 +89,13 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     /* read the processors' long_offset table */
     platform_al (PLATFORM_OFFSETS, (uint8_t *)(&long_offset),0,0);
 
-    /* read the instance long_offset table */
-    pinst = (/* struct stream_local_instance */uint32_t *)GRAPH_STREAM_INST(graph,long_offset);
-    pinst = &(pinst[stream_instance]);
     graph_src = graph_dst = graph; 
 
     /* if I am the master processor (archID=1 + procID=0), copy the graph, or wait */
     platform_al (PLATFORM_PROC_ID, &procID, &archID,0);
     if ((archID == 1U) && (procID == 0U))
     {
-        switch (RD(graph,COPY_CONF_GRAPH0))
+        switch (tmp32 = RD(graph[0],COPY_CONF_GRAPH0))
         {
         /*
            Graph is read from Flash and copied in RAM, 
@@ -153,17 +150,20 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
         default:
         case COPY_CONF_GRAPH0_ALREADY_IN_RAM:
             graph_src = graph;
-            graph_src[1] = GRAPH_RAM_OFFSET(graph,long_offset);
+            graph_src[1] = physical_to_offset(graph,long_offset);
             graph_src[2] = graph_src[1];
             graph_dst = &(graph_src[graph_size/sizeof(uint32_t)]);
 
-            parameters[STREAM_PARAM_GRAPH] = GRAPH_RAM_OFFSET(graph,long_offset);
+            parameters[STREAM_PARAM_GRAPH] = graph_src[1];
             break;
         }
+
+        /* all other process can be released from wait state */
+        platform_al (PLATFORM_MP_BOOT_DONE,0,0,0); 
     }
 
     /* declare the graph memory as shared */
-    if (RD(graph,SHAREDMEM_GRAPH0))
+    if (RD(graph[0],SHAREDMEM_GRAPH0))
     {   platform_al (PLATFORM_MP_GRAPH_SHARED, (uint8_t *)graph_src, (uint8_t *)graph_dst,0);
     }
 
@@ -187,7 +187,9 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     /* 
         initialization of all the SWC 
     */
-    arm_stream(STREAM_RESET, parameters,0,0); 
+    arm_stream(STREAM_RESET, parameters, 
+            (void *)STREAM_SCHD_RET_END_ALL_PARSED, 
+            (void *)STREAM_SCHD_NO_SCRIPT); 
 
     platform_al (PLATFORM_MP_RESET_DONE, &stream_instance,0,0);
 
@@ -204,7 +206,7 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     */     
     io_mask = EXTRACT_FIELD(pinst[STREAM_INSTANCE_WHOAMI_PORTS], BOUNDARY_PARCH);
     pio = GRAPH_IO_CONFIG_ADDR(graph,long_offset);
-    nio = RD(graph,NBIO_GRAPH0);
+    nio = RD(graph[0],NBIO_GRAPH0);
     all_arcs = GRAPH_ARC_LIST_ADDR(graph,long_offset);
 
 

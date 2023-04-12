@@ -176,11 +176,10 @@ void arm_stream_route (int32_t command, uint32_t *instance, data_buffer_t *data,
             increment = (nb_data * sizeof(SAMP_IN));
             pt_pt = data;
             *(pt_pt->address) += increment;
-            pt_pt->size       -= increment;
             pt_pt ++;
             increment = (nb_data * sizeof(SAMP_OUT));
             *(pt_pt->address) += increment;
-            pt_pt->size       -= increment;
+
             
             break;
         }
