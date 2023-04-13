@@ -25,67 +25,40 @@
 * 
  */
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h> 
+//#include <stdlib.h>
+//#include <stdint.h>
+//#include <string.h> 
 
-#include "stream_const.h"      /* graph list */
+/*---------------------------------------*/
+#include "platform_windows.h"
+//#include "platform_arduino_nano33.h"
+/*---------------------------------------*/
 
-#include "platform_const.h"
-
+#include "stream_const.h"      
 #include "stream_types.h"  
-#include "platform_types.h"
 
-/*-------------------PLATFORM MANIFEST-----------------------
-                  +-----------------+
-                  | static |working |
-   +--------------------------------+
-   |external RAM  |        |        |
-   +--------------------------------+
-   |internal RAM  |        |        |
-   +--------------------------------+
-   |fast TCM      |  N/A   |        |
-   +--------------+--------+--------+
-*/
-#define SIZE_MBANK_DMEM_EXT   0x20000  /* external */
-#define SIZE_MBANK_DMEM       0x8000    /* internal */
-#define SIZE_MBANK_DMEMFAST   0x4000    /* TCM */
-#define SIZE_MBANK_BACKUP     0x10      /* BACKUP */
-#define SIZE_MBANK_HWIODMEM   0x1000    /* DMA buffer */
-#define SIZE_MBANK_PMEM       0x100     /* patch */
-
-uint32_t MEXT[SIZE_MBANK_DMEM_EXT];
-uint32_t RAM1[SIZE_MBANK_DMEM/4];
-uint32_t RAM2[SIZE_MBANK_DMEM/4];
-uint32_t RAM3[SIZE_MBANK_DMEM/4];
-uint32_t RAM4[SIZE_MBANK_DMEM/4];
-uint32_t TCM1[SIZE_MBANK_DMEMFAST]; 
-uint32_t TCM2[SIZE_MBANK_DMEMFAST]; 
-uint32_t BKUP[SIZE_MBANK_BACKUP]; 
-uint32_t HWIO[SIZE_MBANK_HWIODMEM];
-uint32_t PMEM[SIZE_MBANK_PMEM];
-
-#define PROC_ID 0 
-extern const uint32_t graph_input[];
-
-#if PROC_ID == 0
-intPtr_t long_offset[NB_MEMINST_OFFSET] = 
-{
-    (intPtr_t)&(MEXT[10]), // MBANK_DMEM_EXT
-    (intPtr_t)&(RAM1[11]), // MBANK_DMEM    
-    (intPtr_t)&(RAM1[12]), // MBANK_DMEMPRIV
-    (intPtr_t)&(TCM1[13]), // MBANK_DMEMFAST
-    (intPtr_t)&(BKUP[14]), // MBANK_BACKUP  
-    (intPtr_t)&(HWIO[15]), // MBANK_HWIODMEM
-    (intPtr_t)&(PMEM[16]), // MBANK_PMEM    
-    (intPtr_t)graph_input, // MBANK_FLASH   ideally 16Bytes-aligned for arc shifter 1
-};
-#endif
   
 
-#if MULTIPROCESS == 1
-static uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
-{   volatile uint8_t *pt8 = pt8b;
+
+#if MULTIPROCESS == 1  
+uint32_t check_hw_compatibility(uint32_t whoami, uint32_t bootParamsHeader) 
+{
+    uint8_t match = 1;
+
+    if (RD(bootParamsHeader, ARCHID_BP) > 0u) /* do I care about the architecture ID ? */
+    {   match = U8(RD(bootParamsHeader, ARCHID_BP) == RD(whoami, ARCHID_PARCH));
+    }
+
+    if (RD(bootParamsHeader, PROCID_BP) > 0u) /* do I care about the processor ID ? */
+    {   match = match & U8(RD(bootParamsHeader, PROCID_BP) == RD(whoami, PROCID_PARCH));
+    }
+    return match;
+}
+
+uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
+{   volatile uint8_t *pt8;
+    pt8 = pt8b;
+
     *pt8 = code;
     INSTRUCTION_SYNC_BARRIER;
 
@@ -95,8 +68,20 @@ static uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
     return (*pt8 == code);
 }
 #else
-#define WR_BYTE_AND_CHECK_MP_(pt8b, code) 1
+#define check_hw_compatibility(whoami, bootParamsHeader) 1u  
+uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
+{   return 1u;
+}
+//#define WR_BYTE_AND_CHECK_MP_(pt8b, code) 1u
 #endif
+
+ 
+ /*  
+    data in RAM : a single Stream instance is in charge of one io
+    the only extra SRAM area needed to interface with Stream is the address of the graph
+
+ */
+uint32_t * platform_io_callback_parameter [LAST_IO_FUNCTION_PLATFORM];
 
 /*
  * --- platform abstraction layer -------------------------------------------------------
@@ -129,6 +114,7 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
 
     case PLATFORM_OFFSETS: /* platform_al (PLATFORM_OFFSETS, intPtr_t **,0,0); */
     {
+        extern intPtr_t long_offset[NB_MEMINST_OFFSET];
         intPtr_t **D; 
         intPtr_t *S;
         D = (intPtr_t **)ptr1;

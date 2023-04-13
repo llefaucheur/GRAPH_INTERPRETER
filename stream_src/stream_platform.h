@@ -34,22 +34,22 @@
 #define U8(x) ((uint8_t)(x))
 
 //enum platform_al_services       
-#define PLATFORM_PROC_ID            1u           /* who am i ? */
+#define PLATFORM_PROC_ID            1u   /* who am i ? */
 #define PLATFORM_MP_GRAPH_SHARED    2u   /* need to declare the graph area as "sharable" in S = MPU_RASR[18] */
 #define PLATFORM_MP_BOOT_SYNCHRO    3u   /* collission of access to the graph at boot time */
-#define PLATFORM_MP_BOOT_WAIT       4u      /* wait master processor copies the graph */
-#define PLATFORM_MP_BOOT_DONE       5u      /* to confirm the graph was copied in RAM */
-#define PLATFORM_MP_RESET_WAIT      6u     /* wait the graph is initialized */
-#define PLATFORM_MP_RESET_DONE      7u     /* tell the reset sequence was executed for that Stream instance */
+#define PLATFORM_MP_BOOT_WAIT       4u   /* wait master processor copies the graph */
+#define PLATFORM_MP_BOOT_DONE       5u   /* to confirm the graph was copied in RAM */
+#define PLATFORM_MP_RESET_WAIT      6u   /* wait the graph is initialized */
+#define PLATFORM_MP_RESET_DONE      7u   /* tell the reset sequence was executed for that Stream instance */
 #define PLATFORM_IO_SET_STREAM_ALL  8u   /* launch all the graph interfaces */
-#define PLATFORM_IO_SET_STREAM      9u     /* share &platform_io(), buffer address, *selection of setting EXTENSION/option, data format */
-#define PLATFORM_IO_DATA           10u           /* "data exchanges */ 
-#define PLATFORM_IO_STOP_STREAM    11u    /*  */
-#define PLATFORM_IO_ACK            12u            /* interface callback to arm_stream_io */
-#define PLATFORM_BACKUP_MEM        13u        /* share the list of memory areas to backup periodically */
-#define PLATFORM_RESTORE_MEM       14u       /* restore memory areas before warm boot */
-#define PLATFORM_EXEC_TIME         15u        /* time counter since last call */
-#define PLATFORM_ERROR             16u             /* error to report to the application */
+#define PLATFORM_IO_SET_STREAM      9u   /* share &platform_io(), buffer address, *selection of setting EXTENSION/option, data format */
+#define PLATFORM_IO_DATA           10u   /* "data exchanges */ 
+#define PLATFORM_IO_STOP_STREAM    11u   /*  */
+#define PLATFORM_IO_ACK            12u   /* interface callback to arm_stream_io */
+#define PLATFORM_BACKUP_MEM        13u   /* share the list of memory areas to backup periodically */
+#define PLATFORM_RESTORE_MEM       14u   /* restore memory areas before warm boot */
+#define PLATFORM_EXEC_TIME         15u   /* time counter since last call */
+#define PLATFORM_ERROR             16u   /* error to report to the application */
 #define PLATFORM_TIME_SET          17u
 #define PLATFORM_TIMER_SET         18u
 #define PLATFORM_TIME_READ         19u

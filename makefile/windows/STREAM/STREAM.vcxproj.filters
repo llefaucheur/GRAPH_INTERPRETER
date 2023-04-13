@@ -51,9 +51,6 @@
     <ClCompile Include="..\..\..\stream_al\platform_al.c">
       <Filter>Source Files\AL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_al\platform_io.c">
-      <Filter>Source Files\AL</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\stream_src\stream_services.c">
       <Filter>Source Files\src</Filter>
     </ClCompile>
@@ -102,6 +99,12 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\split\arm_stream_split.c">
       <Filter>Source Files\nodes</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector_process.c">
+      <Filter>Source Files\nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_al\platform_windows.c">
+      <Filter>Source Files\AL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\stream_graph\graph_iir_gate.txt">
@@ -130,14 +133,14 @@
     <ClInclude Include="..\..\..\stream_src\stream_types.h">
       <Filter>Source Files\src</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\stream_al\platform_types.h">
-      <Filter>Source Files\AL</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_al\platform_const.h">
-      <Filter>Source Files\AL</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\stream_src\stream_const.h">
       <Filter>Source Files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_al\platform_windows.h">
+      <Filter>Source Files\AL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_al\platform_al.h">
+      <Filter>Source Files\AL</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

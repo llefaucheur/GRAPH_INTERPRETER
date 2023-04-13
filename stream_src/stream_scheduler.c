@@ -24,16 +24,12 @@
  * limitations under the License.
 * 
  */
-#ifndef cSTREAM_PUBLIC_ARCS_H
-#define cSTREAM_PUBLIC_ARCS_H
 
 #include "stream_const.h"      /* graph list */
-
 #include "stream_types.h"
 
+#include <string.h>             /* for memcpy */
 
-#include "../stream_al/platform_const.h"
-#include <string.h>
 
 /*----------------------------------------------------------------------------
    execute a swc
@@ -471,8 +467,7 @@ static void check_graph_boundaries(
     }
 }
 
-
-#if MULTIPROCESS == 1  
+#if MULTIPROCESSING
 uint32_t check_hw_compatibility(uint32_t whoami, uint32_t bootParamsHeader) 
 {
     uint8_t match = 1;
@@ -486,23 +481,10 @@ uint32_t check_hw_compatibility(uint32_t whoami, uint32_t bootParamsHeader)
     }
     return match;
 }
-
-uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
-{   volatile uint8_t *pt8;
-    pt8 = pt8b;
-
-    *pt8 = code;
-    INSTRUCTION_SYNC_BARRIER;
-
-    /* no need to use LDREX, don't wait and escape if collision occurs */
-    DATA_MEMORY_BARRIER;
-
-    return (*pt8 == code);
-}
 #else
 #define check_hw_compatibility(whoami, bootParamsHeader) 1u  
-#define WR_BYTE_AND_CHECK_MP_(pt8b, code) 1u
 #endif
+
 
 /*----------------------------------------------------------------------------
    scan the graph and execute a "scan_function_ptr" task
@@ -654,6 +636,7 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
             {   continue;
             }
             tmp8 = (uint8_t)RD(whoami, INST_ID_PARCH);   
+
             if (0u == WR_BYTE_AND_CHECK_MP_(pt8b_collision_arc_1, tmp8))
             {   continue;   /* a collision occured, don't wait */
             }
@@ -670,7 +653,6 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
                 intPtr_t memreq_physical[MAX_NB_MEM_REQ_PER_NODE + (SIZEOF_ARCDESC_SHORT_W32*MAX_NB_ARC_PER_SWC_V0)];
                 uint16_t nbmem;
                 uint8_t i;
-                uint8_t j;
                 uint32_t *memreq;
 
 
@@ -864,6 +846,3 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
     /* save last position */
     ST(parameters[STREAM_PARAM_CTRL],LASTSWC_PARAM, linked_list_ptr - GRAPH_LINKDLIST_ADDR(graph,long_offset));
 }
-
-
-#endif

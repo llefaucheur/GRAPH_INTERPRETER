@@ -25,8 +25,10 @@
  * 
  */
 
+
 #include "stream_const.h"
 #include "stream_types.h"
+
 
 typedef struct
 {   
@@ -51,7 +53,7 @@ void arm_data_conditioning_run(arm_data_conditioning_instance *instance,
                      float *outBufs)
 {
     /* fake equalizer */
-    MEMCPY(outBufs, in, nb_samples * sizeof(float));
+//    MEMCPY(outBufs, in, nb_samples * sizeof(float));
 }
 
 /**

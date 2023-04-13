@@ -26,9 +26,8 @@
  */
 
 #include "stream_const.h"
-
-#include "stream_types.h"      /* all non preprocessor directives */
-#include "platform_const.h"
+#include "stream_types.h"   /* all non preprocessor directives */
+#include <string.h>         /* memcpy */
 
 /*----------------------------------------------------------*/
 
@@ -150,7 +149,7 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
         default:
         case COPY_CONF_GRAPH0_ALREADY_IN_RAM:
             graph_src = graph;
-            graph_src[1] = physical_to_offset(graph,long_offset);
+            graph_src[1] = physical_to_offset((uint8_t *)graph,long_offset);
             graph_src[2] = graph_src[1];
             graph_dst = &(graph_src[graph_size/sizeof(uint32_t)]);
 

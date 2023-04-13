@@ -142,7 +142,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\stream_al\platform_al.c" />
-    <ClCompile Include="..\..\..\stream_al\platform_io.c" />
+    <ClCompile Include="..\..\..\stream_al\platform_windows.c" />
     <ClCompile Include="..\..\..\stream_demo\main.c" />
     <ClCompile Include="..\..\..\stream_demo\stream_demo.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\audio_codec\arm_codec.c" />
@@ -153,6 +153,7 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_filter\arm_dsp_filter.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_src\arm_rate_converter.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\generator\arm_stream_generator.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\merge\arm_stream_merge.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\mixer\arm_stream_mixer.c" />
@@ -171,8 +172,8 @@
     <Text Include="..\..\..\stream_graph\graph_imadpcm.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\stream_al\platform_const.h" />
-    <ClInclude Include="..\..\..\stream_al\platform_types.h" />
+    <ClInclude Include="..\..\..\stream_al\platform_al.h" />
+    <ClInclude Include="..\..\..\stream_al\platform_windows.h" />
     <ClInclude Include="..\..\..\stream_src\stream_nodes.h" />
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\..\stream_src\stream_arcs.h" />

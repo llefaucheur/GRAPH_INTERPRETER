@@ -164,7 +164,7 @@ void arm_stream_codec (int32_t command, uint32_t *instance, data_buffer_t *data,
 
             pt_pt = data;
             inBuf  = (SAMP_IN *)pt_pt->address;   
-            data_buffer_size    = pt_pt->size;
+            data_buffer_size     = pt_pt->size;
             pt_pt++;
             outBuf = (SAMP_OUT *)(pt_pt->address); 
             bufferout_free        = pt_pt->size;

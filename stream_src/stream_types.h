@@ -35,9 +35,9 @@
     #define MAX_ADD_OFFSET 0x7FFFFFFFFFFFFFFFL
 */
 #ifdef PLATFORM_ARCH_32BIT
-typedef uint32_t intPtr_t;
+#define intPtr_t uint32_t 
 #else
-typedef uint64_t intPtr_t;
+#define intPtr_t uint64_t 
 #endif
 
 #define MAX_ADD_OFFSET 0x7FFFFFFFL
@@ -58,6 +58,7 @@ typedef uint32_t (*io_function_control_ptr)  (uint32_t *setting, uint8_t *data, 
 /* 
     Manifest of IO functions and capabilities
 */
+
 struct platform_io_manifest           
 {   io_function_control_ptr io_set;     
     io_function_control_ptr io_start; 

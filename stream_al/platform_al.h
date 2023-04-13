@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        stream_const.h
- * Description:  public references for the application using CMSIS-STREAM
+ * Title:        xxx.c
+ * Description:  
  *
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
@@ -24,21 +24,18 @@
  * limitations under the License.
 * 
  */
-#ifndef cSTREAM_CONST_H
-#define cSTREAM_CONST_H
+#ifndef platform_al_H
+#define platform_al_H
 
-#include <stdint.h>
+/*------------------------*/
+#include "platform_windows.h"
 
+//#include "platform_arduino_nano33.h"
+/*------------------------*/
 
-#include "platform_al.h"       /* defines */
-#include "stream_arcs.h"       /* buffers */
-#include "stream_macro.h"      /* defines */
-#include "stream_nodes.h"      /* swc */
-#include "stream_platform.h"   /* hw/sw dependencies */
-#include "stream_graph.h"      /* graph list */
+extern uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code);
+extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3);
+ 
+platform_al_H
 
-
-#endif /* cSTREAM_CONST_H */
-/*
- * -----------------------------------------------------------------------
- */
+#endif /* #ifndef platform_al_H */

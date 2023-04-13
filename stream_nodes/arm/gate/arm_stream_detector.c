@@ -28,6 +28,8 @@
 #include "stream_const.h"
 #include "stream_types.h"
 
+#include "arm_stream_detector.h"
+
 /*
     9.	stream_detector
     Operation : provides a boolean output stream from the detection of a rising (of falling) edge above 
@@ -39,29 +41,6 @@
     time-constant in [ms] for the energy integration time, time-constant to gate the output.
 */
 
-typedef struct
-{
-    uint32_t debouncing_counter; /* sample counter : maintain the "detected" flag at least for this number of samples */
-    uint8_t log2decfMAX;        /* decimation will be a power of 2 (-1)*/
-    uint8_t high_pass_shifter;  /* z1 */
-    uint8_t low_pass_shifter;   /* z6 */
-    uint8_t floor_noise_shifter;/* z7 */
-    uint8_t peak_signal_shifter;/* z8 */
-} detector_configuration;
-
-typedef struct
-{
-    detector_configuration config;
-
-    int16_t z1;    /* memory of the high-pass filter (recursive part) */
-    int16_t z2;    /* memory of the high-pass filter (direct part) */
-    int16_t z3;    /* output of the high-pass filter */
-    int16_t z6;    /* memory of the first low-pass filter */
-    int16_t z7;    /* memory of the floor-noise tracking low-pass filter */
-    int16_t z8;    /* memory of the envelope tracking low-pass filter */
-    int32_t down_counter;    /* memory of the debouncing downcounter  */
-} arm_detector_instance;
-
 #define NB_PRESET 4
 const detector_configuration detector_preset [NB_PRESET] = 
 {
@@ -71,25 +50,10 @@ const detector_configuration detector_preset [NB_PRESET] =
     { 10000, 7, 1, 4, 7, 5},   /* preset #3 = peak detector 2 TBD */
 };
 
-/**
-  @brief         Processing function 
-  @param[in]     S         points to an instance of the floating-point Biquad cascade structure
-  @param[in]     pSrc      points to the block of input data
-  @param[out]    pDst      points to the block of output data = 0x7FFF when detected, else 0
-  @param[in]     blockSize  number of samples to process
-  @return        none
- */
-void detector_processing (arm_detector_instance *instance, 
-                     uint8_t *in, int32_t nb_data, 
-                     int16_t *outBufs)
-{
-    int i;
-    for (i = 0; i < nb_data; i++)
-    {
-        outBufs[i] = (int16_t)((int16_t)(in[i])<<8);
-    }
-}
 
+extern void detector_processing (arm_detector_instance *instance, 
+                     uint8_t *in, int32_t nb_data, 
+                     int16_t *outBufs);
 /**
   @brief         
   @param[in]     command    bit-field

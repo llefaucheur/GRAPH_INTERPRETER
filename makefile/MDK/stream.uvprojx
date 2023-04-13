@@ -52,7 +52,7 @@
           <OutputName>stream</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
-          <CreateHexFile>0</CreateHexFile>
+          <CreateHexFile>1</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
           <ListingPath>.\Listings\</ListingPath>
@@ -314,7 +314,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>2</Optim>
+            <Optim>4</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -435,9 +435,9 @@
               <FilePath>..\..\stream_al\platform_al.c</FilePath>
             </File>
             <File>
-              <FileName>platform_io.c</FileName>
+              <FileName>platform_windows.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\stream_al\platform_io.c</FilePath>
+              <FilePath>..\..\stream_al\platform_windows.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -445,24 +445,14 @@
           <GroupName>nodes</GroupName>
           <Files>
             <File>
+              <FileName>arm_codec.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\stream_nodes\arm\audio_codec\arm_codec.c</FilePath>
+            </File>
+            <File>
               <FileName>stream_nodes.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\stream_nodes\stream_nodes.c</FilePath>
-            </File>
-            <File>
-              <FileName>arm_format_converter.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\stream_nodes\arm\dsp_convert\arm_format_converter.c</FilePath>
-            </File>
-            <File>
-              <FileName>arm_compress.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\stream_nodes\arm\audio_codec\arm_compress.c</FilePath>
-            </File>
-            <File>
-              <FileName>arm_decompress.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\stream_nodes\arm\audio_codec\arm_decompress.c</FilePath>
             </File>
             <File>
               <FileName>arm_code_imadpcm.c</FileName>
@@ -475,19 +465,9 @@
               <FilePath>..\..\stream_nodes\arm\dsp_amp\arm_stream_amplitude.c</FilePath>
             </File>
             <File>
-              <FileName>arm_filter.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\stream_nodes\arm\dsp_filter\arm_filter.c</FilePath>
-            </File>
-            <File>
               <FileName>arm_rate_converter.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\stream_nodes\arm\dsp_src\arm_rate_converter.c</FilePath>
-            </File>
-            <File>
-              <FileName>arm_gating.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\stream_nodes\arm\gate\arm_gating.c</FilePath>
             </File>
             <File>
               <FileName>arm_stream_merge.c</FileName>
@@ -513,6 +493,41 @@
               <FileName>arm_tiny_vad.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\stream_nodes\arm\vad\arm_tiny_vad.c</FilePath>
+            </File>
+            <File>
+              <FileName>arm_data_conditioning.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\stream_nodes\arm\data_conditioning\arm_data_conditioning.c</FilePath>
+            </File>
+            <File>
+              <FileName>arm_stream_detector.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\stream_nodes\arm\gate\arm_stream_detector.c</FilePath>
+            </File>
+            <File>
+              <FileName>arm_stream_detector_process.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\stream_nodes\arm\gate\arm_stream_detector_process.c</FilePath>
+            </File>
+            <File>
+              <FileName>arm_script.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\stream_nodes\arm\script\arm_script.c</FilePath>
+            </File>
+            <File>
+              <FileName>arm_stream_converter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\stream_nodes\arm\dsp_convert\arm_stream_converter.c</FilePath>
+            </File>
+            <File>
+              <FileName>arm_dsp_filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\stream_nodes\arm\dsp_filter\arm_dsp_filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>arm_stream_generator.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\stream_nodes\arm\generator\arm_stream_generator.c</FilePath>
             </File>
           </Files>
         </Group>
