@@ -1,1 +1,0 @@
-/* replaced by arm_stream_detector */
