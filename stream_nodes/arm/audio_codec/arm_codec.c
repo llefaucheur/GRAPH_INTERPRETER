@@ -113,7 +113,8 @@ void arm_stream_codec (int32_t command, uint32_t *instance, data_buffer_t *data,
             uint32_t *memresults = instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
-            arm_stream_codec_instance *pinstance = (arm_stream_codec_instance *) memresults++;
+            arm_stream_codec_instance *pinstance = (arm_stream_codec_instance *)  *memresults;
+            memresults++;
 
             break;
         }    

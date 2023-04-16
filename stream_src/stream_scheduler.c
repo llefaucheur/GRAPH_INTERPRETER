@@ -46,7 +46,20 @@ static void stream_calls_swc (p_stream_node address_swc, int32_t command,
      /* xdm_buffer pointers are updated inside the component */
      address_swc (command, instance, data, parameter);
 }
-    
+
+
+
+/*
+   MISRA 2012 RULES 11.XX
+ */
+intPtr_t convert_ptr_to_int (void *in)
+{
+    return (intPtr_t)in;
+}
+void * convert_int_to_ptr (intPtr_t in)
+{
+    return (void *)in;
+}    
 /*----------------------------------------------------------------------------*/
 
 intPtr_t arc_extract_info_int (uint32_t *arc, uint8_t tag, intPtr_t *offsets)
@@ -327,14 +340,13 @@ static void read_arc_xdm (uint32_t *arc, uint32_t in0out1, intPtr_t *long_offset
 static void check_arc_and_rewind (uint32_t *arc, uint32_t in0out1, intPtr_t *long_offset, 
                            data_buffer_t *xdm_data)
 {
-    uint32_t fill_thr;
     uint32_t fifosize;
     uint32_t diff;
     intPtr_t long_base;
-    uint8_t bool;
     uint8_t *write;
     uint8_t *data;
-
+    uint8_t shift_thr;
+    uint8_t bool;
 
     /* is it simple/null arc */
     if (RD(arc[BUFSIZDBG_ARCW1], SHAREDARC_ARCW1) == 1u)
@@ -371,8 +383,8 @@ static void check_arc_and_rewind (uint32_t *arc, uint32_t in0out1, intPtr_t *lon
         ST(arc[WRIOCOLL_ARCW3], WRITE_ARCW3, diff);
 
         /* are there enough data in the FIFO to tell for data realignment? */
-        fill_thr = RD(arc[RDFLOW_ARCW2], THRESHOLD_ARCW2);
-        bool = ((fifosize - diff) > (fifosize >> (1U + fill_thr))) ? 1 : 0;
+        shift_thr = RD(arc[RDFLOW_ARCW2], THRESHOLD_ARCW2);
+        bool = ((fifosize - diff) > (fifosize >> (1U + shift_thr))) ? 1 : 0;
         ST(arc[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3, bool);
         DATA_MEMORY_BARRIER;
     }
@@ -408,6 +420,8 @@ static void check_graph_boundaries(
     uint8_t need_data_move;
     uint32_t size;
     uint8_t *buffer;
+    uint8_t search_field;
+    uint8_t readwrite_field;
     struct platform_control_stream p_data_move;
 
     io_mask = EXTRACT_FIELD(pstream_inst[STREAM_INSTANCE_WHOAMI_PORTS], BOUNDARY_PARCH);
@@ -417,7 +431,8 @@ static void check_graph_boundaries(
 
         /* does this port needs to be managed by the Stream instance ? */
         if (0u == U(io_mask & ((uint32_t)1 << iio))) 
-            continue; 
+        {   continue; 
+        }
 
         /* a previous request is in process, no need to ask again */
         if (0u != TEST_BIT(*pio, REQMADE_IOFMT_LSB))
@@ -429,28 +444,26 @@ static void check_graph_boundaries(
         /* if this is an input stream : check the buffer is empty  */
         if (RX0_TO_GRAPH == EXTRACT_FIELD(*pio, RX0TX1_IOFMT))
         {   need_data_move = ((TEST_BIT(arcs[arc_idx + (uint32_t)RDFLOW_ARCW2], READY_W_ARCW2_LSB)) > 0u)? 1 : 0;
-
-            /* input ring buffer starts from "write" index for the io producer */
-            buffer = (uint8_t *)(arc_extract_info_pt (&(arcs[arc_idx]), arc_write_address, long_offset));
-            size = arc_extract_info_int (&(arcs[arc_idx]), arc_free_area, long_offset);
+            readwrite_field = arc_write_address;
+            search_field = arc_free_area;
         }
 
         /* if this is an output stream : check the buffer is READY_R */
         else
         {   need_data_move = ((TEST_BIT(arcs[arc_idx + WRIOCOLL_ARCW3], READY_R_ARCW3_LSB)) > 0u) ? 1 : 0;
-
-            /* output ring buffer starts from "read" index for the io consumer */
-            buffer = (uint8_t *)(arc_extract_info_pt (&(arcs[arc_idx]), arc_read_address, long_offset));
-            size = arc_extract_info_int (&(arcs[arc_idx]), arc_data_amount, long_offset);
+            readwrite_field = arc_read_address;
+            search_field = arc_data_amount;
         }
         
         if (0u != need_data_move)
-        {
+        {   buffer = (uint8_t *)(arc_extract_info_pt (&(arcs[arc_idx]), readwrite_field, long_offset));
+            size = arc_extract_info_int (&(arcs[arc_idx]), search_field, long_offset);
+
             /* 
                 TODO When the IO is slave and stream_io_domain=PLATFORM_LOW_DATA_RATE_XX 
                  check the time interval from last frame (by a read of the time-stamp in 
                  the FIFO) and current time, to deliver a data rate close to :
-                 "platform_io_manifest.stream_settings_default.SAMPLING_FMT1_"
+                 "platform_io_control.stream_settings_default.SAMPLING_FMT1_"
                 Trigger the data request some time ahead to let the converters
                  have the time to exchange data (image, remote temperature sensors,
                  characters on a display, ..)
@@ -464,6 +477,9 @@ static void check_graph_boundaries(
             p_data_move.buffer.size = size;
             platform_al(PLATFORM_IO_DATA, (uint8_t *)&p_data_move, 0u, 0u);
         }
+
+        /* jump to next graph port */
+        pio += STREAM_IOFMT_SIZE_W32;
     }
 }
 
@@ -485,7 +501,6 @@ uint32_t check_hw_compatibility(uint32_t whoami, uint32_t bootParamsHeader)
 #define check_hw_compatibility(whoami, bootParamsHeader) 1u  
 #endif
 
-
 /*----------------------------------------------------------------------------
    scan the graph and execute a "scan_function_ptr" task
    algorithm :
@@ -494,22 +509,15 @@ uint32_t check_hw_compatibility(uint32_t whoami, uint32_t bootParamsHeader)
      - check the input ring buffers at the boundary of the graph are full
      - check the output ring buffers at the boundary of the graph are empty
 
-     Format of the linked-list :
-     word 0 = 32bits header, bit-field giving the index of the node 
-     word 1 =  optional (flag in the header) instance index 
-     word 2 =  2 x 16bits indexes to the input and output arcs
-     word 3 =  optional boot parameters (variable length of this field)
-
-
     Scheduler algorithm :
     1 the SWC is checked for data input amount and free area on output
-    - the SWC is checked not to be blocked on its output (ALIGNBLCK_ARCW3=0)
+    - the SWC is checked not to be blocked on its output
 
     2 the SWC is locked from other process activity :
         COLLISION_GI<=INST_ID_PARCH
     - if COLLISION_GI<>INST_ID_PARCH collision occured : continue to next SWC
 
-    (3) if the SWC generating the input data was blocked (ALIGNBLCK_ARCW3=0) 
+    (3) if the SWC generating the input data was blocked
         during its attempt to realign the data to base address, then it is 
         the responsibility of the consumer node (current SWC) to realign the 
         data, and clear the flag. 
@@ -520,8 +528,6 @@ uint32_t check_hw_compatibility(uint32_t whoami, uint32_t bootParamsHeader)
 
     - output FIFO write pointer is incremented AND a check is made for data 
         re-alignment to base adresses (to avoid address looping)
-        if the arc is locked by the SWC consumer, then the "ALIGNBLCK_ARCW3" 
-        is set. The SWC don't wait and let the consumer manage the alignement
 
     - depending on the SWC return value, the STATUS_GI is set to "need_rerun"
         and the SWC will be run again asap after checking the graph boundaries
@@ -531,13 +537,10 @@ uint32_t check_hw_compatibility(uint32_t whoami, uint32_t bootParamsHeader)
      
  *----------------------------------------------------------------------------*/
 
-void stream_scan_graph (intPtr_t *parameters, int8_t return_option, 
-    int8_t script_option, int8_t reset_option) 
-{
-    /* struct stream_local_instance */uint32_t *pinst;
-
+typedef struct {
+    uint32_t *pinst;
     uint8_t *pt8b_collision_arc_1;
-    uint8_t tmp8;
+    uint8_t endLinkedList;
 	uint32_t *graph;
     uint32_t *all_arcs;
     uint32_t *linked_list_ptr;
@@ -547,7 +550,6 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
     uint32_t swc_instance;
     uint32_t *swc_instance_ptr;
     uint16_t preset;
-
     uint32_t swc_header;
     uint32_t whoami;
     p_stream_node address_swc;
@@ -561,288 +563,345 @@ void stream_scan_graph (intPtr_t *parameters, int8_t return_option,
     uint32_t *arc1;
     uint32_t *all_formats;
     uint32_t bootParamsHeader;
+} stack;
 
-    platform_al (PLATFORM_OFFSETS,(uint8_t *)&long_offset,0,0);
+static void init_stack (intPtr_t *parameters, stack *S);
+static void read_header (stack *S);
+static void reset_load_parameters (stack *S);
+static uint8_t lock_this_component (stack *S);
+static void set_new_parameters (stack *S);
+static void run_node (intPtr_t *parameters, stack *S, uint8_t script_option);
 
-    /* load the graph pointers */
-    graph = convert_int_to_ptr(parameters[STREAM_PARAM_GRAPH]);
-    {   /* struct stream_local_instance */uint32_t *ptmp;
-        ptmp = GRAPH_STREAM_INST(graph,long_offset);
-        ptmp = &(ptmp[RD(parameters[STREAM_PARAM_CTRL], INSTIDX_PARAM)]);
-        pinst = (/* struct stream_local_instance */uint32_t *)GRAPH_STREAM_INST(graph,long_offset);
-    }
-    all_arcs = GRAPH_ARC_LIST_ADDR(graph,long_offset);
 
-    all_nodes = convert_int_to_ptr(pinst[STREAM_INSTANCE_NODE_ENTRY_POINTS]);
-    whoami = pinst[STREAM_INSTANCE_WHOAMI_PORTS];
-    pio = (uint32_t *)(GRAPH_IO_CONFIG_ADDR(graph,long_offset));
-    nio = RD(graph[0],NBIO_GRAPH0);
-    all_formats = GRAPH_FORMAT_ADDR(graph,long_offset);
+void stream_scan_graph (intPtr_t *parameters, int8_t return_option, 
+    int8_t script_option, int8_t reset_option) 
+{
+    stack S;
+
+    init_stack (parameters, &S);
 
     if (script_option == STREAM_SCHD_SCRIPT_START) { stream_execute_script(parameters);}
 
     /* loop until all the components are blocked by the data streams */
 	do 
     {  
-        linked_list_ptr = GRAPH_LINKDLIST_ADDR(graph,long_offset); 
+        S.linked_list_ptr = GRAPH_LINKDLIST_ADDR(S.graph,S.long_offset); 
 
         /* continue from the last position */
-        linked_list_ptr = &(linked_list_ptr[RD(parameters[STREAM_PARAM_CTRL],LASTSWC_PARAM)]);
-        some_components_have_data = 0u;  
+        S.linked_list_ptr = &(S.linked_list_ptr[RD(parameters[STREAM_PARAM_CTRL],LASTSWC_PARAM)]);
+        S.some_components_have_data = 0u;  
 
         /* read the linked-list until finding the SWC index "LAST_WORD" */
 	    do 
         {   
             /* check the boundaries of the graph, not during end/stop periods */
-            if (reset_option == 0) { check_graph_boundaries(pinst, pio, nio, all_arcs, long_offset); }
-            
-            /* check this node can be executed on this processor */
-            linked_list_ptr_header = linked_list_ptr;
-            swc_header = *linked_list_ptr;    
-            linked_list_ptr++;
-            arc0 = &(all_arcs[SIZEOF_ARCDESC_W32 * RD(swc_header, ARCIN_GI)]);
-            arc1 = &(all_arcs[SIZEOF_ARCDESC_W32 * RD(swc_header, ARCOUT_GI)]);
-            
-            {   uint16_t x;
-                uint16_t idx_swc;
-                idx_swc = (uint16_t)RD(swc_header, SWC_IDX_GI);
-                address_swc = all_nodes[idx_swc];
-                swc_instance = *linked_list_ptr;
-                linked_list_ptr++;
-                linked_list_ptr = &(linked_list_ptr[RD(swc_instance, NBALLOC_INST)]); // skip the memreq table
-                bootParamsHeader = *linked_list_ptr;
-                linked_list_ptr++;
-                preset = (uint16_t)RD(bootParamsHeader, PRESET_BP);
-                linked_list_ptr_bootparam = linked_list_ptr;
-                x = (uint16_t)RD(bootParamsHeader, N32LENGTH_BP); // skip the table of parameters
-                linked_list_ptr = &(linked_list_ptr[x]);
-            
-                /* does the SWC is executable on this processor */
-                if (0U == check_hw_compatibility(whoami, bootParamsHeader))
-                {   continue;
-                }
+            if (reset_option == 0) 
+            {   check_graph_boundaries(S.pinst, S.pio, S.nio, S.all_arcs, S.long_offset); 
             }
             
-            /* ================================================================*/
-            /* ---------------------SWC reservation attempt -------------------*/            
-            /* if the SWC is already used skip it */
-            pt8b_collision_arc_1 = (uint8_t *)arc1;
-            {   uint32_t j;
-                j = U(4u*WRIOCOLL_ARCW3 + COLLISION_ARC_OFFSET_BYTE);
-                pt8b_collision_arc_1 = &(pt8b_collision_arc_1[j]);
-            }
-            RD_BYTE_MP_(check, pt8b_collision_arc_1);
-            if (check != U8(0))
+            read_header (&S);
+
+            /* does the SWC is executable on this processor */
+            if (0U == check_hw_compatibility(whoami, bootParamsHeader))
             {   continue;
             }
-            tmp8 = (uint8_t)RD(whoami, INST_ID_PARCH);   
 
-            if (0u == WR_BYTE_AND_CHECK_MP_(pt8b_collision_arc_1, tmp8))
-            {   continue;   /* a collision occured, don't wait */
-            }
-            /* ------------------SWC is now locked for me ! --------------------*/            
-            /* =================================================================*/
-
-            swc_instance = pack2linaddr_int(swc_instance,long_offset);
-            swc_instance_ptr = (uint32_t *)convert_int_to_ptr(swc_instance);
-
-            /* ---------------- reset phase of the graph ? -------------------- */
-            if (reset_option > 0)
-            {   
-            #define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (SIZEOF_ARCDESC_SHORT_W32*MAX_NB_ARC_PER_SWC_V0))
-                intPtr_t memreq_physical[MAX_NB_MEM_REQ_PER_NODE + (SIZEOF_ARCDESC_SHORT_W32*MAX_NB_ARC_PER_SWC_V0)];
-                uint16_t nbmem;
-                uint8_t i;
-                uint32_t *memreq;
-
-
-                memreq = &(linked_list_ptr_header[1]);
-                nbmem = (uint16_t)RD(memreq[0],NBALLOC_INST);
-                memreq_physical[0] = swc_instance;
-
-                for (i = 1; i < MAX_NB_MEM_REQ_PER_NODE; i++)
-                {   /* create pointers to the right memory bank */
-                    memreq_physical[i] = (i <= nbmem) ? 
-                        pack2linaddr_int(memreq[i], long_offset) : 0u;
-                }      
-
-                /* push the information related to the format of the arcs */
-                //for (j = 0; j < MAX_NB_ARC_PER_SWC_V0; j++)
-                {   uint32_t *F;
-                    F = &(all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc0,FORMATIDX_ARCW0)]);
-                    memreq_physical[i++] = *F++;    /* Word 0 SIZSFTRAW_FMT0 */
-                    memreq_physical[i++] = *F;      /* Word 1 SAMPINGNCHANM1_FMT1 */
-                    F = &(all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc1,FORMATIDX_ARCW0)]);
-                    memreq_physical[i++] = *F++;    /* Word 0 SIZSFTRAW_FMT0 */
-                    memreq_physical[i++] = *F;      /* Word 1 SAMPINGNCHANM1_FMT1 */
-                }      
-                /*
-                    add for each arc : [nb channel, sampling rate, interleaving, time-stamp format]
-                */
-                stream_calls_swc (address_swc, PACK_COMMAND(1,1,0,preset,STREAM_RESET), 
-                    (uint32_t *)memreq_physical, 
-                    (data_buffer_t *)arm_stream_services, 
-                    &check);
+            if (0 == lock_this_component (&S))
+            {   continue;
             }
 
             /* ---------------- parameter was changed, or reset ? -------------------- */
             if (reset_option > 0 ||
-                (LINKEDLIST_IS_IN_RAM(graph) && TEST_BIT(swc_header, NEWPARAM_GI_LSB)))
+                (LINKEDLIST_IS_IN_RAM(S.graph) && TEST_BIT(S.swc_header, NEWPARAM_GI_LSB)))
             {   
-                uint8_t i;
-                uint8_t nparam;
-                uint8_t *ptr_param8b;
-
-                /*
-                    TODO : allocate a scratch area to copy the parameters, and avoid SWC 
-                        to have access to Stream internal memory area
-                */
-                ptr_param8b = (uint8_t *)linked_list_ptr_bootparam;
-                nparam = *ptr_param8b;
-                ptr_param8b++;
-
-                /* do we load the full set of parameters ? */
-                if (nparam == ALLPARAM_)
-                {   
-                    stream_calls_swc (address_swc, PACK_COMMAND(1,1,ALLPARAM_,preset,STREAM_SET_PARAMETER), 
-                        swc_instance_ptr,
-                        (data_buffer_t *)ptr_param8b, 
-                        &check);
-                }
-                else
-                /* else : load the parameters one-by-one */
-                {   uint8_t param_tag;
-                    uint8_t param_nb_bytes;
-                    for (i = 0; i < nparam; i++)
-                    {   param_tag = *ptr_param8b;
-                        ptr_param8b++;
-                        param_nb_bytes = *ptr_param8b;
-                        ptr_param8b++;
-                
-                        stream_calls_swc (address_swc, PACK_COMMAND(1,1,param_tag,preset,STREAM_SET_PARAMETER), 
-                            swc_instance_ptr,
-                            (data_buffer_t *)ptr_param8b, 
-                            &check);
-                        ptr_param8b = &(ptr_param8b[param_nb_bytes]);
-                    }
-                }
-                
+                /* ---------------- reset phase of the graph ? -------------------- */
                 if (reset_option > 0)
-                {   /* SWC is unlocked */
-                    WR_BYTE_MP_(pt8b_collision_arc_1, 0u);
+                {   reset_load_parameters (&S);
+                }
+
+                set_new_parameters (&S);
+
+                if (reset_option > 0)
+                {   WR_BYTE_MP_(S.pt8b_collision_arc_1, 0u);    /* SWC is unlocked */
                     continue;
                 }
                 /* ready to accept new parameters : clear the flag */
-                if (LINKEDLIST_IS_IN_RAM(graph)) 
-                {   CLEAR_BIT_MP(swc_header, NEWPARAM_GI_LSB);
+                if (LINKEDLIST_IS_IN_RAM(S.graph)) 
+                {   CLEAR_BIT_MP(S.swc_header, NEWPARAM_GI_LSB);
                 }
             }
 
-            
-            /* ==========================================================================*/
             /* end of graph ? */
             if (reset_option < 0)
-            {   stream_calls_swc (address_swc, PACK_COMMAND(1,1,0,0,STREAM_END), 
-                    (uint32_t *)swc_instance, 0u, &check);
-                /* SWC is unlocked */
-                WR_BYTE_MP_(pt8b_collision_arc_1, 0u);
+            {   stream_calls_swc (S.address_swc, PACK_COMMAND(1,1,0,0,STREAM_END), 
+                    (uint32_t *)S.swc_instance, 0u, &S.check);
+                
+                WR_BYTE_MP_(S.pt8b_collision_arc_1, 0u);    /* SWC is unlocked */
                 continue;
             }
-            /* ==========================================================================*/
             
-            /* several iterations to benefit from the hot cache */
-            //uint8_t iswc_repeat;
-            //for (iswc_repeat = 0; iswc_repeat < MAX_SWC_REPEAT; iswc_repeat++)
-
             /* check input arc has enough data and output arc is empty and unblocked 
                 all those arcs data structures are made to have those two lines the most
                 efficiently implemented : spend the least possible time to decide to skip 
                 this SWC
             */
-            if (0u  != TEST_BIT (arc0[WRIOCOLL_ARCW3], READY_R_ARCW3_LSB)
-                && (0u != TEST_BIT (arc1[RDFLOW_ARCW2], READY_W_ARCW2_LSB)))
+//{long tmp = TEST_BIT (S.arc0[WRIOCOLL_ARCW3], READY_R_ARCW3_LSB);
+//      tmp = TEST_BIT (S.arc1[RDFLOW_ARCW2], READY_W_ARCW2_LSB);
+//      tmp = 0;
+//}
+
+            if (0u == TEST_BIT (S.arc0[WRIOCOLL_ARCW3], READY_R_ARCW3_LSB) ||
+               (0u == TEST_BIT (S.arc1[RDFLOW_ARCW2], READY_W_ARCW2_LSB)))
             {   continue;
             }
-            some_components_have_data = 1u;
 
-            /* if the SWC generating the input data was blocked (ALIGNBLCK_ARCW3=0) 
-                during its attempt to realign the data to base address, then it is 
-                the responsibility of the consumer node (current SWC) to realign the 
-                data, and clear the flag. 
-            */
-            if (0u != TEST_BIT (arc0[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB))
-            {
-                arc_data_operations (arc0, arc_data_realignment_to_base, long_offset, 0, 0);
-                CLEAR_BIT (arc0[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB);
-                DATA_MEMORY_BARRIER;
-            }
-        
-            /* prepare the pointers to input and output buffers (MAX_NB_ARC_PER_SWC_V0) */
-            read_arc_xdm (arc0, 0u, long_offset, &(xdm_data[0])/*, all_formats*/);
-            read_arc_xdm (arc1, 1u, long_offset, &(xdm_data[1])/*, all_formats*/);
-
-            /* if the SWC is using a relocatable memory segment to TCM, the base address is loaded 
-                in the first address of its instance */
-            if (0u != RD(swc_header, TCM_INST_GI))
-            {   intPtr_t *tmp = (intPtr_t *)swc_instance;
-                *tmp = long_offset[MBANK_DMEMFAST];
-            }
-
-            if (script_option == STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC) {stream_execute_script(parameters); }
-
-            do 
-            {
-                #define SWC_TASK_NOT_COMPLETED 0
-                /* call the SWC, returns the information "0 == SWC needs to be called again" 
-                   to give some CPU periods for trigering data moves 
-                   long SWC can be split to allow data moves without RTOS */
-                stream_calls_swc (address_swc, PACK_COMMAND(1,1,0,preset,STREAM_RUN), 
-                    swc_instance_ptr, xdm_data,  &check);
-
-                if (SWC_TASK_NOT_COMPLETED == check)
-                {   /* check the boundaries of the graph */
-                    check_graph_boundaries(pinst, pio, nio, all_arcs, long_offset);
-                }
-            } 
-            while (check == SWC_TASK_NOT_COMPLETED);
-
-
-            if (script_option == STREAM_SCHD_SCRIPT_AFTER_EACH_SWC) {stream_execute_script(parameters); }
-
-            /*  output FIFO write pointer is incremented AND a check is made for data 
-                re-alignment to base adresses (to avoid address looping)
-                if the arc is locked by the SWC consumer, then the "ALIGNBLCK_ARCW3" 
-                is set. The SWC don't wait and let the consumer manage the alignement 
-            */
-            check_arc_and_rewind(arc0, 0u, long_offset, &(xdm_data[0])); 
-            check_arc_and_rewind(arc1, 1u, long_offset, &(xdm_data[1])); 
-            
-            /* SWC is unlocked : change the output arc */
-            WR_BYTE_MP_(pt8b_collision_arc_1, 0u);
-
-            tmp8 = (GRAPH_LAST_WORD == RD(*linked_list_ptr,SWC_IDX_GI)) ? 1 : 0;
-            if (tmp8 == 1)
-            {   /* rewind the index when the last word is detected */
-                linked_list_ptr = GRAPH_LINKDLIST_ADDR(graph,long_offset);
-            }
+            run_node (parameters, &S, script_option);
 
             if (return_option == STREAM_SCHD_RET_END_EACH_SWC)
             {   break;
             }
 
-	    }  while (tmp8);
+	    }  while (0 == S.endLinkedList);
 
         if ((return_option == STREAM_SCHD_RET_END_ALL_PARSED) || (return_option == STREAM_SCHD_RET_END_EACH_SWC))
-        {   some_components_have_data = 0u; 
+        {   S.some_components_have_data = 0u; 
             break;
         }
         if (script_option == STREAM_SCHD_SCRIPT_END_PARSING) {stream_execute_script(parameters); }
 
-    } while ((return_option == STREAM_SCHD_RET_END_SWC_NODATA) && (0u != some_components_have_data));
+    } while ((return_option == STREAM_SCHD_RET_END_SWC_NODATA) && (0u != S.some_components_have_data));
 
 
     if (script_option == STREAM_SCHD_SCRIPT_END) {stream_execute_script(parameters); }
 
     /* save last position */
-    ST(parameters[STREAM_PARAM_CTRL],LASTSWC_PARAM, linked_list_ptr - GRAPH_LINKDLIST_ADDR(graph,long_offset));
+    ST(parameters[STREAM_PARAM_CTRL],LASTSWC_PARAM, S.linked_list_ptr - GRAPH_LINKDLIST_ADDR(S.graph,S.long_offset));
+}
+
+static void init_stack (intPtr_t *parameters, stack *S)
+{
+    platform_al (PLATFORM_OFFSETS,(uint8_t *)&(S->long_offset),0,0);
+    /* load the graph pointers */
+    S->graph = convert_int_to_ptr(parameters[STREAM_PARAM_GRAPH]);
+    {   uint32_t *ptmp;
+        ptmp = GRAPH_STREAM_INST(S->graph,S->long_offset);
+        ptmp = &(ptmp[RD(parameters[STREAM_PARAM_CTRL], INSTIDX_PARAM)]);
+        S->pinst = (uint32_t *)GRAPH_STREAM_INST(S->graph,S->long_offset);
+    }
+    S->all_arcs = GRAPH_ARC_LIST_ADDR(S->graph,S->long_offset);
+
+    S->all_nodes = convert_int_to_ptr(S->pinst[STREAM_INSTANCE_NODE_ENTRY_POINTS]);
+    S->whoami = S->pinst[STREAM_INSTANCE_WHOAMI_PORTS];
+    S->pio = (uint32_t *)(GRAPH_IO_CONFIG_ADDR(S->graph,S->long_offset));
+    S->nio = RD(S->graph[0],NBIO_GRAPH0);
+    S->all_formats = GRAPH_FORMAT_ADDR(S->graph,S->long_offset);
+}
+
+static void read_header (stack *S)
+{
+    uint16_t x;
+    uint16_t idx_swc;
+
+    /* check this node can be executed on this processor */
+    S->linked_list_ptr_header = S->linked_list_ptr;
+    S->swc_header = *S->linked_list_ptr;    
+    S->linked_list_ptr++;
+    
+    S->arc0 = &(S->all_arcs[SIZEOF_ARCDESC_W32 * RD(S->swc_header, ARCIN_GI)]);
+    S->arc1 = &(S->all_arcs[SIZEOF_ARCDESC_W32 * RD(S->swc_header, ARCOUT_GI)]);
+    
+    idx_swc = (uint16_t)RD(S->swc_header, SWC_IDX_GI);
+    S->address_swc = S->all_nodes[idx_swc];
+    S->swc_instance = *S->linked_list_ptr;
+    S->linked_list_ptr++;
+    
+    S->linked_list_ptr = &(S->linked_list_ptr[RD(S->swc_instance, NBALLOC_INST)]); // skip the memreq table
+    
+    S->bootParamsHeader = *S->linked_list_ptr;
+    S->linked_list_ptr++;
+
+    S->preset = (uint16_t)RD(S->bootParamsHeader, PRESET_BP);
+    S->linked_list_ptr_bootparam = S->linked_list_ptr;
+    x = (uint16_t)RD(S->bootParamsHeader, N32LENGTH_BP); // skip the table of parameters
+    S->linked_list_ptr = &(S->linked_list_ptr[x]);
+
+    S->endLinkedList = (GRAPH_LAST_WORD == RD(*S->linked_list_ptr,SWC_IDX_GI)) ? 1 : 0;
+    if (S->endLinkedList == 1)
+    {   /* rewind the index when the last word is detected */
+        S->linked_list_ptr = GRAPH_LINKDLIST_ADDR(S->graph,S->long_offset);
+    }
+}
+
+static uint8_t lock_this_component (stack *S)
+{
+    uint32_t tmp;
+    /* ================================================================*/
+    /* ---------------------SWC reservation attempt -------------------*/            
+    /* if the SWC is already used skip it */
+    S->pt8b_collision_arc_1 = (uint8_t *)S->arc1;
+    {   uint32_t j;
+        j = U(4u*WRIOCOLL_ARCW3 + COLLISION_ARC_OFFSET_BYTE);
+        S->pt8b_collision_arc_1 = &(S->pt8b_collision_arc_1[j]);
+    }
+    RD_BYTE_MP_(S->check, S->pt8b_collision_arc_1);
+    if (S->check != U8(0))
+    {   return 0;
+    }
+    tmp = (uint8_t)RD(S->whoami, INST_ID_PARCH);   
+    
+    if (0u == WR_BYTE_AND_CHECK_MP_(S->pt8b_collision_arc_1, tmp))
+    {   return 0;   /* a collision occured, don't wait */
+    }
+    /* ------------------SWC is now locked for me ! --------------------*/            
+    /* =================================================================*/
+
+
+    S->swc_instance = pack2linaddr_int(S->swc_instance,S->long_offset);
+    S->swc_instance_ptr = (uint32_t *)convert_int_to_ptr(S->swc_instance);
+
+    return 1;
+}
+
+static void reset_load_parameters (stack *S)
+{
+#define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (SIZEOF_ARCDESC_SHORT_W32*MAX_NB_ARC_PER_SWC_V0))
+    intPtr_t memreq_physical[MAX_NB_MEM_REQ_PER_NODE + (SIZEOF_ARCDESC_SHORT_W32*MAX_NB_ARC_PER_SWC_V0)];
+    uint16_t nbmem;
+    uint8_t i;
+    uint32_t *memreq;
+
+
+    memreq = &(S->linked_list_ptr_header[1]);
+    nbmem = (uint16_t)RD(memreq[0],NBALLOC_INST);
+    memreq_physical[0] = S->swc_instance;
+
+    for (i = 1; i < MAX_NB_MEM_REQ_PER_NODE; i++)
+    {   /* create pointers to the right memory bank */
+        memreq_physical[i] = (i <= nbmem) ? 
+            pack2linaddr_int(memreq[i], S->long_offset) : 0u;
+    }      
+
+    /* push the information related to the format of the arcs */
+    //for (j = 0; j < MAX_NB_ARC_PER_SWC_V0; j++)
+    {   uint32_t *F;
+        F = &(S->all_formats[STREAM_FORMAT_SIZE_W32 * RD(S->arc0,FORMATIDX_ARCW0)]);
+        memreq_physical[i++] = *F++;    /* Word 0 SIZSFTRAW_FMT0 */
+        memreq_physical[i++] = *F;      /* Word 1 SAMPINGNCHANM1_FMT1 */
+        F = &(S->all_formats[STREAM_FORMAT_SIZE_W32 * RD(S->arc1,FORMATIDX_ARCW0)]);
+        memreq_physical[i++] = *F++;    /* Word 0 SIZSFTRAW_FMT0 */
+        memreq_physical[i++] = *F;      /* Word 1 SAMPINGNCHANM1_FMT1 */
+    }      
+    /*
+        add for each arc : [nb channel, sampling rate, interleaving, time-stamp format]
+    */
+    stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,0,S->preset,STREAM_RESET), 
+        (uint32_t *)memreq_physical, 
+        (data_buffer_t *)arm_stream_services, 
+        &S->check);
+
+}
+
+static void set_new_parameters (stack *S)
+{
+    uint8_t i;
+    uint8_t nparam;
+    uint8_t *ptr_param8b;
+
+    /*
+        TODO : allocate a scratch area to copy the parameters, and avoid SWC 
+            to have access to Stream internal memory area
+    */
+    ptr_param8b = (uint8_t *)S->linked_list_ptr_bootparam;
+    nparam = *ptr_param8b;
+    ptr_param8b++;
+
+    /* do we load the full set of parameters ? */
+    if (nparam == ALLPARAM_)
+    {   
+        stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,ALLPARAM_,S->preset,STREAM_SET_PARAMETER), 
+            S->swc_instance_ptr,
+            (data_buffer_t *)ptr_param8b, 
+            &S->check);
+    }
+    else
+    /* else : load the parameters one-by-one */
+    {   uint8_t param_tag;
+        uint8_t param_nb_bytes;
+        for (i = 0; i < nparam; i++)
+        {   param_tag = *ptr_param8b;
+            ptr_param8b++;
+            param_nb_bytes = *ptr_param8b;
+            ptr_param8b++;
+    
+            stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,param_tag,S->preset,STREAM_SET_PARAMETER), 
+                S->swc_instance_ptr,
+                (data_buffer_t *)ptr_param8b, 
+                &S->check);
+            ptr_param8b = &(ptr_param8b[param_nb_bytes]);
+        }
+    }
+
+}
+
+static void run_node (intPtr_t *parameters, stack *S, uint8_t script_option)
+{
+    /* several iterations to benefit from the hot cache */
+    //uint8_t iswc_repeat;
+    //for (iswc_repeat = 0; iswc_repeat < MAX_SWC_REPEAT; iswc_repeat++)
+    
+    S->some_components_have_data = 1u;
+    
+    /* if the SWC generating the input data was blocked (ALIGNBLCK_ARCW3=1) 
+        during its attempt to realign the data to base address, then it is 
+        the responsibility of the consumer node (current SWC) to realign the 
+        data, and clear the flag. 
+    */
+    if (0u != TEST_BIT (S->arc0[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB))
+    {
+        arc_data_operations (S->arc0, arc_data_realignment_to_base, S->long_offset, 0, 0);
+        //CLEAR_BIT (arc0[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB);
+        DATA_MEMORY_BARRIER;
+    }
+    
+    /* prepare the pointers to input and output buffers (MAX_NB_ARC_PER_SWC_V0) */
+    read_arc_xdm (S->arc0, 0u, S->long_offset, &(S->xdm_data[0])/*, all_formats*/);
+    read_arc_xdm (S->arc1, 1u, S->long_offset, &(S->xdm_data[1])/*, all_formats*/);
+    
+    /* if the SWC is using a relocatable memory segment to TCM, the base address is loaded 
+        in the first address of its instance */
+    if (0u != RD(S->swc_header, TCM_INST_GI))
+    {   intPtr_t *tmp = (intPtr_t *)S->swc_instance;
+        *tmp = S->long_offset[MBANK_DMEMFAST];
+    }
+    
+    if (script_option == STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC) {stream_execute_script(parameters); }
+    
+    do 
+    {
+        #define SWC_TASK_NOT_COMPLETED 0
+        /* call the SWC, returns the information "0 == SWC needs to be called again" 
+           to give some CPU periods for trigering data moves 
+           long SWC can be split to allow data moves without RTOS */
+        stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,0,S->preset,STREAM_RUN), 
+            S->swc_instance_ptr, S->xdm_data,  &S->check);
+    
+        if (SWC_TASK_NOT_COMPLETED == S->check)
+        {   /* check the boundaries of the graph */
+            check_graph_boundaries(S->pinst, S->pio, S->nio, S->all_arcs, S->long_offset);
+        }
+    } 
+    while (S->check == SWC_TASK_NOT_COMPLETED);
+    
+    
+    if (script_option == STREAM_SCHD_SCRIPT_AFTER_EACH_SWC) {stream_execute_script(parameters); }
+    
+    /*  output FIFO write pointer is incremented AND a check is made for data 
+        re-alignment to base adresses (to avoid address looping)
+        The SWC don't wait and let the consumer manage the alignement 
+    */
+    check_arc_and_rewind(S->arc0, 0u, S->long_offset, &(S->xdm_data[0])); 
+    check_arc_and_rewind(S->arc1, 1u, S->long_offset, &(S->xdm_data[1])); 
+    
+    /* SWC is unlocked : change the output arc */
+    WR_BYTE_MP_(S->pt8b_collision_arc_1, 0u);
 }

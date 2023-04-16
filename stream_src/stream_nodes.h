@@ -97,7 +97,7 @@
 /*---------------------------------------------------------------------------------------------------*/
 /*
     SWC manifest
-    Memory consumption estimated by interpolation = a.nb_channels + b.FS + c.frameSize
+    Memory consumption estimated by interpolation = a.nb_channels + b.FS + c.frameSize + d.rawDataSize
 */
 /* SWC memory allocation constraint 32bits : memory allocation description */
 #define   OFFSET_MEMREQ_MSB U(31)

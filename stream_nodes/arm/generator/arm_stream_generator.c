@@ -112,7 +112,8 @@ void arm_stream_generator (int32_t command, uint32_t *instance, data_buffer_t *d
             uint32_t *memresults = instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
-            arm_generator_instance *pinstance = (arm_generator_instance *) memresults++;
+            arm_generator_instance *pinstance = (arm_generator_instance *)  *memresults;
+            memresults++;
             /* here reset */
 
             break;

@@ -112,7 +112,8 @@ void arm_script (int32_t command, uint32_t *instance, data_buffer_t *data, uint3
             uint32_t *memresults = instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
-            arm_script_instance *pinstance = (arm_script_instance *) memresults++;
+            arm_script_instance *pinstance = (arm_script_instance *)  *memresults;
+            memresults++;
             /* here reset */
 
             break;

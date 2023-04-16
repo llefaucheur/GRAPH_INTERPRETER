@@ -112,7 +112,8 @@ void arm_stream_split (int32_t command, uint32_t *instance, data_buffer_t *data,
             uint32_t *memresults = instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
-            arm_split_instance *pinstance = (arm_split_instance *) memresults++;
+            arm_split_instance *pinstance = (arm_split_instance *) *memresults;
+            memresults++;
             /* here reset */
 
             break;

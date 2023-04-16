@@ -82,7 +82,8 @@ void arm_data_conditioning (int32_t command, uint32_t *instance, data_buffer_t *
             uint32_t *memresults = instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
-            arm_data_conditioning_instance *pinstance = (arm_data_conditioning_instance *) memresults++;
+            arm_data_conditioning_instance *pinstance = (arm_data_conditioning_instance *) *memresults;
+            memresults++;
             break;
         }    
 

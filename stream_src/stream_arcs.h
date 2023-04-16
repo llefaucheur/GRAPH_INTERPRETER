@@ -43,30 +43,28 @@
 //enum arc_data_operations_threshold
 //enum debug_arc_computation_1D { /* 4bits */
 
-//#if 0
-//#define ARC_NO_COMPUTE 0
-//#define ARC_DATA_RATE 1
-//#define ARC_TIME_STAMP_LAST_ACCESS 2
-//#define ARC_PEAK_DATA 3
-//#define ARC_MEAN_DATA 4
-//#define ARC_MIN_DATA 5
-//#define ARC_ABSMEAN_DATA 6
-//#define ARC_METADATA_TO_OTHER_ARC 6 /* when metada is changing (from last DEBUG_REG_ARCW1) the new data is push to another arc (DBG_IDX_ARCW5) */
-////};
-//
-////enum underflow_error_service_id{/* 3bits UNDERFLRD_ARCW2, OVERFLRD_ARCW2 */
-//#define NO_UNDERFLOW_MANAGEMENT 0  /* just RD/WR index alignment on the next frame size */
-//#define REPEAT_LAST_FRAME 1          /* flow errors management */
-//#define GENERATE_ZEROES 2
-//#define INTERPOLATE_FRAME 3          /* MPEG decoder underflow : tell the decoder, mute the output */
-////};
-//
-////enum overflow_error_service_id {/* 3bits UNDERFLRD_ARCW2, OVERFLRD_ARCW2 */
-//#define NO_OVERFLOW_MANAGEMENT 0     /* just RD/WR index alignment on the next frame size */
-//#define SKIP_LAST_FRAME 1            /* flow errors management */
-//#define DECIMATE_FRAME 2
-////};
-//#endif
+#define ARC_NO_COMPUTE 0
+#define ARC_DATA_RATE 1
+#define ARC_TIME_STAMP_LAST_ACCESS 2
+#define ARC_PEAK_DATA 3
+#define ARC_MEAN_DATA 4
+#define ARC_MIN_DATA 5
+#define ARC_ABSMEAN_DATA 6
+#define ARC_METADATA_TO_OTHER_ARC 6 /* when metada is changing (from last DEBUG_REG_ARCW1) the new data is push to another arc (DBG_IDX_ARCW5) */
+//};
+
+//enum underflow_error_service_id{/* 2bits UNDERFLRD_ARCW2, OVERFLRD_ARCW2 */
+#define NO_UNDERFLOW_MANAGEMENT 0  /* just RD/WR index alignment on the next frame size */
+#define REPEAT_LAST_FRAME 1          /* flow errors management */
+#define GENERATE_ZEROES 2
+#define INTERPOLATE_FRAME 3          /* MPEG decoder underflow : tell the decoder, mute the output */
+//};
+
+//enum overflow_error_service_id {/* 2bits UNDERFLRD_ARCW2, OVERFLRD_ARCW2 */
+#define NO_OVERFLOW_MANAGEMENT 0     /* just RD/WR index alignment on the next frame size */
+#define SKIP_LAST_FRAME 1            /* flow errors management */
+#define DECIMATE_FRAME 2
+//};
 
 /*============================================================================================================*/
 /* 
@@ -90,31 +88,31 @@
 
 //enum time_stamp_format_type {
 #define NO_TS 0
-//#define ABS_TS_64 1                  /* long time reference */
-//#define REL_TS_32 2                  /* time difference from previous frame packet in stream_time_seconds format */
-//#define COUNTER_TS 3                 /* counter of data frames */
+#define ABS_TS_64 1                  /* long time reference */
+#define REL_TS_32 2                  /* time difference from previous frame packet in stream_time_seconds format */
+#define COUNTER_TS 3                 /* counter of data frames */
 
 
 //enum hashing_type {
-//#define NO_HASHING 0                 /* cipher protocol under definition */
-//#define HASHING_ON 1                 /* the stream is ciphered (HMAC-SHA256 / stream_encipher XTEA)*/
+#define NO_HASHING 0                 /* cipher protocol under definition */
+#define HASHING_ON 1                 /* the stream is ciphered (HMAC-SHA256 / stream_encipher XTEA)*/
 
 
 //enum frame_format_type {
-//#define FMT_INTERLEAVED 0           /* "arc_descriptor_interleaved" for example L/R audio or IMU stream..   */
-//                                    /* the pointer associated to the stream points to data (L/R/L/R/..)     */
+#define FMT_INTERLEAVED 0           /* "arc_descriptor_interleaved" for example L/R audio or IMU stream..   */
+                                    /* the pointer associated to the stream points to data (L/R/L/R/..)     */
 #define FMT_DEINTERLEAVED_1PTR 1    /* single pointer to the first channel, next channel base address is    */
                                     /*  computed by adding the buffer size/nchan, also for ring buffers  */
 //
 ////enum frame_format_synchro {
-//#define SYNCHRONOUS 0               /* tells the output buffer size is NOT changing */
-//#define ASYNCHRONOUS 1              /* tells the output frame length is variable, input value "Size" tells the maximum value  
+#define SYNCHRONOUS 0               /* tells the output buffer size is NOT changing */
+#define ASYNCHRONOUS 1              /* tells the output frame length is variable, input value "Size" tells the maximum value  
 //                                       data format : optional time-stamp (stream_time_stamp_format_type)
 //                                                    domain [2bits] and sub-domain [6bits rfc8428]
 //                                                    payload : [nb samples] [samples]  */
 ////enum direction_rxtx {
-//#define IODIRECTION_RX 0              /* RX from the Graph pont of view */
-//#define IODIRECTION_TX 1
+#define IODIRECTION_RX 0              /* RX from the Graph pont of view */
+#define IODIRECTION_TX 1
 
 /*============================================================================================================*/
 #define STREAM_FORMAT_SIZE_W32 3            // digital, common part of the format 
@@ -215,7 +213,7 @@
 #define COLLISION_ARCW3_LSB U(24) 
 #define COLLISION_ARC_OFFSET_BYTE U(3)
 #define ALIGNBLCK_ARCW3_MSB U(23)
-#define ALIGNBLCK_ARCW3_LSB U(23) /* 1  Producer asking to realign the buffer */
+#define ALIGNBLCK_ARCW3_LSB U(23) /* 1  producer sets "need for data realignement" */
 #define   READY_R_ARCW3_MSB U(22) /*    "Buffer ready for read" */ 
 #define   READY_R_ARCW3_LSB U(22) /* 1  (write-read)>size/2 (or /4) */
 #define     WRITE_ARCW3_MSB U(21)

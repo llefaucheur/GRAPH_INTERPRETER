@@ -419,11 +419,6 @@
               <FileType>1</FileType>
               <FilePath>..\..\stream_src\stream_services.c</FilePath>
             </File>
-            <File>
-              <FileName>stream_ptr_int.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\stream_src\stream_ptr_int.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>

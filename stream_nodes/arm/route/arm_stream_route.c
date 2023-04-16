@@ -112,7 +112,8 @@ void arm_stream_route (int32_t command, uint32_t *instance, data_buffer_t *data,
             uint32_t *memresults = instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
-            arm_route_instance *pinstance = (arm_route_instance *) memresults++;
+            arm_route_instance *pinstance = (arm_route_instance *) *memresults;
+            memresults++;
             /* here reset */
 
             break;

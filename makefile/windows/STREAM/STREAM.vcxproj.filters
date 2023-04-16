@@ -54,9 +54,6 @@
     <ClCompile Include="..\..\..\stream_src\stream_services.c">
       <Filter>Source Files\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_src\stream_ptr_int.c">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\arm\audio_codec\audio_codec_imadpcm\arm_code_imadpcm.c">
       <Filter>Source Files\nodes</Filter>
     </ClCompile>
@@ -141,6 +138,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\stream_al\platform_al.h">
       <Filter>Source Files\AL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector.h">
+      <Filter>Source Files\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\dsp_filter\arm_dsp_filter.h">
+      <Filter>Source Files\nodes</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

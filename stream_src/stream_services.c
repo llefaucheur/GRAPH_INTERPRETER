@@ -35,7 +35,7 @@
         check there is no flow error
   */
 
-intPtr_t arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
+void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
 {   
     intPtr_t *parameters;
 
@@ -80,5 +80,4 @@ intPtr_t arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *pt
     default:
         break;
     }
-    return 0;
 }

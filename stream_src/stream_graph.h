@@ -339,40 +339,41 @@
 #define IO_COMMAND_DATA_MOVE_RX  U(3)
 #define IO_COMMAND_DATA_MOVE_TX  U(4)
 //
-//#define SET_ZERO_REG 5u               /* set a 0 in to *DEBUG_REG_ARCW1 */
-//#define SET_ONE_REG 6u                /* set a 1 in to *DEBUG_REG_ARCW1 */
-//#define INCREMENT_REG 7u              /* increment *DEBUG_REG_ARCW1 */
-//#define SET_ZERO_NOTIFICATION_ADDR 8u /* set a 0 in to *DBGADDR_ARCW4 */
-//#define SET_ONE_NOTIFICATION_ADDR 9u  /* set a 1 in to *DBGADDR_ARCW4 */
-//#define INCREMENT_NOTIFICATION_REG 10u /* increment the arc notification register in *DBGADDR_ARCW4 */
-//#define SET_AND_INCREMENT 11u        /* set a 1 in to *DBGADDR_ARCW4 and increment register *DEBUG_REG_ARCW1 */
-//#define PROCESSOR_WAKEUP 12u         /* MP use-case WAKEUP_IOFMT */
+#define SET_ZERO_REG 5u               /* set a 0 in to *DEBUG_REG_ARCW1 */
+#define SET_ONE_REG 6u                /* set a 1 in to *DEBUG_REG_ARCW1 */
+#define INCREMENT_REG 7u              /* increment *DEBUG_REG_ARCW1 */
+#define SET_ZERO_NOTIFICATION_ADDR 8u /* set a 0 in to *DBGADDR_ARCW4 */
+#define SET_ONE_NOTIFICATION_ADDR 9u  /* set a 1 in to *DBGADDR_ARCW4 */
+#define INCREMENT_NOTIFICATION_REG 10u /* increment the arc notification register in *DBGADDR_ARCW4 */
+#define SET_AND_INCREMENT 11u        /* set a 1 in to *DBGADDR_ARCW4 and increment register *DEBUG_REG_ARCW1 */
+#define PROCESSOR_WAKEUP 12u         /* MP use-case WAKEUP_IOFMT */
 //};    
 
 
 /*=====================================================================================*/                          
 /*                  STREAM_FORMAT_IO 
     The graph hold a table of uint32_t "stream_format_io" [LAST_IO_FUNCTION_PLATFORM]
-    addressed from #define GRAPH_IO_CONFIG_ADDR(graph) (graph+graph[2])
-        0x000XXXXX,   // 008 002 Word 2 : offset to io_configuration 
 */
+
+#define STREAM_IOFMT_SIZE_W32 2   /* one word for settings controls + 1 for instance selection and mixed-signal settings */
+
 #define RX0_TO_GRAPH 0u
 #define TX1_FROM_GRAPH 1u
 
-//#define BUFFER_HW_IOFMT_MSB U(31)  
-#define BUFFER_HW_IOFMT_LSB U(31)  /* 1  copy of BUFFER_FROM_HW_IOMEM_LSB from platform_io_manifest [] */  
-//#define    FORMAT_IOFMT_MSB U(30)  
-//#define    FORMAT_IOFMT_LSB U(26)  /* 5  index to the table of formats  */
-#define IOCOMMAND_IOFMT_MSB U(25)  /*    input_output_command_id of ring placed at the boundary of the graph */
-#define IOCOMMAND_IOFMT_LSB U(22)  /* 4   use grain_out (RX) grain_in (TX) to trigger the services: wake-up processors/DMA */
-#define    RX0TX1_IOFMT_MSB U(21)  /*    direction of the stream */
-#define    RX0TX1_IOFMT_LSB U(21)  /* 1   0 : to the graph    1 : from the graph */
-#define FW_IO_IDX_IOFMT_MSB U(20)  /*    enum codes to address platform_io_functions[] */
-#define FW_IO_IDX_IOFMT_LSB U(15)  /* 6  platform_io [fw_io_idx] -> io_start() */
-//#define GRAPH_DOM_IOFMT_MSB U(14)  /*    => to interpret stream[3,4]  WORD 3 - SPECIFIC */
-//#define GRAPH_DOM_IOFMT_LSB U( 9)  /* 6  64 physical domains = enum stream_io_domain */
-//#define   REQMADE_IOFMT_MSB U( 8)  
-#define   REQMADE_IOFMT_LSB U( 8)  /* 1  request on going, no need to ask again  */
+#define    UNUSED_IOFMT_MSB U(31)  
+#define    UNUSED_IOFMT_LSB U(24)  /* 8  */
+#define  INSTANCE_IOFMT_MSB U(23)  
+#define  INSTANCE_IOFMT_LSB U(20)  /* 4  selection of 16 GPIO for example */
+#define IOCOMMAND_IOFMT_MSB U(19)  
+#define IOCOMMAND_IOFMT_LSB U(16)  /* 4  input_output_command_id */
+#define  FOLLOWER_IOFMT_MSB U(15)  
+#define  FOLLOWER_IOFMT_LSB U(15)  /* 1   */
+#define    RX0TX1_IOFMT_MSB U(14)  /*    direction of the stream */
+#define    RX0TX1_IOFMT_LSB U(14)  /* 1  0 : to the graph    1 : from the graph */
+#define   REQMADE_IOFMT_MSB U(13)  
+#define   REQMADE_IOFMT_LSB U(13)  /* 1  request on going, no need to ask again  */
+#define FW_IO_IDX_IOFMT_MSB U(12)  /*    enum codes to address platform_io_functions[] */
+#define FW_IO_IDX_IOFMT_LSB U( 8)  /* 5  platform_io [fw_io_idx] -> io_start(parameter) */
 #define   IOARCID_IOFMT_MSB U( 7)  
 #define   IOARCID_IOFMT_LSB U( 0)  /* 8  Arc */
 /*=====================================================================================*/                          

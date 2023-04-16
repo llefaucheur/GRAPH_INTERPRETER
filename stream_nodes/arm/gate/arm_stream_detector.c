@@ -42,12 +42,12 @@
 */
 
 #define NB_PRESET 4
-const detector_configuration detector_preset [NB_PRESET] = 
-{
-    { 10000, 7, 1, 4, 7, 5},   /* preset #0 = VAD at 16kHz */
-    { 10000, 7, 1, 4, 7, 5},   /* preset #1 = VAD at 48kHz */
-    { 10000, 7, 1, 4, 7, 5},   /* preset #2 = peak detector 1 TBD */
-    { 10000, 7, 1, 4, 7, 5},   /* preset #3 = peak detector 2 TBD */
+const detector_parameters detector_preset [NB_PRESET] = 
+{   /* log2counter, log2decfMAX, high_pass_shifter, low_pass_shifter, floor_noise_shifter, peak_signal_shifter */
+    { 12, 6, 1, 3, 7, 4},   /* preset #0 = VAD at 16kHz */
+    { 12, 7, 2, 4, 7, 5},   /* preset #1 = VAD at 48kHz */
+    { 12, 6, 0, 4, 6, 4},   /* preset #2 = peak detector 1 no HPF */
+    { 12, 7, 2, 4, 7, 5},   /* preset #3 = peak detector 2 TBD */
 };
 
 
@@ -79,13 +79,41 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
         {   stream_entrance *stream_entry = (stream_entrance *)(uint64_t)data;
             uint32_t *memresults = instance;
             uint16_t preset = RD(command, PRESET_CMD);
+            uint8_t *pt8b, i, n;
 
-            arm_detector_instance *pinstance = (arm_detector_instance *) memresults++;
+            arm_detector_instance *pinstance = (arm_detector_instance *)(memresults[0]);
             
             /* here reset : clear the instance and preload in the memory instance the preset */
-
+            /* here reset */
+            pt8b = (uint8_t *) pinstance;
+            n = sizeof(arm_detector_instance);
+            for (i = 0; i < n; i++)
+            {
+                pt8b[i] = 0;
+            }
             break;
         }    
+
+        /* func(command = (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
+                    TAG of a parameter to set, 0xFF means "set all the parameters" in a raw
+                *instance, 
+                data = (one or all)
+        */ 
+        case STREAM_SET_PARAMETER:  
+        {   uint8_t *pt8bsrc, *pt8bdst, i, n;
+            uint8_t *new_parameters = (uint8_t *)data;
+            arm_detector_instance *pinstance = (arm_detector_instance *) instance;
+
+            /* copy the parameters */
+            pt8bsrc = (uint8_t *) data;
+            pt8bdst = (uint8_t *) &(pinstance->config);
+            n = sizeof(detector_parameters);
+            for (i = 0; i < n; i++)
+            {   pt8bdst[i] = pt8bsrc[i];
+            }
+            break;
+        }
+
 
         /* func(command = STREAM_RUN, PRESET, TAG, NB ARCS IN/OUT)
                instance,  

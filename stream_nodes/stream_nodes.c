@@ -104,9 +104,9 @@ LPC10(1bit/sample) de/encoding.
 Parameters : coding scheme 
 
 11.	data conditioning
-Operation : applies y = f(x), where f = c.(H(a.G(x) + b) + d, 
-  with H and G being either x^2, sqrt, x, log10, pow10, 1/x
-Parameters : all 
+Operation : applies result = interp1(X,Y,input,'method')
+Following https://fr.mathworks.com/help/matlab/ref/interp1.html
+Parameters : X,Y vectors and interpolation method
 
 12.	signal generator
 Operation : sine, noise, sweep, square

@@ -74,34 +74,15 @@
 
 
 /*
-   list of possible IO ports for the graph
+   list of IO ports for the graph
    see stream_local_instance : whoami_ports [BOUNDARY_PARCH]
       and GRAPH_IO_CONFIG_ADDR
  */
 
-//enum stream_io_domain                 
-//{ 
-//    PLATFORM_DATA_IN,
-//    PLATFORM_DATA_OUT,
-#define PLATFORM_APPLICATION_DATA_IN 1
-//    PLATFORM_APPLICATION_DATA_OUT,
-//    PLATFORM_AUDIO_IN,
-#define PLATFORM_AUDIO_OUT 2
-//    PLATFORM_GPIO_IN,
-//    PLATFORM_GPIO_OUT,
-//    PLATFORM_MOTION_CAPTURE,  /* tactical : for 9X IMU sensors */
-//    PLATFORM_PICTURE_IN,
-//    PLATFORM_PICTURE_OUT, 
-//    PLATFORM_USER_INTERFACE_IN
-//    PLATFORM_USER_INTERFACE_OUT
-//    PLATFORM_COMMAND_IN       
-//    PLATFORM_COMMAND_OUT      /* debug traces */
-//    PLATFORM_LOW_DATA_RATE_IN,
-//    PLATFORM_LOW_DATA_RATE_OUT,
+
+#define PLATFORM_APPLICATION_DATA_IN    0u
+#define PLATFORM_AUDIO_OUT              1u
 
 #define LAST_IO_FUNCTION_PLATFORM 2
-//};
-
-
 
 #endif /* #ifndef PLATFORM_WINDOWS_H */

@@ -55,20 +55,41 @@ typedef struct {
 //typedef void (*io_callback_ptr)      (uint32_t idx, uint8_t *data, uint32_t length);   
 typedef uint32_t (*io_function_control_ptr)  (uint32_t *setting, uint8_t *data, uint32_t length);  
 
-/* 
-    Manifest of IO functions and capabilities
-*/
 
-struct platform_io_manifest           
+/* 
+    MANIFEST of IO functions and capabilities
+    used to interpret stream_setting in platform_xx.h
+*/
+//enum stream_io_domain                 
+//#define PLATFORM_DATA_IN                1u
+//#define PLATFORM_DATA_OUT               2u
+//#define PLATFORM_APPLICATION_DATA_IN    3u
+//#define PLATFORM_APPLICATION_DATA_OUT   4u
+//#define PLATFORM_AUDIO_IN               5u
+//#define PLATFORM_AUDIO_OUT              6u
+//#define PLATFORM_GPIO_IN                7u
+//#define PLATFORM_GPIO_OUT               8u
+//#define PLATFORM_MOTION_CAPTURE         9u
+//#define PLATFORM_PICTURE_IN            10u
+//#define PLATFORM_PICTURE_OUT           11u  
+//#define PLATFORM_USER_INTERFACE_IN     12u 
+//#define PLATFORM_USER_INTERFACE_OUT    13u 
+//#define PLATFORM_COMMAND_IN            14u
+//#define PLATFORM_COMMAND_OUT           15u
+//#define PLATFORM_LOW_DATA_RATE_IN      16u 
+//#define PLATFORM_LOW_DATA_RATE_OUT     17u 
+//#define PLATFORM_TIMER_IN              18u 
+//#define PLATFORM_TIMER_OUT             19u
+
+
+
+
+struct platform_io_control           
 {   io_function_control_ptr io_set;     
     io_function_control_ptr io_start; 
     io_function_control_ptr io_stop; 
-    uint32_t io_domain;             /* PACK_IOMEMDOMAIN */
-    uint32_t stream_settings_default[STREAM_FORMAT_SIZE_W32]; 
-    const int32_t *stream_setting_extension;
+    const int32_t *stream_setting;
 };
-
-
 
 
 /*==================================================== SWC  ======================================================================*/
@@ -195,12 +216,10 @@ struct platform_proc_identification{    /* who am I ? */
 };
 
 
-#define IO_SETTINGS_64bits 2
-
 struct platform_control_stream
 {   
     uint32_t *graph;        
-    uint32_t domain_settings[IO_SETTINGS_64bits];
+    uint32_t domain_settings;
     uint8_t fw_idx;
     data_buffer_t buffer;    // [{void *; int}]
 };
@@ -208,24 +227,25 @@ struct platform_control_stream
 
 
 /* stream parameters */
-struct stream_control 
-{   const io_function_control_ptr io_set;     
-    const io_function_control_ptr io_start; 
-    const io_function_control_ptr io_stop; 
-};
+//struct stream_control 
+//{   const io_function_control_ptr io_set;     
+//    const io_function_control_ptr io_start; 
+//    const io_function_control_ptr io_stop; 
+//};
 
 extern p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS];
 
-/* two entry points */
+/* three entry points */
 extern void arm_stream (uint32_t command, 
         void *ptr1, void *ptr2, void *ptr3);
 extern void arm_stream_io (uint32_t fw_io_idx, 
         uint32_t *graph,
         uint8_t *data, uint32_t length);
+extern void arm_stream_services (uint32_t command, 
+        void *ptr1, void *ptr2, void *ptr3);
 
 /* ---- REFERENCES --------------------------------------------*/
 
-extern intPtr_t arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3);
 extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3);
 void stream_scan_graph (intPtr_t *parameters, int8_t return_option, 
     int8_t script_option, int8_t reset_option);

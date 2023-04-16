@@ -142,28 +142,20 @@ const int32_t audio_render_settings [] = {
  /*  
     data in Flash :
  */
-struct platform_io_manifest platform_io [LAST_IO_FUNCTION_PLATFORM] = 
+struct platform_io_control platform_io [LAST_IO_FUNCTION_PLATFORM] = 
 {
     {   //  PLATFORM_APPLICATION_DATA_IN
     .io_set = audio_ap_rx_set_stream,
     .io_start = audio_ap_rx_start_data_move,
     .io_stop = audio_ap_rx_stop_stream,
-    .io_domain = PACK_IOMEMDOMAIN(1,0,0,0,0,IO_IS_FOLLOWER,PLATFORM_APPLICATION_DATA_IN),
-    .stream_settings_default = { 
-        PACKSTREAMFORMAT0(STREAM_Q15,FMT_DEINTERLEAVED_1PTR,32),
-        PACKSTREAMFORMAT1(NO_TS,16000,0)},
-    .stream_setting_extension = 0,
+    .stream_setting = 0, 
     },
 
     {   //  PLATFORM_AUDIO_OUT
     .io_set = audio_render_set_stream,
     .io_start = audio_render_start_data_move,
     .io_stop = audio_render_stop_stream,
-    .io_domain = PACK_IOMEMDOMAIN(2,0,0,0,0,IO_IS_FOLLOWER,PLATFORM_AUDIO_OUT),
-    .stream_settings_default = { 
-        PACKSTREAMFORMAT0(STREAM_Q15,FMT_DEINTERLEAVED_1PTR,32),
-        PACKSTREAMFORMAT1(NO_TS,16000,0)},
-    .stream_setting_extension = audio_render_settings,
+    .stream_setting = audio_render_settings,
     }
 };
 
@@ -228,8 +220,10 @@ uint32_t audio_ap_rx_set_stream (uint32_t *setting, uint8_t *data, uint32_t size
 }
 
 /* --------------------------------------------------------------------------------------- */
-int16_t *audio_render_data;
-uint32_t audio_render_size;
+// IO_COMMAND_DATA_MOVE_TX, buffer is declared by the driver 
+#define audio_render_size 0x20
+static int16_t audio_render_data [audio_render_size];
+
 /* --------------------------------------------------------------------------------------- */
 void audio_render_transfer_done (uint8_t *data, uint32_t size) 
 {   
@@ -256,7 +250,7 @@ uint32_t audio_render_start_data_move (uint32_t *setting, uint8_t *data, uint32_
         samples[15u & iptr] = *ptr; ptr++; iptr++;
     }
 
-    audio_render_transfer_done ((uint8_t *)(uint64_t)audio_render_data, size);
+    audio_render_transfer_done ((uint8_t *)audio_render_data, size);
     return 1u; 
 }
 
@@ -279,8 +273,9 @@ uint32_t audio_render_set_stream (uint32_t *setting, uint8_t *data, uint32_t siz
     uint32_t tmp;
     tmp = *setting; 
 
-    audio_render_data = (int16_t *)data;
-    audio_render_size = size;
+// IO_COMMAND_DATA_MOVE_TX, buffer is declared by the driver 
+    //audio_render_data = (int16_t *)data;
+    //audio_render_size = size;
     return 1u;
 }
 

@@ -67,6 +67,7 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     /* struct stream_local_instance */uint32_t *pinst;
     uint32_t *pio;
     uint32_t stream_format_io;
+    uint32_t stream_format_io_setting;
     struct platform_control_stream set_stream;
     uint32_t io_mask;
     uint32_t iarc; 
@@ -94,7 +95,8 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     platform_al (PLATFORM_PROC_ID, &procID, &archID,0);
     if ((archID == 1U) && (procID == 0U))
     {
-        switch (tmp32 = RD(graph[0],COPY_CONF_GRAPH0))
+        tmp32 = RD(graph[0],COPY_CONF_GRAPH0);
+        switch (tmp32)
         {
         /*
            Graph is read from Flash and copied in RAM, 
@@ -211,7 +213,10 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
 
     for (iio = 0; iio < nio; iio++)
     {
-        stream_format_io = *pio++;
+        uint8_t io_command;
+
+        stream_format_io = pio[0];
+        stream_format_io_setting = pio[1];
 
         /* does this port is managed by the Stream instance ? */
         if (0 == (io_mask & (1U << iio))) 
@@ -221,25 +226,33 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
         set_stream.fw_idx = fw_idx;
 
         /* default value settings */
-        set_stream.domain_settings[0] = 0;
-        set_stream.domain_settings[1] = 0;
+        set_stream.domain_settings = stream_format_io_setting;
 
         /* the graph compiler uses the platform manifest to know the need for each IO 
            to receive from Stream an allocated memory buffers, and its arc descriptor.
            When the processing is in-place, this arc descriptor is not associated to a 
            buffer.
            */
-        if (0 == TEST_BIT(stream_format_io, BUFFER_HW_IOFMT_LSB))
+        io_command = EXTRACT_FIELD(stream_format_io, IOCOMMAND_IOFMT);
+
+        if (IO_COMMAND_SET_BUFFER_RX == io_command ||
+            IO_COMMAND_SET_BUFFER_TX == io_command  )
         {
-            iarc = SIZEOF_ARCDESC_W32 * RD(stream_format_io, IOARCID_IOFMT);
+            iarc = sizeof(uint32_t) * RD(stream_format_io, IOARCID_IOFMT);
             set_stream.buffer.address = 
                 (uint8_t *)pack2linaddr_ptr(all_arcs[iarc + BUF_PTR_ARCW0],long_offset);
             set_stream.buffer.size = 
                 (uint32_t)RD(all_arcs[iarc + BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
         }
+        else
+        {   set_stream.buffer.address = 0;
+            set_stream.buffer.size = 0;
+        }
         /* the Stream instance holds the memory offsets */
         set_stream.graph = convert_int_to_ptr(parameters[STREAM_PARAM_GRAPH]);
         platform_al (PLATFORM_IO_SET_STREAM, (uint8_t *)&set_stream, 0, 0);
+
+        pio += STREAM_IOFMT_SIZE_W32;
     }
 
     /* release the stack before graph execution */

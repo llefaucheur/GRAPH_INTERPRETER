@@ -41,17 +41,17 @@
 
 typedef struct
 {
-    uint32_t debouncing_counter; /* sample counter : maintain the "detected" flag at least for this number of samples */
-    uint8_t log2decfMAX;        /* decimation will be a power of 2 (-1)*/
-    uint8_t high_pass_shifter;  /* z1 */
-    uint8_t low_pass_shifter;   /* z6 */
-    uint8_t floor_noise_shifter;/* z7 */
-    uint8_t peak_signal_shifter;/* z8 */
-} detector_configuration;
+    uint8_t log2counter;        /* sample counter= 2^log2counter: maintains the "detected" flag at least for this number of samples */
+    uint8_t log2decfMAX;        /* decimation = a power of 2 (-1) */
+    uint8_t high_pass_shifter;  /* for z1 */
+    uint8_t low_pass_shifter;   /* for z6 */
+    uint8_t floor_noise_shifter;/* for z7 */
+    uint8_t peak_signal_shifter;/* for z8 */
+} detector_parameters;
 
-typedef struct
+typedef struct /* total = 22 Bytes => 24bytes/6word32 */
 {
-    detector_configuration config;
+    detector_parameters config; /* 6 bytes */
 
     int16_t z1;    /* memory of the high-pass filter (recursive part) */
     int16_t z2;    /* memory of the high-pass filter (direct part) */

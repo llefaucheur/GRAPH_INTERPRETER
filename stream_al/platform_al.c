@@ -210,8 +210,8 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
     case PLATFORM_IO_STOP_STREAM : 
 	{   
         struct platform_control_stream *parameters;
-        extern struct platform_io_manifest platform_io [LAST_IO_FUNCTION_PLATFORM];
-        struct platform_io_manifest *io_manifest;
+        extern struct platform_io_control platform_io [LAST_IO_FUNCTION_PLATFORM];
+        struct platform_io_control *io_manifest;
         data_buffer_t *buffer;
         io_function_control_ptr io_func;
         uint32_t fw_idx;
@@ -221,7 +221,7 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
         buffer = &(parameters->buffer);
         fw_idx = parameters->fw_idx;
         io_manifest = &(platform_io[fw_idx]);
-        settings = &(parameters->domain_settings[0]);
+        settings = &(parameters->domain_settings);
 
         switch (command)
         {

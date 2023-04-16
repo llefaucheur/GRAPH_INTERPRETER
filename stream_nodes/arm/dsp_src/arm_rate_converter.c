@@ -112,7 +112,8 @@ void arm_stream_rate_converter (int32_t command, uint32_t *instance, data_buffer
             uint32_t *memresults = instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
-            arm_rate_converter_instance *pinstance = (arm_rate_converter_instance *) memresults++;
+            arm_rate_converter_instance *pinstance = (arm_rate_converter_instance *)  *memresults;
+            memresults++;
             /* here reset */
 
             break;

@@ -112,7 +112,8 @@ void arm_stream_merge (int32_t command, uint32_t *instance, data_buffer_t *data,
             uint32_t *memresults = instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
-            arm_merge_instance *pinstance = (arm_merge_instance *) memresults++;
+            arm_merge_instance *pinstance = (arm_merge_instance *) *memresults;
+            memresults++;
             /* here reset */
 
             break;

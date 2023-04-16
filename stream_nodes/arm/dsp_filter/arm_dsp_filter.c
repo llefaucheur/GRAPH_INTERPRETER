@@ -28,63 +28,8 @@
 #include "stream_const.h"
 #include "stream_types.h"
 
+#include "arm_dsp_filter.h"
 
-typedef struct
-{
-    stream_entrance *stream_entry;
-    float data0;
-    float data1;
-    float data2;
-} arm_filter_instance;
-
-
-/**
-  @brief         Processing function for the floating-point Biquad cascade filter.
-  @param[in]     S         points to an instance of the floating-point Biquad cascade structure
-  @param[in]     pSrc      points to the block of input data
-  @param[out]    pDst      points to the block of output data
-  @param[in]     blockSize  number of samples to process
-  @return        none
- */
-int32_t arm_filter_calls_stream (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status)
-{
-    stream_entrance *STREAM; /* function pointer used for debug/trace, memory move and free, signal processing */
-    arm_filter_instance *pinstance = (arm_filter_instance *)instance;
-
-    switch (command)
-    {   
-        //case STREAM_REGISTER_ME: first command to register the SWC
-        //case STREAM_DEBUG_TRACE:
-        //{  
-        //}
-        default: 
-            return 0;
-    }
-    STREAM = pinstance->stream_entry;
-    STREAM (command, (uint8_t*)instance, (uint8_t*)data, 0);  /* single interface to STREAM for controls ! */
-    return 0;
-}
-
-
-/**
-  @brief         Processing function 
-  @param[in]     S         points to an instance of the floating-point Biquad cascade structure
-  @param[in]     pSrc      points to the block of input data
-  @param[out]    pDst      points to the block of output data
-  @param[in]     blockSize  number of samples to process
-  @return        none
- */
-void filter_processing (arm_filter_instance *instance, 
-                     uint8_t *in, int32_t nb_data, 
-                     int16_t *outBufs)
-{
-    /* fake decoder*/ 
-    int i;
-    for (i = 0; i < nb_data; i++)
-    {
-        outBufs[i] = (int16_t)((int16_t)(in[i])<<8);
-    }
-}
 
 /**
   @brief         
@@ -106,15 +51,40 @@ void arm_stream_dsp_filter (int32_t command, uint32_t *instance, data_buffer_t *
                 
                 memory_results are followed by the first two words of STREAM_FORMAT_SIZE_W32 
                 memory pointers are in the same order as described in the SWC manifest
+
+                memresult[0] : instance of the component (one pointer and 2 bytes)
+                memresult[1] : pointer to the allocated memory (biquad states and coefs)
+                memresult[2] : input arc Word 0 SIZSFTRAW_FMT0 
+                memresult[3] : input arc Word 1 SAMPINGNCHANM1_FMT1 
+                memresult[4] : output arc Word 0 SIZSFTRAW_FMT0 
+                memresult[5] : output arc Word 1 SAMPINGNCHANM1_FMT1 
+
+                preset (8bits) : number of biquads in cascade, max = 4, from SWC manifest 
+                tag (8bits)  : unused
         */
         case STREAM_RESET: 
         {   stream_entrance *stream_entry = (stream_entrance *)(uint64_t)data;
-            uint32_t *memresults = instance;
-            uint16_t preset = RD(command, PRESET_CMD);
+            intPtr_t *memresults = instance;
+            uint8_t *pt8b, i, n;
+            arm_filter_instance *pinstance = (arm_filter_instance *) (memresults[0]);
 
-            arm_filter_instance *pinstance = (arm_filter_instance *) memresults++;
+            pinstance->frameSize = RD(memresults[2], FRAMESIZE_FMT0);
+            ST(pinstance->format, NUMSTAGE_FLT,  RD(command, PRESET_CMD));
+            ST(pinstance->format, RAWDATA_FLT,   RD(memresults[2], RAW_FMT0));
+            ST(pinstance->format, NBCHAN_FLT,  1+RD(memresults[3], NCHANM1_FMT1));
+            ST(pinstance->format, INTERLEAV_FLT, RD(memresults[2], INTERLEAV_FMT0));
+            ST(pinstance->format, TIMESTAMP_FLT, RD(memresults[3], TIMSTAMP_FMT1));
+            ST(pinstance->format, NUMSTAGE_FLT,  RD(command, PRESET_CMD));
+
+            /* TCM area (when possible), first field of the instance for MP */
+            pinstance->TCM_working = (intPtr_t *)(memresults[1]);   
+
             /* here reset */
-
+            pt8b = (uint8_t *) &(pinstance->U.biq_q15);
+            n = sizeof(arm_filter_biquad_q15);
+            for (i = 0; i < n; i++)
+            {   pt8b[i] = 0;
+            }
             break;
         }    
 
@@ -124,8 +94,27 @@ void arm_stream_dsp_filter (int32_t command, uint32_t *instance, data_buffer_t *
                 data = (one or all)
         */ 
         case STREAM_SET_PARAMETER:  
-        {   
-            uint8_t *new_parameters = (uint8_t *)data;
+       {    uint8_t *pt8bsrc, *pt8bdst, i, n;
+            arm_filter_instance *pinstance = (arm_filter_instance *) instance;
+
+            /* copy the parameters */
+            pt8bsrc = (uint8_t *) data;
+
+            /* arm_stream_dsp_filter can manage Q15 and float */
+            if (RD(pinstance->format, RAWDATA_FLT) == STREAM_FP32)
+            {   pt8bdst = (uint8_t *) &(pinstance->U.biq_float);
+                n = sizeof(arm_filter_biquad_float);
+            }
+            else
+            {   pt8bdst = (uint8_t *) &(pinstance->U.biq_q15);
+                n = sizeof(arm_filter_biquad_q15);
+            }
+
+            if (RD(command, TAG_CMD) == ALLPARAM_)
+            {   for (i = 0; i < n; i++)
+                {   pt8bdst[i] = pt8bsrc[i];
+                }
+            }
             break;
         }
 
@@ -139,7 +128,6 @@ void arm_stream_dsp_filter (int32_t command, uint32_t *instance, data_buffer_t *
         case STREAM_READ_PARAMETER:  
         {   
             uint8_t *new_parameters = (uint8_t *)data;
-
             break;
         }
         
