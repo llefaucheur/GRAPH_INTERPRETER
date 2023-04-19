@@ -24,17 +24,19 @@
  * limitations under the License.
 * 
  */
+#define _CRT_SECURE_NO_DEPRECATE 1
+#include <stdio.h>
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-
 #include "platform_al.h"
 
 #include "platform_windows.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
+
+
 
 /*-------------------PLATFORM MANIFEST-----------------------
                   +-----------------+
@@ -164,105 +166,88 @@ struct platform_io_control platform_io [LAST_IO_FUNCTION_PLATFORM] =
 /* --------------------------------------------------------------------------------------- */
 int16_t *audio_ap_rx_data;
 uint32_t audio_ap_rx_size;
+FILE *ptf_in_audio_ap_rx_data;
+
+//#define audio_render_size 0x20
+//static int16_t audio_render_data [audio_render_size];
+FILE *ptf_in_audio_render_data;
 /* --------------------------------------------------------------------------------------- */
 
 void audio_ap_rx_transfer_done (uint8_t *data, uint32_t size) 
 {   
-    platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_APPLICATION_DATA_IN, data, (uint8_t *)(uint64_t)size);
+    platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_APPLICATION_DATA_IN,
+        data, (uint8_t *)size);
 }
 
-
+/* --------------------------------------------------------------------------------------- */
 
 uint32_t audio_ap_rx_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) 
 { 
-    #define NSAMP 16
-    int8_t i; 
-    int8_t n;
-    int8_t *ptr;
-    static int16_t iptr;
-    static int16_t samples[NSAMP] = { 
-     0, 12539, 23170, 30273, 32767, 30273, 23170, 12539,
-     0, -12539, -23170, -30273, -32767, -30273, -23170, -12539, };
+    int tmp;
 
-    extern int16_t *audio_ap_rx_data;
-    ptr = (int8_t *)audio_ap_rx_data;
-    n = size;
-
-    for (i = 0; i < n; i++)
-    {   
-        *ptr = (int8_t)((samples[15u & iptr])>>8u); ptr++; iptr++;
+    tmp = fread(data, 1, size, ptf_in_audio_ap_rx_data);
+    if (size != tmp)
+    {   audio_ap_rx_transfer_done ((uint8_t *)data, 0);
+        fclose (ptf_in_audio_ap_rx_data);
+        exit(-1);
     }
-
-    audio_ap_rx_transfer_done ((uint8_t *)(uint64_t)data, size);
+    else
+    {   audio_ap_rx_transfer_done ((uint8_t *)data, size);
+    }
     return 1u; 
 }
 
-
+/* --------------------------------------------------------------------------------------- */
 
 uint32_t audio_ap_rx_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size) 
 { 
-    uint32_t tmp;
-    uint8_t *tmp8;
-
-    tmp = *setting; tmp8 = data; tmp = size;
+    fclose (ptf_in_audio_ap_rx_data);
     return 1u;
 }
 
+/* --------------------------------------------------------------------------------------- */
 
 uint32_t audio_ap_rx_set_stream (uint32_t *setting, uint8_t *data, uint32_t size) 
 { 
-    uint32_t tmp;
-    tmp = *setting; 
+//#define FILE_IN "..\sine_noise_offset.raw"
+#define FILE_IN "..\\sine_noise.raw"
 
-    audio_ap_rx_data = (int16_t *)data;
-    audio_ap_rx_size = size;
+    if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rb")))
+    {   exit (-1);
+    }
     return 1u;
 }
 
-/* --------------------------------------------------------------------------------------- */
-// IO_COMMAND_DATA_MOVE_TX, buffer is declared by the driver 
-#define audio_render_size 0x20
-static int16_t audio_render_data [audio_render_size];
+
+
+
+
+
+
 
 /* --------------------------------------------------------------------------------------- */
+
 void audio_render_transfer_done (uint8_t *data, uint32_t size) 
 {   
-    platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_AUDIO_OUT, data, (uint8_t *)size);
+    platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_AUDIO_OUT, 
+        data, (uint8_t *)size);
 }
 
-
+/* --------------------------------------------------------------------------------------- */
 
 uint32_t audio_render_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) 
 {   
-    #define NSAMP 16
-    static uint16_t i;
-    static uint16_t iptr;
-    static int16_t *ptr;
-    static int16_t samples[NSAMP];
-    uint32_t *tmp;
+    fwrite(data, 1, size, ptf_in_audio_render_data);
 
-    tmp = setting;
-
-    ptr = audio_render_data;
-
-    for (i = 0; i < audio_render_size; i++)
-    {   
-        samples[15u & iptr] = *ptr; ptr++; iptr++;
-    }
-
-    audio_render_transfer_done ((uint8_t *)audio_render_data, size);
+    audio_render_transfer_done ((uint8_t *)data, size);
     return 1u; 
 }
 
-
+/* --------------------------------------------------------------------------------------- */
 
 uint32_t audio_render_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size) 
 {   
-    uint32_t tmp;
-    uint8_t *tmp8;
-
-    tmp = *setting; tmp8 = data; tmp = size;
-
+    fclose (ptf_in_audio_render_data);
     return 1u;
 }
 
@@ -270,15 +255,12 @@ uint32_t audio_render_stop_stream(uint32_t *setting, uint8_t *data, uint32_t siz
 
 uint32_t audio_render_set_stream (uint32_t *setting, uint8_t *data, uint32_t size)
 {   
-    uint32_t tmp;
-    tmp = *setting; 
-
-// IO_COMMAND_DATA_MOVE_TX, buffer is declared by the driver 
-    //audio_render_data = (int16_t *)data;
-    //audio_render_size = size;
+#define FILE_OUT "..\\audio_out.raw"
+    if (NULL == (ptf_in_audio_render_data = fopen(FILE_OUT, "wb")))
+    {   exit (-1);
+    }
     return 1u;
 }
-
 
 /*
  * -----------------------------------------------------------------------

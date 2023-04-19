@@ -55,7 +55,7 @@ int main(void)
     stream_demo_init(0, 1, graph_input, sizeof(graph_input), parameters);
 
     /* run the graph */
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 1000000000L; i++)
     {
 		arm_stream(STREAM_RUN, &parameters,
             (void *)STREAM_SCHD_RET_END_ALL_PARSED, 

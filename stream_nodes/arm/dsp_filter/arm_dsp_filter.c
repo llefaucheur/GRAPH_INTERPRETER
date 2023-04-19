@@ -99,6 +99,8 @@ void arm_stream_dsp_filter (int32_t command, uint32_t *instance, data_buffer_t *
 
             /* copy the parameters */
             pt8bsrc = (uint8_t *) data;
+            pinstance->numstages = (uint32_t)(*pt8bsrc);
+            pt8bsrc = pt8bsrc+4;
 
             /* arm_stream_dsp_filter can manage Q15 and float */
             if (RD(pinstance->format, RAWDATA_FLT) == STREAM_FP32)
@@ -109,6 +111,7 @@ void arm_stream_dsp_filter (int32_t command, uint32_t *instance, data_buffer_t *
             {   pt8bdst = (uint8_t *) &(pinstance->U.biq_q15);
                 n = sizeof(arm_filter_biquad_q15);
             }
+
 
             if (RD(command, TAG_CMD) == ALLPARAM_)
             {   for (i = 0; i < n; i++)
@@ -143,31 +146,32 @@ void arm_stream_dsp_filter (int32_t command, uint32_t *instance, data_buffer_t *
         case STREAM_RUN:   
         {
             arm_filter_instance *pinstance = (arm_filter_instance *) instance;
-            int32_t nb_data, data_buffer_size, bufferout_free, increment;
+            int32_t nb_data, data_buffer_size, bufferout_free;
             data_buffer_t *pt_pt;
-            #define SAMP_IN uint8_t 
+            #define SAMP_IN int16_t 
             #define SAMP_OUT int16_t
             SAMP_IN *inBuf;
             SAMP_OUT *outBuf;
 
             pt_pt = data;
             inBuf  = (SAMP_IN *)pt_pt->address;   
-            data_buffer_size    = pt_pt->size;
+            data_buffer_size    = pt_pt->size;  /* data amount in the original buffer */
             pt_pt++;
             outBuf = (SAMP_OUT *)(pt_pt->address); 
-            bufferout_free        = pt_pt->size;
+            bufferout_free        = pt_pt->size; /* free area in the original buffer */
 
             nb_data = data_buffer_size / sizeof(SAMP_IN);
 
             //processing(pinstance, inBuf, nb_data, outBuf);
+            { int i;
+                for (i = 0; i < nb_data; i++)
+                    outBuf[i] = inBuf[i];
+            }
 
-            increment = (nb_data * sizeof(SAMP_IN));
             pt_pt = data;
-            *(pt_pt->address) += increment;
+            *(&(pt_pt->size)) = nb_data * sizeof(SAMP_IN); /* amount of data consumed */
             pt_pt ++;
-            increment = (nb_data * sizeof(SAMP_OUT));
-            *(pt_pt->address) += increment;
-
+            *(&(pt_pt->size)) = nb_data * sizeof(SAMP_OUT);   /* amount of data produced */
             
             break;
         }

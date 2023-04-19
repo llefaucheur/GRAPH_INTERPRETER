@@ -44,7 +44,7 @@
 
 typedef struct {
 
-    uint8_t *address;
+    intPtr_t address;
     intPtr_t size;
 
 } data_buffer_t;

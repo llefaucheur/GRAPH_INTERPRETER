@@ -52,7 +52,7 @@ const detector_parameters detector_preset [NB_PRESET] =
 
 
 extern void detector_processing (arm_detector_instance *instance, 
-                     uint8_t *in, int32_t nb_data, 
+                     int16_t *in, int32_t nb_data, 
                      int16_t *outBufs);
 /**
   @brief         
@@ -125,9 +125,9 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
         case STREAM_RUN:   
         {
             arm_detector_instance *pinstance = (arm_detector_instance *) instance;
-            int32_t nb_data, data_buffer_size, bufferout_free, increment;
+            int32_t nb_data, data_buffer_size, bufferout_free;
             data_buffer_t *pt_pt;
-            #define SAMP_IN uint8_t 
+            #define SAMP_IN int16_t 
             #define SAMP_OUT int16_t
             SAMP_IN *inBuf;
             SAMP_OUT *outBuf;
@@ -143,13 +143,10 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
 
             detector_processing (pinstance, inBuf, nb_data, outBuf);
 
-            increment = (nb_data * sizeof(SAMP_IN));
             pt_pt = data;
-            *(pt_pt->address) += increment;
+            *(&(pt_pt->size)) = nb_data * sizeof(SAMP_IN); /* amount of data consumed */
             pt_pt ++;
-            increment = (nb_data * sizeof(SAMP_OUT));
-            *(pt_pt->address) += increment;
-
+            *(&(pt_pt->size)) = nb_data * sizeof(SAMP_OUT);   /* amount of data produced */
             
             break;
         }

@@ -35,9 +35,9 @@ intPtr_t pack2linaddr_int(uint32_t data, intPtr_t *offsets)
 {
     intPtr_t tmp1, tmp2, tmp3, tmp4, tmp5, tmp6;
     uint32_t tmp0;
-    tmp0 = EXTRACT_FIELD(data, BASEIDX_ARCW0);      tmp1 = (intPtr_t)tmp0;
-    tmp0 = EXTRACT_FIELD(data, BASESHIFT_ARCW0);    tmp2 = (intPtr_t)tmp0;
-    tmp0 = EXTRACT_FIELD(data, DATAOFF_ARCW0);      tmp3 = (intPtr_t)tmp0;
+    tmp0 = RD(data, BASEIDX_ARCW0);      tmp1 = (intPtr_t)tmp0;
+    tmp0 = RD(data, BASESHIFT_ARCW0);    tmp2 = (intPtr_t)tmp0;
+    tmp0 = RD(data, DATAOFF_ARCW0);      tmp3 = (intPtr_t)tmp0;
 
     tmp4 = tmp1 << (tmp2 << U(2));
     tmp5 = offsets[tmp3];
@@ -205,7 +205,7 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     /* 
         initialization of the graph IO ports 
     */     
-    io_mask = EXTRACT_FIELD(pinst[STREAM_INSTANCE_WHOAMI_PORTS], BOUNDARY_PARCH);
+    io_mask = RD(pinst[STREAM_INSTANCE_WHOAMI_PORTS], BOUNDARY_PARCH);
     pio = GRAPH_IO_CONFIG_ADDR(graph,long_offset);
     nio = RD(graph[0],NBIO_GRAPH0);
     all_arcs = GRAPH_ARC_LIST_ADDR(graph,long_offset);
@@ -222,7 +222,7 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
         if (0 == (io_mask & (1U << iio))) 
             continue; 
 
-        fw_idx = EXTRACT_FIELD(stream_format_io, FW_IO_IDX_IOFMT);
+        fw_idx = RD(stream_format_io, FW_IO_IDX_IOFMT);
         set_stream.fw_idx = fw_idx;
 
         /* default value settings */
@@ -233,14 +233,14 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
            When the processing is in-place, this arc descriptor is not associated to a 
            buffer.
            */
-        io_command = EXTRACT_FIELD(stream_format_io, IOCOMMAND_IOFMT);
+        io_command = RD(stream_format_io, IOCOMMAND_IOFMT);
 
         if (IO_COMMAND_SET_BUFFER_RX == io_command ||
             IO_COMMAND_SET_BUFFER_TX == io_command  )
         {
             iarc = sizeof(uint32_t) * RD(stream_format_io, IOARCID_IOFMT);
             set_stream.buffer.address = 
-                (uint8_t *)pack2linaddr_ptr(all_arcs[iarc + BUF_PTR_ARCW0],long_offset);
+                pack2linaddr_int(all_arcs[iarc + BUF_PTR_ARCW0],long_offset);
             set_stream.buffer.size = 
                 (uint32_t)RD(all_arcs[iarc + BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
         }

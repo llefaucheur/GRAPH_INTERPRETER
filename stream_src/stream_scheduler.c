@@ -70,10 +70,10 @@ intPtr_t arc_extract_info_int (uint32_t *arc, uint8_t tag, intPtr_t *offsets)
     uint32_t base;
     intPtr_t ret;
 
-    read =  EXTRACT_FIELD(arc[RDFLOW_ARCW2   ], READ_ARCW2);
-    write = EXTRACT_FIELD(arc[WRIOCOLL_ARCW3 ], WRITE_ARCW3);
-    size =  EXTRACT_FIELD(arc[BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
-    base =  EXTRACT_FIELD(arc[BUF_PTR_ARCW0  ], BASEIDX_ARCW0);
+    read =  RD(arc[RDFLOW_ARCW2   ], READ_ARCW2);
+    write = RD(arc[WRIOCOLL_ARCW3 ], WRITE_ARCW3);
+    size =  RD(arc[BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
+    base =  RD(arc[BUF_PTR_ARCW0  ], BASEIDX_ARCW0);
 
     switch (tag)
     {
@@ -99,23 +99,23 @@ intPtr_t * arc_extract_info_pt (uint32_t *arc, uint8_t tag, intPtr_t *offsets)
     intPtr_t *long_base;
     intPtr_t *ret;
 
-    read =  EXTRACT_FIELD(arc[RDFLOW_ARCW2   ], READ_ARCW2);
-    write = EXTRACT_FIELD(arc[WRIOCOLL_ARCW3 ], WRITE_ARCW3);
-    size =  EXTRACT_FIELD(arc[BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
-    base =  EXTRACT_FIELD(arc[BUF_PTR_ARCW0  ], BASEIDX_ARCW0);
-    shift = EXTRACT_FIELD(arc[BUF_PTR_ARCW0  ], BASESHIFT_ARCW0);
-    idxoff =EXTRACT_FIELD(arc[BUF_PTR_ARCW0  ], DATAOFF_ARCW0);
+    read =  RD(arc[RDFLOW_ARCW2   ], READ_ARCW2);
+    write = RD(arc[WRIOCOLL_ARCW3 ], WRITE_ARCW3);
+    size =  RD(arc[BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
+    base =  RD(arc[BUF_PTR_ARCW0  ], BASEIDX_ARCW0);
+    shift = RD(arc[BUF_PTR_ARCW0  ], BASESHIFT_ARCW0);
+    idxoff =RD(arc[BUF_PTR_ARCW0  ], DATAOFF_ARCW0);
     long_base = pack2linaddr_ptr(base,offsets);
 
     switch (tag)
     {
     case arc_base_address : ret = long_base; 
         break;
-    case arc_ceil_address : ret = &(long_base[size]); 
+    case arc_ceil_address : ret = (intPtr_t *)&(((uint8_t *)long_base)[size]); 
         break;
-    case arc_read_address : ret = &(long_base[read]); 
+    case arc_read_address : ret = (intPtr_t *)&(((uint8_t *)long_base)[read]); 
         break;
-    case arc_write_address: ret = &(long_base[write]); 
+    case arc_write_address: ret = (intPtr_t *)&(((uint8_t *)long_base)[write]); 
         break;
     default : ret = 0u; 
     }
@@ -202,18 +202,21 @@ void arc_data_operations (
     uint8_t bool;
 
     //xdm_data = (data_buffer_t *)buffer;
-    fifosize =  EXTRACT_FIELD(arc[BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
-    base =      EXTRACT_FIELD(arc[BUF_PTR_ARCW0  ], BASEIDX_ARCW0);
-    shift =     EXTRACT_FIELD(arc[BUF_PTR_ARCW0  ], BASESHIFT_ARCW0);
-    idxoff =    EXTRACT_FIELD(arc[BUF_PTR_ARCW0  ], DATAOFF_ARCW0);
+    fifosize =  RD(arc[BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
+    base =      RD(arc[BUF_PTR_ARCW0  ], BASEIDX_ARCW0);
+    shift =     RD(arc[BUF_PTR_ARCW0  ], BASESHIFT_ARCW0);
+    idxoff =    RD(arc[BUF_PTR_ARCW0  ], DATAOFF_ARCW0);
     long_base = (uint8_t *)pack2linaddr_ptr(base,long_offset);
 
     switch (tag)
     {
     /* data is left shifted to the base address to avoid circular addressing */ 
     case arc_data_realignment_to_base:
-        read =  EXTRACT_FIELD(arc[RDFLOW_ARCW2  ], READ_ARCW2);
-        write = EXTRACT_FIELD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
+        read =  RD(arc[RDFLOW_ARCW2  ], READ_ARCW2);
+        if (read == 0)
+        {   break;      /* buffer is full but there is nothing to realign */
+        }
+        write = RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
         size = U(write - read);
         src = &(long_base[read]);
         dst =  long_base;
@@ -223,14 +226,19 @@ void arc_data_operations (
         ST(arc[RDFLOW_ARCW2  ], READ_ARCW2, 0);
         ST(arc[WRIOCOLL_ARCW3], WRITE_ARCW3, size);
 
-        /* DMB on RD/WR to let the producer be aware */
+        /* does the write index is not far, to ask for data realignment? */
+        fill_thr = RD(arc[RDFLOW_ARCW2], THRESHOLD_ARCW2);
+        bool = (size > (fifosize >> (1U + fill_thr))) ? 1 : 0;
+        ST(arc[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3, bool);
+
+        /* DMB on RD/WR to let the producers be aware */
         DATA_MEMORY_BARRIER;
     break;
 
     /* move in and increment write index, update filling status */
     case arc_move_to_arc : 
         /* only one node can read the write-index at a time : no collision is possible */
-        write = EXTRACT_FIELD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
+        write = RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
         src = buffer;
         dst = &(long_base[write]);
         MEMCPY (dst, src, datasize);
@@ -240,9 +248,9 @@ void arc_data_operations (
         ST(arc[WRIOCOLL_ARCW3], WRITE_ARCW3, write);
 
         /* are there enough data in the FIFO to tell it ready for read ? */
-        fill_thr = EXTRACT_FIELD(arc[RDFLOW_ARCW2  ], THRESHOLD_ARCW2);
-        read =     EXTRACT_FIELD(arc[RDFLOW_ARCW2  ], READ_ARCW2);
-        write =    EXTRACT_FIELD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
+        fill_thr = RD(arc[RDFLOW_ARCW2  ], THRESHOLD_ARCW2);
+        read =     RD(arc[RDFLOW_ARCW2  ], READ_ARCW2);
+        write =    RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
         bool = (U(write - read) > U(datasize >> U(U(1) + fill_thr))) ? 1 : 0;
         ST(arc[WRIOCOLL_ARCW3], READY_R_ARCW3, bool);
         DATA_MEMORY_BARRIER;
@@ -251,15 +259,15 @@ void arc_data_operations (
     /* move out was done by the consumer, increment read index, update emptiness status */
     case arc_moved_from_arc  : 
         /* only one node can update the read-index at a time : no collision is possible */
-        read = EXTRACT_FIELD(arc[RDFLOW_ARCW2], READ_ARCW2);
+        read = RD(arc[RDFLOW_ARCW2], READ_ARCW2);
         read = read + datasize;
 
         /* update the read index */
         ST(arc[RDFLOW_ARCW2], READ_ARCW2, read);
 
         /* are there enough free-space in the FIFO to tell it ready for write ? */
-        fill_thr = EXTRACT_FIELD(arc[RDFLOW_ARCW2  ], THRESHOLD_ARCW2);
-        write =    EXTRACT_FIELD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
+        fill_thr = RD(arc[RDFLOW_ARCW2  ], THRESHOLD_ARCW2);
+        write =    RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
         {   uint32_t a;
             uint32_t b;
             a = U(fifosize - write);
@@ -273,22 +281,31 @@ void arc_data_operations (
     /* large buffer : no data move but update the arc descriptor to the
         buffer provided by the arm_stream_io() callback */
 
-    /* set the buffer to IO addres with R=0  and W=Size */
+    /* set the buffer to IO address with R=0  and W=Size 
+       RX buffer generated from IO => set the address 
+        */
     case arc_set_base_address_to_arc :
-        ST(arc[BUF_PTR_ARCW0 ], BASEIDXOFFARCW0, physical_to_offset(buffer, long_offset));
-        ST(arc[WRIOCOLL_ARCW3], READY_R_ARCW3, 1);
         ST(arc[RDFLOW_ARCW2  ], READ_ARCW2, 0);
+        ST(arc[BUF_PTR_ARCW0 ], BASEIDXOFFARCW0, physical_to_offset(buffer, long_offset));
         ST(arc[WRIOCOLL_ARCW3], WRITE_ARCW3, datasize);
+        ST(arc[WRIOCOLL_ARCW3], READY_R_ARCW3, 1);
+        
+        /* does the write index is already far, to ask for data realignment? */
+        fill_thr = RD(arc[RDFLOW_ARCW2], THRESHOLD_ARCW2);
+        bool = (datasize > (fifosize >> (1U + fill_thr))) ? 1 : 0;
+        ST(arc[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3, bool);
 
         DATA_MEMORY_BARRIER;
         break;
 
-    /* set the buffer to IO addres with R=W=0 */
+    /* set the buffer to IO addres with R=W=0
+       TX buffer to the IO => set the address of data generated by the graph
+    */
     case arc_set_base_address_from_arc :
-        ST(arc[BUF_PTR_ARCW0 ], BASEIDXOFFARCW0, physical_to_offset(buffer, long_offset));
-        ST(arc[RDFLOW_ARCW2  ], READY_W_ARCW2, 1);
         ST(arc[RDFLOW_ARCW2  ], READ_ARCW2, 0);
         ST(arc[WRIOCOLL_ARCW3], WRITE_ARCW3, 0);
+        ST(arc[BUF_PTR_ARCW0 ], BASEIDXOFFARCW0, physical_to_offset(buffer, long_offset));
+        ST(arc[RDFLOW_ARCW2  ], READY_W_ARCW2, 1);
 
         DATA_MEMORY_BARRIER;
         break;
@@ -307,23 +324,19 @@ void arc_data_operations (
 static void read_arc_xdm (uint32_t *arc, uint32_t in0out1, intPtr_t *long_offset, 
                    data_buffer_t *xdm_data/*, uint32_t *all_formats*/)
 {
-    uint32_t  fifosize;
-
-    fifosize = EXTRACT_FIELD(arc[BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
-
     if (U(0) != in0out1)
     {
-        /* output buffer of the SWC */
-        xdm_data->address = (uint8_t *)(arc_extract_info_pt (arc, arc_write_address, long_offset));
+        /* output buffer of the SWC : size = free area in the original buffer */
+        xdm_data->address = (intPtr_t)(arc_extract_info_pt (arc, arc_write_address, long_offset));
         xdm_data->size    = arc_extract_info_int (arc, arc_free_area, long_offset);
         // TODO implement size modulo frame_size of the format to recover synchronization errors
         // solution synchronize on the producer: the distance to WRITE_ARCW3 is a multiple of the frame size
     }
     else
     {
-        /* input buffer of the SWC */
-        xdm_data->address = (uint8_t *)(arc_extract_info_pt (arc, arc_read_address, long_offset));
-        xdm_data->size    = arc_extract_info_int (arc, arc_free_area, long_offset);
+        /* input buffer of the SWC : size = data amount in the original buffer*/
+        xdm_data->address = (intPtr_t)(arc_extract_info_pt (arc, arc_read_address, long_offset));
+        xdm_data->size    = arc_extract_info_int (arc, arc_data_amount, long_offset);
     }
 }
 
@@ -341,12 +354,13 @@ static void check_arc_and_rewind (uint32_t *arc, uint32_t in0out1, intPtr_t *lon
                            data_buffer_t *xdm_data)
 {
     uint32_t fifosize;
-    uint32_t diff;
     intPtr_t long_base;
-    uint8_t *write;
-    uint8_t *data;
+    uint8_t write_idx;
+    uint8_t read_idx;
     uint8_t shift_thr;
     uint8_t bool;
+    uint8_t fill_thr;
+    intPtr_t increment;
 
     /* is it simple/null arc */
     if (RD(arc[BUFSIZDBG_ARCW1], SHAREDARC_ARCW1) == 1u)
@@ -358,15 +372,22 @@ static void check_arc_and_rewind (uint32_t *arc, uint32_t in0out1, intPtr_t *lon
         return;
     }
      
-    fifosize =  EXTRACT_FIELD(arc[BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
-    long_base = EXTRACT_FIELD(arc[BUF_PTR_ARCW0  ], BASEIDX_ARCW0);
+    fifosize =  RD(arc[BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
+    long_base = RD(arc[BUF_PTR_ARCW0  ], BASEIDX_ARCW0);
 
     /* is it an output arc ? */
     if (0u != in0out1)
     {
         /* output buffer of the SWC : check the pointer increment */
-        write = (uint8_t *)arc_extract_info_pt(arc, arc_write_address, long_offset);
-        data = xdm_data->address;
+        write_idx = RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
+        increment = xdm_data->size;
+        write_idx = write_idx + increment;
+        ST(arc[WRIOCOLL_ARCW3], WRITE_ARCW3, write_idx);
+
+        fill_thr = RD(arc[RDFLOW_ARCW2  ], THRESHOLD_ARCW2);
+        read_idx = RD(arc[RDFLOW_ARCW2  ], READ_ARCW2);
+        bool = (U(write_idx - read_idx) > U(fifosize >> U(U(1) + fill_thr))) ? 1 : 0;
+        ST(arc[WRIOCOLL_ARCW3], READY_R_ARCW3, bool);
 
         /* is there debug/monitoring activity to do ? */
         if (RD(arc[RDFLOW_ARCW2], COMPUTCMD_ARCW2) != 0u)
@@ -375,30 +396,41 @@ static void check_arc_and_rewind (uint32_t *arc, uint32_t in0out1, intPtr_t *lon
            */
         }
 
-
-        diff = convert_ptr_to_int(data) - convert_ptr_to_int(write);   // for debug
-
-        data = xdm_data->address;
-        diff = convert_ptr_to_int(data) - convert_ptr_to_int((uint8_t *)long_base);   
-        ST(arc[WRIOCOLL_ARCW3], WRITE_ARCW3, diff);
-
-        /* are there enough data in the FIFO to tell for data realignment? */
+        /* does the write index is already far, to ask for data realignment? */
         shift_thr = RD(arc[RDFLOW_ARCW2], THRESHOLD_ARCW2);
-        bool = ((fifosize - diff) > (fifosize >> (1U + shift_thr))) ? 1 : 0;
+        bool = (write_idx > (fifosize >> (1U + shift_thr))) ? 1 : 0;
         ST(arc[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3, bool);
-        DATA_MEMORY_BARRIER;
-    }
-    /* this is an input arc */
-    else
-    {
-        /* input buffer of the SWC, update the read index*/
-        diff = convert_ptr_to_int(xdm_data->address) - convert_ptr_to_int((uint8_t *)long_base);   
-        ST(arc[RDFLOW_ARCW2], READ_ARCW2, diff);
 
         /* check the need for data flush */
         if (U(0) != TEST_BIT(arc[BUFSIZDBG_ARCW1], MPFLUSH_ARCW1_LSB))
         {   DATA_MEMORY_BARRIER
         }
+
+        /* make the write pointer update visible to all processors */
+        DATA_MEMORY_BARRIER;
+    }
+    /* this is an input arc */
+    else
+    {   
+        /* input buffer of the SWC, update the read index*/
+        read_idx = RD(arc[RDFLOW_ARCW2], READ_ARCW2);
+        increment = xdm_data->size;
+        read_idx = read_idx + increment;
+        ST(arc[RDFLOW_ARCW2], READ_ARCW2, read_idx);
+
+        fill_thr = RD(arc[RDFLOW_ARCW2  ], THRESHOLD_ARCW2);
+        write_idx = RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
+        bool = (U(write_idx - read_idx) > U(fifosize >> U(U(1) + fill_thr))) ? 1 : 0;
+        ST(arc[WRIOCOLL_ARCW3], READY_R_ARCW3, bool);
+
+        /* does data realignement is possible ? */
+        if (0u != TEST_BIT (arc[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB))
+        {   arc_data_operations (arc, arc_data_realignment_to_base, long_offset, 0, 0);
+            DATA_MEMORY_BARRIER;
+        }
+
+        /* make the read pointer update visible to all processors */
+        DATA_MEMORY_BARRIER;
     }
 
 }
@@ -424,7 +456,7 @@ static void check_graph_boundaries(
     uint8_t readwrite_field;
     struct platform_control_stream p_data_move;
 
-    io_mask = EXTRACT_FIELD(pstream_inst[STREAM_INSTANCE_WHOAMI_PORTS], BOUNDARY_PARCH);
+    io_mask = RD(pstream_inst[STREAM_INSTANCE_WHOAMI_PORTS], BOUNDARY_PARCH);
     for (iio = 0u; iio < nio; iio++)
     {
         /* ports where the peripheral is master are not checked (MASTER_FOLLOWER_IOMEM) */
@@ -439,10 +471,10 @@ static void check_graph_boundaries(
         {   continue;
         }
 
-        arc_idx = EXTRACT_FIELD(*pio, IOARCID_IOFMT);
+        arc_idx = SIZEOF_ARCDESC_W32 * RD(*pio, IOARCID_IOFMT);
 
         /* if this is an input stream : check the buffer is empty  */
-        if (RX0_TO_GRAPH == EXTRACT_FIELD(*pio, RX0TX1_IOFMT))
+        if (RX0_TO_GRAPH == RD(*pio, RX0TX1_IOFMT))
         {   need_data_move = ((TEST_BIT(arcs[arc_idx + (uint32_t)RDFLOW_ARCW2], READY_W_ARCW2_LSB)) > 0u)? 1 : 0;
             readwrite_field = arc_write_address;
             search_field = arc_free_area;
@@ -458,7 +490,9 @@ static void check_graph_boundaries(
         if (0u != need_data_move)
         {   buffer = (uint8_t *)(arc_extract_info_pt (&(arcs[arc_idx]), readwrite_field, long_offset));
             size = arc_extract_info_int (&(arcs[arc_idx]), search_field, long_offset);
-
+            if (size == 0)
+            {   break;
+            }
             /* 
                 TODO When the IO is slave and stream_io_domain=PLATFORM_LOW_DATA_RATE_XX 
                  check the time interval from last frame (by a read of the time-stamp in 
@@ -470,10 +504,10 @@ static void check_graph_boundaries(
             */
 
             /* ask the firmware to awake this port */
-            p_data_move.fw_idx = EXTRACT_FIELD(*pio, FW_IO_IDX_IOFMT);
+            p_data_move.fw_idx = RD(*pio, FW_IO_IDX_IOFMT);
 
             /* using the address of the ring buffer */
-            p_data_move.buffer.address = buffer;
+            p_data_move.buffer.address = (intPtr_t)buffer;
             p_data_move.buffer.size = size;
             platform_al(PLATFORM_IO_DATA, (uint8_t *)&p_data_move, 0u, 0u);
         }
@@ -859,7 +893,6 @@ static void run_node (intPtr_t *parameters, stack *S, uint8_t script_option)
     if (0u != TEST_BIT (S->arc0[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB))
     {
         arc_data_operations (S->arc0, arc_data_realignment_to_base, S->long_offset, 0, 0);
-        //CLEAR_BIT (arc0[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB);
         DATA_MEMORY_BARRIER;
     }
     
@@ -869,7 +902,7 @@ static void run_node (intPtr_t *parameters, stack *S, uint8_t script_option)
     
     /* if the SWC is using a relocatable memory segment to TCM, the base address is loaded 
         in the first address of its instance */
-    if (0u != RD(S->swc_header, TCM_INST_GI))
+    if (0u != TEST_BIT(S->swc_header, TCM_INST_GI_LSB))
     {   intPtr_t *tmp = (intPtr_t *)S->swc_instance;
         *tmp = S->long_offset[MBANK_DMEMFAST];
     }

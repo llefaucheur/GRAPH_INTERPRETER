@@ -228,15 +228,15 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
         case PLATFORM_IO_SET_STREAM:
             platform_io_callback_parameter [parameters->fw_idx] = parameters->graph;
             io_func = io_manifest->io_set;
-            (*io_func)(settings, buffer->address, (uint32_t)(buffer->size));
+            (*io_func)(settings, (uint8_t *)(buffer->address), (uint32_t)(buffer->size));
             break;
         case PLATFORM_IO_DATA :
             io_func = io_manifest->io_start;
-            (*io_func)(settings, buffer->address, (uint32_t)(buffer->size));
+            (*io_func)(settings, (uint8_t *)(buffer->address), (uint32_t)(buffer->size));
             break;
         case PLATFORM_IO_STOP_STREAM:
             io_func = io_manifest->io_stop;
-            (*io_func)(settings, buffer->address, (uint32_t)(buffer->size));
+            (*io_func)(settings, (uint8_t *)(buffer->address), (uint32_t)(buffer->size));
             break;
         default:
             break;

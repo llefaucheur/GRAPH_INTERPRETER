@@ -485,11 +485,6 @@
               <FilePath>..\..\stream_nodes\arm\split\arm_stream_split.c</FilePath>
             </File>
             <File>
-              <FileName>arm_tiny_vad.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\stream_nodes\arm\vad\arm_tiny_vad.c</FilePath>
-            </File>
-            <File>
               <FileName>arm_data_conditioning.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\stream_nodes\arm\data_conditioning\arm_data_conditioning.c</FilePath>

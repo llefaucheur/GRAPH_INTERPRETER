@@ -33,14 +33,12 @@
 /* ----------------------------- */
 typedef struct
 {
-    uint32_t numstages;
     int32_t b0, b1, b2, a1, a2;     /* coefficients */
     int32_t q0, z1, z2;             /* error spectral shaping, 2 states */
 } arm_filter_biquad_q15;
 /* ----------------------------- */
 typedef struct
 {
-    uint32_t numstages;
     float b0, b1, b2, a1, a2;     /* coefficients */
     float q0, z1, z2;             /* error spectral shaping, 2 states */
 } arm_filter_biquad_float;
@@ -67,7 +65,10 @@ typedef struct
 #define     NUMSTAGE_FLT_LSB U( 0) /*  4 number of biquad stages */
     uint32_t format;
 
-    /* memory and coefficients, copied to *TCM_working before computations */
+    uint32_t numstages;
+
+    /* memory and coefficients, in cascade x , 
+        copied to *TCM_working before computations */
     union
     {   arm_filter_biquad_q15   biq_q15;
         arm_filter_biquad_float biq_float;

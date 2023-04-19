@@ -51,13 +51,24 @@
   @return        none
  */
 void detector_processing (arm_detector_instance *instance, 
-                     uint8_t *in, int32_t nb_data, 
+                     int16_t *in, int32_t nb_data, 
                      int16_t *outBufs)
 {
     int i;
+
     for (i = 0; i < nb_data; i++)
     {
-        outBufs[i] = (int16_t)((int16_t)(in[i])<<8);
+        // simplified VAD : reload the counter on energy detection
+        if (in[i] > 500)
+        {   instance->down_counter = 1 << (instance->config.log2counter);
+        }
+
+        if (instance->down_counter > 0) 
+            outBufs[i] = 32767;
+        else
+            outBufs[i] = 0;
+
+        if (instance->down_counter >= 1)
+            instance->down_counter --;
     }
 }
-

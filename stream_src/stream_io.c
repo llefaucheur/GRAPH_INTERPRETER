@@ -55,54 +55,56 @@ void arm_stream_io (uint32_t fw_io_idx,
     pio = (uint32_t *)GRAPH_IO_CONFIG_ADDR(graph,long_offset);
     pio = &(pio[fw_io_idx]);
     arc = GRAPH_ARC_LIST_ADDR(graph,long_offset);
-    arc_idx = EXTRACT_FIELD(*pio, IOARCID_IOFMT);
+    arc_idx = RD(*pio, IOARCID_IOFMT);
     arc = &(arc[SIZEOF_ARCDESC_W32 * arc_idx]);
-    rx0tx1 = (uint8_t) EXTRACT_FIELD(*pio, RX0TX1_IOFMT);
-    command = (uint8_t) EXTRACT_FIELD(*pio, IOCOMMAND_IOFMT);
+    rx0tx1 = (uint8_t) RD(*pio, RX0TX1_IOFMT);
+    command = (uint8_t) RD(*pio, IOCOMMAND_IOFMT);
     size = data_size;
 
     switch (rx0tx1)
     {
         /* stream to the graph */
         case RX0_TO_GRAPH:
-            /* free area = size - write */
-            free_area = EXTRACT_FIELD(arc[BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1) - 
-                EXTRACT_FIELD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
-
-            if (free_area < data_size)
-            {   /* overflow issue */
-                flow_error = (uint8_t) EXTRACT_FIELD(arc[RDFLOW_ARCW2], OVERFLRD_ARCW2);
-                platform_al(PLATFORM_ERROR, 0,0,0);
-                /* TODO : implement the flow management desired for "flow_error" */
-                size = free_area;
-            }
             if (command == (uint8_t)IO_COMMAND_DATA_MOVE_RX)
-            {   arc_data_operations (arc, arc_move_to_arc, long_offset, data, size);      
+            {   /* free area = size - write */
+                free_area = RD(arc[BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1) - 
+                RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
+                
+                if (free_area < data_size)
+                {   /* overflow issue */
+                    flow_error = (uint8_t) RD(arc[RDFLOW_ARCW2], OVERFLRD_ARCW2);
+                    platform_al(PLATFORM_ERROR, 0,0,0);
+                    /* TODO : implement the flow management desired for "flow_error" */
+                    size = free_area;
+                }
+
+                arc_data_operations (arc, arc_move_to_arc, long_offset, data, size);      
             } 
-            if (command == (uint8_t)IO_COMMAND_SET_BUFFER_RX)
+            else /* (command == (uint8_t)IO_COMMAND_SET_BUFFER_RX) */
             {   arc_data_operations (arc, arc_set_base_address_to_arc, long_offset, data, size);    
             }
             break;
 
         /* stream from the graph */
         case TX1_FROM_GRAPH:
-            /* amount of data = write - read */
-            amount_of_data = EXTRACT_FIELD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3) -    
-                EXTRACT_FIELD(arc[RDFLOW_ARCW2], READ_ARCW2);
-    
-            if (amount_of_data < data_size)
-            {   /* underflow issue */
-                flow_error = (uint8_t) EXTRACT_FIELD(arc[RDFLOW_ARCW2], UNDERFLRD_ARCW2);
-                /* TODO : implement the flow management desired for "flow_error" */
-                size = amount_of_data;
-            }
             if (command == (uint8_t)IO_COMMAND_DATA_MOVE_RX)
-            {   arc_data_operations (arc, arc_moved_from_arc, long_offset, 0, size);      
+            {   /* amount of data = write - read */
+                amount_of_data = RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3) -    
+                RD(arc[RDFLOW_ARCW2], READ_ARCW2);
+
+                if (amount_of_data < data_size)
+                {   /* underflow issue */
+                    flow_error = (uint8_t) RD(arc[RDFLOW_ARCW2], UNDERFLRD_ARCW2);
+                    /* TODO : implement the flow management desired for "flow_error" */
+                    size = amount_of_data;
+                }            
+                arc_data_operations (arc, arc_moved_from_arc, long_offset, 0, size);      
             } 
-            if (command == (uint8_t)IO_COMMAND_SET_BUFFER_TX)
+            else /* (command == (uint8_t)IO_COMMAND_SET_BUFFER_TX) */
             {   arc_data_operations (arc, arc_set_base_address_from_arc, long_offset, data, size);    
             }
             break;
+
         default:
             break;
     }
