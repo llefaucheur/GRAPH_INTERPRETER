@@ -41,13 +41,14 @@
     time-constant in [ms] for the energy integration time, time-constant to gate the output.
 */
 
+// TODO Liam These are not accessible to user - to set params currently you need to pass an array of parameters - do we want to add this functionality or force use of presets?
 #define NB_PRESET 4
 const detector_parameters detector_preset [NB_PRESET] = 
-{   /* log2counter, log2decfMAX, high_pass_shifter, low_pass_shifter, floor_noise_shifter, peak_signal_shifter */
-    { 12, 6, 1, 3, 7, 4},   /* preset #0 = VAD at 16kHz */
-    { 12, 7, 2, 4, 7, 5},   /* preset #1 = VAD at 48kHz */
-    { 12, 6, 0, 4, 6, 4},   /* preset #2 = peak detector 1 no HPF */
-    { 12, 7, 2, 4, 7, 5},   /* preset #3 = peak detector 2 TBD */
+{   /* log2counter, log2decfMAX, high_pass_shifter, low_pass_shifter, floor_noise_shifter, peak_signal_shifter, vad_rise, vad_fall, prescaler_accumulator */
+    { 12, 6, 1, 3, 7, 4, 0, 0, 0},   /* preset #0 = VAD at 16kHz */
+    { 12, 7, 2, 4, 7, 5, 0, 0, 0},   /* preset #1 = VAD at 48kHz */
+    { 12, 6, 0, 4, 6, 4, 0, 0, 0},   /* preset #2 = peak detector 1 no HPF */
+    { 12, 7, 2, 4, 7, 5, 0, 0, 0},   /* preset #3 = peak detector 2 TBD */
 };
 
 
@@ -58,14 +59,14 @@ extern void detector_processing (arm_detector_instance *instance,
   @brief         
   @param[in]     command    bit-field
   @param[in]     pinst      instance of the component
-  @param[in/out] pdata      address and size of buffers
+  @param[in/out] pdata      address and size of buffers TODO: OR pointer to required detector_preset if COMMAND = STREAM_SET_PARAM?
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
+
 void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status)
 {
     *status = 1;    /* default return status, unless processing is not finished */
-
     switch (RD(command,COMMAND_CMD))
     { 
         /* func(command = (STREAM_RESET, PRESET, TAG, NB ARCS IN/OUT)
@@ -100,18 +101,27 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
                 data = (one or all)
         */ 
         case STREAM_SET_PARAMETER:  
-        {   uint8_t *pt8bsrc, *pt8bdst, i, n;
-            uint8_t *new_parameters = (uint8_t *)data;
+        {
             arm_detector_instance *pinstance = (arm_detector_instance *) instance;
+            pinstance->config = detector_preset[1]; // Liam hard-coded
 
+            // TODO Add support for custom raw params and/or select preset using passed data
+            if (0)
+            {
+            uint8_t *pt8bsrc, *pt8bdst, i, n;
+            // TODO Unused variable new_parameters can be removed?
+            // uint8_t *new_parameters = (uint8_t *)data;
+            arm_detector_instance *pinstance = (arm_detector_instance *) instance;
             /* copy the parameters */
-            pt8bsrc = (uint8_t *) data;
+            pt8bsrc = (uint8_t *) &(data->address);
             pt8bdst = (uint8_t *) &(pinstance->config);
             n = sizeof(detector_parameters);
             for (i = 0; i < n; i++)
             {   pt8bdst[i] = pt8bsrc[i];
             }
+            }
             break;
+
         }
 
 
@@ -133,7 +143,7 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
             SAMP_OUT *outBuf;
 
             pt_pt = data;
-            inBuf  = (SAMP_IN *)pt_pt->address;   
+            inBuf  = (SAMP_IN *)pt_pt->address;
             data_buffer_size    = pt_pt->size;
             pt_pt++;
             outBuf = (SAMP_OUT *)(pt_pt->address); 

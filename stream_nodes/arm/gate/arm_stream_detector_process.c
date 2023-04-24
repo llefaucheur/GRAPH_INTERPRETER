@@ -25,11 +25,20 @@
  * 
  */
 
+#define F2Q31(f) (long)(0x7FFFFFFL*(f))
+#define F2Q15(f) (long)(0x7FFFL*(f))
+
+#define ConvertSamp(f) (f<<15)
+#define DIVBIN(s,n) (s>>n)
+
 #include "stream_const.h"
 #include "stream_types.h"
 
 #include "arm_stream_detector.h"
 
+// Debug
+#include <stdio.h>
+#include <inttypes.h>
 /*
     9.	stream_detector
     Operation : provides a boolean output stream from the detection of a rising (of falling) edge above 
@@ -54,21 +63,30 @@ void detector_processing (arm_detector_instance *instance,
                      int16_t *in, int32_t nb_data, 
                      int16_t *outBufs)
 {
-    int i;
 
-    for (i = 0; i < nb_data; i++)
+    for (int i = 0; i < 2; i++)
+
     {
-        // simplified VAD : reload the counter on energy detection
-        if (in[i] > 500)
-        {   instance->down_counter = 1 << (instance->config.log2counter);
-        }
-
-        if (instance->down_counter > 0) 
-            outBufs[i] = 32767;
-        else
-            outBufs[i] = 0;
-
-        if (instance->down_counter >= 1)
-            instance->down_counter --;
+        printf("SampleRaw_detector_processing: %i \n", in[i]);
+        int16_t input_data = ConvertSamp(in[i]);
+        printf("SampConverted_detector_processing: %i \n", input_data);
     }
+
+    // int i;
+
+    // for (i = 0; i < nb_data; i++)
+    // {
+    //     // simplified VAD : reload the counter on energy detection
+    //     if (in[i] > 500)
+    //     {   instance->down_counter = 1 << (instance->config.log2counter);
+    //     }
+
+    //     if (instance->down_counter > 0) 
+    //         outBufs[i] = 32767;
+    //     else
+    //         outBufs[i] = 0;
+
+    //     if (instance->down_counter >= 1)
+    //         instance->down_counter --;
+    // }
 }

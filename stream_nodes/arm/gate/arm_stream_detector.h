@@ -47,11 +47,15 @@ typedef struct
     uint8_t low_pass_shifter;   /* for z6 */
     uint8_t floor_noise_shifter;/* for z7 */
     uint8_t peak_signal_shifter;/* for z8 */
-} detector_parameters;
+    uint8_t vad_rise;/* rise time */
+    uint8_t vad_fall;/* fall time */
+    uint8_t prescaler_accumulator;/* likely for amending range? */
 
-typedef struct /* total = 22 Bytes => 24bytes/6word32 */
+} detector_parameters;
+// TODO Liam Verify revised byte count is correct
+typedef struct /* total = 25 Bytes => 28bytes/6word32 */
 {
-    detector_parameters config; /* 6 bytes */
+    detector_parameters config; /* 9 bytes */
 
     int16_t z1;    /* memory of the high-pass filter (recursive part) */
     int16_t z2;    /* memory of the high-pass filter (direct part) */
@@ -62,3 +66,5 @@ typedef struct /* total = 22 Bytes => 24bytes/6word32 */
     int32_t down_counter;    /* memory of the debouncing downcounter  */
 } arm_detector_instance;
 
+// Expose stream_detector
+void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status);
