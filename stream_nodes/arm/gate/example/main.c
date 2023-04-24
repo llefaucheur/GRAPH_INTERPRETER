@@ -31,10 +31,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "../arm_stream_detector.h"
+#include "stream_types.h"
+#include <inttypes.h>
 
-
-
-const short AudioInputSamples[] = {
+const int16_t AudioInputSamples[] = {
 /* 
 Fixed-point toggle times:
 VAD toggled to 1 at 218953
@@ -49,17 +49,27 @@ VAD toggled to 1 at 349566
 VAD toggled to 0 at 406267
 */
 #include "TestPattern.txt"
-#define FS 48000
 };
 
-// extern void detector_processing((arm_detector_instance *instance, 
-//                      int16_t *in, int32_t nb_data, 
-//                      int16_t *outBufs);
+#define FS 48000
 
 void main (void)
 {
     arm_detector_instance instance;
-    printf("Starting\n");
+    uint32_t status;
+
+    // Note code is intended for 32 bit but debugging on 64; so casts/pointer mismatches must be considered
+ 
+    data_buffer_t dummy_for_set_param;
+    arm_stream_detector(STREAM_SET_PARAMETER, (uint32_t*)&instance, &dummy_for_set_param , &status);
+    
+    // Create struct to match expected input type for stream detector using address of input array
+    // and the number of elements in it
+    data_buffer_t input = {.address = AudioInputSamples, .size = sizeof(AudioInputSamples)};    
+    arm_stream_detector(STREAM_RUN, &instance, &input, &status);
+    
+
+// WIP Remaining VAD Code to be implemented/adapted
 // #define nbSamples sizeof(AudioInputSamples)/2
 //     long NsampProcess, vad, previous_vad, command;
 //     long isamp;

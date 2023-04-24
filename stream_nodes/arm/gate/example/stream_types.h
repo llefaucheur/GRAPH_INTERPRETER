@@ -34,8 +34,10 @@
     #define intPtr_t uint64_t
     #define MAX_ADD_OFFSET 0x7FFFFFFFFFFFFFFFL
 */
-#ifdef PLATFORM_ARCH_32BIT
-#define intPtr_t uint32_t 
+
+#define DEBUGGING_ON_X86  1
+#if !DEBUGGING_ON_X86
+#define intPtr_t uint32_t
 #else
 #define intPtr_t uint64_t 
 #endif
