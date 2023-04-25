@@ -1,92 +1,192 @@
 # CMSIS Stream
+## PRELIMINARY DATA -- IN DEVELOPMENT 
 
+***WHAT***
 
+**CMSIS-Stream** is a scheduler of **DSP/ML software components**
+designed with **three motivations**:
 
-## Getting started
+-   **Accelerate time to market**
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+Go fast from prototypes using DSP/ML stream processing validated on a
+computer, to final tuning steps on board.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+-   **DSP/ML Software component stores**
 
-## Add your files
+Provide to developers opaque interfaces to platform memory and arrange
+the data are exchanged to the desired formats.
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+-   **Portability, scalability**
 
-```
-cd existing_repo
-git remote add origin https://git.research.arm.com/signalProcessing/CMSIS-Stream.git
-git branch -M main
-git push -uf origin main
-```
+Use the same stream-based processing method for devices of 2kB RAM to
+multiprocessors with heterogeneous architectures.
 
-## Integrate with your tools
+***HOW***
 
-- [ ] [Set up project integrations](https://git.research.arm.com/signalProcessing/CMSIS-Stream/-/settings/integrations)
+CMSIS-Stream is a scheduler and interpreter of a graph description,
+sitting on top of a minimal platform abstraction layer to memory and
+input/output stream interfaces. CMSIS-Stream manages the data streams of
+"arcs" between "nodes" with automatic format conversions.
 
-## Collaborate with your team
+The graph description is a compact data structure using indexes to
+physical addresses provided by the abstraction layer (AL). **This graph
+description is generated in three steps**:
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+1.  **A graphical user interface** (GUI) generates a high-level
+    description of the connexions between nodes and the platform data
+    streams. This graph representation is using the *YML format* used in
+    the CMSIS-DSP ComputeGraph
+    ([link](https://github.com/ARM-software/CMSIS-DSP/tree/main/ComputeGraph))
+    with extra fields to set the nodes processor affinity and the
+    board's presets. "No code" is one objective of the project: go
+    directly from this GUI to tests on target.
 
-## Test and Deploy
+2.  **A targeted platform is selected with its associated list of
+    "manifests"**. Each platform using CMSIS-Stream has a "platform
+    manifest" giving the processing details (processor architecture and
+    FPU options, minimum guaranteed amount of memory the system provides
+    per RAM blocks, their speed and sharing options, TCM sizes). And
+    manifests for each of the installed software components (SWC) giving
+    the developer identification, input/output data formats, memory
+    consumption, documentation of the parameters and a list of
+    "presets", test-patterns and expected results. This second
+    processing step generates the text file representation of the graph
+    ("*graphTxt*") used by the scheduler and can be manually modified.
 
-Use the built-in continuous integration in GitLab.
+3.  **Finally, the binary file used by the target is generated**. The
+    file format is either a C file, or a *binary* hashed data to load in
+    a specific flash memory block, to allow quick tuning without need of
+    recompilation.
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+**The abstraction layer (AL) provides the following services:**
 
-***
+1.  **Share the physical memory map base addresses**. The graph is using
+    indexes to base addresses to 8 different *memory types*: slow shared
+    external, fast shared internal, fast private, critical fast TCM,
+    backup, hardware IO, program, graph flash data. Nodes are processing
+    buffers with parameters using physical addresses. This interface
+    shares the table of entry points of the nodes installed in the
+    device.
 
-# Editing this README
+2.  **Call the functions generating/consuming data streams** declared in
+    the platform manifest and addressed as indexes from the scheduler
+    when the FIFOs at the boundary of the graph are full or empty.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
+3.  **Share time information**. The graphTxt embeds the byte-codes of
+    "Scripts" used to implement state-machines, to change nodes
+    parameters, to read the arcs content, trigger GPIO connected to the
+    graph, generated strings of JSON characters to the application, etc.
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+CMSIS-Stream is delivered with a generic implementation of the above
+services, with one memory bank, device drivers emulated with precomputed
+data, time information emulated with systick counters.
 
-## Name
-Choose a self-explaining name for your project.
+------------------------------------------------------------------------------
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+***DETAILS***
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Stream-based processing is facilitated using CMSIS-Stream:
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+-   Nodes can be written in **any computer languages**. The scheduler is
+    addressing the nodes from their single entry point, respecting the
+    ARM's EABI format and the CMSIS-Stream 4-parameters API format
+    (examples below). There is no restriction in having the nodes
+    delivered in binary format, compiled with "position independent
+    execution" options. The nodes delivered in binary can still have
+    access to the C standard libraries through a CMSIS-Stream service.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+-   **Drift management.** The streams don't need to be perfectly
+    isochronous. Rate conversion service is provided by the scheduler
+    when the sampling conversion can be expressed in ratio of integers.
+    The scheduler defines different quality of services (QoS) when a
+    main stream is processed with drifting secondary streams. The
+    time-base is adjusted to the high-QoS streams (minimum latency and
+    distortion), leaving the secondary streams managed with
+    interpolators in case of flow issues.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+-   CMSIS-Stream manages **TCM access**. If a software component
+    declares in its manifest the need for a "critical speed memory bank"
+    of small size (usually less than 30kBytes), the scheduler will
+    arrange the give the base address of a TCM area when the component
+    is called. TCM area are used for working/scratch areas, it is the
+    responsibility of the programmer to swap it with static memory if
+    needed.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+-   **Backup SRAM**. Some applications are requiring a fast recovery in
+    case of failures ("warm boot") or when the system restores itself
+    from deep-sleep periods. One of the 8 memory types allows SWC
+    developers to save the state of algorithms for fast return to normal
+    operations.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+-   graphTxt translation to binary allows memory optimization with
+    overlays of working/scratch memory banks.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+-   **Multiprocessing** SMP and AMP with 32+64bits. The graph
+    description is placed in a shared memory, and any CMSIS-Stream
+    instance can contribute to the processing. The node reservation
+    protocol is lock-free. The nodes are described with bit-fields to
+    map execution on specific processor and architectures. The buffers
+    associated to arcs can be allocated to private memory-banks.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+-   **Scripting**. To avoid going back and forth with the application
+    interface for simple decisions, without the need to recompile the
+    application (Low-code/No-code strategy, example of toggling a GPIO,
+    changing node parameter, building a JSON string\...) the graph
+    scheduler can interpret a compact byte-stream of codes to execute
+    simple scripts.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+-   **Process isolation**. The nodes never read the graph description
+    data, and their memory mapping is made for operation with hardware
+    memory protection.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+-   **Format conversions**. The SWC developer declares, in the
+    manifests, the data formats of the node. CMSIS-Stream makes the
+    translation between nodes: sampling-rates conversions, changes of
+    raw data, removal of time-stamps, channels de-interleaving.
 
-## License
-For open source projects, say how it is licensed.
+-   CMSIS-Stream manages the various **methods of controlling I/O** with
+    3 functions: parameters setting and buffer allocation, data move,
+    stop. The platform manifest mixed-signal components settings,
+    flow-control). This abstraction layer facilitates the control of
+    streams with DMA or polling schemes.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+-   The **tiny wrapper** format allows having a single interface (as
+    experimented in EEMBC "AudioMark") for all the nodes, including
+    those having multiple arcs connexions.
+
+-   CMSIS-Stream is **open-source**, and portable to Cortex-M, Cortex-R,
+    Cortex-A and Laptop computers.
+
+-   Example of software components (SWC): image and voice codec, data
+    conditioning, motion classifiers, data mixers. CMSIS-Stream comes
+    with short list of SWC doing data routing, mixing, conversion and
+    detection.
+
+-   **From the developer point of view**, it creates opaque memory
+    interfaces to the input/output streams of a graph, and arranges data
+    are exchanged in the desired formats of each component. CMSIS-Stream
+    manages the memory mapping with speed constraints, provided by the
+    developer, at instance creation. This lets software run with maximum
+    performance in rising situations of memory bounded problems.
+    CMSIS-Stream will accept code in binary format activated with keys.
+    It is designed to integrate memory protection between software
+    components.
+
+-   **From the system integrator view**, it eases the tuning and the
+    replacement of one component by another one and is made to ease
+    processing split with multiprocessors. The stream is described with
+    a graph (a text file) designed with a graphical tool. The
+    development of DSP/ML processing will be possible without need to
+    write code and allow graph changes and tuning without recompilation.
+
+-   **CMSIS-Stream design objectives**: Low RAM, graph descriptor placed
+    in Flash + RAM, from small Cortex-M0 with 2kB to SMP/AMP/coprocessor
+    and mix of 32/64bits thanks to the concept of shared RAM and index
+    to memory banks provided by the local processor abstraction layer.
+    Memory bank indexes can address up to 128GB of memory.
+
+-   **Computing libraries** are provided under compilation options, to
+    avoid replicating CMSIS-DSP in nodes with binary code deliveries,
+    and to allow arm-v7M codes able to benefit from arm-v8.1M vector
+    processing extensions without the need for code recompilation.
+
