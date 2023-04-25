@@ -36,6 +36,15 @@
 extern uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code);
 extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3);
  
-platform_al_H
+extern int32_t extract_sensor_field (const uint8_t *platform_bit_fields, 
+                              const int32_t *settings,
+                              uint8_t index);
+
+
+extern const uint8_t platform_audio_out_bit_fields[];
+#define PLATFORM_AUDIO_OUT_NCHAN    0
+#define PLATFORM_AUDIO_OUT_FS       1
+#define PLATFORM_AUDIO_OUT_FRAMESIZE 2
+#define PLATFORM_AUDIO_OUT_MVRMS    3
 
 #endif /* #ifndef platform_al_H */

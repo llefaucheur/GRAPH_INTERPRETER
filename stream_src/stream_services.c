@@ -37,14 +37,6 @@
 
 void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
 {   
-    intPtr_t *parameters;
-
-    parameters = (intPtr_t *)ptr1;
-    {   intPtr_t a;
-        intPtr_t b;
-        a = convert_ptr_to_int(ptr2);
-        b = convert_ptr_to_int(ptr3);
-    }
 	switch (command)
     {
     case 0:
@@ -76,6 +68,30 @@ void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
 	{   
     }   
      *----------------------------------------------------------------------------*/
+
+
+    /* ----------------------------------------------------------------------------------*/
+    case STREAM_NODE_REGISTER: /* called during STREAM_NODE_DECLARATION to register the SWC callback */
+        #ifndef _MSC_VER 
+            rtn_addr = __builtin_return_address(0); // check the lr matches with the node 
+        #endif
+        break; 
+    /* ----------------------------------------------------------------------------------
+        arm_stream(DEBUG_TRACE_1B, 1 bit trace, *int32_t);
+        arm_stream(DEBUG_TRACE_STRING, 16 characters traces, *int32_t);
+        arm_stream(DEBUG_TRACE, 1 bit trace, 2 digits trace, 16 characters, *int32_t traces);
+        arm_stream(DEBUG_TRACE_STAMPS, enable time stamps);
+     */
+    case STREAM_DEBUG_TRACE:
+        break;
+    case STREAM_DEBUG_TRACE_1B:
+        break;
+    case STREAM_DEBUG_TRACE_STRING:
+        
+        break;
+    case STREAM_DEBUG_TRACE_STAMPS:
+        break;
+
 
     default:
         break;

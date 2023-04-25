@@ -65,7 +65,9 @@ void arm_stream_io (uint32_t fw_io_idx,
     {
         /* stream to the graph */
         case RX0_TO_GRAPH:
-            if (command == (uint8_t)IO_COMMAND_DATA_MOVE_RX)
+            switch (command)
+            {
+            case IO_COMMAND_DATA_MOVE_RX:
             {   /* free area = size - write */
                 free_area = RD(arc[BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1) - 
                 RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
@@ -80,14 +82,23 @@ void arm_stream_io (uint32_t fw_io_idx,
 
                 arc_data_operations (arc, arc_move_to_arc, long_offset, data, size);      
             } 
-            else /* (command == (uint8_t)IO_COMMAND_SET_BUFFER_RX) */
-            {   arc_data_operations (arc, arc_set_base_address_to_arc, long_offset, data, size);    
-            }
             break;
+
+            case IO_COMMAND_SET_BUFFER_RX:
+            {   arc_data_operations (arc, arc_set_base_address_to_arc, long_offset, data, size);    
+                break;
+            }
+
+            default :
+            case IO_COMMAND_NONE:   /* the IO path was disabled */
+                    break;
+            }
 
         /* stream from the graph */
         case TX1_FROM_GRAPH:
-            if (command == (uint8_t)IO_COMMAND_DATA_MOVE_RX)
+            switch (command)
+            {
+            case IO_COMMAND_DATA_MOVE_RX:
             {   /* amount of data = write - read */
                 amount_of_data = RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3) -    
                 RD(arc[RDFLOW_ARCW2], READ_ARCW2);
@@ -100,12 +111,21 @@ void arm_stream_io (uint32_t fw_io_idx,
                 }            
                 arc_data_operations (arc, arc_moved_from_arc, long_offset, 0, size);      
             } 
-            else /* (command == (uint8_t)IO_COMMAND_SET_BUFFER_TX) */
+
+            case IO_COMMAND_SET_BUFFER_TX :
             {   arc_data_operations (arc, arc_set_base_address_from_arc, long_offset, data, size);    
+                break;
             }
-            break;
+
+            default :
+            case IO_COMMAND_NONE:  /* the IO path was disabled */
+                    break;
+            }
 
         default:
             break;
     }
+
+    /* data transfer done */
+    CLEAR_BIT_MP(*pio, REQMADE_IOFMT_LSB);
 }

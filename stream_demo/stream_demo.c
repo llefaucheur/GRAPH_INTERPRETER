@@ -58,6 +58,7 @@ intPtr_t * pack2linaddr_ptr(uint32_t data, intPtr_t *offsets)
 void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
             uint32_t *graph, 
             uint32_t graph_size,
+            uint8_t warm_boot,
             intPtr_t *parameters
             )
 {
@@ -183,11 +184,16 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     pinst = (/* struct stream_local_instance */uint32_t *)GRAPH_STREAM_INST(graph, long_offset);
     pinst = &(pinst[stream_instance]);
     pinst[STREAM_INSTANCE_NODE_ENTRY_POINTS] = convert_ptr_to_int(node_entry_point_table);
-    pinst[STREAM_INSTANCE_WHOAMI_PORTS] = PACKWHOAMI(stream_instance,procID,archID,0x003); // scan 2 io ports
 
     /* 
         initialization of all the SWC 
     */
+
+    /* if cold start : clear the backup area */
+    if (warm_boot == 0u)
+    {   platform_al (PLATFORM_CLEAR_BACKUP_MEM, 0,0,0);
+    }
+
     arm_stream(STREAM_RESET, parameters, 
             (void *)STREAM_SCHD_RET_END_ALL_PARSED, 
             (void *)STREAM_SCHD_NO_SCRIPT); 

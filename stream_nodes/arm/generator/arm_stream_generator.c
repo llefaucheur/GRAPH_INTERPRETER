@@ -39,7 +39,7 @@ typedef struct
 
 
 /**
-  @brief         Processing function for the floating-point Biquad cascade filter.
+  @brief         Processing function for _______________
   @param[in]     S         points to an instance of the floating-point Biquad cascade structure
   @param[in]     pSrc      points to the block of input data
   @param[out]    pDst      points to the block of output data
@@ -53,7 +53,7 @@ int32_t arm_generator_calls_stream (int32_t command, uint32_t *instance, data_bu
 
     switch (command)
     {   
-        //case STREAM_REGISTER_ME: first command to register the SWC
+        //case STREAM_NODE_REGISTER: first command to register the SWC
         //case STREAM_DEBUG_TRACE:
         //{  
         //}
@@ -119,7 +119,7 @@ void arm_stream_generator (int32_t command, uint32_t *instance, data_buffer_t *d
             break;
         }    
 
-        /* func(command = (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
+        /* func(command = bitfield (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
                     TAG of a parameter to set, 0xFF means "set all the parameters" in a raw
                 *instance, 
                 data = (one or all)

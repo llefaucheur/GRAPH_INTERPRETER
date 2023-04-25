@@ -97,8 +97,10 @@
 /*---------------------------------------------------------------------------------------------------*/
 /*
     SWC manifest
-    Memory consumption estimated by interpolation = a.nb_channels + b.FS + c.frameSize + d.rawDataSize
+    Memory consumption estimated by interpolation 
+        a.nb_channels + b.FS + c.frameSize + d.rawDataSize
 */
+
 /* SWC memory allocation constraint 32bits : memory allocation description */
 #define   OFFSET_MEMREQ_MSB U(31)
 #define   OFFSET_MEMREQ_LSB U(31) /* 1  followed by an offset (working memory in SMP) */
@@ -132,10 +134,7 @@
 //enum idx_memory_base_offset   
 #define MBANK_DMEM_EXT  U(0)    /* external shared memory, index [0] for graph */
 #define MBANK_DMEM      U(1)    /* internal shared memory, index [0] for graph */
-
-#define NB_ARC_OFFSET   U(2) /* arc offsets for the shared internal / external mem */
-
-#define MBANK_DMEMPRIV  U(2)    /* not shared memory space, (MP without cache) */
+#define MBANK_DMEMPRIV  U(2)    /* not shared memory space */
 #define MBANK_DMEMFAST  U(3)    /* DTCM Cortex-M/LLRAM Cortex-R, swapped between SWC calls if static */
 #define MBANK_BACKUP    U(4)    /* backup SRAM addressed only by STREAM */
 #define MBANK_HWIODMEM  U(5)    /* memory space for I/O and DMA buffers */

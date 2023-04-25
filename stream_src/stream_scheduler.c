@@ -125,6 +125,19 @@ intPtr_t * arc_extract_info_pt (uint32_t *arc, uint8_t tag, intPtr_t *offsets)
 /*----------------------------------------------------------------------------
     script 
     [0] FIFO of byte codes for debug script (FIFO #0)
+             Word1_scripts : script size, global register used + backup MEM, stack size
+             Wordn_scripts : stack and byte-codes, see stream_execute_script()
+
+    Registers 
+        One register is used for test "t"
+    Instructions
+        load "t", from stack(i) = R(i) or #const
+        load R(i) from arc FIFOdata / debugReg
+        compare R(i) with "t" : <> = != and skip next instruction 
+        jump to #label 
+        dsz decrement and jump on non-zero
+        arithmetic add,sub, #const/R(j)
+
  *----------------------------------------------------------------------------*/
 int stream_execute_script(intPtr_t *parameters)
 {    
@@ -466,8 +479,10 @@ static void check_graph_boundaries(
         {   continue; 
         }
 
-        /* a previous request is in process, no need to ask again */
-        if (0u != TEST_BIT(*pio, REQMADE_IOFMT_LSB))
+        /* a previous request is in process, no need to ask again, bit reset in arm_stream_io 
+           and just wait when the graph IO port is follower (the IO driver is master) */
+        if ((0u != TEST_BIT(*pio, REQMADE_IOFMT_LSB)) || 
+            (0u != TEST_BIT(*pio, FOLLOWER_IOFMT_LSB)))
         {   continue;
         }
 
@@ -502,6 +517,9 @@ static void check_graph_boundaries(
                  have the time to exchange data (image, remote temperature sensors,
                  characters on a display, ..)
             */
+
+            /* data transfer on-going */
+            SET_BIT(*pio, REQMADE_IOFMT_LSB);
 
             /* ask the firmware to awake this port */
             p_data_move.fw_idx = RD(*pio, FW_IO_IDX_IOFMT);

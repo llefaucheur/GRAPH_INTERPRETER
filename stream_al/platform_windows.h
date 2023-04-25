@@ -79,10 +79,13 @@
       and GRAPH_IO_CONFIG_ADDR
  */
 
-
+/* see stream_types.h : enum stream_io_domain */ 
 #define PLATFORM_APPLICATION_DATA_IN    0u
 #define PLATFORM_AUDIO_OUT              1u
+#define PLATFORM_COMMAND_OUT            2u
 
-#define LAST_IO_FUNCTION_PLATFORM 2
+#define LAST_IO_FUNCTION_PLATFORM 3
+
+
 
 #endif /* #ifndef PLATFORM_WINDOWS_H */

@@ -90,7 +90,7 @@ void arm_data_conditioning (int32_t command, uint32_t *instance, data_buffer_t *
 
 
 
-        /* func(command = (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
+        /* func(command = bitfield (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
                     TAG of a parameter to set, 0xFF means "set all the parameters" in a raw
                 *instance, 
                 data = (one or all)

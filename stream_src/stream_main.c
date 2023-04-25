@@ -79,11 +79,18 @@ void arm_stream (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
             break;
         }
 
+        /* arm_stream (STREAM_INTERPRET_COMMANDS, byte stream, 0, 0)*/
+        case STREAM_APP_SET_PARAMETER: 
+        {
+            /* byte stream format : command + length, byte-stream 
+               use-case : 
+                node set/read parameters 
+                I/O save/restore state, disable/enable, change settings
+                ARCs : check content, read/write => "PLATFORM_COMMAND_OUT"
+               */
+        }
 
-     //   case STREAM_INTERPRET_COMMANDS:
-     //{  
-     // commands have the format of SET_PARAMS
-     //}
+
 
         default:
             break;

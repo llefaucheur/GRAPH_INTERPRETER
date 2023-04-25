@@ -74,8 +74,8 @@
     Word m : debug registers and vectors from ARC content analysis 
     ...
     Word n : script 
-             Word1_scripts : script size, global register used, stack size
-             Wordn_scripts : stack, byte-code        
+             Word1_scripts : script size, global register used + backup MEM, stack size
+             Wordn_scripts : stack and byte-codes, see stream_execute_script()
     ... 
     Word t : memory areas used for FIFO buffers 
              and used for initializations, list of PACKSWCMEM results with fields
@@ -88,7 +88,7 @@
    used to synchronize the RESET sequence in platform_al() */
 #define MAX_NB_STREAM_INSTANCES 4 
 
-#define NB_NODE_ENTRY_POINTS 20
+#define NB_NODE_ENTRY_POINTS 24
 /* special case of short format script */
 #define SCRIPT_SW_IDX 0u            /* index of node_entry_point_table[SCRIPT_SW_IDX] = arm_script*/
 
@@ -309,10 +309,10 @@
 
 
 
-/* ----------- for stream_param_t -----------------*/
+/* ----------- for stream_param_t : intPtr_t[2] -----------------*/
 #define NB_STREAM_PARAM 2
-#define STREAM_PARAM_GRAPH 0
-#define STREAM_PARAM_CTRL 1
+#define STREAM_PARAM_GRAPH 0    /* address of the graph */
+#define STREAM_PARAM_CTRL 1     /* index of the Stream instance */
 //typedef struct
 //{   
 //  uint32_t *graph;         
@@ -333,7 +333,7 @@
     Platform control (RAM) => HW IO
 */
 //enum input_output_command_id {  /*    */
-//#define IO_COMMAND_NONE          U(0)  /* not a ring buffer located on graph ports, or slave protocol */
+#define IO_COMMAND_NONE          U(0)  /* not a ring buffer located on graph ports, or slave protocol */
 #define IO_COMMAND_SET_BUFFER_RX U(1)
 #define IO_COMMAND_SET_BUFFER_TX U(2)
 #define IO_COMMAND_DATA_MOVE_RX  U(3)
@@ -361,13 +361,15 @@
 #define TX1_FROM_GRAPH 1u
 
 #define    UNUSED_IOFMT_MSB U(31)  
-#define    UNUSED_IOFMT_LSB U(24)  /* 8  */
+#define    UNUSED_IOFMT_LSB U(25)  /* 7  NOTISOCHRONOUS_IOMEM */
+#define NOTISOCHR_IOFMT_MSB U(24)  /*    used to size the FIFO:  FRAMESIZE_FMT0 x SAMPLING_FMT1 */
+#define NOTISOCHR_IOFMT_LSB U(24)  /* 1  1:bursty asynchronous : frame size and FS give the peak data-rate */
 #define  INSTANCE_IOFMT_MSB U(23)  
 #define  INSTANCE_IOFMT_LSB U(20)  /* 4  selection of 16 GPIO for example */
 #define IOCOMMAND_IOFMT_MSB U(19)  
 #define IOCOMMAND_IOFMT_LSB U(16)  /* 4  input_output_command_id */
 #define  FOLLOWER_IOFMT_MSB U(15)  
-#define  FOLLOWER_IOFMT_LSB U(15)  /* 1   */
+#define  FOLLOWER_IOFMT_LSB U(15)  /* 1  1=IO_IS_FOLLOWER */
 #define    RX0TX1_IOFMT_MSB U(14)  /*    direction of the stream */
 #define    RX0TX1_IOFMT_LSB U(14)  /* 1  0 : to the graph    1 : from the graph */
 #define   REQMADE_IOFMT_MSB U(13)  
@@ -407,17 +409,16 @@
 #define COMMAND_CMD_LSB U( 0) /* 8 command */
 #define PACK_COMMAND(I,O,T,P,CMD) (((I)<<28)| ((O)<<24)| ((T)<<16)| ((P)<<8)| (CMD))
 
-//enum stream_command 
+//enum stream_command (8bits LSB)
 //{
 #define STREAM_RESET 1u             /* func(STREAM_RESET, *instance, * memory_results) */
 #define STREAM_SET_PARAMETER 2u     /* swc instances are protected by multithread effects when changing parmeters on the fly */
 #define STREAM_READ_PARAMETER 3u    
 #define STREAM_RUN 4u               /* func(STREAM_RUN, instance, *in_out) */
 #define STREAM_END 5u               /* func(STREAM_END, instance, 0)   called at STREAM_APP_STOP_GRAPH, swc calls free() if it used stdlib's malloc */
+#define STREAM_APP_SET_PARAMETER 6u /* arm_stream (STREAM_INTERPRET_COMMANDS, byte stream, 0, 0)*/
 //#define STREAM_DELETE_NODE 
 //#define STREAM_INSERT_NODE
-//#define STREAM_INTERPRET_COMMANDS
-
 //};
 
 /*
@@ -425,7 +426,7 @@
 */
 //enum stream_services
 //{
-#define STREAM_REGISTER_ME 1u
+#define STREAM_NODE_REGISTER 1u
 
 #define STREAM_FORMAT_UPDATE_FS 2u       /* SWC information for a change of stream format, sampling, nb of channel */
 #define STREAM_FORMAT_UPDATE_NCHAN 3u     /* raw data sample, mapping of channels, (web radio use-case) */

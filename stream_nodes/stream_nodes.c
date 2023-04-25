@@ -104,7 +104,7 @@ LPC10(1bit/sample) de/encoding.
 Parameters : coding scheme 
 
 11.	data conditioning
-Operation : applies result = interp1(X,Y,input,'method')
+Operation : applies y=aX+b and more generally y=interp1(X,Y,input,'method')
 Following https://fr.mathworks.com/help/matlab/ref/interp1.html
 Parameters : X,Y vectors and interpolation method
 
@@ -134,22 +134,26 @@ extern p_stream_node arm_stream_generator;
 p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
 {
     /*--------- ARM ---------*/
-    /*  0*/ (void *)&arm_script, 
-    /*  1*/ (void *)&arm_stream_split,                        
-    /*  2*/ (void *)&arm_stream_merge,                        
-    /*  3*/ (void *)&arm_stream_route, 
-    /*  4*/ (void *)&arm_stream_converter,                        
-    /*  5*/ (void *)&arm_stream_rate_converter,                        
-    /*  6*/ (void *)&arm_stream_amplitude,                        
-    /*  7*/ (void *)&arm_stream_mixer, 
-    /*  8*/ (void *)&arm_stream_dsp_filter,                        
-    /*  9*/ (void *)&arm_stream_detector,                        
-    /* 10*/ (void *)&arm_stream_codec,                        
-    /* 11*/ (void *)&arm_data_conditioning,  
-    /* 12*/ (void *)&arm_stream_generator, 
-    /* 13*/ TBD, //(void *)&arm_stream_classifier, 
-    /* 14*/ TBD, 
+    /*  0*/ 0, 
+    /*  1*/ (void *)&arm_script, 
+    /*  2*/ (void *)&arm_stream_split,                        
+    /*  3*/ (void *)&arm_stream_merge,                        
+    /*  4*/ (void *)&arm_stream_route, 
+    /*  5*/ (void *)&arm_stream_converter,                        
+    /*  6*/ (void *)&arm_stream_rate_converter,                        
+    /*  7*/ (void *)&arm_stream_amplitude,                        
+    /*  8*/ (void *)&arm_stream_mixer, 
+    /*  9*/ (void *)&arm_stream_dsp_filter,                        
+    /* 10*/ (void *)&arm_stream_detector,                        
+    /* 11*/ (void *)&arm_stream_codec,                        
+    /* 12*/ (void *)&arm_data_conditioning,  
+    /* 13*/ (void *)&arm_stream_generator, 
+    /* 14*/ TBD, //(void *)&arm_stream_classifier, 
     /* 15*/ TBD, 
+    /* 16*/ TBD, 
+    /* 17*/ TBD, 
+    /* 18*/ TBD, 
+    /* 19*/ TBD, 
 
     /*------ COMPANY #1 -----*/
     TBD,                           

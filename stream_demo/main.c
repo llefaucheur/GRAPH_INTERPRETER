@@ -49,16 +49,31 @@ int main(void)
             uint8_t total_nb_stream_instance,
             const uint32_t *graph_input, 
             uint32_t graph_size,
+            uint8_t warm_boot,
             intPtr_t *parameters
             );
 
-    stream_demo_init(0, 1, graph_input, sizeof(graph_input), parameters);
+#define STREAM_CURRENT_INSTANCE 0
+#define STREAM_NB_INSTANCE 1
+#define STREAM_WARM_BOOT 0
+
+    stream_demo_init
+    (   STREAM_CURRENT_INSTANCE, 
+        STREAM_NB_INSTANCE, 
+        graph_input, 
+        sizeof(graph_input), 
+        STREAM_WARM_BOOT, 
+        parameters
+    );
 
     /* run the graph */
 	for (int i = 0; i < 1000000000L; i++)
     {
-		arm_stream(STREAM_RUN, &parameters,
+		arm_stream
+        (   STREAM_RUN, 
+            &parameters,
             (void *)STREAM_SCHD_RET_END_ALL_PARSED, 
-            (void *)STREAM_SCHD_NO_SCRIPT);
+            (void *)STREAM_SCHD_NO_SCRIPT
+        );
     }  
 }

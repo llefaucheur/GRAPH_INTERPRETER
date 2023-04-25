@@ -37,6 +37,18 @@
 #include "stream_types.h"  
 
 
+extern uint32_t audio_render_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size);
+extern uint32_t audio_render_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size);
+extern uint32_t audio_render_set_stream(uint32_t *setting, uint8_t *data, uint32_t siz);
+
+extern uint32_t audio_ap_rx_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size);
+extern uint32_t audio_ap_rx_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size);
+extern uint32_t audio_ap_rx_set_stream(uint32_t *setting, uint8_t *data, uint32_t siz);
+
+extern uint32_t trace_set (uint32_t *setting, uint8_t *data, uint32_t size);
+extern uint32_t trace_start(uint32_t *setting, uint8_t *data, uint32_t size);
+extern uint32_t trace_stop(uint32_t *setting, uint8_t *data, uint32_t siz);
+
 
 /*-------------------PLATFORM MANIFEST-----------------------
                   +-----------------+
@@ -85,9 +97,25 @@ intPtr_t long_offset[NB_MEMINST_OFFSET] =
 #endif
 
 
-#if MULTIPROCESS == 1
-static uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
-{   volatile uint8_t *pt8 = pt8b;
+#if MULTIPROCESS == 1  
+uint32_t check_hw_compatibility(uint32_t whoami, uint32_t bootParamsHeader) 
+{
+    uint8_t match = 1;
+
+    if (RD(bootParamsHeader, ARCHID_BP) > 0u) /* do I care about the architecture ID ? */
+    {   match = U8(RD(bootParamsHeader, ARCHID_BP) == RD(whoami, ARCHID_PARCH));
+    }
+
+    if (RD(bootParamsHeader, PROCID_BP) > 0u) /* do I care about the processor ID ? */
+    {   match = match & U8(RD(bootParamsHeader, PROCID_BP) == RD(whoami, PROCID_PARCH));
+    }
+    return match;
+}
+
+uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
+{   volatile uint8_t *pt8;
+    pt8 = pt8b;
+
     *pt8 = code;
     INSTRUCTION_SYNC_BARRIER;
 
@@ -97,9 +125,15 @@ static uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
     return (*pt8 == code);
 }
 #else
-#define WR_BYTE_AND_CHECK_MP_(pt8b, code) 1
-#endif
 
+#define check_hw_compatibility(whoami, bootParamsHeader) 1u  
+
+//#define WR_BYTE_AND_CHECK_MP_(pt8b, code) 1
+uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
+{   return 1u;
+}
+
+#endif
 
 
 
@@ -112,13 +146,42 @@ extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t 
 //
 //extern uint32_t * platform_io_callback_parameter [LAST_IO_FUNCTION_PLATFORM];
 //
-extern uint32_t audio_render_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) ;
-extern uint32_t audio_render_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size) ;
-extern uint32_t audio_render_set_stream(uint32_t *setting, uint8_t *data, uint32_t siz);
 
-extern uint32_t audio_ap_rx_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) ;
-extern uint32_t audio_ap_rx_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size) ;
-extern uint32_t audio_ap_rx_set_stream(uint32_t *setting, uint8_t *data, uint32_t siz);
+
+/*
+ * --- IO HW and board Manifest -------------------------------------------------------
+
+   Declaration of master/follower stream control 
+
+   Declaration of scaling factor to reach the RFC8428 (sensiml) unit
+    used during the graph creation for the insertion of gain compensation
+*/
+    #if 0
+    /* physical units rfc8428 rfc8798 */
+    enum stream_units_physical_t {   
+        unused_unit=0,      /* int16_t format */            /* int32_t format */           
+        unit_linear,        /* PCM and default format */    /* PCM and default format */
+        unit_dBm0, 
+        unit_decibel,       /* Q11.4 :   1dB <> 0x0010      Q19.12 :   1dB <> 0x0000 1000  */
+        unit_percentage,    /* Q11.4 :   1 % <> 0x0010      Q19.12 :   1 % <> 0x0000 1000 */
+        unit_meter,         /* Q11.4 :  10 m <> 0x00A0      Q19.12 :  10 m <> 0x0000 A000 */
+        . . . 
+    #endif
+/*
+ * --- Digital HW Manifest ------------------------------------------------------------
+
+   Declaration of the minimum guaranteed amount of memory pre-allocated per
+    types (idx_memory_base_offset)
+
+   Additional information on MBANK_DMEM when there are several physical memory 
+    banks and several processors : to let the nodes dedicated to one processor 
+    have their processing area isolated to the ones of the other processor.
+    => manual manual memory mapping optimization step 
+    GUI => YML file => TXT graph generation, verbose editable =>
+    optional manual optimization process, mapping to HW platform specific =>
+    last step  binary file (hashed) graph generation.
+*/
+
 
 /*
  * --- IO HW and board interfaces -------------------------------------------------------
@@ -146,44 +209,73 @@ const int32_t audio_render_settings [] = {
  */
 struct platform_io_control platform_io [LAST_IO_FUNCTION_PLATFORM] = 
 {
-    {   //  PLATFORM_APPLICATION_DATA_IN
+    {   /* PLATFORM_APPLICATION_DATA_IN */
     .io_set = audio_ap_rx_set_stream,
     .io_start = audio_ap_rx_start_data_move,
     .io_stop = audio_ap_rx_stop_stream,
     .stream_setting = 0, 
     },
 
-    {   //  PLATFORM_AUDIO_OUT
+    {   /* PLATFORM_AUDIO_OUT */
     .io_set = audio_render_set_stream,
     .io_start = audio_render_start_data_move,
     .io_stop = audio_render_stop_stream,
     .stream_setting = audio_render_settings,
-    }
+    },
+
+    {   /* PLATFORM_COMMAND_OUT */
+    .io_set = trace_set,
+    .io_start = trace_start,
+    .io_stop = trace_stop,
+    .stream_setting = 0,
+    },
 };
 
 
 
+
 /* --------------------------------------------------------------------------------------- */
-int16_t *audio_ap_rx_data;
-uint32_t audio_ap_rx_size;
 FILE *ptf_in_audio_ap_rx_data;
-
-//#define audio_render_size 0x20
-//static int16_t audio_render_data [audio_render_size];
 FILE *ptf_in_audio_render_data;
-/* --------------------------------------------------------------------------------------- */
+FILE *ptf_trace;
 
+uint32_t frame_size_audio_render;
+
+
+/* --------------------------------------------------------------------------------------- */
+uint32_t trace_start (uint32_t *setting, uint8_t *data, uint32_t size) 
+{   fprintf(ptf_trace, "\n%s", data);
+    return 1u; 
+}
+/* --------------------------------------------------------------------------------------- */
+uint32_t trace_stop (uint32_t *setting, uint8_t *data, uint32_t size) 
+{   fclose (ptf_trace);
+    return 1u;
+}
+/* --------------------------------------------------------------------------------------- */
+uint32_t trace_set (uint32_t *setting, uint8_t *data, uint32_t size) 
+{ 
+#define FILE_TRACE "..\\trace.txt"
+    if (NULL == (ptf_trace = fopen(FILE_TRACE, "wt")))
+    {   exit (-1);
+    }
+    return 1u;
+}
+
+
+
+
+
+
+/* --------------------------------------------------------------------------------------- */
 void audio_ap_rx_transfer_done (uint8_t *data, uint32_t size) 
-{   
-    platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_APPLICATION_DATA_IN,
+{   platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_APPLICATION_DATA_IN,
         data, (uint8_t *)size);
 }
 
 /* --------------------------------------------------------------------------------------- */
-
 uint32_t audio_ap_rx_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) 
-{ 
-    int tmp;
+{   int tmp;
 
     tmp = fread(data, 1, size, ptf_in_audio_ap_rx_data);
     if (size != tmp)
@@ -198,15 +290,12 @@ uint32_t audio_ap_rx_start_data_move (uint32_t *setting, uint8_t *data, uint32_t
 }
 
 /* --------------------------------------------------------------------------------------- */
-
 uint32_t audio_ap_rx_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size) 
-{ 
-    fclose (ptf_in_audio_ap_rx_data);
+{   fclose (ptf_in_audio_ap_rx_data);
     return 1u;
 }
 
 /* --------------------------------------------------------------------------------------- */
-
 uint32_t audio_ap_rx_set_stream (uint32_t *setting, uint8_t *data, uint32_t size) 
 { 
 //#define FILE_IN "..\sine_noise_offset.raw"
@@ -220,48 +309,45 @@ uint32_t audio_ap_rx_set_stream (uint32_t *setting, uint8_t *data, uint32_t size
 
 
 
-
-
-
-
-
 /* --------------------------------------------------------------------------------------- */
-
 void audio_render_transfer_done (uint8_t *data, uint32_t size) 
-{   
-    platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_AUDIO_OUT, 
+{   platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_AUDIO_OUT, 
         data, (uint8_t *)size);
 }
 
 /* --------------------------------------------------------------------------------------- */
-
 uint32_t audio_render_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) 
-{   
-    fwrite(data, 1, size, ptf_in_audio_render_data);
+{   fwrite(data, 1, size, ptf_in_audio_render_data);
 
     audio_render_transfer_done ((uint8_t *)data, size);
     return 1u; 
 }
 
 /* --------------------------------------------------------------------------------------- */
-
 uint32_t audio_render_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size) 
-{   
-    fclose (ptf_in_audio_render_data);
+{   fclose (ptf_in_audio_render_data);
     return 1u;
 }
 
-
-
+/* --------------------------------------------------------------------------------------- */
 uint32_t audio_render_set_stream (uint32_t *setting, uint8_t *data, uint32_t size)
 {   
 #define FILE_OUT "..\\audio_out.raw"
     if (NULL == (ptf_in_audio_render_data = fopen(FILE_OUT, "wb")))
     {   exit (-1);
     }
+
+    /* simulate IO master port with a fixed frame size */
+    frame_size_audio_render = extract_sensor_field 
+        (platform_audio_out_bit_fields, audio_render_settings, PLATFORM_AUDIO_OUT_FRAMESIZE);
+
     return 1u;
 }
 
 /*
  * -----------------------------------------------------------------------
  */
+   
+
+
+

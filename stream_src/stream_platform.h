@@ -46,28 +46,30 @@
 #define PLATFORM_IO_DATA           10u   /* "data exchanges */ 
 #define PLATFORM_IO_STOP_STREAM    11u   /*  */
 #define PLATFORM_IO_ACK            12u   /* interface callback to arm_stream_io */
-#define PLATFORM_BACKUP_MEM        13u   /* share the list of memory areas to backup periodically */
-#define PLATFORM_RESTORE_MEM       14u   /* restore memory areas before warm boot */
+#define PLATFORM_CLEAR_BACKUP_MEM  13u   /* cold start : clear backup memory */
+#define PLATFORM_DEEPSLEEP_ENABLED 14u   /* deep-sleep activation is possible when returning from arm_stream(STREAM_RUN..) */
 #define PLATFORM_EXEC_TIME         15u   /* time counter since last call */
 #define PLATFORM_ERROR             16u   /* error to report to the application */
 #define PLATFORM_TIME_SET          17u
-#define PLATFORM_TIMER_SET         18u
+#define PLATFORM_RTC_SET         18u
 #define PLATFORM_TIME_READ         19u
+#define PLATFORM_OFFSETS           20u   /* returns the pointer to the (long) platform offsets */
 #define PLATFORM_OFFSETS           20u
+#define PLATFORM_REMOTE_DATA       21u
 
 
 //enum error_codes 
 #define ERROR_MEMORY_ALLOCATION     1u
 
 
-
+/* ----------------- PLATFORM_IO_MANIFEST ------------------------*/
 ////enum io_buffer_allocation => duplicates with the information "IOCOMMAND_IOFMT" 
 //#define ALLOC_FROM_APPLICATION      0u
 //#define ALLOC_FROM_IO               1u
 ////enum io_master_follower
 //#define IO_IS_MASTER                0u
 //#define IO_IS_FOLLOWER              1u
-
+//
 ///*---- Platform Sensor configuration : io_domain ----*/
 //#define     UNUSED_IOMEM_MSB        31u 
 //#define     UNUSED_IOMEM_LSB        28u /* 4   */
@@ -93,6 +95,7 @@
 
 
 
+
 /*
     STREAM SERVICES
 */
@@ -106,6 +109,9 @@ enum stream_command
     /* Commands LSB4 = 0 ------------------------------------------------------------------- */
     STREAM_CONTROL = 0x00000010,           
 
+    /* first call of SWC to Stream, to register its return address which must be identical for all
+       the later services asked by the SWC */
+    STREAM_NODE_REGISTER,     
  
     //STREAM_SET_BUFFER_NOTIFICATION,
 
