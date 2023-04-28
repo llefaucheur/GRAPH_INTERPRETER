@@ -47,28 +47,18 @@ typedef struct
     uint8_t low_pass_shifter;   /* for z6 */
     uint8_t floor_noise_shifter;/* for z7 */
     uint8_t peak_signal_shifter;/* for z8 */
-    // TODO Check with Laurent if there is a better way to initialise these float values. 
-    // They will be cast to long at runtime so there is no obvious saving in defining as uint8_t.
-    // uint8_t vad_rise;/* rise time */
-    // uint8_t vad_fall;/* fall time */
-    float vad_rise;/* rise time */
-    float vad_fall;/* fall time */
-    uint8_t prescaler_accumulator;/* likely for amending range? */
-
 } detector_parameters;
-// TODO Liam Revise byte counts
-typedef struct /* total = 36 Bytes*/
-{
-    detector_parameters config; /* 15 bytes */
 
-    int32_t z1;    /* memory of the high-pass filter (recursive part) */
-    int32_t z2;    /* memory of the high-pass filter (direct part) */
-    int32_t z3;    /* output of the high-pass filter */
-    int32_t z6;    /* memory of the first low-pass filter */
-    int32_t z7;    /* memory of the floor-noise tracking low-pass filter */
-    int32_t z8;    /* memory of the envelope tracking low-pass filter */
+typedef struct /* total = 22 Bytes => 24bytes/6word32 */
+{
+    detector_parameters config; /* 6 bytes */
+
+    int16_t z1;    /* memory of the high-pass filter (recursive part) */
+    int16_t z2;    /* memory of the high-pass filter (direct part) */
+    int16_t z3;    /* output of the high-pass filter */
+    int16_t z6;    /* memory of the first low-pass filter */
+    int16_t z7;    /* memory of the floor-noise tracking low-pass filter */
+    int16_t z8;    /* memory of the envelope tracking low-pass filter */
     int32_t down_counter;    /* memory of the debouncing downcounter  */
 } arm_detector_instance;
 
-// Expose stream_detector
-void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status);

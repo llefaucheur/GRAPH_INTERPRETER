@@ -48,13 +48,11 @@ void arm_stream_io (uint32_t fw_io_idx,
     uint8_t rx0tx1;
     uint8_t command;
     uint8_t flow_error;
-    intPtr_t *long_offset;
     uint32_t *pio;
 
-    platform_al (PLATFORM_OFFSETS, (uint8_t *)&long_offset,0,0);
-    pio = (uint32_t *)GRAPH_IO_CONFIG_ADDR(graph,long_offset);
+    pio = (uint32_t *)GRAPH_IO_CONFIG_ADDR();
     pio = &(pio[fw_io_idx]);
-    arc = GRAPH_ARC_LIST_ADDR(graph,long_offset);
+    arc = GRAPH_ARC_LIST_ADDR();
     arc_idx = RD(*pio, IOARCID_IOFMT);
     arc = &(arc[SIZEOF_ARCDESC_W32 * arc_idx]);
     rx0tx1 = (uint8_t) RD(*pio, RX0TX1_IOFMT);
@@ -80,12 +78,12 @@ void arm_stream_io (uint32_t fw_io_idx,
                     size = free_area;
                 }
 
-                arc_data_operations (arc, arc_move_to_arc, long_offset, data, size);      
+                arc_data_operations (arc, arc_move_to_arc, data, size);      
             } 
             break;
 
             case IO_COMMAND_SET_BUFFER_RX:
-            {   arc_data_operations (arc, arc_set_base_address_to_arc, long_offset, data, size);    
+            {   arc_data_operations (arc, arc_set_base_address_to_arc, data, size);    
                 break;
             }
 
@@ -109,11 +107,11 @@ void arm_stream_io (uint32_t fw_io_idx,
                     /* TODO : implement the flow management desired for "flow_error" */
                     size = amount_of_data;
                 }            
-                arc_data_operations (arc, arc_moved_from_arc, long_offset, 0, size);      
+                arc_data_operations (arc, arc_moved_from_arc, 0, size);      
             } 
 
             case IO_COMMAND_SET_BUFFER_TX :
-            {   arc_data_operations (arc, arc_set_base_address_from_arc, long_offset, data, size);    
+            {   arc_data_operations (arc, arc_set_base_address_from_arc, data, size);    
                 break;
             }
 

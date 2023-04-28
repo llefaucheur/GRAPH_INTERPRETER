@@ -35,7 +35,7 @@
         check there is no flow error
   */
 
-void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
+void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
 {   
 	switch (command)
     {
@@ -73,21 +73,31 @@ void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
     /* ----------------------------------------------------------------------------------*/
     case STREAM_NODE_REGISTER: /* called during STREAM_NODE_DECLARATION to register the SWC callback */
         #ifndef _MSC_VER 
-            rtn_addr = __builtin_return_address(0); // check the lr matches with the node 
+            //rtn_addr = __builtin_return_address(0); // check the lr matches with the node 
         #endif
         break; 
     /* ----------------------------------------------------------------------------------
-        arm_stream(DEBUG_TRACE_1B, 1 bit trace, *int32_t);
-        arm_stream(DEBUG_TRACE_STRING, 16 characters traces, *int32_t);
-        arm_stream(DEBUG_TRACE, 1 bit trace, 2 digits trace, 16 characters, *int32_t traces);
-        arm_stream(DEBUG_TRACE_STAMPS, enable time stamps);
+        arm_stream(PACK_SERVICE(instance index, STREAM_DEBUG_TRACE), *int8_t, nb bytes, 0);
+        arm_stream(DEBUG_TRACE_STAMPS, disable_0 / enable_1 time stamps);
      */
     case STREAM_DEBUG_TRACE:
-        break;
-    case STREAM_DEBUG_TRACE_1B:
-        break;
-    case STREAM_DEBUG_TRACE_STRING:
-        
+        {   
+            uint32_t *pinst;
+            uint8_t arcid;
+            uint32_t size;
+            uint32_t *arc;
+
+            /* extraction of the arc index used for the traces of this Stream instance */
+            pinst = (uint32_t *)GRAPH_STREAM_INST();
+            pinst = &(pinst[RD(command, INST_SRV) * STREAM_INSTANCE_SIZE]); 
+            arcid = RD(pinst[STREAM_INSTANCE_PARAMETERS], TRACE_ARC_PARINST);
+            arc = GRAPH_ARC_LIST_ADDR();
+            arc = &(arc[arcid * SIZEOF_ARCDESC_W32]);
+
+            /* copy the trace data @@@ no overflow check */
+            size = (uint32_t)ptr2;
+            arc_data_operations (arc, arc_move_to_arc, ptr1, size);
+        }
         break;
     case STREAM_DEBUG_TRACE_STAMPS:
         break;

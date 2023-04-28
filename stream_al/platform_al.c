@@ -115,7 +115,7 @@ const uint8_t platform_audio_out_bit_fields[] = { 3,4,2,3,4,2,1,2,1,2,1,2,1 };
 /* PLATFORM_COMMAND_IN */
     // FIFO(s) of commands from the application    
 
-/* PLATFORM_COMMAND_out */
+/* PLATFORM_COMMAND_OUT */
     // execusion trace/debug, FIFO(s) of command result to the application
 
 

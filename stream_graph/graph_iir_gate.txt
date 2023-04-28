@@ -31,25 +31,25 @@
 0x08000150,   // 058 016    instance to the static data (NBALLOC_INST=1)
 0x00000200,   // 05C 017       TCM 
 0x0000A001,   // 060 018    Bootparam header : preset 1=DF2T_F32, all param, N32LENGTH=A
-0x000001FF,   // 064 019    FF=-allparams,byte stream,numStages=1
-0x0071DD00,   // 068 01A     000071DD 
-0xFF2E5B00,   // 06C 01B     FFFF2E5B
-0x0071DDFF,   // 070 01C     000071DD    Coefs [B,A] = cheby2(2,0.5,1/11) (notch at 1kHz/Fs=16kHz)
-0xFF216600,   // 074 01D     FFFF2166
-0x0070B0FF,   // 078 01E     000070B0
-0x00000000,   // 07C 01F    a2 q0
-0x00000001,   // 080 020    q0 z1
-0x00000002,   // 084 021    z1 z2
-0xEEEEEE03,   // 088 022    z2    end of byte stream
+0x000001FF,   // 064 019    0 FF=-allparams,byte stream,numStages=1
+0x0071DD00,   // 068 01A    1 000071DD 
+0xFF2E5B00,   // 06C 01B    2 FFFF2E5B
+0x0071DDFF,   // 070 01C    3 000071DD    Coefs [B,A] = cheby2(2,0.5,1/11) (notch at 1kHz/Fs=16kHz)
+0xFF216600,   // 074 01D    4 FFFF2166
+0x0070B0FF,   // 078 01E    5 000070B0
+0x00000000,   // 07C 01F    6 a2 q0
+0x00000001,   // 080 020    7 q0 z1
+0x00000002,   // 084 021    8 z1 z2
+0xEEEEEE03,   // 088 022    9 z2    end of byte stream
 0x2802010A,   // 08C 023 -arm_stream_detector, arcs=1,2 swc=10 
 0x00000180,   // 090 024    instance to the static data (NBALLOC_INST=0)
-0x00002002,   // 094 025    Bootparam header : preset 2=VAD,N32LENGTH=2 
-0x030201FF,   // 098 026    all parameters = 6bytes
-0xEE060504,   // 09C 027    parameters
-0x00000FFF,   // 0A0 028  -----  End of the linked-list SWCID=0xFFF
-0xDDDDDDDD,   // 0A4 029  
-0xDDDDDDDD,   // 0A8 02A     unused
-0xDDDDDDDD,   // 0AC 02B     unused
+0x00002002,   // 094 025    0 Bootparam header : preset 2=VAD,N32LENGTH=6 
+0x030201FF,   // 098 026    1 all parameters = 6bytes
+0xEE060504,   // 09C 027    2 parameters
+0x00000000,   // 0A0 028    3
+0x00000000,   // 0A4 029    4
+0x00000000,   // 0A8 02A    5
+0x00000FFF,   // 0AC 02B  -----  End of the linked-list SWCID=0xFFF
 0xDDDDDDDD,   // 0B0 02C     unused
 0x111110B4,   // 0B4 02D Debug Script 
 0x11111111,   // 0B8 02E  
@@ -62,8 +62,8 @@
 0x11111111,   // 0D4 035
 0x11111111,   // 0D8 036
 0x01000007,   // 0DC 037    whoami_ports : PACKWHOAMI(INST,PROCIDX,ARCH=1,BOUNDARIES=all 7)   STREAM INSTANCES -------------------------------
-0x00000000,   // 0E0 038    node_entry to fill (two words if aarch64 is used)
-0xAAAAAAAA,   // 0E4 039    unused
+0x00000000,   // 0E0 038    instance parameters (trace arc)
+0x00000000,   // 0E4 039    node_entry to fill (27bits compressed field)
 0xAAAAAAAA,   // 0E8 03A    unused
 0x0000019C,   // 0EC 03B [0] input -> FILTER                ARC descriptors --------------------------------
 0x00000020,   // 0F0 03C    32 Bytes
@@ -144,5 +144,5 @@
 0x00000000,   // 21C 087
 0x00000000,   // 220 088 
 0x00000000,   // 224 089 
-0x00000000,   // 228 08A
+0x00000000   // 228 08A
  

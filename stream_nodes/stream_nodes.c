@@ -128,6 +128,7 @@ extern p_stream_node arm_stream_decompression;
 extern p_stream_node arm_data_conditioning;
 extern p_stream_node arm_stream_generator;
 //extern p_stream_node arm_stream_classifier;
+//extern p_stream_node arm_stream_command_interpreter;
 
 #define TBD 0
 
@@ -149,7 +150,7 @@ p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
     /* 12*/ (void *)&arm_data_conditioning,  
     /* 13*/ (void *)&arm_stream_generator, 
     /* 14*/ TBD, //(void *)&arm_stream_classifier, 
-    /* 15*/ TBD, 
+    /* 15*/ TBD, //(void *)&arm_stream_command_interpreter, 
     /* 16*/ TBD, 
     /* 17*/ TBD, 
     /* 18*/ TBD, 

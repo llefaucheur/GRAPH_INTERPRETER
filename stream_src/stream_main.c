@@ -42,11 +42,11 @@
  */
 void arm_stream (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
 {   
-    intPtr_t *parameters;
+    uint8_t stream_instance;  
     uint8_t scheduling;
     uint8_t script;
 
-    parameters = (intPtr_t *)ptr1;
+    stream_instance = (uint8_t)(uint64_t)ptr1;
     scheduling = U8(convert_ptr_to_int(ptr2));
     script = U8(convert_ptr_to_int(ptr3));
 
@@ -54,7 +54,7 @@ void arm_stream (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
     {
 	    case STREAM_RESET: 
 	    {   
-            stream_scan_graph (parameters, 
+            stream_scan_graph (stream_instance, 
                 scheduling,
                 script,
                 1);
@@ -63,7 +63,7 @@ void arm_stream (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
         }
 	    case STREAM_RUN:   
 	    {  
-            stream_scan_graph (parameters, 
+            stream_scan_graph (stream_instance, 
                 scheduling,
                 script,
                 0);
@@ -72,7 +72,7 @@ void arm_stream (uint32_t command, void *ptr1, void *ptr2, void *ptr3)
 
         case STREAM_END:
 	    {  
-            stream_scan_graph (parameters, 
+            stream_scan_graph (stream_instance, 
                 scheduling,
                 script,
                 -1);

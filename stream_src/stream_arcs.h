@@ -153,19 +153,22 @@
     #define PACKSTREAMFORMAT1(TIMESTAMP,SAMPLING, NCHANM1) ((U(TIMESTAMP)<<26)|(U(SAMPLING)<<5)|U(NCHANM1))
 
 
-/*--------------- WORD 2 -  direction, channel mapping (depends on the "domain")------*/
-#define          MAPPING_FMT2  U( 2)
-    #define    UNUSED_FMT2_MSB U(31)
-    #define    UNUSED_FMT2_LSB U(27) /* 5   unused*/
-    #define   HASHIDX_FMT2_MSB U(26)
-    #define   HASHIDX_FMT2_LSB U(25) /* 2  index (1,2,3) of the hashing key structure */
-    #define DIRECTION_FMT2_MSB U(24)
-    #define DIRECTION_FMT2_LSB U(24) /* 1  0 = RX (data flows to the graph), 1 = TX */
-    #define   MAPPING_FMT2_MSB U(23) /* 24 mapping of <24 channels example of 7.1 format (8 channels): */
+/*--------------- WORD 2 -  direction, channel mapping (depends on the "stream_io_domain")------*/
+#define AUDIO_MAPPING_FMT2 U( 2)
+    #define   MAPPING_FMT2_MSB U(31) /* 32 mapping of channels example of 7.1 format (8 channels): */
     #define   MAPPING_FMT2_LSB U( 0) /*     FrontLeft, FrontRight, FrontCenter, LowFrequency, BackLeft, BackRight, SideLeft, SideRight ..*/
 
-    #define PACKSTREAMFORMAT2(HASH,DIRECTION,MAP) ((U(HASH)<<25)|(U(DIRECTION)<<24)|U(MAP))
+#define     PICTURE_FMT2 U( 2)
+    #define  UNUSED_FMT2_MSB U(31) /* 12b   */
+    #define  UNUSED_FMT2_LSB U(20)
+    #define  BORDER_FMT2_MSB U(19) /* 2 pixel border 0,1,2,3   */
+    #define  BORDER_FMT2_LSB U(18)
+    #define   RATIO_FMT2_MSB U(17) /* 4 ratio to height : 1:1 4:3 16:9 16:10 5:4  */
+    #define   RATIO_FMT2_LSB U(14)
+    #define   WIDTH_FMT2_MSB U(13) /* 14 number of pixel width */
+    #define   WIDTH_FMT2_LSB U( 0) 
 
+/*------------------------------------------------------------------------------------*/
 
 #define SIZEOF_ARCDESC_SHORT_W32 U(2)
 #define SIZEOF_ARCDESC_W32 U(4)

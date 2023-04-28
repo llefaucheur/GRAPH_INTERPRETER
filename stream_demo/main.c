@@ -32,25 +32,21 @@
     global parameters 
 */
 
-
 const uint32_t graph_input[] = 
 {
     #include "../stream_graph/graph_iir_gate.txt"
     //#include "../stream_graph/graph_imadpcm.txt"
 };
 
-
+arm_global_data_t arm_stream_global;
 
 int main(void)
 {
-    intPtr_t parameters[NB_STREAM_PARAM];
-
     extern void stream_demo_init(uint8_t stream_instance, 
             uint8_t total_nb_stream_instance,
             const uint32_t *graph_input, 
             uint32_t graph_size,
-            uint8_t warm_boot,
-            intPtr_t *parameters
+            uint8_t warm_boot
             );
 
 #define STREAM_CURRENT_INSTANCE 0
@@ -62,8 +58,7 @@ int main(void)
         STREAM_NB_INSTANCE, 
         graph_input, 
         sizeof(graph_input), 
-        STREAM_WARM_BOOT, 
-        parameters
+        STREAM_WARM_BOOT
     );
 
     /* run the graph */
@@ -71,7 +66,7 @@ int main(void)
     {
 		arm_stream
         (   STREAM_RUN, 
-            &parameters,
+            (void *)STREAM_CURRENT_INSTANCE,
             (void *)STREAM_SCHD_RET_END_ALL_PARSED, 
             (void *)STREAM_SCHD_NO_SCRIPT
         );

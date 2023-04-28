@@ -31,16 +31,26 @@
     Graph data format :
     ----------------------SHARED RAM/FLASH-----------------------------
     header of the graph : 
-        [0] offset_w32 to the list of Stream instance structures
-        [1] offset to formats (Flash)
-        [2] offset to IO configuration (Flash)
-        [3] address of arc descriptors (RAM) (GRAPH_ARC_LIST_ADDR_RAM)
-        [4] address of the Stream instances(RAM) (GRAPH_STREAM_INST)
-        [5] parameters (nb_io) and script address (RAM) (GRAPH_SCRIPT_ADDR)
-        [6] address of arc debug (RAM)
-        [7] address of of the graph base address (RAM) when 0=GRAPH_HEADER_SPLIT_IN_RAM_LSB
+        [0] Offset/LenRAM copyInRAMConfig bits + SharedMem bit + nb-io (8bits)
+        [1] offset to RAM
+        [2] offset to IO configuration 
+        [3] address of format(s)
+        [4] address of the linkedlist 
+        [5] address of the CMSIS-Stream instances
+        [6] address of arc decriptors 
+        [7] address of the debug registers
+        [8] address of the debug script
     ...
-    Word q : LINKED-LIST of SWC
+    [2] : start of IO "stream_format_io" (2 word per IO)
+             Word0: ARC ID, on-going request, domain, io platform index, in/out, command parameter, format
+             Word1: Settings bit-fields
+    ...
+    [3] : start of FORMAT used by the arcs (3 words each) 
+             Word0: Frame size, interleaving scheme, raw data type
+             Word1: Nb Chan, Sampling rate, time-stamp format
+             Word2: depends on IO Domain
+    ...
+    [4] : LINKED-LIST of SWC
              minimum 3 words/SWC
              Word0: SWCID, arc0/arc1. arc++, TCM, verbose, new param
              Word1: pack address of instance to nb memreq words, nb memreq, 
@@ -49,35 +59,25 @@
              Word3: extension for arc2/arc3, in/out, HQoS
              list Ends with SWC ID 0x3FFF 
     ...
-    Word n : start of IO "stream_format_io" (1 word per IO)
-             Word0: ARC ID, on-going request, domain, io platform index, in/out, command parameter, format
-    ...
-    Word p : start of FORMAT used by the arcs (3 words each) 
-             Word0: Frame size, interleaving scheme, raw data type
-             Word1: Nb Chan, Sampling rate, time-stamp format
-             Word2: IO Domain, channel mapping of the domain, in/out, hashing
-    ...
     -----------------------SHARED RAM-------------------------------
-    Word 5 : STREAM INSTANCE "stream_local_instance" 10 words (18 when arch64 are used)
-             Word0: platform stream to scan, identification "whoami"
-             Word1: base address of the graph in RAM
-             Word2: address of the platform AL 
-             Word3: pointer to the list of executable nodes from this instance
-             Word4-10: long offset to the 7 banks used with the ARCs (internal/external) + IO + TCM
+    [5] : STREAM INSTANCE "stream_local_instance" 3 words 
+             Word0: platform streams to scan, identification "whoami"
+             Word1: trace arc
+             Word2: pointer to the list of executable nodes from this instance
     ...
-    Word   : start of ARC descriptors (4 words each)
+    [6] : start of ARC descriptors (4 words each)
              Word0: base offsetm data format, need for flush after write
              Word1: size, debug result registers
              Word2: read index, ready for read, THR size/4, flow error and debug tasks index
              Word3: write index, ready for write, need realignment flag, locking byte
     ...
-    Word m : debug registers and vectors from ARC content analysis 
+    [7] : debug registers and vectors from ARC content analysis 
     ...
-    Word n : script 
+    [8] : script 
              Word1_scripts : script size, global register used + backup MEM, stack size
              Wordn_scripts : stack and byte-codes, see stream_execute_script()
     ... 
-    Word t : memory areas used for FIFO buffers 
+    [-] : memory areas used for FIFO buffers 
              and used for initializations, list of PACKSWCMEM results with fields
                 SIZE, ALIGNMT, SPEED, zero on last field 
     ...
@@ -108,19 +108,17 @@
 #define      NBIO_GRAPH0_MSB U( 4)       
 #define      NBIO_GRAPH0_LSB U( 0) /* 5  nb of external boundaries of the graph */
 
-/* -------- GRAPH[1]--RAM-OFFSET---- */
-#define GRAPH_RAM_OFFSET(G,L)     pack2linaddr_int((G)[1],L)
-#define GRAPH_RAM_OFFSET_PTR(G,L) pack2linaddr_ptr((G)[1],L)
+#define GRAPH_RAM_OFFSET()     pack2linaddr_int(arm_stream_global.graph[1])
+#define GRAPH_RAM_OFFSET_PTR() pack2linaddr_ptr(arm_stream_global.graph[1])
+#define GRAPH_IO_CONFIG_ADDR() pack2linaddr_ptr(arm_stream_global.graph[2])
+#define GRAPH_FORMAT_ADDR()    pack2linaddr_ptr(arm_stream_global.graph[3])
+#define GRAPH_LINKDLIST_ADDR() pack2linaddr_ptr(arm_stream_global.graph[4])
+#define GRAPH_STREAM_INST()    pack2linaddr_ptr(arm_stream_global.graph[5])
+#define GRAPH_ARC_LIST_ADDR()  pack2linaddr_ptr(arm_stream_global.graph[6])
+#define GRAPH_DEBUG_REGISTER() pack2linaddr_ptr(arm_stream_global.graph[7])
+#define GRAPH_DEBUG_SCRIPT()   pack2linaddr_ptr(arm_stream_global.graph[8])
 
-#define GRAPH_IO_CONFIG_ADDR(G,L) pack2linaddr_ptr((G)[2],L)
-#define GRAPH_FORMAT_ADDR(G,L)    pack2linaddr_ptr((G)[3],L)
-#define GRAPH_LINKDLIST_ADDR(G,L) pack2linaddr_ptr((G)[4],L)
-#define GRAPH_STREAM_INST(G,L)    pack2linaddr_ptr((G)[5],L)
-#define GRAPH_ARC_LIST_ADDR(G,L)  pack2linaddr_ptr((G)[6],L)
-#define GRAPH_DEBUG_REGISTER(G,L) pack2linaddr_ptr((G)[7],L)
-#define GRAPH_DEBUG_SCRIPT(G,L)   pack2linaddr_ptr((G)[8],L)
-
-#define LINKEDLIST_IS_IN_RAM(G) (7 != RD((G)[4],DATAOFF_ARCW0))
+#define LINKEDLIST_IS_IN_RAM() (MBANK_FLASH != RD(arm_stream_global.graph[4],DATAOFF_ARCW0))
 
 /* 
     ================================= GRAPH LINKED LIST =======================================
@@ -275,8 +273,7 @@
 /*=============================== STREAM INSTANCES =================================*/
 
 /* PROCESSORS FORMAT packed_info in 32bits : -------------------------  */
-/*---- processor's information ----*/
-            /* synchronization BYTE, used for locking SWC on arc1 */
+/* synchronization BYTE, used for locking SWC on arc1 */
 #define  INST_ID_PARCH_MSB U(31)
 #define   WHOAMI_PARCH_MSB U(31)
 #define INSTANCE_PARCH_MSB U(31)  /* avoid locking an arc by the same processor, but different RTOS instances*/
@@ -287,46 +284,43 @@
 #define   ARCHID_PARCH_LSB U(24)  /* 3 [1..7] processor architectures 0="any" 1="master processor architecture" */
 #define   WHOAMI_PARCH_LSB U(24)  /*   whoami used to lock a SWC to specific processor or architecture */
 #define  INST_ID_PARCH_LSB U(24)  /*   8 bits identification for locks */
-//                           
 #define BOUNDARY_PARCH_MSB U(23)  
-#define BOUNDARY_PARCH_LSB U( 0) /* 24 boundary ports to scan */  
+#define BOUNDARY_PARCH_LSB U( 0) /* 24 boundary ports in STREAM_FORMAT_IO to scan */  
 
 #define PACKWHOAMI(INST,PROCIDX,ARCH,BOUNDARIES) (((INST)<<30)|((PROCIDX)<<27)|((ARCH)<<24)|(BOUNDARIES))
-/*
-    SWC manifests tell if instances are relocatable or if SWC are assigned to specific Stream instance
-      for example : MP TCM usage with different base addresses
-*/
-///* struct stream_local_instance */uint32_t  /* structure allocated to each STREAM instance */
-//{
-//    uint32_t whoami_ports;  /* PACKWHOAMI : 16bits list of graph io ports this processor must check + who am I */
-//
-//    p_stream_node *node_entry_points;     /* all the nodes visible from this processor */
-//};
-#define STREAM_INSTANCE_SIZE 2
-#define STREAM_INSTANCE_WHOAMI_PORTS 0
-#define STREAM_INSTANCE_NODE_ENTRY_POINTS 1
+
+#define    UNUSED_PARINST_MSB U(31)  /* 12 */ 
+#define    UNUSED_PARINST_LSB U(20)    
+#define   LASTSWC_PARINST_MSB U(19)  /* 12 last linkedList index used*/ 
+#define   LASTSWC_PARINST_LSB U( 8)    
+#define TRACE_ARC_PARINST_MSB U( 7)
+#define TRACE_ARC_PARINST_LSB U( 0)  /*  8 index of the arc used for debug trace / instance */
+
+///* struct stream_local_instance */        /* structure allocated to each STREAM instance */
+//{     uint32_t whoami_ports;              /* PACKWHOAMI */
+//      uint32 parameters;
+//      p_stream_node *node_entry_points;   /* all the nodes visible from this processor */
+
+#define STREAM_INSTANCE_SIZE 3
+#define STREAM_INSTANCE_WHOAMI_PORTS 0          /* _PARCH_ fields */
+#define STREAM_INSTANCE_PARAMETERS 1            /* _PARINST_ fields */
+#define STREAM_INSTANCE_NODE_ENTRY_POINTS 2     /* 27 bits */
 
 
 
 
 /* ----------- for stream_param_t : intPtr_t[2] -----------------*/
-#define NB_STREAM_PARAM 2
-#define STREAM_PARAM_GRAPH 0    /* address of the graph */
-#define STREAM_PARAM_CTRL 1     /* index of the Stream instance */
-//typedef struct
-//{   
-//  uint32_t *graph;         
-//  uint32_t instance_control;  /* see STREAM_PARAM_BITFIELDS */
+//#define NB_STREAM_PARAM 1
+//#define STREAM_PARAM_CTRL 0     /* index of the Stream instance */
 //
-//} stream_param_t;
+//#define STREAM_PARAM_BITFIELDS 
+//#define  UNUSED_PARAM_MSB U(31)
+//#define  UNUSED_PARAM_LSB U(18) /* 14      */
+//#define LASTSWC_PARAM_MSB U(17)
+//#define LASTSWC_PARAM_LSB U( 6) /* 12 index to the last position scanned by the scheduler */
+//#define INSTIDX_PARAM_MSB U( 5) 
+//#define INSTIDX_PARAM_LSB U( 0) /*  6 Stream instance index of the graph readers */
 
-#define STREAM_PARAM_BITFIELDS 
-#define  UNUSED_PARAM_MSB U(31)
-#define  UNUSED_PARAM_LSB U(18) /* 14      */
-#define LASTSWC_PARAM_MSB U(17)
-#define LASTSWC_PARAM_LSB U( 6) /* 12 index to the last position scanned by the scheduler */
-#define INSTIDX_PARAM_MSB U( 5) 
-#define INSTIDX_PARAM_LSB U( 0) /*  6 Stream instance index of the graph readers */
 
 /*================================= STREAM CONTROL ================================*/
 /* 
@@ -361,7 +355,7 @@
 #define TX1_FROM_GRAPH 1u
 
 #define    UNUSED_IOFMT_MSB U(31)  
-#define    UNUSED_IOFMT_LSB U(25)  /* 7  NOTISOCHRONOUS_IOMEM */
+#define    UNUSED_IOFMT_LSB U(25)  /* 7   */
 #define NOTISOCHR_IOFMT_MSB U(24)  /*    used to size the FIFO:  FRAMESIZE_FMT0 x SAMPLING_FMT1 */
 #define NOTISOCHR_IOFMT_LSB U(24)  /* 1  1:bursty asynchronous : frame size and FS give the peak data-rate */
 #define  INSTANCE_IOFMT_MSB U(23)  
@@ -402,12 +396,14 @@
 #define    NOUT_CMD_MSB U(27)       
 #define    NOUT_CMD_LSB U(24) /* 4 number of output arcs */
 #define     TAG_CMD_MSB U(23)       
-#define     TAG_CMD_LSB U(16) /* 8 selection */
+#define     TAG_CMD_LSB U(16) /* 8 selection / debug arc index */
 #define  PRESET_CMD_MSB U(15)       
 #define  PRESET_CMD_LSB U( 8) /* 8 preset */
-#define COMMAND_CMD_MSB U( 7)       
-#define COMMAND_CMD_LSB U( 0) /* 8 command */
-#define PACK_COMMAND(I,O,T,P,CMD) (((I)<<28)| ((O)<<24)| ((T)<<16)| ((P)<<8)| (CMD))
+#define    INST_CMD_MSB U( 7)       
+#define    INST_CMD_LSB U( 4) /* 4 instance index */
+#define COMMAND_CMD_MSB U( 3)       
+#define COMMAND_CMD_LSB U( 0) /* 4 command */
+#define PACK_COMMAND(I,O,T,P,INST,CMD) (((I)<<28)|((O)<<24)|((T)<<16)|((P)<<8)|((INST)<<4)|(CMD))
 
 //enum stream_command (8bits LSB)
 //{

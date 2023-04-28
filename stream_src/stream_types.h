@@ -225,6 +225,14 @@ struct platform_control_stream
 };
 
 
+/*
+    global data of a processor, independent of the Stream instances
+*/
+typedef struct  
+{   
+    uint32_t *graph;
+    intPtr_t *long_offset;
+} arm_global_data_t;
 
 /* stream parameters */
 //struct stream_control 
@@ -242,31 +250,27 @@ extern void arm_stream_io (uint32_t fw_io_idx,
         uint32_t *graph,
         uint8_t *data, uint32_t length);
 extern void arm_stream_services (uint32_t command, 
-        void *ptr1, void *ptr2, void *ptr3);
+        uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3);
+
+extern void stream_scan_graph (uint8_t stream_instance, int8_t return_option, 
+    int8_t script_option, int8_t reset_option);
 
 /* ---- REFERENCES --------------------------------------------*/
 
 extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3);
-void stream_scan_graph (intPtr_t *parameters, int8_t return_option, 
-    int8_t script_option, int8_t reset_option);
 
-//extern void * convert_intp_to_voidp (intPtr_t *in);
-//extern void * convert_sdata_to_voidp (data_buffer_t *in);
-//extern void * convert_int_to_ptr (intPtr_t in);
-//
-//extern intPtr_t convert_ptr_to_int (void *in);
-//extern intPtr_t convert_ptr_to_int (uint8_t *in);
+extern arm_global_data_t arm_stream_global;
+
 extern intPtr_t convert_ptr_to_int (void *in);
 extern void * convert_int_to_ptr (intPtr_t in);
 
-extern intPtr_t * pack2linaddr_ptr(uint32_t data, intPtr_t *offsets);
-extern intPtr_t pack2linaddr_int(uint32_t data, intPtr_t *offsets);
+extern intPtr_t * pack2linaddr_ptr(uint32_t data);
+extern intPtr_t pack2linaddr_int(uint32_t data);
 
-extern intPtr_t arc_extract_info_int (uint32_t *arc, uint8_t tag, intPtr_t *offsets);
-extern intPtr_t * arc_extract_info_pt (uint32_t *arc, uint8_t tag, intPtr_t *offsets);
-extern int stream_execute_script(intPtr_t *parameters);
-extern uint32_t physical_to_offset (uint8_t *buffer, intPtr_t *long_offset);
-extern void arc_data_operations (intPtr_t *arc, uint8_t tag, intPtr_t *long_offset, uint8_t *buffer, uint32_t size);
-extern void stream_scan_graph (intPtr_t *parameters, int8_t return_option, int8_t script_option, int8_t reset_option);
+extern intPtr_t arc_extract_info_int (uint32_t *arc, uint8_t tag);
+extern intPtr_t * arc_extract_info_pt (uint32_t *arc, uint8_t tag);
+extern int stream_execute_script(void);
+extern uint32_t physical_to_offset (uint8_t *buffer);
+extern void arc_data_operations (intPtr_t *arc, uint8_t tag, uint8_t *buffer, uint32_t size);
 
 #endif /* #ifndef cSTREAM_TYPES_H */
