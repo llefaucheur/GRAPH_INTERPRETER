@@ -169,22 +169,25 @@ Stream-based processing is facilitated using CMSIS-Stream:
     manages the memory mapping with speed constraints, provided by the
     developer, at instance creation. This lets software run with maximum
     performance in rising situations of memory bounded problems.
-    CMSIS-Stream will accept code in binary format activated with keys.
-    It is designed to integrate memory protection between software
-    components.
+    CMSIS-Stream accepts code in binary format activated with keys
+    (TBC). It is designed to integrate memory protection between
+    software components.
 
 15. **From the system integrator view**, it eases the tuning and the
     replacement of one component by another one and is made to ease
     processing split with multiprocessors. The stream is described with
     a graph (a text file) designed with a graphical tool. The
     development of DSP/ML processing will be possible without need to
-    write code and allow graph changes and tuning without recompilation.
+    write code and allow graph changes and tuning [without
+    recompilation]{.underline}.
 
-16. **CMSIS-Stream design objectives**: Low RAM, graph descriptor placed
-    in Flash + RAM, from small Cortex-M0 with 2kB to SMP/AMP/coprocessor
-    and mix of 32/64bits thanks to the concept of shared RAM and index
-    to memory banks provided by the local processor abstraction layer.
-    Memory bank indexes can address up to 128GB of memory.
+16. **CMSIS-Stream design objectives**: Low RAM footprint. Graph
+    descriptor can be placed in Flash with a small portion in RAM.
+    Use-cases go from small Cortex-M0 with 2kBytes RAM to
+    SMP/AMP/coprocessor and mix of 32/64bits thanks to the concept of
+    shared RAM and indexes to memory banks provided by the local
+    processor abstraction layer. Memory bank indexes can address
+    cumulated 128GB of memory.
 
 17. **Computing libraries** are provided under compilation options, to
     avoid replicating CMSIS-DSP in nodes with binary code deliveries,
