@@ -28,6 +28,7 @@
 #include "stream_const.h"
 #include "stream_types.h"
 
+
 /*
     9.	stream_detector
     Operation : provides a boolean output stream from the detection of a rising (of falling) edge above 
@@ -39,26 +40,88 @@
     time-constant in [ms] for the energy integration time, time-constant to gate the output.
 */
 
-typedef struct
+enum STREAM_DETECTOR_PRESETS 
+{
+    // STREAM_DETECTOR_PRESET_NONE,
+    STREAM_DETECTOR_PRESET_VAD_16kHz,
+    STREAM_DETECTOR_PRESET_VAD_48kHz,
+    STREAM_DETECTOR_PRESET_AD_16kHz,
+    STREAM_DETECTOR_PRESET_AD_48kHz,
+};
+
+enum STREAM_DETECTOR_PARAMS
+{
+    // STREAM_DETECTOR_USE_PRESETS,
+    STREAM_DETECTOR_LOW_PASS,
+    STREAM_DETECTOR_RISE_TIME,
+    STREAM_DETECTOR_FALL_TIME,
+};
+
+typedef struct          /* 8 Bytes  */
 {
     uint8_t log2counter;        /* sample counter= 2^log2counter: maintains the "detected" flag at least for this number of samples */
     uint8_t log2decfMAX;        /* decimation = a power of 2 (-1) */
     uint8_t high_pass_shifter;  /* for z1 */
     uint8_t low_pass_shifter;   /* for z6 */
-    uint8_t floor_noise_shifter;/* for z7 */
-    uint8_t peak_signal_shifter;/* for z8 */
+    uint8_t floor_peak_shifter; /* for z7 */
+    uint8_t vad_rise;           /* rise time MiniFloat Mantissa 3b Exp 6b */
+    uint8_t vad_fall;           /* fall time MiniFloat Mantissa 3b Exp 6b */
+    uint8_t THR;                /* detection threshold z8/z7 */
 } detector_parameters;
 
-typedef struct /* total = 22 Bytes => 24bytes/6word32 */
+// TODO Liam Revise byte counts
+typedef struct /* total = 36 Bytes*/
 {
-    detector_parameters config; /* 6 bytes */
+    detector_parameters config; /* 9 bytes */
 
-    int16_t z1;    /* memory of the high-pass filter (recursive part) */
-    int16_t z2;    /* memory of the high-pass filter (direct part) */
-    int16_t z3;    /* output of the high-pass filter */
-    int16_t z6;    /* memory of the first low-pass filter */
-    int16_t z7;    /* memory of the floor-noise tracking low-pass filter */
-    int16_t z8;    /* memory of the envelope tracking low-pass filter */
+    int32_t z1;    /* memory of the high-pass filter (recursive part) */
+    int32_t z2;    /* memory of the high-pass filter (direct part) */
+    int32_t z3;    /* output of the high-pass filter */
+    int32_t z6;    /* memory of the first low-pass filter */
+    int32_t z7;    /* memory of the floor-noise tracking low-pass filter */
+    int32_t z8;    /* memory of the envelope tracking low-pass filter */
+    int32_t decf;  /* memory of the decimator for z7/floor noise estimation */
+    int32_t accvad;/* accumulator / estimation */
+    int32_t Flag;  /* accumulator 2 / estimation  */
     int32_t down_counter;    /* memory of the debouncing downcounter  */
+    uint8_t previous_vad; 
 } arm_detector_instance;
 
+#define F2Q31(f) (long)(0x7FFFFFFFL*(f))
+#define ConvertSamp(f) (f<<12)
+#define DIVBIN(s,n) (s>>n)
+
+// Threshold/clamping to prevent the value 0 entering filter calculations
+#define lowestS  F2Q31(0.0001)
+
+#define THR  3
+#define MAXVAD  F2Q31(0.98)
+
+// Filter variables
+#define Z1 instance->z1
+#define Z2 instance->z2
+#define Z3 instance->z3
+#define Z6 instance->z6
+#define Z7 instance->z7
+#define Z8 instance->z8
+#define DECF instance->decf
+#define ACCVAD instance->accvad
+#define FLAG instance->Flag
+#define SHPF instance->config.high_pass_shifter
+#define SLPF instance->config.low_pass_shifter // S1 in tinyVad
+#define PREVIOUSVAD instance->previous_vad
+
+// TODO Verify if these can be replaced by a single value 
+// S2 in tinyvad. Used for both floor & peak calculations (z7 & z8)
+#define SFloorPeak instance->config.floor_peak_shifter
+
+// Replace above with #define SPeak  instance->config.peak_signal_shifter if we do need separate values for each
+
+// Time constants for VAD algorithm
+#define MINIF(m,exp) ((m)<<6 | (exp))
+#define MINIFLOAT2Q31(x) (((x) & 0xE0) << (23 - ((x) & 0x1F)))
+#define VADRISE MINIFLOAT2Q31(instance->config.vad_rise)
+#define VADFALL MINIFLOAT2Q31(instance->config.vad_fall)
+
+// Value of decremented counter is 2^log2decfMAX -1 to allow mask to be used to detect rollover
+#define decfMASK ((1 << (instance->config.log2decfMAX)) -1)

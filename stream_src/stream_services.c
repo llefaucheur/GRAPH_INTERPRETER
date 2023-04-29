@@ -37,7 +37,7 @@
 
 void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
 {   
-	switch (command)
+	switch (RD(command,COMMAND_CMD))
     {
     case 0:
         break;
@@ -77,8 +77,8 @@ void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_
         #endif
         break; 
     /* ----------------------------------------------------------------------------------
-        arm_stream(PACK_SERVICE(instance index, STREAM_DEBUG_TRACE), *int8_t, nb bytes, 0);
-        arm_stream(DEBUG_TRACE_STAMPS, disable_0 / enable_1 time stamps);
+        arm_stream_services(PACK_SERVICE(instance index, STREAM_DEBUG_TRACE), *int8_t, nb bytes, 0);
+        arm_stream_services(DEBUG_TRACE_STAMPS, disable_0 / enable_1 time stamps);
      */
     case STREAM_DEBUG_TRACE:
         {   

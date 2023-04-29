@@ -85,6 +85,8 @@ void arm_stream_dsp_filter (int32_t command, uint32_t *instance, data_buffer_t *
             for (i = 0; i < n; i++)
             {   pt8b[i] = 0;
             }
+            arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), "FLTR", (uint8_t *)4, 0);
+
             break;
         }    
 
@@ -118,6 +120,7 @@ void arm_stream_dsp_filter (int32_t command, uint32_t *instance, data_buffer_t *
                 {   pt8bdst[i] = pt8bsrc[i];
                 }
             }
+            arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), "FLTS", (uint8_t *)4, 0);
             break;
         }
 
@@ -173,6 +176,7 @@ void arm_stream_dsp_filter (int32_t command, uint32_t *instance, data_buffer_t *
             pt_pt ++;
             *(&(pt_pt->size)) = nb_data * sizeof(SAMP_OUT);   /* amount of data produced */
             
+            //arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), "FLTU", (uint8_t *)4, 0);
             break;
         }
 

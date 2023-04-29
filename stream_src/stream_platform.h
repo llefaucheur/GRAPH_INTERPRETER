@@ -81,8 +81,6 @@
 //#define            PROC_IOMEM_LSB   15u /* 8  locks this IO to proc (among 8), 0=any from this architecture */
 //#define   MEM_SPACE_OFF_IOMEM_MSB   14u  
 //#define   MEM_SPACE_OFF_IOMEM_LSB   12u /* 3  64bits offset selection : 0/internal/external/io = idx_memory_base_offset */
-//#define  BUFFER_FROM_HW_IOMEM_MSB   11u /*    "io_buffer_allocation"  TO REMOVE */
-//#define  BUFFER_FROM_HW_IOMEM_LSB   11u /* 1  Buffer is provided by the driver = 1, data pointer is provided by the application at set-up = 0 */
 //#define MASTER_FOLLOWER_IOMEM_MSB   10u /*    "io_master_follower" */
 //#define MASTER_FOLLOWER_IOMEM_LSB   10u /* 1  Master=0 Follower=1  */
 //#define PLATFORM_IO_IDX_IOMEM_MSB    9u /*    16 io_index of the same domain (16 GPIO, 16 ADC, ..) */  
@@ -90,8 +88,8 @@
 //#define          DOMAIN_IOMEM_MSB    5u
 //#define          DOMAIN_IOMEM_LSB    0u /* 6  64 physical domains = enum  stream_io_domain */
 //
-//#define PACK_IOMEMDOMAIN(ARCH,PROC,OFFSET,HWBUFFER,MASTER,IOIDX,DOMAIN) \
-//    (((ARCH)<<23)|((PROC)<<15)|((OFFSET)<<12)|((HWBUFFER)<<11)|((MASTER)<<10)|((IOIDX)<<6)|((DOMAIN)<<0))
+//#define PACK_IOMEMDOMAIN(ARCH,PROC,OFFSET,MASTER,IOIDX,DOMAIN) \
+//    (((ARCH)<<23)|((PROC)<<15)|((OFFSET)<<12)|((MASTER)<<10)|((IOIDX)<<6)|((DOMAIN)<<0))
 
 
 

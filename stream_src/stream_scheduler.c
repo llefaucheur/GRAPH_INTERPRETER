@@ -588,30 +588,30 @@ uint32_t check_hw_compatibility(uint32_t whoami, uint32_t bootParamsHeader)
  *----------------------------------------------------------------------------*/
 
 typedef struct {
-    uint32_t *pinst;
-    uint8_t *pt8b_collision_arc_1;
-    uint8_t endLinkedList;
-    uint8_t stream_instance;
+    p_stream_node address_swc;
     uint32_t *all_arcs;
+    uint32_t *all_formats;
+    p_stream_node *all_nodes;
+    uint32_t *arc0;
+    uint32_t *arc1;
+    uint32_t bootParamsHeader;
+    uint32_t check;
+    uint8_t endLinkedList;
     uint32_t *linked_list_ptr;
     uint32_t *linked_list_ptr_header;
     uint32_t *linked_list_ptr_bootparam;
+    uint8_t nio;
+    uint32_t *pinst;
+    uint32_t *pio;
+    uint16_t preset;
+    uint8_t *pt8b_collision_arc_1;
+    uint8_t some_components_have_data;
+    uint8_t stream_instance;
     uint32_t swc_instance;
     uint32_t *swc_instance_ptr;
-    uint16_t preset;
     uint32_t swc_header;
     uint32_t whoami;
-    p_stream_node address_swc;
-    uint8_t nio;
-    p_stream_node *all_nodes;
-    uint32_t *pio;
-    uint32_t check;
-    uint8_t some_components_have_data;
     data_buffer_t xdm_data[MAX_NB_STREAM_SWC];
-    uint32_t *arc0;
-    uint32_t *arc1;
-    uint32_t *all_formats;
-    uint32_t bootParamsHeader;
 } stack;
 
 static void init_stack (uint8_t stream_instance, stack *S);
@@ -684,7 +684,7 @@ void stream_scan_graph (uint8_t stream_instance, int8_t return_option,
 
             /* end of graph ? */
             if (reset_option < 0)
-            {   stream_calls_swc (S.address_swc, PACK_COMMAND(1,1,0,0,S.swc_instance,STREAM_END), 
+            {   stream_calls_swc (S.address_swc, PACK_COMMAND(1,1,0,0,S.stream_instance,STREAM_END), 
                     (uint32_t *)S.swc_instance, 0u, &S.check);
                 
                 WR_BYTE_MP_(S.pt8b_collision_arc_1, 0u);    /* SWC is unlocked */
@@ -737,7 +737,7 @@ static void init_stack (uint8_t stream_instance, stack *S)
     S->all_nodes = convert_int_to_ptr(S->pinst[STREAM_INSTANCE_NODE_ENTRY_POINTS]);
     S->whoami = S->pinst[STREAM_INSTANCE_WHOAMI_PORTS];
     S->pio = (uint32_t *)(GRAPH_IO_CONFIG_ADDR());
-    S->nio = RD(arm_stream_global.graph,NBIO_GRAPH0);
+    S->nio = RD(*(arm_stream_global.graph),NBIO_GRAPH0);
     S->all_formats = GRAPH_FORMAT_ADDR();
 }
 
@@ -838,7 +838,7 @@ static void reset_load_parameters (stack *S)
     /*
         add for each arc : [nb channel, sampling rate, interleaving, time-stamp format]
     */
-    stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,0,S->preset,S->swc_instance, STREAM_RESET), 
+    stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,0,S->preset,S->stream_instance, STREAM_RESET), 
         (uint32_t *)memreq_physical, 
         (data_buffer_t *)arm_stream_services, 
         &S->check);
@@ -862,7 +862,7 @@ static void set_new_parameters (stack *S)
     /* do we load the full set of parameters ? */
     if (nparam == ALLPARAM_)
     {   
-        stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,ALLPARAM_,S->preset,S->swc_instance, STREAM_SET_PARAMETER), 
+        stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,ALLPARAM_,S->preset,S->stream_instance, STREAM_SET_PARAMETER), 
             S->swc_instance_ptr,
             (data_buffer_t *)ptr_param8b, 
             &S->check);
@@ -877,7 +877,7 @@ static void set_new_parameters (stack *S)
             param_nb_bytes = *ptr_param8b;
             ptr_param8b++;
     
-            stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,param_tag,S->preset,S->swc_instance, STREAM_SET_PARAMETER), 
+            stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,param_tag,S->preset,S->stream_instance, STREAM_SET_PARAMETER), 
                 S->swc_instance_ptr,
                 (data_buffer_t *)ptr_param8b, 
                 &S->check);
@@ -925,7 +925,7 @@ static void run_node (uint8_t stream_instance, stack *S, uint8_t script_option)
         /* call the SWC, returns the information "0 == SWC needs to be called again" 
            to give some CPU periods for trigering data moves 
            long SWC can be split to allow data moves without RTOS */
-        stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,0,S->preset,S->swc_instance, STREAM_RUN), 
+        stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,0,S->preset,S->stream_instance, STREAM_RUN), 
             S->swc_instance_ptr, S->xdm_data,  &S->check);
     
         if (SWC_TASK_NOT_COMPLETED == S->check)

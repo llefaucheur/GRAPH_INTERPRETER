@@ -38,9 +38,15 @@ extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t 
  
 extern int32_t extract_sensor_field (const uint8_t *platform_bit_fields, 
                               const int32_t *settings,
+                              uint8_t setting_line,
                               uint8_t index);
 
 
+/*
+     8  3  nchan          3,   1, 2, 8,
+    16  4  FS             2,   16000, 48000, 
+     4  2  framesize [ms] 2,   10, 16, 
+*/
 extern const uint8_t platform_audio_out_bit_fields[];
 #define PLATFORM_AUDIO_OUT_NCHAN    0
 #define PLATFORM_AUDIO_OUT_FS       1

@@ -156,15 +156,23 @@ const uint8_t platform_audio_out_bit_fields[] = { 3,4,2,3,4,2,1,2,1,2,1,2,1 };
        bit  29- 0 = time     (30bits seconds = 68years)
      */
 
+
+/*
+    skip the fields line by line, until finding the "setting_line"
+    and read the "index" setting from this line
+
+    The table is made of int32_t to unquantize 
+*/
 int32_t extract_sensor_field (const uint8_t *platform_bit_fields, 
                               const int32_t *settings,
+                              uint8_t setting_line,
                               uint8_t index)
 {
     uint8_t i, j, i_field, nb_fields;
 
     i_field = 0;
 
-    for (i = 0; i < index; i++)
+    for (i = 0; i < setting_line; i++)
     {   nb_fields = settings[i_field];
         for (j = 0; j < nb_fields; j++)
         {

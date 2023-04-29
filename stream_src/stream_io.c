@@ -51,7 +51,7 @@ void arm_stream_io (uint32_t fw_io_idx,
     uint32_t *pio;
 
     pio = (uint32_t *)GRAPH_IO_CONFIG_ADDR();
-    pio = &(pio[fw_io_idx]);
+    pio = &(pio[STREAM_IOFMT_SIZE_W32 * fw_io_idx]);
     arc = GRAPH_ARC_LIST_ADDR();
     arc_idx = RD(*pio, IOARCID_IOFMT);
     arc = &(arc[SIZEOF_ARCDESC_W32 * arc_idx]);
@@ -96,7 +96,7 @@ void arm_stream_io (uint32_t fw_io_idx,
         case TX1_FROM_GRAPH:
             switch (command)
             {
-            case IO_COMMAND_DATA_MOVE_RX:
+            case IO_COMMAND_DATA_MOVE_TX:
             {   /* amount of data = write - read */
                 amount_of_data = RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3) -    
                 RD(arc[RDFLOW_ARCW2], READ_ARCW2);

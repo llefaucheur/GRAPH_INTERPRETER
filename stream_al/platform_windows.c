@@ -183,10 +183,12 @@ extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t 
 */
 
 
-/*
- * --- IO HW and board interfaces -------------------------------------------------------
+/* --------------------------------------------------------------------------------------- 
+ * --- IO HW and board interfaces --------------------------------------------------------
  */
-/* tuning of AUDIO_RENDER_STREAM_SETTING */
+/*  tuning of AUDIO_RENDER_STREAM_SETTING 
+    const uint8_t platform_audio_out_bit_fields[] = { 3,4,2,3,4,2,1,2,1,2,1,2,1 };
+*/
 const int32_t audio_render_settings [] = { 
     /* nb options nbbits */
     /*  8  3  nchan */         3,   1, 2, 8,
@@ -204,26 +206,28 @@ const int32_t audio_render_settings [] = {
     /*     6 bits remains */ 
     };
  
- /*  
+
+
+/* --------------------------------------------------------------------------------------- 
     data in Flash :
  */
 struct platform_io_control platform_io [LAST_IO_FUNCTION_PLATFORM] = 
 {
-    {   /* PLATFORM_APPLICATION_DATA_IN */
+    {   /* PLATFORM_APPLICATION_DATA_IN_INSTANCE_0 */
     .io_set = audio_ap_rx_set_stream,
     .io_start = audio_ap_rx_start_data_move,
     .io_stop = audio_ap_rx_stop_stream,
     .stream_setting = 0, 
     },
 
-    {   /* PLATFORM_AUDIO_OUT */
+    {   /* PLATFORM_AUDIO_OUT_INSTANCE_0 */
     .io_set = audio_render_set_stream,
     .io_start = audio_render_start_data_move,
     .io_stop = audio_render_stop_stream,
     .stream_setting = audio_render_settings,
     },
 
-    {   /* PLATFORM_COMMAND_OUT */
+    {   /* PLATFORM_COMMAND_OUT_INSTANCE_0 */
     .io_set = trace_set,
     .io_start = trace_start,
     .io_stop = trace_stop,
@@ -238,13 +242,36 @@ struct platform_io_control platform_io [LAST_IO_FUNCTION_PLATFORM] =
 FILE *ptf_in_audio_ap_rx_data;
 FILE *ptf_in_audio_render_data;
 FILE *ptf_trace;
-
 uint32_t frame_size_audio_render;
+
+
+
+
+
+/* --------------------------------------------------------------------------------------- */
+void audio_render_transfer_done (uint8_t *data, uint32_t size) 
+{   platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_AUDIO_OUT_INSTANCE_0, 
+        data, (uint8_t *)size);
+}
+/* --------------------------------------------------------------------------------------- */
+void audio_ap_rx_transfer_done (uint8_t *data, uint32_t size) 
+{   platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_APPLICATION_DATA_IN_INSTANCE_0,
+        data, (uint8_t *)size);
+}
+/* --------------------------------------------------------------------------------------- */
+void trace_ap_rx_transfer_done (uint8_t *data, uint32_t size) 
+{   platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_COMMAND_OUT_INSTANCE_0,
+        data, (uint8_t *)size);
+}
+
+
 
 
 /* --------------------------------------------------------------------------------------- */
 uint32_t trace_start (uint32_t *setting, uint8_t *data, uint32_t size) 
-{   fprintf(ptf_trace, "\n%s", data);
+{   data[size] = 0;     /* end of string */
+    fprintf(ptf_trace, "%s\n", data);
+    trace_ap_rx_transfer_done ((uint8_t *)data, size);
     return 1u; 
 }
 /* --------------------------------------------------------------------------------------- */
@@ -266,12 +293,6 @@ uint32_t trace_set (uint32_t *setting, uint8_t *data, uint32_t size)
 
 
 
-
-/* --------------------------------------------------------------------------------------- */
-void audio_ap_rx_transfer_done (uint8_t *data, uint32_t size) 
-{   platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_APPLICATION_DATA_IN,
-        data, (uint8_t *)size);
-}
 
 /* --------------------------------------------------------------------------------------- */
 uint32_t audio_ap_rx_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) 
@@ -309,11 +330,6 @@ uint32_t audio_ap_rx_set_stream (uint32_t *setting, uint8_t *data, uint32_t size
 
 
 
-/* --------------------------------------------------------------------------------------- */
-void audio_render_transfer_done (uint8_t *data, uint32_t size) 
-{   platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_AUDIO_OUT, 
-        data, (uint8_t *)size);
-}
 
 /* --------------------------------------------------------------------------------------- */
 uint32_t audio_render_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) 
@@ -331,7 +347,7 @@ uint32_t audio_render_stop_stream(uint32_t *setting, uint8_t *data, uint32_t siz
 
 /* --------------------------------------------------------------------------------------- */
 uint32_t audio_render_set_stream (uint32_t *setting, uint8_t *data, uint32_t size)
-{   
+{   uint8_t index_frame_size = 0;
 #define FILE_OUT "..\\audio_out.raw"
     if (NULL == (ptf_in_audio_render_data = fopen(FILE_OUT, "wb")))
     {   exit (-1);
@@ -339,7 +355,7 @@ uint32_t audio_render_set_stream (uint32_t *setting, uint8_t *data, uint32_t siz
 
     /* simulate IO master port with a fixed frame size */
     frame_size_audio_render = extract_sensor_field 
-        (platform_audio_out_bit_fields, audio_render_settings, PLATFORM_AUDIO_OUT_FRAMESIZE);
+        (platform_audio_out_bit_fields, audio_render_settings, PLATFORM_AUDIO_OUT_FRAMESIZE, index_frame_size);
 
     return 1u;
 }

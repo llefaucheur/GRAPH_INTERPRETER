@@ -355,7 +355,9 @@
 #define TX1_FROM_GRAPH 1u
 
 #define    UNUSED_IOFMT_MSB U(31)  
-#define    UNUSED_IOFMT_LSB U(25)  /* 7   */
+#define    UNUSED_IOFMT_LSB U(31)  /* 1   */
+#define    DOMAIN_IOFMT_MSB U(30)  
+#define    DOMAIN_IOFMT_LSB U(25)  /* 6  64 stream_io_domain  */
 #define NOTISOCHR_IOFMT_MSB U(24)  /*    used to size the FIFO:  FRAMESIZE_FMT0 x SAMPLING_FMT1 */
 #define NOTISOCHR_IOFMT_LSB U(24)  /* 1  1:bursty asynchronous : frame size and FS give the peak data-rate */
 #define  INSTANCE_IOFMT_MSB U(23)  

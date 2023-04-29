@@ -60,30 +60,43 @@ typedef uint32_t (*io_function_control_ptr)  (uint32_t *setting, uint8_t *data, 
     MANIFEST of IO functions and capabilities
     used to interpret stream_setting in platform_xx.h
 */
-    //enum stream_io_domain                 
-    //#define PLATFORM_DATA_IN                1u
-    //#define PLATFORM_DATA_OUT               2u
-    //#define PLATFORM_APPLICATION_DATA_IN    3u
-    //#define PLATFORM_APPLICATION_DATA_OUT   4u
-    //#define PLATFORM_AUDIO_IN               5u
-    //#define PLATFORM_AUDIO_OUT              6u
-    //#define PLATFORM_GPIO_IN                7u
-    //#define PLATFORM_GPIO_OUT               8u
-    //#define PLATFORM_MOTION_CAPTURE         9u
-    //#define PLATFORM_PICTURE_IN            10u
-    //#define PLATFORM_PICTURE_OUT           11u  
-    //#define PLATFORM_USER_INTERFACE_IN     12u 
-    //#define PLATFORM_USER_INTERFACE_OUT    13u 
-    //#define PLATFORM_COMMAND_IN            14u
-    //#define PLATFORM_COMMAND_OUT           15u
-    //#define PLATFORM_LOW_DATA_RATE_IN      16u 
-    //#define PLATFORM_LOW_DATA_RATE_OUT     17u 
-    //#define PLATFORM_RTC_IN                18u 
-    //#define PLATFORM_RTC_OUT               19u
+#define   UNUSED_PLATFORM_DOMAIN_MSB U(31)  
+#define   UNUSED_PLATFORM_DOMAIN_LSB U(10)  /* 22   */
+#define INSTANCE_PLATFORM_DOMAIN_MSB U( 9)  
+#define INSTANCE_PLATFORM_DOMAIN_LSB U( 6)  /* 4  16 instances of the same domain */
+#define          PLATFORM_DOMAIN_MSB U( 5)  
+#define          PLATFORM_DOMAIN_LSB U( 0)  /* 6  64 different domains */
+#define PACK_PLATFORM_DOMAIN(INST,DOMAIN) (((INST)<<6)|(DOMAIN))
 
+/* 
+    enum stream_io_domain : list of stream domains categories 
+    each stream domain instance is controled by 3 functions and presets
+    domain have common bitfields for settings (see example platform_audio_out_bit_fields[]).
+*/
+#define PLATFORM_DATA_IN                1u
+#define PLATFORM_DATA_OUT               2u
+#define PLATFORM_APPLICATION_DATA_IN    3u
+#define PLATFORM_APPLICATION_DATA_OUT   4u
+#define PLATFORM_AUDIO_IN               5u
+#define PLATFORM_AUDIO_OUT              6u
+#define PLATFORM_GPIO_IN                7u
+#define PLATFORM_GPIO_OUT               8u
+#define PLATFORM_MOTION_CAPTURE         9u
+#define PLATFORM_2D_IN                 10u
+#define PLATFORM_2D_OUT                11u  
+#define PLATFORM_USER_INTERFACE_IN     12u 
+#define PLATFORM_USER_INTERFACE_OUT    13u 
+#define PLATFORM_COMMAND_IN            14u
+#define PLATFORM_COMMAND_OUT           15u
+#define PLATFORM_LOW_DATA_RATE_IN      16u 
+#define PLATFORM_LOW_DATA_RATE_OUT     17u 
+#define PLATFORM_RTC_IN                18u 
+#define PLATFORM_RTC_OUT               19u
 
-
-
+/*
+    each stream is controled by 3 functions and presets
+    domain presets are defined with bitfields (see example platform_audio_out_bit_fields[]).
+*/
 struct platform_io_control           
 {   io_function_control_ptr io_set;     
     io_function_control_ptr io_start; 
@@ -221,7 +234,7 @@ struct platform_control_stream
     uint32_t *graph;        
     uint32_t domain_settings;
     uint8_t fw_idx;
-    data_buffer_t buffer;    // [{void *; int}]
+    data_buffer_t buffer;    // [{uint8_t *; int}]
 };
 
 
