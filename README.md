@@ -36,8 +36,7 @@ description is generated in three steps:
 1.  **A graphical user interface** (GUI) generates a high-level
     description of the connexions between nodes and with the platform
     data streams. This graph representation is using the *YML format*
-    used in the CMSIS-DSP ComputeGraph ([link](https://github.com/ARM-software/CMSIS-DSP/tree/main/ComputeGraph)), with extra fields to set the nodes processor affinity and the
-    board's presets. "No code" is one objective of the project: go
+    used in the CMSIS-DSP ComputeGraph ([link](https://github.com/ARM-software/CMSIS-DSP/tree/main/ComputeGraph)), with extra fields to set the nodes processor affinity and the board's presets. "No code" is one objective of the project: go
     directly from this GUI to tests on target.
     
 2.  **A targeted platform is selected with its associated list of
@@ -107,10 +106,8 @@ Stream-based processing is facilitated using CMSIS-Stream:
 
 3.  CMSIS-Stream manages **TCM access**. When a software component
     declares, in its manifest, the need for a "critical speed memory
-    bank" of small size (usually less than 30kBytes), the above "step 2,
-    generation of *graphTxt* " will allocate TCM area. TCM area are only
-    used as working/scratch areas, it is the responsibility of the
-    programmer to swap it with static memory if needed.
+    bank" of small size (ideally less than 16kBytes), the above "step 2,
+    generation of *graphTxt* " will allocate TCM area.
 
 4.  **Backup SRAM**. Some applications are requiring a fast recovery in
     case of failures ("warm boot") or when the system restores itself
@@ -193,3 +190,10 @@ Stream-based processing is facilitated using CMSIS-Stream:
     avoid replicating CMSIS-DSP in nodes with binary code deliveries,
     and to allow arm-v7M codes able to benefit from arm-v8.1M vector
     processing extensions without the need for code recompilation.
+
+---------------------------------------------
+
+Implementation details
+
+TBD
+
