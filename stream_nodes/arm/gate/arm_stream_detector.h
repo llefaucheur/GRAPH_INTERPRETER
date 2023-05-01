@@ -64,8 +64,8 @@ typedef struct          /* 8 Bytes  */
     uint8_t high_pass_shifter;  /* for z1 */
     uint8_t low_pass_shifter;   /* for z6 */
     uint8_t floor_peak_shifter; /* for z7 */
-    uint8_t vad_rise;           /* rise time MiniFloat Mantissa 3b Exp 6b */
-    uint8_t vad_fall;           /* fall time MiniFloat Mantissa 3b Exp 6b */
+    uint8_t vad_rise;           /* rise time MiniFloat Mantissa 3bits Exponent 5bits */
+    uint8_t vad_fall;           /* fall time Mantissa=[0..7] Exponent=(-1)x[0..31] */
     uint8_t THR;                /* detection threshold z8/z7 */
 } detector_parameters;
 
@@ -80,10 +80,10 @@ typedef struct /* total = 36 Bytes*/
     int32_t z6;    /* memory of the first low-pass filter */
     int32_t z7;    /* memory of the floor-noise tracking low-pass filter */
     int32_t z8;    /* memory of the envelope tracking low-pass filter */
-    int32_t decf;  /* memory of the decimator for z7/floor noise estimation */
     int32_t accvad;/* accumulator / estimation */
     int32_t Flag;  /* accumulator 2 / estimation  */
     int32_t down_counter;    /* memory of the debouncing downcounter  */
+    int16_t decf;  /* memory of the decimator for z7/floor noise estimation */
     uint8_t previous_vad; 
 } arm_detector_instance;
 
@@ -118,7 +118,7 @@ typedef struct /* total = 36 Bytes*/
 // Replace above with #define SPeak  instance->config.peak_signal_shifter if we do need separate values for each
 
 // Time constants for VAD algorithm
-#define MINIF(m,exp) ((m)<<6 | (exp))
+#define MINIF(m,exp) ((m)<<5 | (exp))
 #define MINIFLOAT2Q31(x) (((x) & 0xE0) << (23 - ((x) & 0x1F)))
 #define VADRISE MINIFLOAT2Q31(instance->config.vad_rise)
 #define VADFALL MINIFLOAT2Q31(instance->config.vad_fall)

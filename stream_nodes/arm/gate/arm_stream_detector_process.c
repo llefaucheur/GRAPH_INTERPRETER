@@ -28,7 +28,7 @@
 #include "stream_const.h"
 #include "stream_types.h"
 
-#define PRINTF 0
+#define PRINTF 1
 
 #include "arm_stream_detector.h"
 
@@ -66,6 +66,7 @@ void detector_processing (arm_detector_instance *instance,
     // WIP We are using int16_t for outbuf now so types don't match, try this simple correction for now
     int32_t isamp = 0;
     int32_t input_data;
+    static long dbgZ4, dbgC;
 
     // Filtering Cascade 
     while (isamp < inputLength) 
@@ -75,6 +76,7 @@ void detector_processing (arm_detector_instance *instance,
         Z3 = Z2 - Z1;
         Z1  = Z2;
 
+        dbgZ4 = Z3;
         Z3 = (Z3 < 0) ? (-Z3) : Z3;
         Z6 = DIVBIN(Z3, SLPF) + (Z6 - DIVBIN(Z6, SLPF));
         Z8 = DIVBIN(Z6, SFloorPeak) + (Z8 - DIVBIN(Z8, SFloorPeak));
@@ -107,6 +109,22 @@ void detector_processing (arm_detector_instance *instance,
             }
         }
 #endif        
+
+    //{
+    //    extern FILE *ptf_trace;
+    //    long x; 
+    //    if (dbgC++ == 73000)
+    //        dbgC = dbgC;
+    //    x = Z6<<2;                  fwrite(&x, 1, 4, ptf_trace);
+    //    x = Z7<<2;                  fwrite(&x, 1, 4, ptf_trace);
+    //    x = input_data;             fwrite(&x, 1, 4, ptf_trace);
+    //    x = dbgZ4;                  fwrite(&x, 1, 4, ptf_trace);
+    //    x = Z8<<4;                  fwrite(&x, 1, 4, ptf_trace);
+    //    x = ACCVAD;                 fwrite(&x, 1, 4, ptf_trace);
+    //    x = FLAG;                   fwrite(&x, 1, 4, ptf_trace);
+    //    x = (pResult[isamp])<<30;   fwrite(&x, 1, 4, ptf_trace);
+    //}
+
         isamp++;
     }
 }

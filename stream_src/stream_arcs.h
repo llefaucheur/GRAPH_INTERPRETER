@@ -127,36 +127,38 @@
 
 /*--------------- WORD 0 - frame size, raw format, interleaving --------------- */
 #define SIZSFTRAW_FMT0   0
-    #define       RAW_FMT0_MSB 31
-    #define       RAW_FMT0_LSB 26 /* stream_raw_data 6bits (0..63)  */
-    #define INTERLEAV_FMT0_MSB 25 
-    #define INTERLEAV_FMT0_LSB 24 /* interleaving : frame_format_type */
-                                  /* frame size in bytes for one deinterleaved channel Byte-acurate up to 16MBytes */
-    #define FRAMESIZE_FMT0_MSB 23 /* raw interleaved buffer size is framesize x nb channel, max = 16MB x nchan */
-    #define FRAMESIZE_FMT0_LSB  0 /* in swc manifests it gives the minimum input size (grain) before activating the swc
-                                     A "frame" is the combination of several channels sampled at the same time 
-                                     A value =0 means the size is any or defined by the IO AL  */
+    #define    UNUSED_FMT0_MSB 31 /*  1   */
+    #define    UNUSED_FMT0_LSB 31
+    #define       RAW_FMT0_MSB 30
+    #define       RAW_FMT0_LSB 25 /*  6 stream_raw_data 6bits (0..63)  */
+    #define INTERLEAV_FMT0_MSB 24       
+    #define INTERLEAV_FMT0_LSB 24 /*  1 interleaving : frame_format_type */
+                                  /*    frame size in bytes for one deinterleaved channel Byte-acurate up to 16MBytes */
+    #define FRAMESIZE_FMT0_MSB 23 /*    raw interleaved buffer size is framesize x nb channel, max = 16MB x nchan */
+    #define FRAMESIZE_FMT0_LSB  0 /* 24 in swc manifests it gives the minimum input size (grain) before activating the swc
+                                        A "frame" is the combination of several channels sampled at the same time 
+                                        A value =0 means the size is any or defined by the IO AL  */
 
     #define PACKSTREAMFORMAT0(RAW,INTERL,FRAMESIZE) ((U(RAW)<<26)|(U(INTERL)<<24)|U(FRAMESIZE))
 
 /*--------------- WORD 1 - sampling rate , nchan  -------------*/
 #define   SAMPINGNCHANM1_FMT1  U( 1)
-    #define    UNUSED_FMT1_MSB U(31) /* 4b   */
+    #define    UNUSED_FMT1_MSB U(31) /* 4   */
     #define    UNUSED_FMT1_LSB U(28)
     #define  TIMSTAMP_FMT1_MSB U(27)
-    #define  TIMSTAMP_FMT1_LSB U(26) /* time_stamp_format_type for time-stamped streams for each interleaved frame */
-    #define  SAMPLING_FMT1_MSB U(25) /* 21bits : mantissa [U19], exponent [U2], FS = M x 2^(1-(8xE)), 0<=>ASYNCHRONOUS/SLAVE */
-    #define  SAMPLING_FMT1_LSB U( 5) /* range = (E=0,1,2,3) 0x3FFFF x 2^(1-4x0) .. 1 x 2^(1-8*3)) [524kHz .. 3 months] */
+    #define  TIMSTAMP_FMT1_LSB U(26) /* 2  time_stamp_format_type for time-stamped streams for each interleaved frame */
+    #define  SAMPLING_FMT1_MSB U(25) /*    21bits : mantissa [U19], exponent [U2], FS = M x 2^(1-(8xE)), 0<=>ASYNCHRONOUS/SLAVE */
+    #define  SAMPLING_FMT1_LSB U( 5) /* 21 range = (E=0,1,2,3) 0x3FFFF x 2^(1-4x0) .. 1 x 2^(1-8*3)) [524kHz .. 3 months] */
     #define   NCHANM1_FMT1_MSB U( 4)
-    #define   NCHANM1_FMT1_LSB U( 0) /* nb channels-1 [1..32] */
+    #define   NCHANM1_FMT1_LSB U( 0) /* 5  nb channels-1 [1..32] */
 
     #define PACKSTREAMFORMAT1(TIMESTAMP,SAMPLING, NCHANM1) ((U(TIMESTAMP)<<26)|(U(SAMPLING)<<5)|U(NCHANM1))
 
 
 /*--------------- WORD 2 -  direction, channel mapping (depends on the "stream_io_domain")------*/
 #define AUDIO_MAPPING_FMT2 U( 2)
-    #define   MAPPING_FMT2_MSB U(31) /* 32 mapping of channels example of 7.1 format (8 channels): */
-    #define   MAPPING_FMT2_LSB U( 0) /*     FrontLeft, FrontRight, FrontCenter, LowFrequency, BackLeft, BackRight, SideLeft, SideRight ..*/
+    #define MAPPING_FMT2_MSB U(31) /* 32 mapping of channels example of 7.1 format (8 channels): */
+    #define MAPPING_FMT2_LSB U( 0) /*     FrontLeft, FrontRight, FrontCenter, LowFrequency, BackLeft, BackRight, SideLeft, SideRight ..*/
 
 #define     PICTURE_FMT2 U( 2)
     #define  UNUSED_FMT2_MSB U(31) /* 12b   */
@@ -174,7 +176,7 @@
 #define SIZEOF_ARCDESC_W32 U(4)
 
 #define   BUF_PTR_ARCW0     U( 0)
-#define FORMATIDX_ARCW0_MSB U(31) /* 5 bits  32 global formats in the graph, graph (intPtr_t) +[ixSTREAM_FORMAT_SIZE_W32]  */ 
+#define FORMATIDX_ARCW0_MSB U(31) /* 5 bits  32 global formats in the graph,  (intPtr_t) +[ixSTREAM_FORMAT_SIZE_W32]  */ 
 #define FORMATIDX_ARCW0_LSB U(27) /*   Graph generator gives IN/OUT arc's frame size to be the LCM of SWC "grains" */
 #define BASEIDXOFFARCW0_MSB U(26) 
 #define   DATAOFF_ARCW0_MSB U(26) /*    arcs are using offset=0/1, same format for SWC instances: 0..4 */

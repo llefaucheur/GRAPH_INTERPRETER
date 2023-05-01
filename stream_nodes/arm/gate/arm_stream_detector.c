@@ -49,11 +49,15 @@ const detector_parameters detector_preset [NB_PRESET] =
 {   /* log2counter, log2decfMAX, 
         high_pass_shifter, low_pass_shifter, low_pass_z7_z8,  
         vad_rise, vad_fall, THR */
-    { 12, 8,  1, 6, 12, MINIF(1,13), MINIF(1,7), 3},   /* preset #0 = VAD at 16kHz */
-    { 12, 8,  1, 6, 12, MINIF(1,13), MINIF(1,7), 3},   /* preset #1 = VAD at 48kHz */
-    { 12, 8,  1, 6, 12, MINIF(1,13), MINIF(1,7), 3},   /* preset #2 = peak detector 1 no HPF */
-    { 12, 8,  1, 6, 12, MINIF(1,13), MINIF(1,7), 3},   /* preset #3 = peak detector 2 TBD */
+    { 12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #0 = VAD at 16kHz */
+    { 12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #1 = VAD at 48kHz */
+    { 12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #2 = peak detector 1 no HPF */
+    { 12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #3 = peak detector 2 TBD */
 };
+
+char dbg[100];
+long x;
+
 
 extern void detector_processing (arm_detector_instance *instance, 
                      int16_t *in, int32_t nb_data, 
@@ -94,7 +98,6 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
             {   pt8bdst[i] = 0;
             }
             pinstance->config = detector_preset[preset];    /* preset data move */
-
             break;
         }  
         
@@ -110,56 +113,24 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
 
             /* copy the parameters */
             pt8bsrc = (uint8_t *) data;
+            pt8bdst = (uint8_t *) &(pinstance->config);
 
+            /* copy all the parameter */
             if (RD(command, TAG_CMD) == 0xFF)
-            {
-                pt8bdst = (uint8_t *) &(pinstance->config);
-                n = sizeof(detector_parameters);
-
+            {   n = sizeof(detector_parameters);
                 for (i = 0; i < n; i++)
                 {   pt8bdst[i] = pt8bsrc[i];
                 }
-
                 break;
             } 
-            else if (RD(command, PRESET_CMD) > NB_PRESET ) 
-            {
-                printf("Undefined preset. Parameters not set. \n");
-                *status = 0;
+            /* copy a single parameter indexed by TAG, after loading the preset */
+            else 
+            {   pinstance->config = detector_preset[RD(command, PRESET_CMD)];
+                pt8bdst = &(pt8bdst[RD(command, TAG_CMD)]);
+                (*pt8bdst) = (*pt8bsrc);
+                break;
             }
-            // TODO Support change multiple (but not all) parameters at once?
-            // Currently a preset must be selected and the if block allows one field to be modified with others kept at preset
-            else {
-                switch (RD(command, PRESET_CMD)){
-                    // TODO Decide if a preset_none enum is necessary
-                    // case STREAM_DETECTOR_PRESET_NONE :
-                    //     break;
-                    case STREAM_DETECTOR_PRESET_VAD_16kHz : pinstance->config = detector_preset[0];
-                        break;
-                    case STREAM_DETECTOR_PRESET_VAD_48kHz : pinstance->config = detector_preset[1];
-                        break;
-                    case 3 : pinstance->config = detector_preset[2];
-                        break;
-                    case 4 : pinstance->config = detector_preset[3];
-                        break;
-                }
-                // WIP This approach only allows a maximum of one field to be configured
-                if RD(command, TAG_CMD)
-                {
-                    switch RD(command, TAG_CMD)
-                    {
-                        //  Cast to correct type and dereference  TODO Change to using void*?
-                        case STREAM_DETECTOR_LOW_PASS : pinstance->config.low_pass_shifter = *(int32_t*)data->address;
-                            break;
-                        case STREAM_DETECTOR_RISE_TIME : pinstance->config.vad_rise = data->address;
-                            break;
-                        case STREAM_DETECTOR_FALL_TIME : pinstance->config.vad_fall = data->address;
-                            break;
-                    }
-                }
-              }
-            }
-
+        }
 
         /* func(command = STREAM_RUN, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
@@ -193,11 +164,16 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
             pt_pt ++;
             *(&(pt_pt->size)) = nb_data * sizeof(SAMP_OUT);   /* amount of data produced */
 
-            {   char dbg[100];
-                sprintf (dbg, "Z2%5d Z7%3d Z8%4d VAD%2d", (pinstance->z2)>>12, (pinstance->z7)>>12, (pinstance->z8)>>12, outBuf[0]);
- 
-                arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), dbg, (uint8_t *)strlen(dbg), 0);            
-            }
+            //--------------------DEBUG---------------------
+            //sprintf (dbg, "Z2%5d Z7%3d Z8%4d VAD%2d", (pinstance->z2)>>12, (pinstance->z7)>>12, (pinstance->z8)>>12, outBuf[0]);
+            //arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), dbg, (uint8_t *)strlen(dbg), 0);            
+/*            x = (inBuf[0])<<12;  memcpy(&(dbg[0]), &x, 4);
+            x = (pinstance->z2)<<2;  memcpy(&(dbg[4]), &x, 4);
+            x = (pinstance->z3)<<2;  memcpy(&(dbg[8]), &x, 4);
+            x = (pinstance->accvad)<<2; memcpy(&(dbg[12]),&x, 4);
+            x = (outBuf[0])<<15;   memcpy(&(dbg[16]),&x, 4);
+            arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), dbg, (uint8_t *)20, 0);     */       
+            
             break;
         }
 
