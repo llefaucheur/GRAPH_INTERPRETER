@@ -9,7 +9,7 @@ designed with three objectives:
 
 For system integrators and OEM : develop complex DSP/ML stream
 processing. Go fast from prototypes validated on a computer to final
-tuning steps on board.
+tuning steps on board, by loading the graph description without device recompilation.
 
 2.  **Software component stores**
 
