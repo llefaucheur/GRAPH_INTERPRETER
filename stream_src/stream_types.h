@@ -132,6 +132,8 @@ enum {
     arc_set_base_address_to_arc,
     arc_set_base_address_from_arc,
     arc_data_realignment_to_base,
+    consumer_frame_size,
+    producer_frame_size
 };
 
 
@@ -284,6 +286,6 @@ extern intPtr_t arc_extract_info_int (uint32_t *arc, uint8_t tag);
 extern intPtr_t * arc_extract_info_pt (uint32_t *arc, uint8_t tag);
 extern int stream_execute_script(void);
 extern uint32_t physical_to_offset (uint8_t *buffer);
-extern void arc_data_operations (intPtr_t *arc, uint8_t tag, uint8_t *buffer, uint32_t size);
+extern void arc_data_operations (intPtr_t *arc, uint8_t tag, uint8_t *buffer, uint32_t size, uint32_t *format);
 
 #endif /* #ifndef cSTREAM_TYPES_H */

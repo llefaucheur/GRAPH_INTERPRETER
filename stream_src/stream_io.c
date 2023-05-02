@@ -49,6 +49,7 @@ void arm_stream_io (uint32_t fw_io_idx,
     uint8_t command;
     uint8_t flow_error;
     uint32_t *pio;
+    uint32_t *all_formats;
 
     pio = (uint32_t *)GRAPH_IO_CONFIG_ADDR();
     pio = &(pio[STREAM_IOFMT_SIZE_W32 * fw_io_idx]);
@@ -58,6 +59,7 @@ void arm_stream_io (uint32_t fw_io_idx,
     rx0tx1 = (uint8_t) RD(*pio, RX0TX1_IOFMT);
     command = (uint8_t) RD(*pio, IOCOMMAND_IOFMT);
     size = data_size;
+    all_formats = GRAPH_FORMAT_ADDR();
 
     switch (rx0tx1)
     {
@@ -67,29 +69,29 @@ void arm_stream_io (uint32_t fw_io_idx,
             {
             case IO_COMMAND_DATA_MOVE_RX:
             {   /* free area = size - write */
-                free_area = RD(arc[BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1) - 
-                RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
+                free_area = RD(arc[1], BUFF_SIZE_ARCW1) - 
+                RD(arc[3], WRITE_ARCW3);
                 
                 if (free_area < data_size)
                 {   /* overflow issue */
-                    flow_error = (uint8_t) RD(arc[RDFLOW_ARCW2], OVERFLRD_ARCW2);
+                    flow_error = (uint8_t) RD(arc[2], OVERFLRD_ARCW2);
                     platform_al(PLATFORM_ERROR, 0,0,0);
                     /* TODO : implement the flow management desired for "flow_error" */
                     size = free_area;
                 }
 
-                arc_data_operations (arc, arc_move_to_arc, data, size);      
+                arc_data_operations (arc, arc_move_to_arc, data, size, all_formats);   
+                break;
             } 
-            break;
 
             case IO_COMMAND_SET_BUFFER_RX:
-            {   arc_data_operations (arc, arc_set_base_address_to_arc, data, size);    
+            {   arc_data_operations (arc, arc_set_base_address_to_arc, data, size, all_formats);    
                 break;
             }
 
             default :
             case IO_COMMAND_NONE:   /* the IO path was disabled */
-                    break;
+                break;
             }
 
         /* stream from the graph */
@@ -98,26 +100,33 @@ void arm_stream_io (uint32_t fw_io_idx,
             {
             case IO_COMMAND_DATA_MOVE_TX:
             {   /* amount of data = write - read */
-                amount_of_data = RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3) -    
-                RD(arc[RDFLOW_ARCW2], READ_ARCW2);
+                amount_of_data = RD(arc[3], WRITE_ARCW3) -    
+                RD(arc[2], READ_ARCW2);
 
                 if (amount_of_data < data_size)
                 {   /* underflow issue */
-                    flow_error = (uint8_t) RD(arc[RDFLOW_ARCW2], UNDERFLRD_ARCW2);
+                    flow_error = (uint8_t) RD(arc[2], UNDERFLRD_ARCW2);
                     /* TODO : implement the flow management desired for "flow_error" */
                     size = amount_of_data;
                 }            
-                arc_data_operations (arc, arc_moved_from_arc, 0, size);      
+                arc_data_operations (arc, arc_moved_from_arc, 0, size, all_formats);     
+
+                /* does data realignement must be done ? */
+                if (0u != TEST_BIT (arc[3], ALIGNBLCK_ARCW3_LSB))
+                {   arc_data_operations (arc, arc_data_realignment_to_base, 0, 0, all_formats);
+                    DATA_MEMORY_BARRIER;
+                }
+                break;
             } 
 
             case IO_COMMAND_SET_BUFFER_TX :
-            {   arc_data_operations (arc, arc_set_base_address_from_arc, data, size);    
+            {   arc_data_operations (arc, arc_set_base_address_from_arc, data, size, all_formats);    
                 break;
             }
 
             default :
             case IO_COMMAND_NONE:  /* the IO path was disabled */
-                    break;
+                break;
             }
 
         default:

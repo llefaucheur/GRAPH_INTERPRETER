@@ -86,6 +86,7 @@ void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_
             uint8_t arcid;
             uint32_t size;
             uint32_t *arc;
+            uint32_t *format;
 
             /* extraction of the arc index used for the traces of this Stream instance */
             pinst = (uint32_t *)GRAPH_STREAM_INST();
@@ -93,10 +94,11 @@ void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_
             arcid = RD(pinst[STREAM_INSTANCE_PARAMETERS], TRACE_ARC_PARINST);
             arc = GRAPH_ARC_LIST_ADDR();
             arc = &(arc[arcid * SIZEOF_ARCDESC_W32]);
+            format = GRAPH_FORMAT_ADDR();
 
             /* copy the trace data @@@ no overflow check */
             size = (uint32_t)ptr2;
-            arc_data_operations (arc, arc_move_to_arc, ptr1, size);
+            arc_data_operations (arc, arc_move_to_arc, ptr1, size, format);
         }
         break;
     case STREAM_DEBUG_TRACE_STAMPS:

@@ -125,10 +125,10 @@
 *       word 2 : specific to domains : hashing, direction, channel mapping 
 */
 
-/*--------------- WORD 0 - frame size, raw format, interleaving --------------- */
+/*--------------- WORD 0 - producer frame size, raw format, interleaving --------------- */
 #define SIZSFTRAW_FMT0   0
-    #define    UNUSED_FMT0_MSB 31 /*  1   */
-    #define    UNUSED_FMT0_LSB 31
+    #define MULTIFRME_FMT0_MSB 31 /*  1 allow the scheduler to push multiframes  */
+    #define MULTIFRME_FMT0_LSB 31
     #define       RAW_FMT0_MSB 30
     #define       RAW_FMT0_LSB 25 /*  6 stream_raw_data 6bits (0..63)  */
     #define INTERLEAV_FMT0_MSB 24       
@@ -170,14 +170,16 @@
     #define   WIDTH_FMT2_MSB U(13) /* 14 number of pixel width */
     #define   WIDTH_FMT2_LSB U( 0) 
 
+
+
 /*------------------------------------------------------------------------------------*/
 
 #define SIZEOF_ARCDESC_SHORT_W32 U(2)
 #define SIZEOF_ARCDESC_W32 U(4)
 
-#define   BUF_PTR_ARCW0     U( 0)
-#define FORMATIDX_ARCW0_MSB U(31) /* 5 bits  32 global formats in the graph,  (intPtr_t) +[ixSTREAM_FORMAT_SIZE_W32]  */ 
-#define FORMATIDX_ARCW0_LSB U(27) /*   Graph generator gives IN/OUT arc's frame size to be the LCM of SWC "grains" */
+#define   BUF_PTR_ARCW0    U( 0)
+#define PRODUCFMT_ARCW0_MSB U(31) /* 5 bits  PRODUCER format  (intPtr_t) +[ixSTREAM_FORMAT_SIZE_W32]  */ 
+#define PRODUCFMT_ARCW0_LSB U(27) /*   Graph generator gives IN/OUT arc's frame size to be the LCM of SWC "grains" */
 #define BASEIDXOFFARCW0_MSB U(26) 
 #define   DATAOFF_ARCW0_MSB U(26) /*    arcs are using offset=0/1, same format for SWC instances: 0..4 */
 #define   DATAOFF_ARCW0_LSB U(24) /* 3 bits 64bits offset index see idx_memory_base_offset */
@@ -187,40 +189,38 @@
 #define   BASEIDX_ARCW0_LSB U( 0) /*22   base address 22bits + 2bits exponent ((base) << ((shift) << 2)) */
 #define BASEIDXOFFARCW0_LSB U( 0) 
                                 
-#define  BUFSIZDBG_ARCW1    U( 1)
-#define    UNUSED_ARCW1_MSB U(31) 
-#define    UNUSED_ARCW1_LSB U(28) /* 4  */
-#define SHAREDARC_ARCW1_MSB U(27) 
-#define SHAREDARC_ARCW1_LSB U(27) /* 1  null source, null sink  (no overflow, for metadata) */
+#define BUFSIZDBG_ARCW1    U( 1)
+#define CONSUMFMT_ARCW1_MSB U(31) /* 5 bits  CONSUMER format  */ 
+#define CONSUMFMT_ARCW1_LSB U(27) /*    */
 #define   MPFLUSH_ARCW1_MSB U(26) /* 1  if "1" then flush the arc's buffer after processing (MProcessing) */ 
-#define   MPFLUSH_ARCW1_LSB U(26) 
+#define   MPFLUSH_ARCW1_LSB U(26) /*     flush is optional when the consumer is run on the same processor */
 #define DEBUG_REG_ARCW1_MSB U(25)
 #define DEBUG_REG_ARCW1_LSB U(22) /* 4  debug result index for debug_arcs[0..15] debug_arc_computation_1D */
 #define BUFF_SIZE_ARCW1_MSB U(21) 
 #define BUFF_SIZE_ARCW1_LSB U( 0)  /* 22 Byte-acurate up to 4MBytes */
 
-#define RDFLOW_ARCW2        U( 2)  /* write access only from the SWC consumer */
+#define    RDFLOW_ARCW2    U( 2)  /* write access only from the SWC consumer */
 #define COMPUTCMD_ARCW2_MSB U(31)       
 #define COMPUTCMD_ARCW2_LSB U(28) /* 4  gives the debug task to proceed  (enum debug_arc_computation_1D) */
 #define UNDERFLRD_ARCW2_MSB U(27)
 #define UNDERFLRD_ARCW2_LSB U(26) /* 2  overflow task id 0=nothing , underflow_error_service_id */
 #define  OVERFLRD_ARCW2_MSB U(25)
 #define  OVERFLRD_ARCW2_LSB U(24) /* 2  underflow task id 0=nothing, overflow_error_service_id */
-#define THRESHOLD_ARCW2_MSB U(23) 
-#define THRESHOLD_ARCW2_LSB U(23) /* 1  0:filling at size/2,  1:at size/4 */
-#define   READY_W_ARCW2_MSB U(22) /*    "Buffer ready for refill" */
-#define   READY_W_ARCW2_LSB U(22) /* 1  (size-write)>size/2 (or /4) */
+#define SHAREDARC_ARCW2_MSB U(27) 
+#define SHAREDARC_ARCW2_LSB U(27) /* 1  null source, null sink  (no overflow, for metadata) */
+//#define   READY_W_ARCW2_MSB U(22) /*    "Buffer ready for refill" */
+//#define   READY_W_ARCW2_LSB U(22) /* 1  (size-write)>size/2 (or /4) */
 #define      READ_ARCW2_MSB U(21)
 #define      READ_ARCW2_LSB U( 0) /* 22     data read index  Byte-acurate up to 4MBytes starting from base address */
 
-#define WRIOCOLL_ARCW3      U( 3) /* write access only from the SWC producer */
+#define COLLISION_ARC_OFFSET_BYTE U(3)
+#define  WRIOCOLL_ARCW3    U( 3) /* write access only from the SWC producer */
 #define COLLISION_ARCW3_MSB U(31) /* 8  MSB byte used to lock the SWC  */ 
 #define COLLISION_ARCW3_LSB U(24) 
-#define COLLISION_ARC_OFFSET_BYTE U(3)
-#define ALIGNBLCK_ARCW3_MSB U(23)
-#define ALIGNBLCK_ARCW3_LSB U(23) /* 1  producer sets "need for data realignement" */
-#define   READY_R_ARCW3_MSB U(22) /*    "Buffer ready for read" */ 
-#define   READY_R_ARCW3_LSB U(22) /* 1  (write-read)>size/2 (or /4) */
+#define ALIGNBLCK_ARCW3_MSB U(23) /*    producer blocked */
+#define ALIGNBLCK_ARCW3_LSB U(23) /* 1  producer sets "need for data realignement"  */
+//#define   READY_R_ARCW3_MSB U(22) /*    "Buffer ready for read" */ 
+//#define   READY_R_ARCW3_LSB U(22) /* 1  (write-read)>size/2 (or /4) */
 #define     WRITE_ARCW3_MSB U(21)
 #define     WRITE_ARCW3_LSB U( 0) /* 22 write read index  Byte-acurate up to 4MBytes starting from base address */
 

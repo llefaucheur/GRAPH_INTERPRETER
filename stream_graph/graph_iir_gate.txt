@@ -9,21 +9,21 @@
 0x00000103,   // 000 000 Offset/LenRAM copyInRAMConfig bits + SharedMem bit + nb-io (8bits)
 0x00000000,   // 004 001 long address to RAM (use DMEM_EXT)
 0x00000020,   // 008 002 long address to IO config  
-0x00000030,   // 00C 003 long address to formats     
+0x00000038,   // 00C 003 long address to formats     
 0x00000054,   // 010 004 long address to Linked-list 
 0x000000DC,   // 014 005 long address to Stream instances 
 0x000000EC,   // 018 006 long address to arc descriptors
 0x0000013C,   // 01C 007 long address to debug script                         -----------STREAM_FORMAT_IO ----  2 words/IO : 
-0x01810000,   // 020 008  Input RX0 _SET_BUFFER_RX=1(arc=0)  PLATFORM_APPLICATION_DATA_IN 3  (command, arc, fw_idx) + (Setting, instance index)
+0x01830000,   // 020 008  Input RX0 _DATA_MOVE_RX=3 (arc=0)  PLATFORM_APPLICATION_DATA_IN 3  (command, arc, fw_idx) + (Setting, instance index)
 0x00000000,   // 024 009
-0x03044102,   // 028 00A  Output TX1 _DATA_MOVE_TX=4(arc=2 detector -> output) PLATFORM_AUDIO_OUT 6 fw_io_idx=1
+0x03044102,   // 028 00A  Output TX1 _DATA_MOVE_TX=4 (arc=2 detector -> output) PLATFORM_AUDIO_OUT 6 fw_io_idx=1
 0x00000000,   // 02C 00B
 0x07844204,   // 030 00C  debug  DATA_MOVE_TX 4  TX(4000) trace IO fw_io_idx=2  ARC=4 PLATFORM_COMMAND_OUT 15
 0x00000000,   // 034 00D
-0x30000001,   // 038 00E [0] framesize=1        stream_data_stream_data_format STREAM_FORMAT_SIZE_W32=3 ------------------------
+0x30000004,   // 038 00E [0] framesize=4        stream_data_stream_data_format STREAM_FORMAT_SIZE_W32=3 -----ALL_FORMATS--------
 0x00000000,   // 03C 00F    int16 input data
 0x00000000,   // 040 010    
-0x4C000001,   // 044 011 [1]
+0x30000006,   // 044 011 [1] framesize=6  
 0x00000000,   // 048 012    int16 samples
 0x00000000,   // 04C 013    
 0x00000000,   // 050 014 
@@ -65,17 +65,17 @@
 0x00000004,   // 0E0 038    instance parameters (trace arc)
 0x00000000,   // 0E4 039    node_entry to fill (27bits compressed field)
 0xAAAAAAAA,   // 0E8 03A    unused
-0x000001C0,   // 0EC 03B [0] input -> FILTER                ARC descriptors --------------------------------
-0x00000020,   // 0F0 03C    32 Bytes
-0x00400000,   // 0F4 03D    ready_W
+0x080001C0,   // 0EC 03B [0] input -> FILTER                ARC descriptors --------------------------------
+0x00000020,   // 0F0 03C    32 Bytes   Producer(format 1) Consumer (format 0)
+0x00000000,   // 0F4 03D    
 0x00000000,   // 0F8 03E     
 0x000001E0,   // 0FC 03F [1] FILTER -> detector, Format #0
 0x00000020,   // 100 040    32 Bytes
-0x00400000,   // 104 041    ready_W
+0x00000000,   // 104 041    
 0x00000000,   // 108 042    
 0x00000200,   // 10C 043 [2] detector -> output
 0x00000020,   // 110 044    32 Bytes
-0x00400000,   // 114 045    ready_W
+0x00000000,   // 114 045    
 0x00000000,   // 118 046    
 0x000000C0,   // 11C 047 [3] FIFO of byte codes for script #0 
 0x00000010,   // 120 048    16 Bytes    placed BEFORE stream instances : can be in Flash

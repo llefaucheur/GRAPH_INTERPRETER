@@ -261,7 +261,7 @@
 //#define MAX_NB_ARCS_DEBUG_REGS U(4)            /* 4bits reserved in DEBUG_REG_ARCW1_LSB */
 //#define MAX_NB_COMMUNICATION_RINGS U(32)       /* 5bits   */
 //#define NB_COMMUNICATION_RINGS U(4) /* 4 input / output of the arc, + 0 inter-processor RINGs, index of io_config[] */
-//#define MAX_NB_INTERNAL_FORMATS (U(4)*STREAM_FORMAT_SIZE_W32)  /* max 32, see FORMATIDX_ARCW0_LSB, digital global 
+//#define MAX_NB_INTERNAL_FORMATS (U(4)*STREAM_FORMAT_SIZE_W32)  /* max 32, see PRODUCFMT_ARCW0_LSB, digital global 
                                             //(data and frame format) to avoid repeating the same information on each arc */
 //#define MAX_NB_GRAPH_LIST 200u               /* The graph description, compiled for the TXT input format */
 //#define MAX_NB_ARCS 20u                      /* memory allocation for arcs, ranging 2 .. 8 words of 32bits */

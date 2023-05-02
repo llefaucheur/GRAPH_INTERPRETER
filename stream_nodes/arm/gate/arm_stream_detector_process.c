@@ -28,7 +28,7 @@
 #include "stream_const.h"
 #include "stream_types.h"
 
-#define PRINTF 1
+#define PRINTF 0
 
 #include "arm_stream_detector.h"
 
@@ -108,23 +108,24 @@ void detector_processing (arm_detector_instance *instance,
                 PREVIOUSVAD = (int8_t) (pResult[isamp]);
             }
         }
-#endif        
+   
 
-    //{
-    //    extern FILE *ptf_trace;
-    //    long x; 
-    //    if (dbgC++ == 73000)
-    //        dbgC = dbgC;
-    //    x = Z6<<2;                  fwrite(&x, 1, 4, ptf_trace);
-    //    x = Z7<<2;                  fwrite(&x, 1, 4, ptf_trace);
-    //    x = input_data;             fwrite(&x, 1, 4, ptf_trace);
-    //    x = dbgZ4;                  fwrite(&x, 1, 4, ptf_trace);
-    //    x = Z8<<4;                  fwrite(&x, 1, 4, ptf_trace);
-    //    x = ACCVAD;                 fwrite(&x, 1, 4, ptf_trace);
-    //    x = FLAG;                   fwrite(&x, 1, 4, ptf_trace);
-    //    x = (pResult[isamp])<<30;   fwrite(&x, 1, 4, ptf_trace);
-    //}
+    {
+        extern FILE *ptf_trace;
+        long x; 
+        if (dbgC++ == 73000)
+            dbgC = dbgC;
+        x = Z6<<2;                  fwrite(&x, 1, 4, ptf_trace);
+        x = Z7<<2;                  fwrite(&x, 1, 4, ptf_trace);
+        x = input_data;             fwrite(&x, 1, 4, ptf_trace);
+        x = dbgZ4;                  fwrite(&x, 1, 4, ptf_trace);
 
+        x = Z8<<4;                  fwrite(&x, 1, 4, ptf_trace);
+        x = ACCVAD;                 fwrite(&x, 1, 4, ptf_trace);
+        x = FLAG;                   fwrite(&x, 1, 4, ptf_trace);
+        x = (pResult[isamp])<<30;   fwrite(&x, 1, 4, ptf_trace);
+    }
+#endif     
         isamp++;
     }
 }

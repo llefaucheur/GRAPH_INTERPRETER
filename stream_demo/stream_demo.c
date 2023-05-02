@@ -234,9 +234,9 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
         {
             iarc = sizeof(uint32_t) * RD(stream_format_io, IOARCID_IOFMT);
             set_stream.buffer.address = 
-                pack2linaddr_int(all_arcs[iarc + BUF_PTR_ARCW0]);
+                pack2linaddr_int(all_arcs[iarc + 0]);
             set_stream.buffer.size = 
-                (uint32_t)RD(all_arcs[iarc + BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
+                (uint32_t)RD(all_arcs[iarc + 1], BUFF_SIZE_ARCW1);
         }
         else
         {   set_stream.buffer.address = 0;
