@@ -11,11 +11,12 @@ For system integrators and OEM : develop complex DSP/ML stream
 processing. Go fast from prototypes validated on a computer to final
 tuning steps on board.
 
-2.  **DSP/ML Software component stores**
+2.  **Software component stores**
 
-For DSP/ML software experts : provide opaque interfaces to the platform
-memory hierarchy, and arrange the data flow is in the desired formats
-between software components.
+Provide opaque interfaces to the platform memory hierarchy, and arrange
+the data flow is in the desired formats between software components.
+Prepare the conditions where components will be delivered in hashed
+binary.
 
 3.  **Portability, scalability**
 
@@ -36,7 +37,7 @@ description is generated in three steps:
 1.  **A graphical user interface** (GUI) generates a high-level
     description of the connexions between nodes and with the platform
     data streams. This graph representation is using the *YML format*
-    used in the CMSIS-DSP ComputeGraph ([link](https://github.com/ARM-software/CMSIS-DSP/tree/main/ComputeGraph)), with extra fields to set the nodes processor affinity and the board's presets. "No code" is one objective of the project: go
+    used in the CMSIS-DSP ComputeGraph ([link](https://github.com/ARM-software/CMSIS-DSP/tree/main/ComputeGraph)), with extra fields to set the nodes processor affinity and the board's presets. "No code" is one objective of the project: go 
     directly from this GUI to tests on target.
     
 2.  **A targeted platform is selected with its associated list of
@@ -190,10 +191,4 @@ Stream-based processing is facilitated using CMSIS-Stream:
     avoid replicating CMSIS-DSP in nodes with binary code deliveries,
     and to allow arm-v7M codes able to benefit from arm-v8.1M vector
     processing extensions without the need for code recompilation.
-
----------------------------------------------
-
-Implementation details
-
-TBD
 
