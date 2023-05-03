@@ -68,33 +68,35 @@ extern uint32_t trace_stop(uint32_t *setting, uint8_t *data, uint32_t siz);
 #define SIZE_MBANK_HWIODMEM   0x1000    /* DMA buffer */
 #define SIZE_MBANK_PMEM       0x100     /* patch */
 
-uint32_t MEXT[SIZE_MBANK_DMEM_EXT];
-uint32_t RAM1[SIZE_MBANK_DMEM/4];
-uint32_t RAM2[SIZE_MBANK_DMEM/4];
-uint32_t RAM3[SIZE_MBANK_DMEM/4];
-uint32_t RAM4[SIZE_MBANK_DMEM/4];
-uint32_t TCM1[SIZE_MBANK_DMEMFAST]; 
-uint32_t TCM2[SIZE_MBANK_DMEMFAST]; 
-uint32_t BKUP[SIZE_MBANK_BACKUP]; 
-uint32_t HWIO[SIZE_MBANK_HWIODMEM];
-uint32_t PMEM[SIZE_MBANK_PMEM];
+static uint32_t MEXT[SIZE_MBANK_DMEM_EXT];
+static uint32_t RAM1[SIZE_MBANK_DMEM/4];
+static uint32_t RAM2[SIZE_MBANK_DMEM/4];
+static uint32_t RAM3[SIZE_MBANK_DMEM/4];
+static uint32_t RAM4[SIZE_MBANK_DMEM/4];
+static uint32_t TCM1[SIZE_MBANK_DMEMFAST]; 
+static uint32_t TCM2[SIZE_MBANK_DMEMFAST]; 
+static uint32_t BKUP[SIZE_MBANK_BACKUP]; 
+static uint32_t HWIO[SIZE_MBANK_HWIODMEM];
+static uint32_t PMEM[SIZE_MBANK_PMEM];
 
 #define PROC_ID 0 
 extern const uint32_t graph_input[];
 
 #if PROC_ID == 0
-intPtr_t long_offset[NB_MEMINST_OFFSET] = 
-{
-    (intPtr_t)&(MEXT[10]), // MBANK_DMEM_EXT
-    (intPtr_t)&(RAM1[11]), // MBANK_DMEM    
-    (intPtr_t)&(RAM1[12]), // MBANK_DMEMPRIV
-    (intPtr_t)&(TCM1[13]), // MBANK_DMEMFAST
-    (intPtr_t)&(BKUP[14]), // MBANK_BACKUP  
-    (intPtr_t)&(HWIO[15]), // MBANK_HWIODMEM
-    (intPtr_t)&(PMEM[16]), // MBANK_PMEM    
-    (intPtr_t)graph_input, // MBANK_FLASH   ideally 16Bytes-aligned for arc shifter 1
-};
+intPtr_t long_offset[NB_MEMINST_OFFSET];
 #endif
+
+void platform_specific_long_offset(void)
+{
+    long_offset[MBANK_DMEM_EXT] = (const intPtr_t)&(MEXT[10]);
+    long_offset[MBANK_DMEM    ] = (const intPtr_t)&(RAM1[11]);
+    long_offset[MBANK_DMEMPRIV] = (const intPtr_t)&(RAM1[12]);
+    long_offset[MBANK_DMEMFAST] = (const intPtr_t)&(TCM1[13]);
+    long_offset[MBANK_BACKUP  ] = (const intPtr_t)&(BKUP[14]);
+    long_offset[MBANK_HWIODMEM] = (const intPtr_t)&(HWIO[15]);
+    long_offset[MBANK_PMEM    ] = (const intPtr_t)&(PMEM[16]);
+    long_offset[MBANK_FLASH   ] = (const intPtr_t)graph_input;
+};
 
 
 #if MULTIPROCESS == 1  
