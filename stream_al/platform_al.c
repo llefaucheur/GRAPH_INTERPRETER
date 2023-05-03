@@ -215,8 +215,11 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3)
     case PLATFORM_OFFSETS: /* platform_al (PLATFORM_OFFSETS, intPtr_t **,0,0); */
     {
         extern intPtr_t long_offset[NB_MEMINST_OFFSET];
+        extern void platform_specific_long_offset(void);
         intPtr_t **D; 
         intPtr_t *S;
+
+        platform_specific_long_offset();
         D = (intPtr_t **)ptr1;
         S = long_offset;
 
