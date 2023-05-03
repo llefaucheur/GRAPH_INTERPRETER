@@ -9,7 +9,8 @@ designed with three objectives:
 
 For system integrators and OEM : develop complex DSP/ML stream
 processing. Go fast from prototypes validated on a computer to final
-tuning steps on board, by loading the graph description without device recompilation.
+tuning steps on board, by loading the graph description without device
+recompilation.
 
 2.  **Software component stores**
 
@@ -37,9 +38,13 @@ description is generated in three steps:
 1.  **A graphical user interface** (GUI) generates a high-level
     description of the connexions between nodes and with the platform
     data streams. This graph representation is using the *YML format*
-    used in the CMSIS-DSP ComputeGraph ([link](https://github.com/ARM-software/CMSIS-DSP/tree/main/ComputeGraph)), with extra fields to set the nodes processor affinity and the board's presets. "No code" is one objective of the project: go 
-    directly from this GUI to tests on target.
-    
+    used in the CMSIS-DSP ComputeGraph
+    ([link](https://github.com/ARM-software/CMSIS-DSP/tree/main/ComputeGraph)),
+    with extra fields to set the nodes processor affinity and the
+    board's presets. "No code" is one objective of the project: go
+    directly from this GUI to tests on target, [without
+    recompilation]{.underline} of the code running in target .
+
 2.  **A targeted platform is selected with its associated list of
     "*manifests*"**. Each platform using CMSIS-Stream has a "*platform
     manifest*" giving the processing details (processor architecture and
@@ -156,10 +161,10 @@ Stream-based processing is facilitated using CMSIS-Stream:
 12. CMSIS-Stream is **open-source**, and portable to Cortex-M, Cortex-R,
     Cortex-A and Laptop computers.
 
-13. Example of software components (SWC): image and voice codec, data
+13. Example of software components: image and voice codec, data
     conditioning, motion classifiers, data mixers. CMSIS-Stream comes
-    with short list of SWC doing data routing, mixing, conversion and
-    detection.
+    with short list of componets doing data routing, mixing, conversion
+    and detection.
 
 14. **From the developer point of view**, it creates opaque memory
     interfaces to the input/output streams of a graph, and arranges data
