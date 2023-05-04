@@ -25,8 +25,15 @@
  * 
  */
 
-#include "stream_const.h"
-#include "stream_types.h"
+#ifdef _MSC_VER 
+#include "../../../stream_al/platform_windows.h"
+#include "../../../stream_src/stream_const.h"      
+#include "../../../stream_src/stream_types.h"  
+#else
+#include "platform_windows.h"
+#include "stream_const.h"      
+#include "stream_types.h"  
+#endif
 
 
 typedef struct
@@ -110,7 +117,7 @@ void arm_stream_codec (int32_t command, uint32_t *instance, data_buffer_t *data,
         */
         case STREAM_RESET: 
         {   stream_entrance *stream_entry = (stream_entrance *)(uint64_t)data;
-            uint32_t *memresults = instance;
+            intPtr_t *memresults = (intPtr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
             arm_stream_codec_instance *pinstance = (arm_stream_codec_instance *)  *memresults;
@@ -156,7 +163,7 @@ void arm_stream_codec (int32_t command, uint32_t *instance, data_buffer_t *data,
         case STREAM_RUN:   
         {
             arm_stream_codec_instance *pinstance = (arm_stream_codec_instance *)instance;
-            int32_t nb_data, data_buffer_size, bufferout_free;
+            intPtr_t nb_data, data_buffer_size, bufferout_free;
             data_buffer_t *pt_pt;
             #define SAMP_IN uint8_t 
             #define SAMP_OUT int16_t

@@ -41,7 +41,7 @@ void arm_stream_io (uint32_t fw_io_idx,
             uint8_t *data, uint32_t data_size)
 {   
     uint32_t arc_idx;
-    intPtr_t *arc;
+    uint32_t *arc;
     uint32_t free_area;
     uint32_t amount_of_data;
     uint32_t size;
@@ -81,6 +81,7 @@ void arm_stream_io (uint32_t fw_io_idx,
                 }
 
                 arc_data_operations (arc, arc_move_to_arc, data, size, all_formats);   
+
                 break;
             } 
 

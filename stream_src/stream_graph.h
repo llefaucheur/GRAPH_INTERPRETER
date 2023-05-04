@@ -295,11 +295,12 @@
 #define   LASTSWC_PARINST_LSB U( 8)    
 #define TRACE_ARC_PARINST_MSB U( 7)
 #define TRACE_ARC_PARINST_LSB U( 0)  /*  8 index of the arc used for debug trace / instance */
-
-///* struct stream_local_instance */        /* structure allocated to each STREAM instance */
-//{     uint32_t whoami_ports;              /* PACKWHOAMI */
-//      uint32 parameters;
+//
+//struct stream_local_instance        /* structure allocated to each STREAM instance */
+//{     uint32_t whoami_ports;        /* PACKWHOAMI */
+//      uint32_t parameters;
 //      p_stream_node *node_entry_points;   /* all the nodes visible from this processor */
+//}
 
 #define STREAM_INSTANCE_SIZE 3
 #define STREAM_INSTANCE_WHOAMI_PORTS 0          /* _PARCH_ fields */

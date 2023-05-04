@@ -25,8 +25,15 @@
 * 
  */
 
-#include "stream_const.h"
-#include "stream_types.h"   /* all non preprocessor directives */
+#ifdef _MSC_VER 
+#include "../../CMSIS-Stream/stream_al/platform_windows.h"
+#include "../../CMSIS-Stream/stream_src/stream_const.h"      
+#include "../../CMSIS-Stream/stream_src/stream_types.h"  
+#else
+#include "platform_windows.h"
+#include "stream_const.h"      
+#include "stream_types.h"  
+#endif
 #include <string.h>         /* memcpy */
 
 /*----------------------------------------------------------*/
@@ -46,7 +53,7 @@ intPtr_t pack2linaddr_int(uint32_t data)
     return tmp6;
 }
 
-intPtr_t * pack2linaddr_ptr(uint32_t data)
+uint32_t * pack2linaddr_ptr(uint32_t data)
 {
     return convert_int_to_ptr (pack2linaddr_int(data));
 }
@@ -64,7 +71,7 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     uint32_t nio;
     uint32_t iio; 
     uint32_t fw_idx;
-    /* struct stream_local_instance */uint32_t *pinst;
+    struct stream_local_instance *pinst;
     uint32_t *pio;
     uint32_t stream_format_io;
     uint32_t stream_format_io_setting;
@@ -171,9 +178,9 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     /*-------------------------------------------*/
 
     /* local stream instance initialization */
-    pinst = (/* struct stream_local_instance */uint32_t *)GRAPH_STREAM_INST();
+    pinst = (struct stream_local_instance *)GRAPH_STREAM_INST();
     pinst = &(pinst[stream_instance]);
-    pinst[STREAM_INSTANCE_NODE_ENTRY_POINTS] = convert_ptr_to_int(node_entry_point_table);
+    pinst->node_entry_points = node_entry_point_table;
 
     /* 
         initialization of all the SWC 
@@ -201,7 +208,7 @@ void stream_demo_init(uint8_t stream_instance, uint8_t total_nb_stream_instance,
     /* 
         initialization of the graph IO ports 
     */     
-    io_mask = RD(pinst[STREAM_INSTANCE_WHOAMI_PORTS], BOUNDARY_PARCH);
+    io_mask = RD(pinst->whoami_ports, BOUNDARY_PARCH);
     pio = GRAPH_IO_CONFIG_ADDR();
     nio = RD(graph[0],NBIO_GRAPH0);
     all_arcs = GRAPH_ARC_LIST_ADDR();

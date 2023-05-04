@@ -25,9 +25,15 @@
  * 
  */
 
-#include "stream_const.h"
-#include "stream_types.h"
-
+#ifdef _MSC_VER 
+#include "../../CMSIS-Stream/stream_al/platform_windows.h"
+#include "../../CMSIS-Stream/stream_src/stream_const.h"      
+#include "../../CMSIS-Stream/stream_src/stream_types.h"  
+#else
+#include "platform_windows.h"
+#include "stream_const.h"      
+#include "stream_types.h"  
+#endif
 /* 
     global parameters 
 */

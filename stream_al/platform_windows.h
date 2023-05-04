@@ -37,7 +37,8 @@
 
 
 /*============================ SWITCHES =====================================*/
-#define PLATFORM_ARCH_32BIT
+//#define PLATFORM_ARCH_32BIT
+#define PLATFORM_ARCH_64BIT
 #define MULTIPROCESS 0      /* one process, one processor */
 
 #ifdef _MSC_VER 

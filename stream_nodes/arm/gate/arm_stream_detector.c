@@ -28,8 +28,15 @@
 #include <stdio.h>  /* for sprintf */
 #include <string.h>  /* for memset */
 
-#include "stream_const.h"
-#include "stream_types.h"
+#ifdef _MSC_VER 
+#include "../../../stream_al/platform_windows.h"
+#include "../../../stream_src/stream_const.h"      
+#include "../../../stream_src/stream_types.h"  
+#else
+#include "platform_windows.h"
+#include "stream_const.h"      
+#include "stream_types.h"  
+#endif
 
 #include "arm_stream_detector.h"
 
@@ -85,7 +92,7 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
         */
         case STREAM_RESET: 
         {   stream_entrance *stream_entry = (stream_entrance *)(uint64_t)data;
-            uint32_t *memresults = instance;
+            intPtr_t *memresults = (intPtr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
             uint8_t *pt8bdst, i, n;
 
@@ -142,7 +149,7 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
         case STREAM_RUN:   
         {
             arm_detector_instance *pinstance = (arm_detector_instance *) instance;
-            int32_t nb_data, data_buffer_size, bufferout_free;
+            intPtr_t nb_data, data_buffer_size, bufferout_free;
             data_buffer_t *pt_pt;
             #define SAMP_IN int16_t 
             #define SAMP_OUT int16_t
@@ -157,7 +164,7 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
             bufferout_free        = pt_pt->size;
 
             nb_data = data_buffer_size / sizeof(SAMP_IN);
-            detector_processing (pinstance, inBuf, nb_data, outBuf);
+            detector_processing (pinstance, inBuf, (int32_t)nb_data, outBuf);
 
             pt_pt = data;
             *(&(pt_pt->size)) = nb_data * sizeof(SAMP_IN); /* amount of data consumed */

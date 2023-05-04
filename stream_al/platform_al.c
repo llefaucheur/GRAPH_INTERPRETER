@@ -26,7 +26,7 @@
  */
 
 //#include <stdlib.h>
-//#include <stdint.h>
+#include <stdint.h>
 //#include <string.h> 
 
 /*---------------------------------------*/
@@ -34,8 +34,13 @@
 //#include "platform_arduino_nano33.h"
 /*---------------------------------------*/
 
+#ifdef _MSC_VER 
+#include "../../CMSIS-Stream/stream_src/stream_const.h"      
+#include "../../CMSIS-Stream/stream_src/stream_types.h"  
+#else
 #include "stream_const.h"      
 #include "stream_types.h"  
+#endif
 
  
  /*  

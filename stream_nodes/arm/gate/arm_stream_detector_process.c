@@ -25,10 +25,17 @@
  * 
  */
 
-#include "stream_const.h"
-#include "stream_types.h"
+#ifdef _MSC_VER 
+#include "../../../stream_al/platform_windows.h"
+#include "../../../stream_src/stream_const.h"      
+#include "../../../stream_src/stream_types.h"  
+#else
+#include "platform_windows.h"
+#include "stream_const.h"      
+#include "stream_types.h"  
+#endif
 
-#define PRINTF 0
+#define PRINTF 1
 
 #include "arm_stream_detector.h"
 

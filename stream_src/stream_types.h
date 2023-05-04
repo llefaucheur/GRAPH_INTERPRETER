@@ -42,19 +42,32 @@
 
 #define MAX_ADD_OFFSET 0x7FFFFFFFL
 
-typedef struct {
 
-    intPtr_t address;
+struct data_buffer
+{   intPtr_t address; 
     intPtr_t size;
+};
 
-} data_buffer_t;
+typedef struct data_buffer data_buffer_t;
 
+/*==================================================== SWC  ======================================================================*/
+/* 
+ * command ; *instance pointer ; two pointers to a temporary area holding : 
+ *      (*,input data size)  x N_stream_input
+ *      (*,output free_area) x N_stream_output
+ *    the SWC updates the (*,n) fields before returning, to  
+ * 
+ */
+
+typedef void (stream_entrance) (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3); 
+typedef void (*p_stream_node) (uint32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *state);
+typedef void (stream_node) (uint32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *state);
 
 //typedef uint32_t (stream_node) (uint32_t command, void * ptr1, void * ptr2, void * ptr3); 
 
 //typedef void (*io_callback_ptr)      (uint32_t idx, uint8_t *data, uint32_t length);   
 typedef uint32_t (*io_function_control_ptr)  (uint32_t *setting, uint8_t *data, uint32_t length);  
-
+typedef uint32_t (io_function_control) (uint32_t *setting, uint8_t *data, uint32_t length);  
 
 /* 
     MANIFEST of IO functions and capabilities
@@ -73,51 +86,37 @@ typedef uint32_t (*io_function_control_ptr)  (uint32_t *setting, uint8_t *data, 
     each stream domain instance is controled by 3 functions and presets
     domain have common bitfields for settings (see example platform_audio_out_bit_fields[]).
 */
-#define PLATFORM_DATA_IN                1u
-#define PLATFORM_DATA_OUT               2u
-#define PLATFORM_APPLICATION_DATA_IN    3u
-#define PLATFORM_APPLICATION_DATA_OUT   4u
-#define PLATFORM_AUDIO_IN               5u
-#define PLATFORM_AUDIO_OUT              6u
-#define PLATFORM_GPIO_IN                7u
-#define PLATFORM_GPIO_OUT               8u
-#define PLATFORM_MOTION_CAPTURE         9u
-#define PLATFORM_2D_IN                 10u
-#define PLATFORM_2D_OUT                11u  
-#define PLATFORM_USER_INTERFACE_IN     12u 
-#define PLATFORM_USER_INTERFACE_OUT    13u 
-#define PLATFORM_COMMAND_IN            14u
-#define PLATFORM_COMMAND_OUT           15u
-#define PLATFORM_LOW_DATA_RATE_IN      16u 
-#define PLATFORM_LOW_DATA_RATE_OUT     17u 
-#define PLATFORM_RTC_IN                18u 
-#define PLATFORM_RTC_OUT               19u
+#define PLATFORM_DATA_IN                1
+#define PLATFORM_DATA_OUT               2
+#define PLATFORM_APPLICATION_DATA_IN    3
+#define PLATFORM_APPLICATION_DATA_OUT   4
+#define PLATFORM_AUDIO_IN               5
+#define PLATFORM_AUDIO_OUT              6
+#define PLATFORM_GPIO_IN                7
+#define PLATFORM_GPIO_OUT               8
+#define PLATFORM_MOTION_CAPTURE         9
+#define PLATFORM_2D_IN                 10
+#define PLATFORM_2D_OUT                11  
+#define PLATFORM_USER_INTERFACE_IN     12 
+#define PLATFORM_USER_INTERFACE_OUT    13 
+#define PLATFORM_COMMAND_IN            14
+#define PLATFORM_COMMAND_OUT           15
+#define PLATFORM_LOW_DATA_RATE_IN      16 
+#define PLATFORM_LOW_DATA_RATE_OUT     17 
+#define PLATFORM_RTC_IN                18 
+#define PLATFORM_RTC_OUT               19
+
 
 /*
     each stream is controled by 3 functions and presets
     domain presets are defined with bitfields (see example platform_audio_out_bit_fields[]).
 */
 struct platform_io_control           
-{   io_function_control_ptr io_set;     
-    io_function_control_ptr io_start; 
-    io_function_control_ptr io_stop; 
+{   io_function_control *io_set;
+    io_function_control *io_start;
+    io_function_control *io_stop;
     const int32_t *stream_setting;
 };
-
-
-/*==================================================== SWC  ======================================================================*/
-/* 
- * command ; *instance pointer ; two pointers to a temporary area holding : 
- *      (*,input data size)  x N_stream_input
- *      (*,output free_area) x N_stream_output
- *    the SWC updates the (*,n) fields before returning, to  
- * 
- */
-
-typedef void (stream_entrance) (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3); 
-typedef void (*p_stream_node) (uint32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *state);
-
-
 
 enum {
     arc_base_address,
@@ -249,6 +248,16 @@ typedef struct
     intPtr_t *long_offset;
 } arm_global_data_t;
 
+
+
+struct stream_local_instance        /* structure allocated to each STREAM instance */
+{     uint32_t whoami_ports;        /* PACKWHOAMI */
+      uint32_t parameters;
+      stream_node **node_entry_points;   /* all the nodes visible from this processor */
+};
+
+
+
 /* stream parameters */
 //struct stream_control 
 //{   const io_function_control_ptr io_set;     
@@ -279,13 +288,15 @@ extern arm_global_data_t arm_stream_global;
 extern intPtr_t convert_ptr_to_int (void *in);
 extern void * convert_int_to_ptr (intPtr_t in);
 
-extern intPtr_t * pack2linaddr_ptr(uint32_t data);
+extern uint32_t * pack2linaddr_ptr(uint32_t data);
 extern intPtr_t pack2linaddr_int(uint32_t data);
 
 extern intPtr_t arc_extract_info_int (uint32_t *arc, uint8_t tag);
 extern intPtr_t * arc_extract_info_pt (uint32_t *arc, uint8_t tag);
 extern int stream_execute_script(void);
 extern uint32_t physical_to_offset (uint8_t *buffer);
-extern void arc_data_operations (intPtr_t *arc, uint8_t tag, uint8_t *buffer, uint32_t size, uint32_t *format);
+extern void arc_data_operations (uint32_t *arc, uint8_t tag, uint8_t *buffer, uint32_t size, uint32_t *format);
+
+extern void set_alignment_bit (uint32_t *arc, uint32_t *all_formats);
 
 #endif /* #ifndef cSTREAM_TYPES_H */

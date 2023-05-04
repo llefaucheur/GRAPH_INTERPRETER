@@ -72,7 +72,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Work\GITHUB_LLF\CMSIS-Stream\stream_al;C:\Work\GITHUB_LLF\CMSIS-Stream\stream_src;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\stream_src;..\..\..\stream_al;$(IncludePath)</IncludePath>
+    <SourcePath>C:\Work\GITHUB_LLF\CMSIS-Stream\stream_al;C:\Work\GITHUB_LLF\CMSIS-Stream\stream_src;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -90,6 +91,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>..\..\..\stream_src;..\..\..\stream_al;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

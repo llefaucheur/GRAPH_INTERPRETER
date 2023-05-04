@@ -32,10 +32,15 @@
 #include <string.h>
 #include "platform_al.h"
 
+#ifdef _MSC_VER 
+#include "../../CMSIS-Stream/stream_al/platform_windows.h"
+#include "../../CMSIS-Stream/stream_src/stream_const.h"      
+#include "../../CMSIS-Stream/stream_src/stream_types.h"  
+#else
 #include "platform_windows.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
-
+#endif
 
 extern uint32_t audio_render_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size);
 extern uint32_t audio_render_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size);
@@ -253,17 +258,17 @@ uint32_t frame_size_audio_render;
 /* --------------------------------------------------------------------------------------- */
 void audio_render_transfer_done (uint8_t *data, uint32_t size) 
 {   platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_AUDIO_OUT_INSTANCE_0, 
-        data, (uint8_t *)size);
+        data, (uint8_t *)(uint64_t)size);
 }
 /* --------------------------------------------------------------------------------------- */
 void audio_ap_rx_transfer_done (uint8_t *data, uint32_t size) 
 {   platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_APPLICATION_DATA_IN_INSTANCE_0,
-        data, (uint8_t *)size);
+        data, (uint8_t *)(uint64_t)size);
 }
 /* --------------------------------------------------------------------------------------- */
 void trace_ap_rx_transfer_done (uint8_t *data, uint32_t size) 
 {   platform_al(PLATFORM_IO_ACK, (uint8_t *)PLATFORM_COMMAND_OUT_INSTANCE_0,
-        data, (uint8_t *)size);
+        data, (uint8_t *)(uint64_t)size);
 }
 
 
@@ -274,6 +279,7 @@ uint32_t trace_start (uint32_t *setting, uint8_t *data, uint32_t size)
 {   //data[size] = 0;     /* end of string */
     //fprintf(ptf_trace, "%s\n", data);
     fwrite(data, 1, size, ptf_trace);
+    fflush(ptf_trace);
     trace_ap_rx_transfer_done ((uint8_t *)data, size);
     return 1u; 
 }
@@ -301,7 +307,7 @@ uint32_t trace_set (uint32_t *setting, uint8_t *data, uint32_t size)
 
 /* --------------------------------------------------------------------------------------- */
 uint32_t audio_ap_rx_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) 
-{   int tmp;
+{   size_t tmp;
 
     tmp = fread(data, 1, size, ptf_in_audio_ap_rx_data);
     if (size != tmp)
@@ -339,6 +345,7 @@ uint32_t audio_ap_rx_set_stream (uint32_t *setting, uint8_t *data, uint32_t size
 /* --------------------------------------------------------------------------------------- */
 uint32_t audio_render_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) 
 {   fwrite(data, 1, size, ptf_in_audio_render_data);
+    fflush(ptf_in_audio_render_data);
 
     audio_render_transfer_done ((uint8_t *)data, size);
     return 1u; 
