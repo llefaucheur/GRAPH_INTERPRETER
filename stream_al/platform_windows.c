@@ -308,8 +308,17 @@ uint32_t trace_set (uint32_t *setting, uint8_t *data, uint32_t size)
 /* --------------------------------------------------------------------------------------- */
 uint32_t audio_ap_rx_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) 
 {   size_t tmp;
+    int32_t i, s, j;
+    int16_t *data16;
 
-    tmp = fread(data, 1, size, ptf_in_audio_ap_rx_data);
+     data16 = (int16_t *)data;
+    for (i = 0; i < (size/2); i++)
+    { j = fscanf(ptf_in_audio_ap_rx_data, "%d,", &s);
+ data16[i] = s;
+    }
+     if (j > 0) tmp = size; else tmp = 0;
+
+    // tmp = fread(data, 1, size, ptf_in_audio_ap_rx_data);
     if (size != tmp)
     {   audio_ap_rx_transfer_done ((uint8_t *)data, 0);
         fclose (ptf_in_audio_ap_rx_data);
@@ -330,11 +339,14 @@ uint32_t audio_ap_rx_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size
 /* --------------------------------------------------------------------------------------- */
 uint32_t audio_ap_rx_set_stream (uint32_t *setting, uint8_t *data, uint32_t size) 
 { 
-#define FILE_IN "..\\VAD_TEST.raw"
+// #define FILE_IN "VAD_TEST.raw"
+#define FILE_IN "VoiceTestPattern.txt"
 //define FILE_IN "..\\sine_noise.raw"
 
-    if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rb")))
-    {   exit (-1);
+    if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rt")))
+    {   
+        printf("Exiting \n");
+        exit (-1);
     }
     return 1u;
 }
