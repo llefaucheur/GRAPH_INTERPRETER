@@ -95,7 +95,6 @@ void detector_processing (arm_detector_instance *instance,
             Z7 = MAX(lowestS, MIN(Z7, Z6));
             DECF = decfMASK;
         }
-
         if (Z8 > Z7 * THR)
           ACCVAD = MIN(MAXVAD, ACCVAD + VADRISE);
         else
@@ -118,6 +117,7 @@ void detector_processing (arm_detector_instance *instance,
    
 
     {
+        #include <stdio.h>
         extern FILE *ptf_trace;
         long x; 
         if (dbgC++ == 73000)

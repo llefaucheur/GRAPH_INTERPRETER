@@ -95,7 +95,7 @@ typedef struct /* total = 36 Bytes*/
 } arm_detector_instance;
 
 #define F2Q31(f) (long)(0x7FFFFFFFL*(f))
-#define ConvertSamp(f) (f<<12)
+#define ConvertSamp(f) (f<<11)
 #define DIVBIN(s,n) (s>>n)
 
 // Threshold/clamping to prevent the value 0 entering filter calculations
