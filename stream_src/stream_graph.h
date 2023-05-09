@@ -402,7 +402,7 @@
 #define     TAG_CMD_LSB U(16) /* 8 selection / debug arc index */
 #define  PRESET_CMD_MSB U(15)       
 #define  PRESET_CMD_LSB U( 8) /* 8 preset */
-#define    INST_CMD_MSB U( 7)       
+#define    INST_CMD_MSB U( 11)       
 #define    INST_CMD_LSB U( 4) /* 4 instance index */
 #define COMMAND_CMD_MSB U( 3)       
 #define COMMAND_CMD_LSB U( 0) /* 4 command */

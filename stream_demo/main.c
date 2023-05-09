@@ -25,15 +25,15 @@
  * 
  */
 
-#ifdef _MSC_VER 
+// #ifdef _MSC_VER 
 #include "../../CMSIS-Stream/stream_al/platform_windows.h"
 #include "../../CMSIS-Stream/stream_src/stream_const.h"      
 #include "../../CMSIS-Stream/stream_src/stream_types.h"  
-#else
-#include "platform_windows.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
-#endif
+#include "../stream_nodes/arm/gate/arm_stream_detector.h"
+// #include "platform_windows.h"
+// #include "stream_const.h"      
+// #include "stream_types.h"  
+// #endif
 /* 
     global parameters 
 */
@@ -66,6 +66,26 @@ int main(void)
         sizeof(graph_input), 
         STREAM_WARM_BOOT
     );
+
+
+    arm_detector_instance instance;
+     uint32_t status;
+     // Note code is intended for 32 bit but debugging on 64; casts/pointer mismatches must be considered
+ 
+   data_buffer_t *dummy_for_set_param;
+
+    /* Liam Note: Change FILE_IN in platform_windows.c along with preset to select input file and preset to use
+       Filter initialisation in stream_detector_process.c must also be adjusted to change from accelerometer to audio */
+    arm_stream_detector(PACK_COMMAND(0,0,0xFF,STREAM_DETECTOR_PRESET_ACCEL_103Hz, 0 ,STREAM_SET_PARAMETER), (uint32_t*)&instance, dummy_for_set_param , &status);
+    // arm_stream_detector(PACK_COMMAND(0,0,0xFF,STREAM_DETECTOR_PRESET_VAD_48kHz, 0 ,STREAM_SET_PARAMETER), (uint32_t*)&instance, dummy_for_set_param , &status);
+
+
+    arm_stream
+(   STREAM_SET_PARAMETER, 
+    (void *)STREAM_CURRENT_INSTANCE,
+    (void *)STREAM_SCHD_RET_END_ALL_PARSED, 
+    (void *)STREAM_SCHD_NO_SCRIPT
+);
 
     /* run the graph */
 	for (int i = 0; i < 1000000000L; i++)

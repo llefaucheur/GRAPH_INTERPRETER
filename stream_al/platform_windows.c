@@ -293,9 +293,11 @@ uint32_t trace_set (uint32_t *setting, uint8_t *data, uint32_t size)
 { 
 //#define FILE_TRACE "..\\trace.txt"
 //    if (NULL == (ptf_trace = fopen(FILE_TRACE, "wt")))
-#define FILE_TRACE "..\\trace.raw"
+#define FILE_TRACE "trace.raw"
     if (NULL == (ptf_trace = fopen(FILE_TRACE, "wb")))
-    {   exit (-1);
+    {
+        printf("Could not write to trace.raw");
+        exit (-1);
     }
     return 1u;
 }
@@ -340,12 +342,17 @@ uint32_t audio_ap_rx_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size
 uint32_t audio_ap_rx_set_stream (uint32_t *setting, uint8_t *data, uint32_t size) 
 { 
 // #define FILE_IN "VAD_TEST.raw"
-#define FILE_IN "VoiceTestPattern.txt"
-//define FILE_IN "..\\sine_noise.raw"
 
-    if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rt")))
+/* Liam Note use of different files requires different scaling for best performance */
+#define FILE_IN "accel_elevator_laurent_double_x2p30_converted_to_int16.txt"
+// #define FILE_IN "audio_original_voicetestpattern_float_x2p16_converted_to_int16.txt"
+// #define FILE_IN "audio_clean_keyword_float_x2p15_convertedtoint16.txt"
+
+
+    // if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rt")))
+    if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rb")))
     {   
-        printf("Exiting \n");
+        printf("Could not open file \n");
         exit (-1);
     }
     return 1u;

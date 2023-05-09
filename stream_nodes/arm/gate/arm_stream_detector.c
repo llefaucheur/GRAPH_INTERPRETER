@@ -56,10 +56,10 @@ const detector_parameters detector_preset [NB_PRESET] =
 {   /* log2counter, log2decfMAX, 
         high_pass_shifter, low_pass_shifter, low_pass_z7_z8,  
         vad_rise, vad_fall, THR */
-    { 12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #0 = VAD at 16kHz */
-    { 12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #1 = VAD at 48kHz */
-    { 12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #2 = peak detector 1 no HPF */
-    { 12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #3 = peak detector 2 TBD */
+    {12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #0 = VAD at 16kHz */
+    {12, 8,  3, 6, 12, MINIF(3,5), MINIF(25,0), 3},   /* preset #1 = VAD at 48kHz */
+    {12, 8,  4, 5, 5, MINIF(3,12), MINIF(1,7), 3},   /* preset #2 = Accelerometer 103Hz */
+    {12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #3 = peak detector 2 TBD */
 };
 
 char dbg[100];
@@ -80,13 +80,12 @@ extern void detector_processing (arm_detector_instance *instance,
 void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status)
 {
     *status = 1;    /* default return status, unless processing is not finished */
-
     switch (RD(command,COMMAND_CMD))
     { 
         /* func(command = (STREAM_RESET, PRESET, TAG, NB ARCS IN/OUT)
                 instance = *memory_results,  
                 data = address of Stream function
-                
+
                 memory_results are followed by the first two words of STREAM_FORMAT_SIZE_W32 
                 memory pointers are in the same order as described in the SWC manifest
         */
@@ -113,30 +112,54 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
                 *instance, 
                 data = (one or all)
         */ 
-        case STREAM_SET_PARAMETER:  
-        {   
-            uint8_t *pt8bsrc, *pt8bdst, i, n;
+        case STREAM_SET_PARAMETER:
+        { 
             arm_detector_instance *pinstance = (arm_detector_instance *) instance;
+               if (RD(command,TAG_CMD) == 0xFF) {
 
-            /* copy the parameters */
-            pt8bsrc = (uint8_t *) data;
-            pt8bdst = (uint8_t *) &(pinstance->config);
+                switch (RD(command, PRESET_CMD)){
+                    case 0 :{ 
+                        // pinstance->config = detector_preset[0];
+                        printf("Unsupported Preset 0 \n");}
+                        break;
+                    case STREAM_DETECTOR_PRESET_VAD_48kHz :{
+                        pinstance->config = detector_preset[STREAM_DETECTOR_PRESET_VAD_48kHz];
+                        printf("Preset VAD 48kHz \n");}
 
-            /* copy all the parameter */
-            if (RD(command, TAG_CMD) == 0xFF)
-            {   n = sizeof(detector_parameters);
-                for (i = 0; i < n; i++)
-                {   pt8bdst[i] = pt8bsrc[i];
+                        break;
+                    case STREAM_DETECTOR_PRESET_ACCEL_103Hz : {
+                        pinstance->config = detector_preset[STREAM_DETECTOR_PRESET_ACCEL_103Hz];
+                        printf("Preset Accel 103Hz \n");}
+                        break;
+                    
+                    case 3 :{ 
+                        // pinstance->config = detector_preset[3];
+                        printf("Unsupported Preset 3\n");}
+                        break;
                 }
-                break;
-            } 
-            /* copy a single parameter indexed by TAG, after loading the preset */
-            else 
-            {   pinstance->config = detector_preset[RD(command, PRESET_CMD)];
-                pt8bdst = &(pt8bdst[RD(command, TAG_CMD)]);
-                (*pt8bdst) = (*pt8bsrc);
-                break;
             }
+            //TODO Add support for configuring individual parameters of presets
+            // uint8_t *pt8bsrc, *pt8bdst, i, n;
+            // arm_detector_instance *pinstance = (arm_detector_instance *) instance;
+
+            // /* copy the parameters */
+            // pt8bsrc = (uint8_t *) data;
+            // pt8bdst = (uint8_t *) &(pinstance->config);
+
+            // /* copy all the parameter */
+            // if (RD(command, TAG_CMD) == 0xFF)
+            // {   n = sizeof(detector_parameters);
+            //     for (i = 0; i < n; i++)
+            //     {   pt8bdst[i] = pt8bsrc[i];
+            //     }
+            //     break;
+            // } 
+            // /* copy a single parameter indexed by TAG, after loading the preset */
+            // else 
+            // {   pinstance->config = detector_preset[RD(command, PRESET_CMD)];
+            //     pt8bdst = &(pt8bdst[RD(command, TAG_CMD)]);
+            //     (*pt8bdst) = (*pt8bsrc);
+                break;
         }
 
         /* func(command = STREAM_RUN, PRESET, TAG, NB ARCS IN/OUT)
