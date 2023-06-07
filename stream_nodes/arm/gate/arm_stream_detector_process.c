@@ -40,6 +40,7 @@
 #include "arm_stream_detector.h"
 
 #include <inttypes.h>
+#include <stdbool.h>
 
 
 /*
@@ -74,11 +75,29 @@ void detector_processing (arm_detector_instance *instance,
     int32_t isamp = 0;
     int32_t input_data;
     static long dbgZ4, dbgC;
+    static long counter;
+
+    // Data read in: elevator was in double but we can safely 
+    // change to float and scale by 15 before saving file
+    //  for consistency then convert to q31 using CS(f,15)
 
     // Filtering Cascade 
+    // while (isamp < inputLength) 
     while (isamp < inputLength) 
     {
-        input_data = ConvertSamp(in[isamp]);
+        counter++;
+        if (counter == 16116 ){
+            // printf("input_data %i\n", in[isamp]);
+        printf("THR %i\n", THR);
+
+         }
+        int shift = 11;
+        // printf("decf %i\n", DECF);
+
+
+        // input_data = ConvertSamp(in[isamp], shift);
+        // printf("input_data_con %d\n", input_data);
+
         Z2 = Z1  - DIVBIN(Z1 , SHPF) + input_data;
         Z3 = Z2 - Z1;
         Z1  = Z2;

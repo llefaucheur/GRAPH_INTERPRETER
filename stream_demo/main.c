@@ -67,8 +67,33 @@ int main(void)
         STREAM_WARM_BOOT
     );
 
+
+    //  arm_detector_instance instance;
+     uint32_t status;
+     // Note code is intended for 32 bit but debugging on 64; casts/pointer mismatches must be considered
+ 
+   data_buffer_t *dummy_for_set_param;
+    // arm_stream_detector(STREAM_SET_PARAMETER, (uint32_t*)&instance, dummy_for_set_param , &status);
+
+    int STREAM_DETECTOR_PRESET_VAD_48kHz = 1;
+    // #define PACK_COMMAND(I,O,T,P,CMD) (((I)<<28)| ((O)<<24)| ((T)<<16)| ((P)<<8)| (CMD))
+    //GETTING WEIRD ERROR HERE SAYING PACK_COMMAND NEEDS 6 ARGS
+    arm_stream_detector(PACK_COMMAND(0,0,0xFE,STREAM_DETECTOR_PRESET_VAD_48kHz,STREAM_SET_PARAMETER), (uint32_t*)&instance, dummy_for_set_param , &status);
+
+
+// #define PACK_COMMAND(I,O,T,P,CMD) (((I)<<28)| ((O)<<24)| ((T)<<16)| ((P)<<8)| (CMD))
+
+    arm_stream
+(   STREAM_SET_PARAMETER, 
+    (void *)STREAM_CURRENT_INSTANCE,
+    (void *)STREAM_SCHD_RET_END_ALL_PARSED, 
+    (void *)STREAM_SCHD_NO_SCRIPT
+);
+
+    printf("here\n");
     /* run the graph */
 	for (int i = 0; i < 1000000000L; i++)
+	// for (int i = 0; i < 10; i++)
     {
 		arm_stream
         (   STREAM_RUN, 

@@ -340,10 +340,13 @@ uint32_t audio_ap_rx_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size
 uint32_t audio_ap_rx_set_stream (uint32_t *setting, uint8_t *data, uint32_t size) 
 { 
 // #define FILE_IN "VAD_TEST.raw"
-#define FILE_IN "VoiceTestPattern.txt"
-//define FILE_IN "..\\sine_noise.raw"
+// #define FILE_IN "VoiceTestPattern.txt"
+// #define FILE_IN "elevator_centered_float_p15_toi32.txt"
+#define FILE_IN "audio_float_p11_toi32_cs.txt"
 
-    if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rt")))
+    // if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rt")))
+    // if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rb")))
+    if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rb")))
     {   
         printf("Exiting \n");
         exit (-1);

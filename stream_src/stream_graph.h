@@ -406,6 +406,7 @@
 #define    INST_CMD_LSB U( 4) /* 4 instance index */
 #define COMMAND_CMD_MSB U( 3)       
 #define COMMAND_CMD_LSB U( 0) /* 4 command */
+// LIAM TODO Verify which version of pack command we should use
 #define PACK_COMMAND(I,O,T,P,INST,CMD) (((I)<<28)|((O)<<24)|((T)<<16)|((P)<<8)|((INST)<<4)|(CMD))
 
 //enum stream_command (8bits LSB)
