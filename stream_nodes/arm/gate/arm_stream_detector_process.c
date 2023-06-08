@@ -88,7 +88,7 @@ void detector_processing (arm_detector_instance *instance,
         counter++;
         if (counter == 16116 ){
             // printf("input_data %i\n", in[isamp]);
-        printf("THR %i\n", THR);
+        // printf("THR %i\n", THR);
 
          }
         int shift = 11;
@@ -114,7 +114,8 @@ void detector_processing (arm_detector_instance *instance,
             Z7 = MAX(lowestS, MIN(Z7, Z6));
             DECF = decfMASK;
         }
-        if (Z8 > Z7 * THR)
+
+        if (Z8 > Z7 * instance->config.THR)
           ACCVAD = MIN(MAXVAD, ACCVAD + VADRISE);
         else
             ACCVAD = MAX(0, ACCVAD - VADFALL);

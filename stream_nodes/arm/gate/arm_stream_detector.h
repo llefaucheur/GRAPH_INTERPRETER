@@ -101,7 +101,8 @@ typedef struct /* total = 36 Bytes*/
 // Threshold/clamping to prevent the value 0 entering filter calculations
 #define lowestS  F2Q31(0.0001)
 
-#define THR  3
+// #define THR  3
+// #define THR instance->config.THR
 #define MAXVAD  F2Q31(0.98)
 
 // Filter variables

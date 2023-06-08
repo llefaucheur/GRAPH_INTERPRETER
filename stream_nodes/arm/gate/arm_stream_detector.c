@@ -80,7 +80,6 @@ extern void detector_processing (arm_detector_instance *instance,
 void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status)
 {
     *status = 1;    /* default return status, unless processing is not finished */
-
     switch (RD(command,COMMAND_CMD))
     { 
         /* func(command = (STREAM_RESET, PRESET, TAG, NB ARCS IN/OUT)
@@ -117,7 +116,11 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
         { //NO BRACKET FOR SWITCH CASE?  
             arm_detector_instance *pinstance = (arm_detector_instance *) instance;
             pinstance->config = detector_preset[1]; // Liam hard-coded
-            printf("set param");
+// #define THR instance->config.THR
+
+            // printf("/n set param thr %i", pinstance->config.THR);//instance->config.THR);
+            // printf("/n set param thr %i", THR);//instance->config.THR);
+            printf("/n set param thr %i", pinstance->config.THR);//instance->config.THR);
             
             // if (RD(command, TAG_CMD) == 0xFF){
             //     switch (RD(command, PRESET_CMD)){
