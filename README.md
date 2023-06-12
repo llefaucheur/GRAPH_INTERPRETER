@@ -42,8 +42,8 @@ description is generated in three steps:
     ([link](https://github.com/ARM-software/CMSIS-DSP/tree/main/ComputeGraph)),
     with extra fields to set the nodes processor affinity and the
     board's presets. "No code" is objective number 1 of the project: go
-    directly from this GUI to tests on target, [without
-    recompilation]{.underline} of the code running in target .
+    directly from this GUI to tests on target, without recompilation of
+    the code running in target .
 
 2.  **A targeted platform is selected with its associated list of
     "*manifests*"**. Each platform using Graph-Interpreter has a
@@ -185,8 +185,7 @@ Stream-based processing is facilitated using Graph-Interpreter:
     processing split with multiprocessors. The stream is described with
     a graph (a text file) designed with a graphical tool. The
     development of DSP/ML processing will be possible without need to
-    write code and allow graph changes and tuning [without
-    recompilation]{.underline}.
+    write code and allow graph changes and tuning without recompilation.
 
 16. **Graph-Interpreter design objectives**: Low RAM footprint. Graph
     descriptor can be placed in Flash with a small portion in RAM.
@@ -200,4 +199,3 @@ Stream-based processing is facilitated using Graph-Interpreter:
     avoid replicating CMSIS-DSP in nodes with binary code deliveries,
     and to allow arm-v7M codes able to benefit from arm-v8.1M vector
     processing extensions without the need for code recompilation.
-
