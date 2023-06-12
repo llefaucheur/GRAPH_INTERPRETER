@@ -2,7 +2,7 @@
 
 ***WHAT***
 
-**CMSIS-Stream** is a scheduler of **DSP/ML software components**
+**Graph-Interpreter** is a scheduler of **DSP/ML software components**
 designed with three objectives:
 
 1.  **Accelerate time to market**
@@ -26,10 +26,10 @@ Use the same stream-based processing methodology from devices using
 
 ***HOW***
 
-CMSIS-Stream is a scheduler and interpreter of a graph description,
+Graph-Interpreter is a scheduler and interpreter of a graph description,
 sitting on top of a minimal platform abstraction layer to memory and
-input/output stream interfaces. CMSIS-Stream manages the data flow of
-"arcs" between "nodes" with automatic format conversions.
+input/output stream interfaces. Graph-Interpreter manages the data flow
+of "arcs" between "nodes" with automatic format conversions.
 
 The *graph description* is a compact data structure using indexes to
 physical addresses provided by the abstraction layer (AL). This graph
@@ -41,21 +41,21 @@ description is generated in three steps:
     used in the CMSIS-DSP ComputeGraph
     ([link](https://github.com/ARM-software/CMSIS-DSP/tree/main/ComputeGraph)),
     with extra fields to set the nodes processor affinity and the
-    board's presets. "No code" is one objective of the project: go
+    board's presets. "No code" is objective number 1 of the project: go
     directly from this GUI to tests on target, [without
     recompilation]{.underline} of the code running in target .
 
 2.  **A targeted platform is selected with its associated list of
-    "*manifests*"**. Each platform using CMSIS-Stream has a "*platform
-    manifest*" giving the processing details (processor architecture and
-    FPU options, minimum guaranteed amount of memory per RAM blocks and
-    their speed, TCM sizes). And "*software components manifests*" for
-    each of the installed processing Nodes, giving the developer
-    identification, input/output data formats, memory consumption,
-    documentation of the parameters and a list of "presets",
-    test-patterns and expected results. This second processing step
-    generates the text file representation of the graph ("*graphTxt*")
-    used by the scheduler and can be manually modified.
+    "*manifests*"**. Each platform using Graph-Interpreter has a
+    "*platform manifest*" giving the processing details (processor
+    architecture and FPU options, minimum guaranteed amount of memory
+    per RAM blocks and their speed, TCM sizes). And "*software
+    components manifests*" for each of the installed processing Nodes,
+    giving the developer identification, input/output data formats,
+    memory consumption, documentation of the parameters and a list of
+    "presets", test-patterns and expected results. This second
+    processing step generates the text file representation of the graph
+    ("*graphTxt*") used by the scheduler and can be manually modified.
 
 3.  **Finally, the binary file used by the target is generated**. The
     file format is either a C source file, or a *binary* hashed data to
@@ -83,23 +83,27 @@ description is generated in three steps:
     to the graph, generated strings of characters to the application,
     etc.
 
-CMSIS-Stream is delivered with a generic implementation of the above
-services, with device drivers emulated with precomputed data, time
+Graph-Interpreter is delivered with a generic implementation of the
+above services, with device drivers emulated with precomputed data, time
 information emulated with systick counters.
 
 ------------------------------------------------------------------------------
 
 ***DETAILS***
 
-Stream-based processing is facilitated using CMSIS-Stream:
+Stream-based processing is facilitated using Graph-Interpreter:
 
 1.  Nodes can be written in **any computer languages**. The scheduler is
     addressing the nodes from a single entry point, respecting the
-    CMSIS-Stream 4-parameters API format (examples below). There is no
-    restriction in having the nodes delivered in binary format, compiled
-    with "position independent execution" option. The nodes delivered in
-    binary can still have access to the C standard libraries through a
-    CMSIS-Stream service.
+    Graph-Interpreter 4-parameters API format (examples below). There is
+    no restriction in having the nodes delivered in binary format,
+    compiled with "**position independent execution**" option. There is
+    no dynamic linking issue: the nodes delivered in binary can still
+    have access to the C standard libraries through a Graph-Interpreter
+    service. The nodes are offered the access to DSP/ML CMSIS kernels
+    (compiled without the position-independent option) : the execution
+    speed will scale with the targeted processor capabilities without
+    recompilation.
 
 2.  **Drift management.** The streams don't need to be perfectly
     isochronous. Rate conversion service is provided by the scheduler
@@ -110,7 +114,7 @@ Stream-based processing is facilitated using CMSIS-Stream:
     and distortion), leaving the secondary streams managed with
     interpolators in case of flow issues.
 
-3.  CMSIS-Stream manages **TCM access**. When a software component
+3.  Graph-Interpreter manages **TCM access**. When a software component
     declares, in its manifest, the need for a "critical speed memory
     bank" of small size (ideally less than 16kBytes), the above "step 2,
     generation of *graphTxt* " will allocate TCM area.
@@ -144,13 +148,13 @@ Stream-based processing is facilitated using CMSIS-Stream:
     memory protection.
 
 9.  **Format conversions**. The developer declares, in the manifests,
-    the input and data formats of the node. CMSIS-Stream makes the
+    the input and data formats of the node. Graph-Interpreter makes the
     translation between nodes: sampling-rates conversions, changes of
     raw data, removal of time-stamps, channels de-interleaving.
 
-10. CMSIS-Stream manages the various **methods of controlling I/O** with
-    3 functions: parameters setting and buffer allocation, data move,
-    stop. The platform manifest mixed-signal components settings,
+10. Graph-Interpreter manages the various **methods of controlling I/O**
+    with 3 functions: parameters setting and buffer allocation, data
+    move, stop. The platform manifest mixed-signal components settings,
     flow-control). This abstraction layer facilitates the control of
     streams with DMA or polling schemes.
 
@@ -158,23 +162,23 @@ Stream-based processing is facilitated using CMSIS-Stream:
     experimented in EEMBC "AudioMark") for all the nodes, including
     those having multiple arcs connexions.
 
-12. CMSIS-Stream is **open-source**, and portable to Cortex-M, Cortex-R,
-    Cortex-A and Laptop computers.
+12. Graph-Interpreter is **open-source**, and portable to Cortex-M,
+    Cortex-R, Cortex-A and Laptop computers.
 
 13. Example of software components: image and voice codec, data
-    conditioning, motion classifiers, data mixers. CMSIS-Stream comes
-    with short list of componets doing data routing, mixing, conversion
-    and detection.
+    conditioning, motion classifiers, data mixers. Graph-Interpreter
+    comes with short list of componets doing data routing, mixing,
+    conversion and detection.
 
 14. **From the developer point of view**, it creates opaque memory
     interfaces to the input/output streams of a graph, and arranges data
-    are exchanged in the desired formats of each component. CMSIS-Stream
-    manages the memory mapping with speed constraints, provided by the
-    developer, at instance creation. This lets software run with maximum
-    performance in rising situations of memory bounded problems.
-    CMSIS-Stream accepts code in binary format activated with keys
-    (TBC). It is designed to integrate memory protection between
-    software components.
+    are exchanged in the desired formats of each component.
+    Graph-Interpreter manages the memory mapping with speed constraints,
+    provided by the developer, at instance creation. This lets software
+    run with maximum performance in rising situations of memory bounded
+    problems. Graph-Interpreter accepts code in binary format activated
+    with keys (TBC). It is designed to integrate memory protection
+    between software components.
 
 15. **From the system integrator view**, it eases the tuning and the
     replacement of one component by another one and is made to ease
@@ -184,7 +188,7 @@ Stream-based processing is facilitated using CMSIS-Stream:
     write code and allow graph changes and tuning [without
     recompilation]{.underline}.
 
-16. **CMSIS-Stream design objectives**: Low RAM footprint. Graph
+16. **Graph-Interpreter design objectives**: Low RAM footprint. Graph
     descriptor can be placed in Flash with a small portion in RAM.
     Use-cases go from small Cortex-M0 with 2kBytes RAM to
     SMP/AMP/coprocessor and mix of 32/64bits thanks to the concept of
