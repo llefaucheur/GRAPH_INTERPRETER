@@ -1,4 +1,10 @@
 /* ----------------------------------------------------------------------
+
+
+        WORK ON GOING
+
+
+
  * Project:      CMSIS Stream
  * Title:        arm_stream_convert.c
  * Description:  filters
@@ -25,12 +31,17 @@
  * 
  */
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+   
+
 #ifdef _MSC_VER 
-#include "../../../stream_al/platform_windows.h"
+#include "../../../stream_al/platform_computer.h"
 #include "../../../stream_src/stream_const.h"      
 #include "../../../stream_src/stream_types.h"  
 #else
-#include "platform_windows.h"
+#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
 #endif
@@ -186,11 +197,16 @@ void arm_stream_converter (int32_t command, uint32_t *instance, data_buffer_t *d
 
 
 
-        /* func(command = STREAM_END, PRESET, TAG, NB ARCS IN/OUT)
+        /* func(command = STREAM_STOP, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = unused
            used to free memory allocated with the C standard library
         */  
-        case STREAM_END:  break;    
+        case STREAM_STOP:  break;    
     }
 }
+
+#ifdef __cplusplus
+}
+#endif
+ 

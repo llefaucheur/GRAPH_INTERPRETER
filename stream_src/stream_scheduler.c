@@ -22,60 +22,131 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-* 
+ * 
  */
+
+#ifdef __cplusplus
+ extern "C" {
+#endif
+    
 
 #include "stream_const.h"      /* graph list */
 #include "stream_types.h"
 
 #include <string.h>             /* for memcpy */
 
+static long DEBUG_CNT;
+
+
+static void read_header (arm_stream_instance_t *S);
+static void reset_component (arm_stream_instance_t *S);
+static uint8_t lock_this_component (arm_stream_instance_t *S);
+static void set_new_parameters (arm_stream_instance_t *S);
+static void run_node (arm_stream_instance_t *S);
+static uint8_t arcs_are_ready(arm_stream_instance_t *S, uint8_t nb_arc);
+static uint8_t arc_ready_for_write(arm_stream_instance_t *S, uint32_t *arc);
+static uint8_t arc_ready_for_read(arm_stream_instance_t *S, uint32_t *arc);
+static intPtr_t arc_extract_info_int (arm_stream_instance_t *S, uint32_t *arc, uint8_t tag);
+
+#define script_option (RD(S->scheduler_control, SCRIPT_SCTRL))
+#define return_option (RD(S->scheduler_control, RETURN_SCTRL))
+#define LO S->S0.long_offset
+#define GR S->S0.graph
 
 /*----------------------------------------------------------------------------
    execute a swc
    this is the only place where a swc is called for safety reason 
    swc can check the return-address is identical
  *----------------------------------------------------------------------------*/
+/**
+  @brief         Call a software component / Node
+  @param[in]     address    address of the component
+  @param[in]     instance   memory instance of the component
+  @param[in/out] data       arcs of the components (list of pointer and size)
+  @param[in]     parameter  returned status after execution
+  @return        none
 
+  @par           The components are called from this single place to control the 
+                  PC return-address both from Stream and the Node side.
+                 The Node updates the "size" field before returning.
+  @remark
+ */
 static void stream_calls_swc (p_stream_node address_swc, int32_t command, 
-                    uint32_t *instance, 
+                    intPtr_t instance, 
                     data_buffer_t *data,
                     uint32_t *parameter
                    )
 {
      /* xdm_buffer pointers are updated inside the component */
-     address_swc (command, instance, data, parameter);
+     address_swc (command, (uint32_t *)instance, data, parameter);
 }
 
 
 
-/*
-   MISRA 2012 RULES 11.XX
+/**
+  @brief        unpack a 27-bits address to physical address
+  @param[in]    offset     table of long offsets of idx_memory_base_offset
+  @param[in]    data       packed address
+  @return       inPtr_t    address in the format of the processor
+
+  @par          A graph gives the address of buffers as indexes ("packed address") in a 
+                way independent of the memory mapping of the processor interpreting the graph.
+                The scheduler of each Stream instance sends a physical address to the Nodes
+                and translates here the indexes to physical address using a table of offsets.
+                There are eight memory banks ("offsets") :
+                    MBANK_DMEM_EXT  external shared memory
+                    MBANK_DMEM      internal shared memory
+                    MBANK_DMEMPRIV  not shared memory space 
+                    MBANK_DMEMFAST  DTCM Cortex-M or LLRAM Cortex-R, swapped between SWC calls if static 
+                    MBANK_BACKUP    backup/retention SRAM 
+                    MBANK_HWIODMEM  memory space for I/O and DMA buffers 
+                    MBANK_PMEM      program RAM 
+                    MBANK_FLASH     shared internal Flash
+
+  @remark       pack2linaddr will be replaced by the macro PACK2LINADDR
  */
-intPtr_t convert_ptr_to_int (void *in)
-{
-    return (intPtr_t)in;
-}
-void * convert_int_to_ptr (intPtr_t in)
-{
-    return (void *)in;
-}    
-/*----------------------------------------------------------------------------*/
 
-intPtr_t arc_extract_info_int (uint32_t *arc, uint8_t tag)
+/*----------------------------------------------------------*/
+static intPtr_t pack2linaddr_int(intPtr_t *long_offset, uint32_t data)
+{
+    intPtr_t dbg1, dbg2, dbg3;
+     dbg1 = RD((data),BASEIDX_ARCW0);
+     dbg2 = *((long_offset)+RD(data,DATAOFF_ARCW0));
+     dbg3 = dbg1 + dbg2;
+
+    return PACK2LINADDR(long_offset,data);
+}
+
+static uint8_t * pack2linaddr_ptr(intPtr_t *long_offset, uint32_t data)
+{
+    return (uint8_t *) (pack2linaddr_int(long_offset, data));
+}
+
+
+/**
+  @brief         Tool box : Arc descriptor fields extraction, returns an integer
+  @param[in]     instance   global data of the instance
+  @param[in]     arc        pointer to the arc descriptor to read
+  @param[in]     command    operation to do
+  @return        int
+
+  @par           Arcs are 4-words packed structures
+                 arc_extract_info_int returns the amount of data or free area, ..
+  @remark
+ */
+
+static intPtr_t arc_extract_info_int (arm_stream_instance_t *S, uint32_t *arc, uint8_t tag)
 {
     uint32_t read;
     uint32_t write;
     uint32_t size;
-    uint32_t base;
     intPtr_t ret;
     uint32_t *all_formats, *F;
 
     read =  RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
     size =  RD(arc[1], BUFF_SIZE_ARCW1);
-    base =  RD(arc[0], BASEIDX_ARCW0);
-    all_formats =  GRAPH_FORMAT_ADDR();
+    all_formats =  S->S0.all_formats;
 
     switch (tag)
     {
@@ -98,75 +169,66 @@ intPtr_t arc_extract_info_int (uint32_t *arc, uint8_t tag)
     return ret;
 }
 
-intPtr_t * arc_extract_info_pt (uint32_t *arc, uint8_t tag)
+/**
+  @brief         Tool box : Arc descriptor fields extraction, returns a byte pointer
+  @param[in]     instance   global data of the instance
+  @param[in]     arc        pointer to the arc descriptor to read
+  @param[in]     command    operation to do
+  @return        uint8 *    data pointer 
+
+  @par           Arcs are 4-words packed structures
+                 arc_extract_info_ptr returns the read/write addresses in the buffer
+  @remark
+ */
+
+
+static uint8_t * arc_extract_info_pt (arm_stream_instance_t *S, uint32_t *arc, uint8_t tag)
 {
     uint32_t read;
     uint32_t write;
-    uint32_t size;
     uint32_t base;
-    uint32_t shift;
-    uint32_t idxoff;
-    intPtr_t *long_base;
-    intPtr_t *ret;
+    uint8_t *long_base;
+    uint8_t *ret;
 
     read =  RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
-    size =  RD(arc[1], BUFF_SIZE_ARCW1);
-    base =  RD(arc[0], BASEIDX_ARCW0);
-    shift = RD(arc[0], BASESHIFT_ARCW0);
-    idxoff =RD(arc[0], DATAOFF_ARCW0);
-    long_base = (intPtr_t *)pack2linaddr_int(base);
+    base =  RD(arc[0], BASEIDXOFFARCW0);
+    long_base = pack2linaddr_ptr(S->S0.long_offset, base);
 
     switch (tag)
     {
-    case arc_base_address : ret = long_base; 
+    case arc_read_address : ret = &(((uint8_t *)long_base)[read]); 
         break;
-    case arc_ceil_address : ret = (intPtr_t *)&(((uint8_t *)long_base)[size]); 
-        break;
-    case arc_read_address : ret = (intPtr_t *)&(((uint8_t *)long_base)[read]); 
-        break;
-    case arc_write_address: ret = (intPtr_t *)&(((uint8_t *)long_base)[write]); 
+    case arc_write_address: ret = &(((uint8_t *)long_base)[write]); 
         break;
     default : ret = 0u; 
     }
     return ret;
 }
 
-/*----------------------------------------------------------------------------
-    script 
-    [0] FIFO of byte codes for debug script (FIFO #0)
-             Word1_scripts : script size, global register used + backup MEM, stack size
-             Wordn_scripts : stack and byte-codes, see stream_execute_script()
 
-    Registers 
-        One register is used for test "t"
-    Instructions
-        load "t", from stack(i) = R(i) or #const
-        load R(i) from arc FIFOdata / debugReg
-        compare R(i) with "t" : <> = != and skip next instruction 
-        jump to #label 
-        dsz decrement and jump on non-zero
-        arithmetic add,sub, #const/R(j)
+/**
+  @brief         Translation of physical address to packed address in 27-bits
+  @param[in]     instance   Global registers of the current instance
+  @param[in]     address    Address to be translated to 
+  @param[in]     data3      3rd parameter integer
+  @return        none
 
- *----------------------------------------------------------------------------*/
-int stream_execute_script(void)
-{    
-    //= RD(parameters[STREAM_PARAM_CTRL], INSTIDX_PARAM); 
-    //arm_script();
-    return 1;
-}
+  @par           Checks which of the 8 memory bank is suitable for the address
+                 Translate the offset to te base address in an integer and shift
+  @remark
+ */
 
 /*----------------------------------------------------------------------------
     convert a physical address to a portable multiprocessor address 
  *----------------------------------------------------------------------------*/
-uint32_t physical_to_offset (uint8_t *buffer)
+uint32_t physical_to_offset (arm_stream_instance_t *S, uint8_t *buffer)
 {
     uint64_t mindist;
     uint64_t pack;
     uint64_t buff;
     uint8_t i;
     uint8_t ibest;
-    uint8_t ishift;
 
     buff = (uint64_t)buffer;
 
@@ -175,62 +237,46 @@ uint32_t physical_to_offset (uint8_t *buffer)
     ibest = 0;
     for (i = 0; i < (uint8_t)NB_MEMINST_OFFSET; i++)
     {
-        if (arm_stream_global.long_offset[i] > buff) 
+        if (S->S0.long_offset[i] > buff) 
         { continue; }
 
         {   uint64_t tmp64;
-            tmp64 = buff - arm_stream_global.long_offset[i];
+            tmp64 = buff - S->S0.long_offset[i];
             if (tmp64 < mindist)
             {   mindist = tmp64;
                 ibest = i;
             }
         }
     }
-
-    /* code it to 22 bits base + 2 bits shifts */
-#define MAX_SHIFT (uint8_t)((U(1) << U(BASESHIFT_ARCW0_MSB-BASESHIFT_ARCW0_LSB+U(1)))-U(1))
-    for (ishift = 0; ishift < MAX_SHIFT; ishift++)
-    {
-        if (mindist < (U(1)<<BASESHIFT_ARCW0_LSB)-U(1)) { break; }
-        mindist = mindist >> 2;
-    }    
-    
-    pack = mindist | ((uint64_t)ishift << (uint8_t)BASESHIFT_ARCW0_LSB) | ((uint64_t)ibest << (uint8_t)DATAOFF_ARCW0_LSB);
+  
+    pack = mindist | ((uint64_t)ibest << (uint8_t)DATAOFF_ARCW0_LSB);
     
     return (uint32_t)pack;
 }
 
-//void set_ready_for_write(uint32_t write, uint32_t fifosize, uint32_t producer_frame_format, uint32_t *arc)
-//{
-//    uint32_t fifo_free_area, producer_frame_size;   
-//    uint8_t bool;
-//
-//    producer_frame_size = RD(producer_frame_format, FRAMESIZE_FMT0);
-//    fifo_free_area = fifosize - write;
-//    bool = (fifo_free_area >= producer_frame_size) ? 1 : 0;
-//
-//    ST(arc[RDFLOW_ARCW2], READY_W_ARCW2, bool);
-//}
 
+/**
+  @brief         Set the "need of data alignment bit" of the arc
+  @param[in]     format     pointer to the table of formats
+  @param[in/out] arc        pointer to the arc to check 
+  @return        none
 
-//void set_ready_for_read(uint32_t read, uint32_t write, uint32_t consumer_frame_format, uint32_t *arc)
-//{
-//    uint32_t fifo_data_amount, consumer_frame_size;   
-//    uint8_t bool;
-//
-//    consumer_frame_size = RD(consumer_frame_format, FRAMESIZE_FMT0);
-//    fifo_data_amount = write - read;
-//    bool = (fifo_data_amount >= consumer_frame_size) ? 1 : 0;
-//
-//    ST(arc[WRIOCOLL_ARCW3], READY_R_ARCW3, bool);
-//}
+  @par           The arc descriptor gives, in the 1st word, the stream format used by
+                 the node producing data to this arc.
+                 Looking at the remaining free space in the buffer and the frame-size
+                 used by the producer (the minimum amount of byte produced per call), the
+                 function set the bit ALIGNBLCK_ARCW3 which will be read by the consumer
+                 node to decide to realign the data to the buffer base address.
+                 When a producer sets the ALIGNBLCK_ARCW3 it means "blocked by lack
+                 of free space", so there is no risk of collision between different 
+                 processors accessing the arc during data realignment.
 
-/* ====================================================================== */
-
-void set_alignment_bit (uint32_t *arc, uint32_t *all_formats)
+  @remark
+ */
+static void set_alignment_bit (uint32_t *all_formats, uint32_t *arc)
 {
-    uint32_t producer_frame_size, fifosize, write;
-    uint8_t bool, i;
+    uint32_t producer_frame_size, fifosize, write, needed_free_area;
+    uint8_t i;
 
     fifosize =  RD(arc[1], BUFF_SIZE_ARCW1);
     write = RD(arc[3], WRITE_ARCW3);
@@ -239,24 +285,43 @@ void set_alignment_bit (uint32_t *arc, uint32_t *all_formats)
     i = RD(arc[0],PRODUCFMT_ARCW0);
     i = i * STREAM_FORMAT_SIZE_W32;
     producer_frame_size = RD(all_formats[i], FRAMESIZE_FMT0);
-    bool = 0;
-    if (write >= fifosize/2) // (fifosize - producer_frame_size))
-    {   bool = 1;
+    needed_free_area = fifosize - producer_frame_size;
+
+    if (write >= needed_free_area)
+    {   SET_BIT(arc[3], ALIGNBLCK_ARCW3_LSB);
     }
-    ST(arc[3], ALIGNBLCK_ARCW3, bool);
+    else
+    {   CLEAR_BIT(arc[3], ALIGNBLCK_ARCW3_LSB);
+    }
 }
-/* ====================================================================== */
-uint8_t arc_ready_for_write(uint32_t *arc)
+
+
+/**
+  @brief         Checks the producer node can use this arc
+  @param[in]     instance   global registers of this instance
+  @param[in]     arc        arc to check
+  @return        none
+
+  @par           The arc descriptor gives, in the 1st word, the stream format used by
+                 the node producing data to this arc.
+                 Looking at the remaining free space in the buffer and the frame-size
+                 used by the producer (the minimum amount of byte produced per call), the
+                 function returns a go/no-go flag.
+  @remark
+ */
+
+static uint8_t arc_ready_for_write(arm_stream_instance_t *S, uint32_t *arc)
 {
     uint32_t producer_frame_size;   
     uint8_t ret;
     uint32_t fifosize, write, *all_formats;
 
-    all_formats = GRAPH_FORMAT_ADDR();
+    all_formats = S->S0.all_formats;
     write = RD(arc[3], WRITE_ARCW3);
     fifosize = RD(arc[1], BUFF_SIZE_ARCW1);
 
-    producer_frame_size = RD(all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc[0],PRODUCFMT_ARCW0)], FRAMESIZE_FMT0);
+    producer_frame_size = 
+        RD(all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc[0],PRODUCFMT_ARCW0)], FRAMESIZE_FMT0);
     if (write >= (fifosize - producer_frame_size))
     {   ret = 0;
     }
@@ -266,14 +331,28 @@ uint8_t arc_ready_for_write(uint32_t *arc)
 
     return ret;
 }
-/* ====================================================================== */
 
-uint8_t arc_ready_for_read(uint32_t *arc)
+
+/**
+  @brief         Checks the consumer node can use this arc
+  @param[in]     instance   global registers of this instance
+  @param[in]     arc        arc to check
+  @return        none
+
+  @par           The arc descriptor gives, in the 2nd word, the stream format used by
+                 the node consuming data from this arc.
+                 Looking at the amount of data in the buffer and the frame-size
+                 consumer by the node (the minimum amount of byte consumed per call), the
+                 function returns a go/no-go flag.
+  @remark
+ */
+
+static uint8_t arc_ready_for_read(arm_stream_instance_t *S, uint32_t *arc)
 {
     uint32_t consumer_frame_size, consumer_frame_format;   
     uint32_t fifosize, read, write, *all_formats, fifo_data_amount;
 
-    all_formats = GRAPH_FORMAT_ADDR();
+    all_formats = S->S0.all_formats;
     read = RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
     fifosize = RD(arc[1], BUFF_SIZE_ARCW1);
@@ -284,34 +363,85 @@ uint8_t arc_ready_for_read(uint32_t *arc)
     return (fifo_data_amount >= consumer_frame_size) ? 1 : 0;
 }
 
-/*----------------------------------------------------------------------------
-    Copy in/out the data of ring buffers
- *----------------------------------------------------------------------------*/
+
+
+/**
+  @brief         Checks the input and output arcs can be used
+  @param[in]     instance   global registers of this instance
+  @param[in]     nb_arc     number of arcs to check in the instance's arc list
+  @return        flag = 0 when at least one arc is not ready for being processed
+
+  
+  @par           The arc descriptor gives, in the 2nd word, the stream format used by
+                 the node consuming data from this arc. On the input streams side, 
+                 looking at the amount of data in the buffer and the frame-size
+                 consumed by the node (the minimum amount of byte consumed per call), the
+                 function returns a go/no-go flag. And on the output streams side, 
+                 looking at the remaining free space in the buffer and the frame-size
+                 used by the producer (the minimum amount of byte produced per call), the
+                 function updates the go/no-go flag.
+  @remark
+ */
+
+static uint8_t arcs_are_ready(arm_stream_instance_t *S, uint8_t nb_arc)
+{
+    uint16_t iarc, arc_id;
+    uint8_t ret;
+    uint32_t *arc;
+
+    ret = 1;
+
+    for (iarc = 0; iarc < nb_arc; iarc++)
+    {
+        arc_id = S->arcID[iarc];
+        arc = &(S->S0.all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arc_id)]);
+
+        if (0 == (ARC_RX0TX1_MASK & arc_id))
+        {   ret &= arc_ready_for_read(S, arc);
+        } 
+        else
+        {
+            ret &= arc_ready_for_write(S, arc);
+        }
+    }
+    return ret;
+}
+
+
+/**
+  @brief         Toolbox of operations on arc
+  @param[in]     instance   pointer to the static area of the current Stream instance
+  @param[in/out] arc        Pointer to the arc descriptor, which can be modified 
+  @param[in]     tag        Command to execute
+  @param[in]     size       parameter used for data moves
+  @return        none
+
+  @par           "arc_data_operations" implements the data moves to/from arc buffers
+                  and the data realignments
+
+  @remark
+ */
+
 void arc_data_operations (
+        arm_stream_instance_t *S, 
         uint32_t *arc, 
         uint8_t tag, 
         uint8_t *buffer, 
-        uint32_t datasize,
-        uint32_t *all_formats
+        uint32_t datasize
         )
 {
     uint32_t read;
     uint32_t write;
     uint32_t base;
-    uint32_t shift;
-    uint32_t idxoff;
-    uint32_t fifosize;
     uint32_t size;
     uint8_t *long_base;
     uint8_t *src;
     uint8_t* dst;
 
     //xdm_data = (data_buffer_t *)buffer;
-    fifosize =  RD(arc[1], BUFF_SIZE_ARCW1);
-    base =      RD(arc[0], BASEIDX_ARCW0);
-    shift =     RD(arc[0], BASESHIFT_ARCW0);
-    idxoff =    RD(arc[0], DATAOFF_ARCW0);
-    long_base = (uint8_t *)pack2linaddr_ptr(base);
+    //fifosize =  RD(arc[1], BUFF_SIZE_ARCW1);
+    base =      RD(arc[0], BASEIDXOFFARCW0);
+    long_base = pack2linaddr_ptr(S->S0.long_offset, base);
 
     switch (tag)
     {
@@ -330,17 +460,16 @@ void arc_data_operations (
         /* update the indexes Read=0, Write=dataLength */
         ST(arc[2], READ_ARCW2, 0);
         ST(arc[3], WRITE_ARCW3, size);
-        CLEAR_BIT(arc[3], ALIGNBLCK_ARCW3_LSB);
 
-        /* does the moved write index allows to declare "ready for write" ? */
-        //set_ready_for_write(write, fifosize, all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc,PRODUCFMT_ARCW0)], arc);
+        /* clear the bit if there is enough free space after this move */
+        set_alignment_bit (S->S0.all_formats, arc);
 
         /* DMB on RD/WR to let the producers be aware */
         DATA_MEMORY_BARRIER;
     break;
 
     /* move in and increment write index, update filling status */
-    case arc_move_to_arc : 
+    case arc_IO_move_to_arc : 
         /* only one node can read the write-index at a time : no collision is possible */
         write = RD(arc[3], WRITE_ARCW3);
         src = buffer;
@@ -349,17 +478,23 @@ void arc_data_operations (
         write = write + datasize;
         ST(arc[3], WRITE_ARCW3, write);
 
-        //read = RD(arc[RDFLOW_ARCW2  ], READ_ARCW2);
-        //set_ready_for_read(read, write, all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc,CONSUMFMT_ARCW1)], arc)
-
         /* check overflow */
-        set_alignment_bit (arc, all_formats);
+        set_alignment_bit (S->S0.all_formats, arc);
 
         DATA_MEMORY_BARRIER;
         break;
 
-    /* move out was done by the consumer, increment read index, update emptiness status */
-    case arc_moved_from_arc  : 
+    /* move out was notified in the driver, do the data move increment read index, 
+        update emptiness status */
+    case arc_IO_moved_from_arc  : 
+        /* only one node can update the read-index at a time : no collision is possible */
+        read = RD(arc[2], READ_ARCW2);
+        src = &(long_base[read]);
+        dst = buffer;
+        MEMCPY (dst, src, datasize);
+
+    /* just an index update of read after arm_stream_io(txslave) */
+    case arc_IO_moved_from_arc_update:
         /* only one node can update the read-index at a time : no collision is possible */
         read = RD(arc[2], READ_ARCW2);
         read = read + datasize;
@@ -367,11 +502,11 @@ void arc_data_operations (
         /* update the read index */
         ST(arc[2], READ_ARCW2, read);
 
-        /* are there enough free-space in the FIFO to tell it ready for write ? */
-        //write =    RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
-        //set_ready_for_write(write, fifosize, all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc,PRODUCFMT_ARCW0)], arc);
+        /* clear the bit if there is enough free space after this move */
+        set_alignment_bit (S->S0.all_formats, arc);
+
         DATA_MEMORY_BARRIER;
-        break;
+        break;        
 
     /* large buffer : no data move but update the arc descriptor to the
         buffer provided by the arm_stream_io() callback 
@@ -380,167 +515,168 @@ void arc_data_operations (
         */
     case arc_set_base_address_to_arc :
         ST(arc[2], READ_ARCW2, 0);
-        ST(arc[0], BASEIDXOFFARCW0, physical_to_offset(buffer));
+        ST(arc[0], BASEIDXOFFARCW0, physical_to_offset(S, buffer));
         ST(arc[3], WRITE_ARCW3, datasize);
-        //set_ready_for_read(0, datasize, all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc,CONSUMFMT_ARCW1)], arc)
+
         DATA_MEMORY_BARRIER;
         break;
 
-    /* set the buffer to IO addres with R=W=0
-       TX buffer to the IO => set the address of data generated by the graph
-    */
     case arc_set_base_address_from_arc :
         ST(arc[2], READ_ARCW2, 0);
+        ST(arc[0], BASEIDXOFFARCW0, physical_to_offset(S, buffer));
         ST(arc[3], WRITE_ARCW3, 0);
-        ST(arc[0], BASEIDXOFFARCW0, physical_to_offset(buffer));
-        //CLEAR_BIT(arc[RDFLOW_ARCW2], READY_W_ARCW2_LSB);
+
         DATA_MEMORY_BARRIER;
         break;
-        
+                
     default : 
         break; 
     }
 }
 
 
+/**
+  @brief         Update the arc descriptor after Node processing
+  @param[in]     instance   pointer to the static area of the current Stream instance
+  @param[in/out] arc        Pointer to the arc descriptor, which can be modified 
+  @param[in]     in0out1    0: the arc is an input of the node, 1: an output of the node
+  @param[in]     xdm_data   pair of pointer + buffer size
+  @return        none
 
-/* --------------------------------------------------------------------------------------------------
-      
-      read arc's pointer and size => XDM structure
+  @par           xdm_data isolates the Node computations from the internal data structure
+                 of Stream.
+
+                 Multiprocess realignment of data to base addresses, algorithm :
+                 - output FIFO write pointer is incremented AND a check is made for data 
+                 re-alignment to base adresses (to avoid address looping)
+                 then the "ALIGNBLCK_ARCW3" is set. The SWC don't wait and let the 
+                 consumer manage the alignement
+                 "Simple" arcs have the exact size of the frame length
+  @remark
  */
-static void read_arc_xdm (uint32_t *arc, uint32_t in0out1, 
-                   data_buffer_t *xdm_data/*, uint32_t *all_formats*/)
-{
-    if (U(0) != in0out1)
-    {
-        /* output buffer of the SWC : size = free area in the original buffer */
-        xdm_data->address = (intPtr_t)(arc_extract_info_pt (arc, arc_write_address));
-        xdm_data->size    = arc_extract_info_int (arc, arc_free_area);
-        // TODO@@@ implement size modulo frame_size of the format to recover synchronization errors
-        // solution synchronize on the producer: the distance to WRITE_ARCW3 is a multiple of the frame size
-    }
-    else
-    {
-        /* input buffer of the SWC : size = data amount in the original buffer*/
-        xdm_data->address = (intPtr_t)(arc_extract_info_pt (arc, arc_read_address));
-        xdm_data->size    = arc_extract_info_int (arc, consumer_frame_size);
-    }
-}
-
-/*----------------------------------------------------------------------------
-    Multiprocess realignment of data to base addresses, algorithm :
-
-    - output FIFO write pointer is incremented AND a check is made for data 
-    re-alignment to base adresses (to avoid address looping)
-    then the "ALIGNBLCK_ARCW3" is set. The SWC don't wait and let the 
-    consumer manage the alignement
-
- *----------------------------------------------------------------------------*/
-static void check_arc_and_rewind (uint32_t *arc, uint32_t in0out1,
-                           data_buffer_t *xdm_data, uint32_t *all_formats)
+static void arc_index_update (arm_stream_instance_t *S, data_buffer_t *xdm_data, uint8_t pre0post1)
 {
     uint32_t fifosize, read, write;
     uint32_t increment;
+    uint32_t *arc;
+    uint16_t iarc, arcID, *pt8_arc;
+                           
+    /* push all the ARCs on the data on the stack */
+    pt8_arc = (uint16_t *)(S->swc_header);
+    pt8_arc = &(pt8_arc[ARC_HEADER_BYTE_OFFSET]);    /* points to the start of the ARCs area in the header */
 
-    /* is it simple/null arc */
-    if (TEST_BIT(arc[2], SHAREDARC_ARCW2_LSB) == 1u)
-    {   ST(arc[3], WRITE_ARCW3, 0);
-        ST(arc[2], READ_ARCW2, 0);
-        //ST(arc[RDFLOW_ARCW2], READY_W_ARCW2, 1);
-        //ST(arc[WRIOCOLL_ARCW3], READY_R_ARCW3, 1);
-        return;
-    }
-     
-    read = RD(arc[2], READ_ARCW2);
-    write = RD(arc[3], WRITE_ARCW3);
-    fifosize =  RD(arc[1], BUFF_SIZE_ARCW1);
 
-    /* is it an output arc ? */
-    if (0u != in0out1)
-    {
-        /* output buffer of the SWC : check the pointer increment */
-        increment = (uint32_t)(xdm_data->size);
-        write = write + increment;
-        ST(arc[3], WRITE_ARCW3, write);
-
-        //set_ready_for_read (read, write, all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc,CONSUMFMT_ARCW1)], arc);
-        //set_ready_for_write(write, fifosize, all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc,PRODUCFMT_ARCW0)], arc);
-
-        /* is there debug/monitoring activity to do ? */
-        if (RD(arc[2], COMPUTCMD_ARCW2) != 0u)
-        { /* TODO : implement the data monitoring 
-            arm_arc_monitor(*, n, RD(,COMPUTCMD_ARCW2), RD(,DEBUG_REG_ARCW1))
-           */
-        }
-
-        set_alignment_bit (arc, all_formats);
-
-        /* check the need for data flush */
-        if (U(0) != TEST_BIT(arc[1], MPFLUSH_ARCW1_LSB))
-        {   DATA_MEMORY_BARRIER
-        }
-
-        /* make the write pointer update visible to all processors */
-        DATA_MEMORY_BARRIER;
-    }
-    /* this is an input arc */
-    else
+    for (iarc = 0; iarc < RD(*(S->swc_header), NBARCW_LW0); iarc++, pt8_arc++)
     {   
-        /* input buffer of the SWC, update the read index*/
-        increment = xdm_data->size;
-        read = read + increment;
-        ST(arc[2], READ_ARCW2, read);
-        //set_ready_for_read (read, write, all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc,CONSUMFMT_ARCW1)], arc);
+        arcID = (S->arcID[iarc]);
+        arc = &(S->S0.all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
+        read = RD(arc[2], READ_ARCW2);
+        write = RD(arc[3], WRITE_ARCW3);
+        fifosize =  RD(arc[1], BUFF_SIZE_ARCW1);
 
-        /* does data realignement is possible ? */
-        set_alignment_bit (arc, all_formats);
+        if (ARC_RX0TX1_MASK & arcID)
+        {   /* TX arc case */
+            if (0 == pre0post1)
+            {/* output buffer of the SWC : size = free area in the original buffer */   
+                xdm_data[iarc].address = (intPtr_t)(arc_extract_info_pt (S, arc, arc_write_address));
+                xdm_data[iarc].size    = arc_extract_info_int (S, arc, arc_free_area);
+            }
+            else
+            {   /* output buffer of the SWC : check the pointer increment */
+                increment = (uint32_t)(xdm_data->size);
+                write = write + increment;
+                ST(arc[3], WRITE_ARCW3, write);
 
-        if (0u != TEST_BIT (arc[3], ALIGNBLCK_ARCW3_LSB))
-        {   arc_data_operations (arc, arc_data_realignment_to_base, 0, 0, all_formats);
-            DATA_MEMORY_BARRIER;
+                /* is there debug/monitoring activity to do ? */
+                if (RD(arc[2], COMPUTCMD_ARCW2) != 0u)
+                { /* @@@ TODO : implement the data monitoring 
+                    arm_arc_monitor(*, n, RD(,COMPUTCMD_ARCW2), RD(,DEBUG_REG_ARCW1))
+                   */
+                }
+
+                /* check for data flush : done when the consumers are not on the same processor */
+                if (U(0) != TEST_BIT(arc[1], MPFLUSH_ARCW1_LSB))
+                {   DATA_MEMORY_BARRIER
+                }
+            }
+        } 
+        else
+        {   /* RX arc case */
+            if (0 == pre0post1)
+            {   /* input buffer of the SWC : size = data amount in the original buffer*/
+                xdm_data[iarc].address = (intPtr_t)(arc_extract_info_pt (S, arc, arc_read_address));
+                xdm_data[iarc].size    = arc_extract_info_int (S, arc, consumer_frame_size);
+            }
+            else
+            {   /* input buffer of the SWC, update the read index*/
+                increment = (uint32_t)(xdm_data->size);
+                read = read + increment;
+                ST(arc[2], READ_ARCW2, read);
+
+                /* does data realignement must be done ? : realign and clear the bit */
+                if (0u != TEST_BIT (arc[3], ALIGNBLCK_ARCW3_LSB))
+                {   arc_data_operations (S, arc, arc_data_realignment_to_base, 0, 0);
+                }
+
+                /* does data realignement is possible ? */
+                set_alignment_bit (S->S0.all_formats, arc);
+            }
         }
-
-        /* make the read pointer update visible to all processors */
-        DATA_MEMORY_BARRIER;
     }
+ }
 
-}
 
+
+/**
+  @brief         Check the Streams at the boundary of the graph
+  @param[in]     instance   pointer to the static area of the current Stream instance
+  @return        none
+
+  @par           The streams at the boundary of the graph can only be managed by one Stream
+                 instance. The graph section dedicated to Stream instances has 2 words/instance.
+                 The first word hold a mask of the boundaries allowed to scan for data movement.
+                 The second word holds the flags telling a movement request is on-going, and there
+                 is no need to ask for more (example of DMA requests on the go).
+
+  @remark
+ */
 /* --------------------------------------------------------------------------------------------------
       check input ring buffers :
       each Stream instance has a list of graph boundary to check for in/out data
  */
-static void check_graph_boundaries(
-        uint32_t io_mask, 
-        uint32_t *pio_param, 
-        uint8_t nio, 
-        uint32_t *arcs)
+static void check_graph_boundaries(arm_stream_instance_t *S)
 {
     uint32_t iio;
     uint32_t arc_idx;
     uint8_t need_data_move;
     uint32_t size;
     uint8_t *buffer;
-    uint32_t *pio, *arc;
+    uint32_t *arc;
     struct platform_control_stream p_data_move;
+    uint32_t *pio, *pio_base;
+    uint32_t io_mask = RD(S->S0.pinst[STREAM_INSTANCE_WHOAMI_PORTS], BOUNDARY_PARCH);
+    uint32_t nio;
+
+    pio_base = S->S0.pio;
+    nio = RD((S->S0.graph)[1],NB_IOS_GR1);
 
     for (iio = 0u; iio < nio; iio++)
     {
         /* jump to next graph port */
-        pio = &(pio_param[iio * STREAM_IOFMT_SIZE_W32]);
+        pio = &(pio_base[iio * STREAM_IOFMT_SIZE_W32]);
         arc_idx = SIZEOF_ARCDESC_W32 * RD(*pio, IOARCID_IOFMT);
-        arc = &(arcs[arc_idx]);
+        arc = &(S->S0.all_arcs[ARC_RX0TX1_CLEAR & arc_idx]);
 
-        /* ports where the peripheral is master are not checked (MASTER_FOLLOWER_IOMEM) */
+        /* ports where the peripheral is commander are not checked (commander_servant_IOMEM) */
         /* does this port needs to be managed by the Stream instance ? */
         if (0u == U(io_mask & ((uint32_t)1 << iio))) 
         {   continue; 
         }
 
-        /* a previous request is in process, no need to ask again, bit reset in arm_stream_io 
-           and just wait when the graph IO port is follower (the IO driver is master) */
-        if ((0u != TEST_BIT(*pio, REQMADE_IOFMT_LSB)) || 
-            (0u != TEST_BIT(*pio, FOLLOWER_IOFMT_LSB)))
+        /* a previous request is in process or if the IO is commander on the interface, then no 
+            need to ask again */
+        if ((0u != TEST_BIT(S->S0.pinst[STREAM_INSTANCE_PARAMETERS], iio)) || 
+            (0u == TEST_BIT(*pio, SERVANT_IOFMT_LSB)))
         {   continue;
         }
 
@@ -548,9 +684,9 @@ static void check_graph_boundaries(
 
         /* if this is an input stream : check the buffer is empty  */
         if (RX0_TO_GRAPH == RD(*pio, RX0TX1_IOFMT))
-        {   need_data_move = arc_ready_for_write(arc);
-            buffer = (uint8_t *)(arc_extract_info_pt(arc, arc_write_address));
-            size = arc_extract_info_int (arc, producer_frame_size);
+        {   need_data_move = arc_ready_for_write(S, arc);
+            buffer = arc_extract_info_pt(S, arc, arc_write_address);
+            size = (uint32_t)arc_extract_info_int (S, arc, producer_frame_size);
             if (size == 0)
             {   break;
             }
@@ -558,18 +694,17 @@ static void check_graph_boundaries(
 
         /* if this is an output stream : check the buffer is READY_R */
         else
-        {   need_data_move = arc_ready_for_read(arc);
-            buffer = (uint8_t *)(arc_extract_info_pt(arc, arc_read_address));
-            size = arc_extract_info_int (arc, consumer_frame_size);
+        {   need_data_move = arc_ready_for_read(S, arc);
+            buffer = arc_extract_info_pt(S, arc, arc_read_address);
+            size = (uint32_t)arc_extract_info_int (S, arc, consumer_frame_size);
             if (size == 0)
             {   break;
             }
         }
         
         /* skip if the buffer is not empty when the IO is programmed for "set buffer" */
-        {   uint8_t command = RD(*pio, IOCOMMAND_IOFMT);
-            if (command == IO_COMMAND_SET_BUFFER_RX || command == IO_COMMAND_SET_BUFFER_TX)
-            {   if (0 != arc_extract_info_int(arc, arc_data_amount))
+        {   if (TEST_BIT(*pio, IOCOMMAND_IOFMT_LSB) == IO_COMMAND_SET_BUFFER)
+            {   if (0 != arc_extract_info_int(S, arc, arc_data_amount))
                 {   continue;
                 }
             }
@@ -585,7 +720,7 @@ static void check_graph_boundaries(
                  characters on a display, ..).
                 data transfer on-going 
             */
-            SET_BIT(*pio, REQMADE_IOFMT_LSB);
+            SET_BIT(S->S0.pinst[STREAM_INSTANCE_PARAMETERS], REQMADE_PARINST_LSB);
 
             /* ask the firmware to awake this port */
             p_data_move.fw_idx = RD(*pio, FW_IO_IDX_IOFMT);
@@ -597,425 +732,493 @@ static void check_graph_boundaries(
 
             /* if this is an input stream : check the buffer needs alignment by the consumer */
             if (RX0_TO_GRAPH == RD(*pio, RX0TX1_IOFMT))
-            {   arc_ready_for_write(arc);
+            {   arc_ready_for_write(S, arc);
             }
 
         }
     }
 }
 
-#if MULTIPROCESSING
-uint32_t check_hw_compatibility(uint32_t whoami, uint32_t bootParamsHeader) 
-{
-    uint8_t match = 1;
-
-    if (RD(bootParamsHeader, ARCHID_BP) > 0u) /* do I care about the architecture ID ? */
-    {   match = U8(RD(bootParamsHeader, ARCHID_BP) == RD(whoami, ARCHID_PARCH));
-    }
-
-    if (RD(bootParamsHeader, PROCID_BP) > 0u) /* do I care about the processor ID ? */
-    {   match = match & U8(RD(bootParamsHeader, PROCID_BP) == RD(whoami, PROCID_PARCH));
-    }
-    return match;
-}
-#else
-#define check_hw_compatibility(whoami, bootParamsHeader) 1u  
-#endif
 
 /*----------------------------------------------------------------------------
-   scan the graph and execute a "scan_function_ptr" task
-   algorithm :
-     - scan the linked-list of node
-     - searching for the ones having input data and free space in the ouput buffer
-     - check the input ring buffers at the boundary of the graph are full
-     - check the output ring buffers at the boundary of the graph are empty
 
-    Scheduler algorithm :
-    1 the SWC is checked for data input amount and free area on output
-    - the SWC is checked not to be blocked on its output
-
-    2 the SWC is locked from other process activity :
-        COLLISION_GI<=INST_ID_PARCH
-    - if COLLISION_GI<>INST_ID_PARCH collision occured : continue to next SWC
-
-    (3) if the SWC generating the input data was blocked
-        during its attempt to realign the data to base address, then it is 
-        the responsibility of the consumer node (current SWC) to realign the 
-        data, and clear the flag. 
-
-    - SWC is called for execution ("NODE_RUN")
-
-    - input FIFO read pointer is updated (incremented)
-
-    - output FIFO write pointer is incremented AND a check is made for data 
-        re-alignment to base adresses (to avoid address looping)
-
-    - depending on the SWC return value, the STATUS_GI is set to "need_rerun"
-        and the SWC will be run again asap after checking the graph boundaries
-        for data moves
-
-    - SWC is unlocked : COLLISION_GI<=0
-     
+   
  *----------------------------------------------------------------------------*/
+/**
+  @brief        Main scheduler loop of the linked list of nodes in the graph
+  @param[in]    instance       pointer to the static area of the current Stream instance
+  @param[in]    reset_option   Tells if this is a scan for reset, run or stop the graph
+  @return       none
 
-typedef struct {
-    p_stream_node address_swc;
-    uint32_t *all_arcs;
-    uint32_t *all_formats;
-    p_stream_node *all_nodes;
-    uint32_t *arc0;
-    uint32_t *arc1;
-    uint32_t bootParamsHeader;
-    uint32_t check;
-    uint32_t io_mask;
-    uint8_t endLinkedList;
-    uint32_t *linked_list_ptr;
-    uint32_t *linked_list_ptr_header;
-    uint32_t *linked_list_ptr_bootparam;
-    uint8_t nio;
-    struct stream_local_instance *pinst;
-    uint32_t *pio;
-    uint16_t preset;
-    uint8_t *pt8b_collision_arc_1;
-    uint8_t some_components_have_data;
-    uint8_t stream_instance;
-    intPtr_t swc_instance;
-    uint32_t swc_header;
-    uint32_t whoami;
-    data_buffer_t xdm_data[MAX_NB_STREAM_SWC];
-} stack;
-
-static void init_stack (uint8_t stream_instance, stack *S);
-static void read_header (stack *S);
-static void reset_load_parameters (stack *S);
-static uint8_t lock_this_component (stack *S);
-static void set_new_parameters (stack *S);
-static void run_node (uint8_t stream_instance, stack *S, uint8_t script_option);
+  @par          scan the graph and execute a node or all the nodes or all until no more data is available
+                algorithm :
+                  - scan the linked-list of node
+                  - check the input ring buffers at the boundary of the graph are full
+                  - check the output ring buffers at the boundary of the graph are empty
+                  - search components having enough input data and free space in the ouput buffer
+     
+  @remark
+  @remark
+ */
 
 
-void stream_scan_graph (uint8_t stream_instance, int8_t return_option, 
-    int8_t script_option, int8_t reset_option) 
+void stream_scan_graph (arm_stream_instance_t *S, int8_t reset_option) 
 {
-    stack S;
+    if (script_option & STREAM_SCHD_SCRIPT_START) { stream_execute_script();}
 
-    init_stack (stream_instance, &S);    /* stream_param_t */
-
-    if (script_option == STREAM_SCHD_SCRIPT_START) { stream_execute_script();}
+    /* continue from the last position, index in W32 */
+    S->linked_list_ptr = &((S->S0.linked_list)[RD(S->S0.pinst[STREAM_INSTANCE_DYNAMIC], SWC_W32OFF_DINST)]);
 
     /* loop until all the components are blocked by the data streams */
 	do 
     {  
-        S.linked_list_ptr = GRAPH_LINKDLIST_ADDR(); 
+        /* start scanning the list assuming no data is processed */
+        CLEAR_BIT(S->scheduler_control, STILDATA_SCTRL_LSB);
 
-        /* continue from the last position */
-        {   uint32_t last_index = RD(S.pinst->parameters,LASTSWC_PARINST);
-            S.linked_list_ptr = &(S.linked_list_ptr[last_index]);
-        }
-        S.some_components_have_data = 0u;  
+        /* detection of the end of the SWC linked list */
+        CLEAR_BIT(S->scheduler_control, ENDLLIST_SCTRL_LSB);
 
         /* read the linked-list until finding the SWC index "LAST_WORD" */
 	    do 
-        {   
+        {   DEBUG_CNT++; if (DEBUG_CNT == 4)
+                DEBUG_CNT = DEBUG_CNT;
+            
             /* check the boundaries of the graph, not during end/stop periods */
             if (reset_option == 0) 
-            {   check_graph_boundaries(S.io_mask, S.pio, S.nio, S.all_arcs); 
+            {   check_graph_boundaries(S); 
             }
          
-            read_header (&S);
+            /* read all the information about the Node and the way to set its parameters */
+            read_header (S);
 
             /* does the SWC is executable on this processor */
-            if (0U == check_hw_compatibility(whoami, bootParamsHeader))
+            if (0U == check_hw_compatibility(
+                    S->S0.pinst[STREAM_INSTANCE_WHOAMI_PORTS], 
+                    (S->swc_header)[0]))
             {   continue;
             }
 
-            if (0 == lock_this_component (&S))
+            /* does an other process/processor is try to execute the same Node ? */
+            if (0 == lock_this_component (S))
             {   continue;
             }
 
-            /* ---------------- parameter was changed, or reset ? -------------------- */
+            /* ---------------- parameter was changed, or reset phase ? -------------------- */
             if (reset_option > 0 ||
-                (LINKEDLIST_IS_IN_RAM() && TEST_BIT(S.swc_header, NEWPARAM_GI_LSB)))
+                (LINKEDLIST_IS_IN_RAM() && TEST_BIT((S->swc_header)[S->swc_parameters_offset], NEWPARAM_LW3_LSB)))
             {   
-                /* ---------------- reset phase of the graph ? -------------------- */
+                /* reset phase of the graph ?  */
                 if (reset_option > 0)
-                {   reset_load_parameters (&S);
+                {   reset_component (S);
                 }
 
-                set_new_parameters (&S);
-
-                if (reset_option > 0)
-                {   WR_BYTE_MP_(S.pt8b_collision_arc_1, 0u);    /* SWC is unlocked */
-                    continue;
-                }
-                /* ready to accept new parameters : clear the flag */
-                if (LINKEDLIST_IS_IN_RAM()) 
-                {   CLEAR_BIT_MP(S.swc_header, NEWPARAM_GI_LSB);
-                }
+                /* set the parameters at reset or when a script loaded new parameters (and set NEWPARAM_GI) */
+                set_new_parameters (S);
             }
 
-            /* end of graph ? */
+            /* end of graph processing ? */
             if (reset_option < 0)
-            {   stream_calls_swc (S.address_swc, PACK_COMMAND(1,1,0,0,S.stream_instance,STREAM_END), 
-                    (uint32_t *)S.swc_instance, 0u, &S.check);
-                
-                WR_BYTE_MP_(S.pt8b_collision_arc_1, 0u);    /* SWC is unlocked */
-                continue;
+            {   uint32_t returned;
+                ST(S->pack_command, COMMAND_CMD, STREAM_STOP);
+                stream_calls_swc (S->address_swc, S->pack_command, 
+                    S->swc_instance_addr, 0u, &returned);
             }
     
             /* if the SWC generating the input data was blocked (ALIGNBLCK_ARCW3=1) 
-                during its attempt to realign the data to base address, then it is 
-                the responsibility of the consumer node (current SWC) to realign the 
+                then it is the responsibility of the consumer node (current SWC) to realign the 
                 data, and clear the flag. 
             */
-            if (0u != TEST_BIT (S.arc0[3], ALIGNBLCK_ARCW3_LSB))
-            {   arc_data_operations (S.arc0, arc_data_realignment_to_base, 0, 0, S.all_formats);
-                DATA_MEMORY_BARRIER;
-            }
-    
-            /* check input arc has enough data and output arc is empty and unblocked 
-                all those arcs data structures are made to have those two lines the most
-                efficiently implemented : spend the least possible time to decide to skip 
-                this SWC
-            */
-            if (0u == arc_ready_for_read(S.arc0) ||
-               (0u == arc_ready_for_write(S.arc1)) )
-            {   continue;
+            {   uint8_t iarc;
+                uint16_t arcID;
+                uint32_t *arc;
+
+                for (iarc = 0; iarc < RD(S->swc_header[0], NBARCW_LW0); iarc++)
+                {   /* search the RX arcs being blocked in producer's side */
+                    arcID = (S->arcID[iarc]);
+                    if (0 == (ARC_RX0TX1_MASK & arcID))
+                    {   arc = &(S->S0.all_arcs[SIZEOF_ARCDESC_W32 * arcID]);
+                        if (0u != TEST_BIT (arc[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB))
+                        {   arc_data_operations (S, arc, arc_data_realignment_to_base, 0, 0);
+                        }
+                    }
+                }
             }
 
-            run_node (stream_instance, &S, script_option);
+            /* check input arc has enough data and output arc is free */
+            if ((0 == reset_option) && 
+                (0 != arcs_are_ready(S, RD(S->swc_header[0], ARCSRDY_LW0)))) 
+            {   run_node (S);
+            }
+    
+            /* now SWC can be unlocked */
+            WR_BYTE_MP_(S->pt8b_collision_arc, 0u);   
 
             if (return_option == STREAM_SCHD_RET_END_EACH_SWC)
             {   break;
             }
 
-	    }  while (0 == S.endLinkedList);
+	    }  while (0 == TEST_BIT(S->scheduler_control, ENDLLIST_SCTRL_LSB));
 
-        if ((return_option == STREAM_SCHD_RET_END_ALL_PARSED) || (return_option == STREAM_SCHD_RET_END_EACH_SWC))
-        {   S.some_components_have_data = 0u; 
+        if ((return_option == STREAM_SCHD_RET_END_ALL_PARSED) || 
+            (return_option == STREAM_SCHD_RET_END_EACH_SWC))
+        {   CLEAR_BIT(S->scheduler_control, STILDATA_SCTRL_LSB); 
             break;
         }
-        if (script_option == STREAM_SCHD_SCRIPT_END_PARSING) {stream_execute_script(); }
+        if (script_option & STREAM_SCHD_SCRIPT_END_PARSING) {stream_execute_script(); }
 
-    } while ((return_option == STREAM_SCHD_RET_END_SWC_NODATA) && (0u != S.some_components_have_data));
+    } while ((return_option == STREAM_SCHD_RET_END_SWC_NODATA) && 
+                (0u != TEST_BIT(S->scheduler_control, STILDATA_SCTRL_LSB)));
 
 
-    if (script_option == STREAM_SCHD_SCRIPT_END) {stream_execute_script(); }
-
-    /* save last position */
-    {   uint32_t last_index = S.linked_list_ptr - GRAPH_LINKDLIST_ADDR();
-        ST(S.pinst->parameters,LASTSWC_PARINST, last_index);
-    }
+    if (script_option & STREAM_SCHD_SCRIPT_END) {stream_execute_script(); }
 }
 
-static void init_stack (uint8_t stream_instance, stack *S)
-{
-    /* load the graph pointers */
-    S->pinst = (struct stream_local_instance *)GRAPH_STREAM_INST();
-    S->stream_instance = stream_instance;
-    S->pinst = &(S->pinst[S->stream_instance]); /* @@@@ */
-    S->io_mask = RD(S->pinst->whoami_ports, BOUNDARY_PARCH);   
-    S->all_arcs = GRAPH_ARC_LIST_ADDR();
 
-    S->all_nodes = S->pinst->node_entry_points;
-    S->whoami = S->pinst->whoami_ports;
-    S->pio = (uint32_t *)(GRAPH_IO_CONFIG_ADDR());
-    S->nio = RD(*(arm_stream_global.graph),NBIO_GRAPH0);
-    S->all_formats = GRAPH_FORMAT_ADDR();
-}
+/**
+  @brief         Read one software component description
+  @param[in]     instance   pointer to the static area of the current Stream instance
 
-static void read_header (stack *S)
+  @return        none
+
+  @par           Data is read from "linked_list_ptr". The function prepares the pointers to
+                 the SWC subroutine to call, the pointer to the parameter and preset
+                 Format :
+                    - Header    (saved in S->swc_header)
+                    - Main Instance + nb of memory pointers
+                       {other memory pointers}
+                    - BootParam : Proc/Arch, preset, parameter length to skip
+                    - Parameters (when skip>0) : nbParams, param byte-stream
+  @remark
+ */
+
+
+static void read_header (arm_stream_instance_t *S)
 {
     uint16_t x;
+    uint16_t narc, iarc;
     uint16_t idx_swc;
 
-    /* check this node can be executed on this processor */
-    S->linked_list_ptr_header = S->linked_list_ptr;
-    S->swc_header = *S->linked_list_ptr;    
-    S->linked_list_ptr++;
-    
-    S->arc0 = &(S->all_arcs[SIZEOF_ARCDESC_W32 * RD(S->swc_header, ARCIN_GI)]);
-    S->arc1 = &(S->all_arcs[SIZEOF_ARCDESC_W32 * RD(S->swc_header, ARCOUT_GI)]);
-    
-    idx_swc = (uint16_t)RD(S->swc_header, SWC_IDX_GI);
-    S->address_swc = S->all_nodes[idx_swc];
-    S->swc_instance = *S->linked_list_ptr;
-    S->linked_list_ptr++;
-    
-    S->linked_list_ptr = &(S->linked_list_ptr[RD(S->swc_instance, NBALLOC_INST)]); // skip the memreq table
-    
-    S->bootParamsHeader = *S->linked_list_ptr;
-    S->linked_list_ptr++;
+    S->swc_header = S->linked_list_ptr;                     // linked_list_ptr => HEADER
+    narc = RD(S->swc_header[0], NBARCW_LW0);
+    S->swc_memory_banks_offset = 
+        1 +(narc/2);
+    S->swc_parameters_offset =  S->swc_memory_banks_offset 
+        + RD(S->swc_header[S->swc_memory_banks_offset], NBALLOC_LW2);
 
-    S->preset = (uint16_t)RD(S->bootParamsHeader, PRESET_BP);
-    S->linked_list_ptr_bootparam = S->linked_list_ptr;
-    x = (uint16_t)RD(S->bootParamsHeader, N32LENGTH_BP); // skip the table of parameters
-    S->linked_list_ptr = &(S->linked_list_ptr[x]);
+    /* default parameters of the node */
+    S->pack_command = PACK_COMMAND(
+        RD((S->swc_header)[S->swc_parameters_offset], PRESET_LW3),
+        narc,
+        ALLPARAM_,
+        RD(S->scheduler_control, INSTANCE_SCTRL),
+        0);
 
-    S->endLinkedList = (GRAPH_LAST_WORD == RD(*S->linked_list_ptr,SWC_IDX_GI)) ? 1 : 0;
-    if (S->endLinkedList == 1)
+    /* physical address of the instance and the code */
+    idx_swc = (uint16_t)RD(S->swc_header[0], SWC_IDX_LW0);
+    S->swc_instance_addr = pack2linaddr_int(S->S0.long_offset, 
+            S->swc_header[S->swc_memory_banks_offset]);
+    S->address_swc = S->all_nodes[idx_swc];   
+
+    /* read the arc indexes */
+    for (iarc = 0; iarc < MIN(narc, MAX_NB_STREAM_PER_SWC); iarc+=2)
+    {   uint32_t arcs;
+        arcs = (S->swc_header)[1+iarc/2];
+        S->arcID[iarc]   = RD(arcs, ARC0_LW1);
+        S->arcID[iarc+1] = RD(arcs, ARC1_LW1);
+    }    
+
+    /* byte pointer for locking the node */
+    x = RD(S->swc_header[0], ARCLOCK_LW0);
+    iarc = S->arcID[x];
+    x = WRIOCOLL_ARCW3 + SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & iarc);
+    S->pt8b_collision_arc = (uint8_t *)&(S->S0.all_arcs[x]);
+    S->pt8b_collision_arc = &(S->pt8b_collision_arc[COLLISION_ARC_OFFSET_BYTE]);
+
+    /* set the linkedList pointer to the next node */
+    x = 1+ (uint16_t)RD((S->swc_header)[S->swc_parameters_offset], W32LENGTH_LW3) +
+        S->swc_parameters_offset;
+        
+    S->linked_list_ptr = &(S->linked_list_ptr[x]);      // linked_list_ptr => next SWC.
+
+    /* check for a rewind to the start of the list */
+    if (GRAPH_LAST_WORD == RD(*S->linked_list_ptr,SWC_IDX_LW0))
     {   /* rewind the index when the last word is detected */
-        S->linked_list_ptr = GRAPH_LINKDLIST_ADDR();
-    }
+        SET_BIT(S->scheduler_control, ENDLLIST_SCTRL_LSB);
+        S->linked_list_ptr = S->S0.linked_list;
+    } 
+
+    /* save word32 the position */
+    ST((S->S0.pinst)[STREAM_INSTANCE_DYNAMIC], 
+        SWC_W32OFF_DINST, 
+        (uint32_t)(S->linked_list_ptr - S->S0.linked_list));
 }
 
-static uint8_t lock_this_component (stack *S)
+
+/**
+  @brief         Lock this component against collisions with other process/processors
+  @param[in]     instance   pointer to the static area of the current Stream instance
+
+  @return        none
+
+  @par           The algorithm consists in the detection of collisions. 
+                 If a collision is detected escape and let it be executed by the others.
+                 The reservation flag is on the production arc, word_3. The memory access
+                 is made with a Byte address pointer (no mask).
+  @remark
+ */
+
+
+
+static uint8_t lock_this_component (arm_stream_instance_t *S)
 {
     uint32_t tmp;
-    /* ================================================================*/
+    uint8_t check;
+    uint32_t j;
+
     /* ---------------------SWC reservation attempt -------------------*/            
     /* if the SWC is already used skip it */
-    S->pt8b_collision_arc_1 = (uint8_t *)S->arc1;
-    {   uint32_t j;
-        j = U(4u*WRIOCOLL_ARCW3 + COLLISION_ARC_OFFSET_BYTE);
-        S->pt8b_collision_arc_1 = &(S->pt8b_collision_arc_1[j]);
-    }
-    RD_BYTE_MP_(S->check, S->pt8b_collision_arc_1);
-    if (S->check != U8(0))
+    j = U(4u*WRIOCOLL_ARCW3 + COLLISION_ARC_OFFSET_BYTE);
+
+    RD_BYTE_MP_(check, S->pt8b_collision_arc);
+    if (check != U8(0))
     {   return 0;
     }
-    tmp = (uint8_t)RD(S->whoami, INST_ID_PARCH);   
-    
-    if (0u == WR_BYTE_AND_CHECK_MP_(S->pt8b_collision_arc_1, tmp))
+ 
+    tmp = (uint8_t)RD(S->S0.pinst[STREAM_INSTANCE_WHOAMI_PORTS], INST_ID_PARCH);  
+    if (0u == WR_BYTE_AND_CHECK_MP_(S->pt8b_collision_arc, tmp))
     {   return 0;   /* a collision occured, don't wait */
     }
     /* ------------------SWC is now locked for me ! --------------------*/            
-    /* =================================================================*/
-
-
-    S->swc_instance = pack2linaddr_int(S->swc_instance);
 
     return 1;
 }
 
-static void reset_load_parameters (stack *S)
+
+/**
+  @brief         Prepare the instance of the component at Reset time
+  @param[in]     instance   pointer to the static area of the current Stream instance
+
+  @return        none
+
+  @par           Nodes must not be able to read the graph. A temporary buffer is used to store
+                 the pointer to memery required by the node (described in the "Node Manifest"
+                 used by the compilation tool "graph2bin"). The addresses are precomputed in the 
+                 graph, close to the component index. The temporary buffer holds the data format
+                 of the input and output arcs
+
+  @remark
+ */
+
+static void reset_component (arm_stream_instance_t *S)
 {
-#define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (SIZEOF_ARCDESC_SHORT_W32*MAX_NB_ARC_PER_SWC_V0))
-    intPtr_t memreq_physical[MAX_NB_MEM_REQ_PER_NODE + (SIZEOF_ARCDESC_SHORT_W32*MAX_NB_ARC_PER_SWC_V0)];
+#define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (SIZEOF_ARCDESC_SHORT_W32*MAX_NB_STREAM_PER_SWC))
+
+    intPtr_t memreq_physical[MAX_NB_MEM_REQ_PER_NODE + 
+                (SIZEOF_ARCDESC_SHORT_W32*MAX_NB_STREAM_PER_SWC)];
     uint16_t nbmem;
-    uint8_t i;
-    uint32_t *memreq;
+    uint8_t imem, j, narc;
+    uint32_t *memreq, check;
+
+    memreq = &(S->swc_header[S->swc_memory_banks_offset]);
+    nbmem = (uint16_t)RD(memreq[0],NBALLOC_LW2);
+    memreq_physical[0] = S->swc_instance_addr;
 
 
-    memreq = &(S->linked_list_ptr_header[1]);
-    nbmem = (uint16_t)RD(memreq[0],NBALLOC_INST);
-    memreq_physical[0] = S->swc_instance;
-
-    for (i = 1; i < MAX_NB_MEM_REQ_PER_NODE; i++)
+    for (imem = 1; imem < nbmem; imem++)
     {   /* create pointers to the right memory bank */
-        memreq_physical[i] = (i <= nbmem) ? 
-            pack2linaddr_int(memreq[i]) : 0u;
+        memreq_physical[imem] = pack2linaddr_int(S->S0.long_offset, memreq[imem]);
     }      
 
-    /* push the information related to the format of the arcs */
-    //for (j = 0; j < MAX_NB_ARC_PER_SWC_V0; j++)
-    {   uint32_t *F;
-        F = &(S->all_formats[STREAM_FORMAT_SIZE_W32 * RD(S->arc0,PRODUCFMT_ARCW0)]);
-        memreq_physical[i++] = *F++;    /* Word 0 SIZSFTRAW_FMT0 */
-        memreq_physical[i++] = *F;      /* Word 1 SAMPINGNCHANM1_FMT1 */
-        F = &(S->all_formats[STREAM_FORMAT_SIZE_W32 * RD(S->arc1,PRODUCFMT_ARCW0)]);
-        memreq_physical[i++] = *F++;    /* Word 0 SIZSFTRAW_FMT0 */
-        memreq_physical[i++] = *F;      /* Word 1 SAMPINGNCHANM1_FMT1 */
+    /* push the FORMAT of the arcs */
+    narc = MIN(MAX_NB_STREAM_PER_SWC, RD(S->swc_header[0], NBARCW_LW0));
+
+    for (j = 0; j < narc; j++)
+    {   uint32_t *F, ifmt;
+        if (ARC_RX0TX1_MASK & (S->arcID)[j])
+        {   ifmt = STREAM_FORMAT_SIZE_W32 * 
+                (ARC_RX0TX1_CLEAR & RD((S->arcID)[j],PRODUCFMT_ARCW0));
+        }
+        else
+        {   ifmt = STREAM_FORMAT_SIZE_W32 * 
+                (ARC_RX0TX1_CLEAR & RD((S->arcID)[j],CONSUMFMT_ARCW1));
+        }
+        F = &(S->S0.all_formats[ifmt]);
+        memreq_physical[imem++] = F[0];     /* Word 0 SIZSFTRAW_FMT0 */
+        memreq_physical[imem++] = F[1];     /* Word 1 SAMPINGNCHANM1_FMT1 */
     }      
-    /*
-        add for each arc : [nb channel, sampling rate, interleaving, time-stamp format]
-    */
-    stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,0,S->preset,S->stream_instance, STREAM_RESET), 
-        (uint32_t *)memreq_physical, 
+
+    /* reset the component */
+    ST(S->pack_command, COMMAND_CMD, STREAM_RESET);
+
+    stream_calls_swc (S->address_swc, S->pack_command, 
+        (intPtr_t) memreq_physical, 
         (data_buffer_t *)arm_stream_services, 
-        &S->check);
-
+        &check);
 }
 
-static void set_new_parameters (stack *S)
+
+/**
+  @brief         Set new parameters
+  @param[in]     instance   pointer to the static area of the current Stream instance
+
+  @return        none
+
+  @par           When the silicon device has a small RAM footprint, the linked-list is graph
+                 is organised with a part in flash (the data format does not change) and other
+                 in RAM (arcs descriptors). When the Linked-List of nodes is in Flash the
+                 parameters are loaded one at Reset time, otherwise the bit "NEWPARAM_GI" 
+                 indicates a new parameter set (replacing the one at graph creation) must be 
+                 reloaded in the Node instance. There is no risk of collision when writing
+                 this bit: only the instance who locked it can have access to this word.
+                 The default parameters are given with the "preset" code, and the graph can 
+                 have a some patched of "nparam" parameters on top this preset. When "nparam"
+                 is "ALLPARAM_" the full set of new parameters is loaded.
+
+  @remark
+ */
+
+static void set_new_parameters (arm_stream_instance_t *S)
 {
-    uint8_t i;
-    uint8_t nparam;
     uint8_t *ptr_param8b;
+    uint32_t length, tmp, idata;
+
+    /* no parameter ? */
+    length = RD((S->swc_header)[S->swc_parameters_offset], W32LENGTH_LW3);
+    if (0 == length)
+    {   return;
+    }
 
     /*
-        TODO : allocate a scratch area to copy the parameters, and avoid SWC 
-            to have access to Stream internal memory area
-    */
-    ptr_param8b = (uint8_t *)S->linked_list_ptr_bootparam;
-    nparam = *ptr_param8b;
-    ptr_param8b++;
+      BOOTPARAMS  : 
+          BOOTPARAMS    : 
+            unused      : 1  
+            paramtype   : 1  0:all params   1:params sent 1-by-1
+            skip        :16  nb of word32 to skip at run time, 0 means no parameter.
+            verbose     : 1  level of details in the debug trace
+            new param   : 1  a script has updated new parameters
+            unused      : 4; 
+            preset LSB  : 8; preset index (SWC delivery)
 
-    /* do we load the full set of parameters ? */
-    if (nparam == ALLPARAM_)
-    {   
-        stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,ALLPARAM_,S->preset,S->stream_instance, STREAM_SET_PARAMETER), 
-            (uint32_t *)S->swc_instance,
+            if skip> 0 and paramtype= 0
+                raw data parameter(s)
+            if skip> 0 and paramtype= 1
+                sequence of pairs {8b index/tag ; 24b byte length} { parameter(s) }
+
+      TODO : allocate a scratch area to copy the parameters, and avoid SWC 
+             to have access to Stream internal memory area
+    */
+    tmp = ((S->swc_header)[S->swc_parameters_offset]);
+    tmp = RD(tmp, SELPARAM_LW3);
+
+    /* start of the parameter byte-stream : one word after the header */
+    ptr_param8b = (uint8_t *) &((S->swc_header)[1 + S->swc_parameters_offset]);
+
+    /* do we load the full set of parameters ? (default setting of pack_command) */
+    if (tmp == 0 /* SELPARAM_LW3 = "ALLPARAM_" */ )
+    {   uint32_t cmd = S->pack_command;
+        ST(cmd, COMMAND_CMD, STREAM_SET_PARAMETER);
+
+        stream_calls_swc (S->address_swc, cmd, 
+            S->swc_instance_addr,
             (data_buffer_t *)ptr_param8b, 
-            &S->check);
+            &tmp);
     }
-    else
-    /* else : load the parameters one-by-one */
+    else /* SELPARAM_LW3 == send the parameters one-by-one */
     {   uint8_t param_tag;
         uint8_t param_nb_bytes;
-        for (i = 0; i < nparam; i++)
-        {   param_tag = *ptr_param8b;
-            ptr_param8b++;
-            param_nb_bytes = *ptr_param8b;
-            ptr_param8b++;
-    
-            stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,param_tag,S->preset,S->stream_instance, STREAM_SET_PARAMETER), 
-                (uint32_t *)S->swc_instance,
+        uint32_t cmd = S->pack_command;
+
+        ST(cmd, COMMAND_CMD, STREAM_SET_PARAMETER);
+        idata = 0;
+
+        while (idata < length/4)
+        {   /* sequence of pairs {8b index/tag ; 24b nb of bytes }  */
+            param_tag = *ptr_param8b;
+            ST(cmd, TAG_CMD, param_tag);
+            ptr_param8b++;  
+            param_nb_bytes = *ptr_param8b++;
+            param_nb_bytes += (*ptr_param8b++)<<8;
+            param_nb_bytes += (*ptr_param8b++)<<16;
+            idata += param_nb_bytes;
+            
+            stream_calls_swc (S->address_swc, cmd, 
+                S->swc_instance_addr,
                 (data_buffer_t *)ptr_param8b, 
-                &S->check);
+                &tmp);
+
             ptr_param8b = &(ptr_param8b[param_nb_bytes]);
         }
     }
 
+    /* ready to accept new parameters : clear the flag */
+    if (LINKEDLIST_IS_IN_RAM()) 
+    {   CLEAR_BIT_MP((S->swc_header)[S->swc_parameters_offset], NEWPARAM_LW3_LSB);
+    }
 }
 
-static void run_node (uint8_t stream_instance, stack *S, uint8_t script_option)
+
+/**
+  @brief         Execution of a Node
+  @param[in]     instance   pointer to the static area of the current Stream instance
+
+  @return        none
+
+  @par           The nodes must not have access to the graph area. A temporary buffer is used
+                 to load pairs of "pointers + size". For input arcs this is the arc read address, 
+                 for output arcs this is the arc write address.
+
+  @remark
+ */
+
+
+static void run_node (arm_stream_instance_t *S)
 {
-    /* several iterations to benefit from the hot cache */
-    //uint8_t iswc_repeat;
-    //for (iswc_repeat = 0; iswc_repeat < MAX_SWC_REPEAT; iswc_repeat++)
-    
-    S->some_components_have_data = 1u;
-    
-    /* prepare the pointers to input and output buffers (MAX_NB_ARC_PER_SWC_V0) */
-    read_arc_xdm (S->arc0, 0u, &(S->xdm_data[0])/*, all_formats*/);
-    read_arc_xdm (S->arc1, 1u, &(S->xdm_data[1])/*, all_formats*/);
+    data_buffer_t xdm_data[MAX_NB_STREAM_PER_SWC];
+    uint32_t check;
+
+    /* flag : still one component is processing data in the graph */
+    SET_BIT(S->scheduler_control, STILDATA_SCTRL_LSB);
+   
+    /* push all the ARCs on the stack */
+    arc_index_update(S, xdm_data, 0); 
     
     /* if the SWC is using a relocatable memory segment to TCM, the base address is loaded 
         in the first address of its instance */
-    if (0u != TEST_BIT(S->swc_header, TCM_INST_GI_LSB))
-    {   intPtr_t *tmp = (intPtr_t *)S->swc_instance;
-        *tmp = arm_stream_global.long_offset[MBANK_DMEMFAST];
+    if (0u != TEST_BIT((S->swc_header)[S->swc_memory_banks_offset], TCM_INST_LW2_LSB))
+    {   intPtr_t *tmp = (intPtr_t *)S->swc_instance_addr;
+        *tmp = S->S0.long_offset[MBANK_DMEMFAST];
     }
     
-    if (script_option == STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC) {stream_execute_script(); }
+    if (script_option & STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC) {stream_execute_script(); }
     
+    ST(S->pack_command, COMMAND_CMD, STREAM_RUN);
+
+    // @@ TODO : repeat the SWC execution 'MAX_SWC_REPEAT' times 
     do 
     {
         #define SWC_TASK_NOT_COMPLETED 0
         /* call the SWC, returns the information "0 == SWC needs to be called again" 
            to give some CPU periods for trigering data moves 
            long SWC can be split to allow data moves without RTOS */
-        stream_calls_swc (S->address_swc, PACK_COMMAND(1,1,0,S->preset,S->stream_instance, STREAM_RUN), 
-            (uint32_t *)S->swc_instance, S->xdm_data,  &S->check);
+        stream_calls_swc (S->address_swc, S->pack_command, 
+            S->swc_instance_addr, xdm_data,  &check);
     
-        if (SWC_TASK_NOT_COMPLETED == S->check)
-        {   /* check the boundaries of the graph */
-            check_graph_boundaries(S->io_mask, S->pio, S->nio, S->all_arcs);
+        if (SWC_TASK_NOT_COMPLETED == check)
+        {   check_graph_boundaries(S); 
         }
     } 
-    while (S->check == SWC_TASK_NOT_COMPLETED);
+    while (check == SWC_TASK_NOT_COMPLETED);
     
     
-    if (script_option == STREAM_SCHD_SCRIPT_AFTER_EACH_SWC) {stream_execute_script(); }
+    if (script_option & STREAM_SCHD_SCRIPT_AFTER_EACH_SWC) {stream_execute_script(); }
     
     /*  output FIFO write pointer is incremented AND a check is made for data 
         re-alignment to base adresses (to avoid address looping)
         The SWC don't wait and let the consumer manage the alignement 
     */
-    check_arc_and_rewind(S->arc0, 0u, &(S->xdm_data[0]), S->all_formats); 
-    check_arc_and_rewind(S->arc1, 1u, &(S->xdm_data[1]), S->all_formats); 
-
-    
-    /* SWC is unlocked : change the output arc */
-    WR_BYTE_MP_(S->pt8b_collision_arc_1, 0u);
+    arc_index_update(S, xdm_data, 1); 
 }
+
+#ifdef __cplusplus
+}
+#endif

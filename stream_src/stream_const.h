@@ -22,12 +22,25 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-* 
+ * 
  */
+
+
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #ifndef cSTREAM_CONST_H
 #define cSTREAM_CONST_H
 
 #include <stdint.h>
+
+/*------ Major-Minor version numbers ------*/
+#define GRAPH_INTERPRETER_VERSION 0x0100
+
+
+/*-----------------------------------------*/
+
 
 #ifdef _MSC_VER 
 #include "../../CMSIS-Stream/stream_al/platform_al.h"        /* defines */
@@ -52,3 +65,8 @@
 /*
  * -----------------------------------------------------------------------
  */
+#ifdef __cplusplus
+}
+#endif
+    
+

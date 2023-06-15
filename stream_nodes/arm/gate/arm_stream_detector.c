@@ -24,16 +24,23 @@
  * limitations under the License.
  * 
  */
+
+#ifdef __cplusplus
+ extern "C" {
+#endif
+   
+ 
+
 #define _CRT_SECURE_NO_DEPRECATE 1
 #include <stdio.h>  /* for sprintf */
 #include <string.h>  /* for memset */
 
 #ifdef _MSC_VER 
-#include "../../../stream_al/platform_windows.h"
+#include "../../../stream_al/platform_computer.h"
 #include "../../../stream_src/stream_const.h"      
 #include "../../../stream_src/stream_types.h"  
 #else
-#include "platform_windows.h"
+#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
 #endif
@@ -173,25 +180,30 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
 
             //--------------------DEBUG---------------------
             //sprintf (dbg, "Z2%5d Z7%3d Z8%4d VAD%2d", (pinstance->z2)>>12, (pinstance->z7)>>12, (pinstance->z8)>>12, outBuf[0]);
-            //arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), dbg, (uint8_t *)strlen(dbg), 0);            
+            //arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), dbg, 0, (uint8_t *)strlen(dbg)); 
 /*            x = (inBuf[0])<<12;  memcpy(&(dbg[0]), &x, 4);
             x = (pinstance->z2)<<2;  memcpy(&(dbg[4]), &x, 4);
             x = (pinstance->z3)<<2;  memcpy(&(dbg[8]), &x, 4);
             x = (pinstance->accvad)<<2; memcpy(&(dbg[12]),&x, 4);
             x = (outBuf[0])<<15;   memcpy(&(dbg[16]),&x, 4);
-            arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), dbg, (uint8_t *)20, 0);     */       
+            arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), dbg, 0, (uint8_t *)20 );     */       
             
             break;
         }
 
-        /* func(command = STREAM_END, PRESET, TAG, NB ARCS IN/OUT)
+        /* func(command = STREAM_STOP, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = unused
            used to free memory allocated with the C standard library
         */  
 
         case STREAM_READ_PARAMETER:  
-        case STREAM_END:  
+        case STREAM_STOP:  
             break;    
     }
 }
+
+#ifdef __cplusplus
+}
+#endif
+ 

@@ -22,12 +22,15 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-* 
+ * 
  */
+
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #ifndef cSTREAM_TYPES_H
 #define cSTREAM_TYPES_H
-
-
 
 /* 
     if 64 bits architectures are reading the graph:
@@ -66,8 +69,8 @@ typedef void (stream_node) (uint32_t command, uint32_t *instance, data_buffer_t 
 //typedef uint32_t (stream_node) (uint32_t command, void * ptr1, void * ptr2, void * ptr3); 
 
 //typedef void (*io_callback_ptr)      (uint32_t idx, uint8_t *data, uint32_t length);   
-typedef uint32_t (*io_function_control_ptr)  (uint32_t *setting, uint8_t *data, uint32_t length);  
-typedef uint32_t (io_function_control) (uint32_t *setting, uint8_t *data, uint32_t length);  
+typedef uint8_t (*io_function_control_ptr)  (uint32_t *setting, uint8_t *data, uint32_t length);  
+typedef uint8_t (io_function_control) (uint32_t *setting, uint8_t *data, uint32_t length);  
 
 /* 
     MANIFEST of IO functions and capabilities
@@ -105,6 +108,7 @@ typedef uint32_t (io_function_control) (uint32_t *setting, uint8_t *data, uint32
 #define PLATFORM_LOW_DATA_RATE_OUT     17 
 #define PLATFORM_RTC_IN                18 
 #define PLATFORM_RTC_OUT               19
+#define PLATFORM_STORAGE_OUT           20 
 
 
 /*
@@ -118,16 +122,15 @@ struct platform_io_control
     const int32_t *stream_setting;
 };
 
-enum {
-    arc_base_address,
-    arc_ceil_address,
-    arc_read_address,
+enum 
+{   arc_read_address,
     arc_write_address,
     arc_data_amount,
     arc_free_area,
     arc_buffer_size,
-    arc_move_to_arc,
-    arc_moved_from_arc,
+    arc_IO_move_to_arc,
+    arc_IO_moved_from_arc,
+    arc_IO_moved_from_arc_update,
     arc_set_base_address_to_arc,
     arc_set_base_address_from_arc,
     arc_data_realignment_to_base,
@@ -140,8 +143,8 @@ enum {
 /*============================ STREAM DATA/TYPE =================================*/
 /* types fit in 6bits, arrays start with 0, stream_bitsize_of_raw() is identical */
 
-enum stream_raw_data {
-    STREAM_DATA_ARRAY = 0,         /* 0 see stream_array: [0NNNTT00] 0, type, nb */
+enum stream_raw_data 
+{   STREAM_DATA_ARRAY = 0,         /* 0 see stream_array: [0NNNTT00] 0, type, nb */
 
     /* one bit per data */
     STREAM_S1,                     /*   S, one signed bit, "0" = +1 */
@@ -223,30 +226,83 @@ enum stream_raw_data {
 
 
 
-struct platform_proc_identification{    /* who am I ? */
-    uint16_t architecture;
-    uint16_t arch_id;
-    uint16_t proc_id;
-};
-
-
-struct platform_control_stream
-{   
-    uint32_t *graph;        
-    uint32_t domain_settings;
-    uint8_t fw_idx;
-    data_buffer_t buffer;    // [{uint8_t *; int}]
-};
-
+//enum stream_scheduling_options
+//{
+#define STREAM_SCHD_RET_END_EACH_SWC        S8(1)   /* return to caller after each SWC calls */
+#define STREAM_SCHD_RET_END_ALL_PARSED      S8(2)   /* return to caller once all SWC are parsed */
+#define STREAM_SCHD_RET_END_SWC_NODATA      S8(3)   /* return to caller when all SWC are starving */
+                            
+#define STREAM_SCHD_NO_SCRIPT               S8(0)
+#define STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC  S8(1)   /* script is called after each SWC called */
+#define STREAM_SCHD_SCRIPT_AFTER_EACH_SWC   S8(2)   /* script is called after each SWC called */
+#define STREAM_SCHD_SCRIPT_END_PARSING      S8(4)   /* script is called at the end of the loop */
+#define STREAM_SCHD_SCRIPT_START            S8(8)   /* script is called when starting */
+#define STREAM_SCHD_SCRIPT_END              S8(16)  /* script is called before return */
+//};
 
 /*
-    global data of a processor, independent of the Stream instances
+    stream instance memory
 */
+#define STREAM_COLD_BOOT 0u
+#define STREAM_WARM_BOOT 1u
+
+#define   UNUSED_SCTRL_MSB U(31)   
+#define   UNUSED_SCTRL_LSB U(24)  /* 8 */
+#define ENDLLIST_SCTRL_MSB U(23)   
+#define ENDLLIST_SCTRL_LSB U(23)  /* 1 endLinkedList detected */
+#define STILDATA_SCTRL_MSB U(22)   
+#define STILDATA_SCTRL_LSB U(22)  /* 1 still some_components_have_data*/
+#define NBINSTAN_SCTRL_MSB U(21)   
+#define NBINSTAN_SCTRL_LSB U(16)  /* 6 */
+#define     BOOT_SCTRL_MSB U(15)   
+#define     BOOT_SCTRL_LSB U(15)  /* 1 cold0/warm1 boot */
+#define   SCRIPT_SCTRL_MSB U(14)   
+#define   SCRIPT_SCTRL_LSB U( 9)  /* 6 script call options bit-field (before/after SWC/loop/full) */
+#define   RETURN_SCTRL_MSB U( 8)
+#define   RETURN_SCTRL_LSB U( 6)  /* 3 return options (each SWC, each parse, once starving */
+#define INSTANCE_SCTRL_MSB U( 5)
+#define INSTANCE_SCTRL_LSB U( 0)  /* 6 instance index */
+#define PACK_STREAM_PARAM(N,B,S,R,I) (      \
+            ((N)<<NBINSTAN_SCTRL_LSB) |     \
+            ((B)<<BOOT_SCTRL_LSB) |         \
+            ((S)<<SCRIPT_SCTRL_LSB) |       \
+            ((R)<<RETURN_SCTRL_LSB) |       \
+             (I))
+
+
 typedef struct  
-{   
+{   /* stream instance overlay */
+    intPtr_t *long_offset;      
     uint32_t *graph;
-    intPtr_t *long_offset;
-} arm_global_data_t;
+    uint32_t *pio;
+    uint32_t *all_formats;   
+    uint32_t *scripts;   
+    uint32_t *linked_list;   
+    uint32_t *pinst;         
+    uint32_t *all_arcs;
+} stream_instance_short_t;
+
+typedef struct  
+{  
+    stream_instance_short_t S0;
+    p_stream_node *all_nodes;
+    uint32_t scheduler_control;     // PACK_STREAM_PARAM(..);
+
+    p_stream_node address_swc;
+    uint32_t *linked_list_ptr;      // linked-list read pointer
+
+    uint32_t *swc_header;            // current swc
+    intPtr_t swc_instance_addr;
+    uint16_t arcID[MAX_NB_STREAM_PER_SWC];
+    uint8_t *pt8b_collision_arc;
+    uint32_t pack_command;          // preset, narc, tag, instanceID, command
+
+    uint8_t swc_memory_banks_offset;// offset in words
+    uint8_t swc_parameters_offset;
+
+} arm_stream_instance_t;
+
+
 
 
 
@@ -256,6 +312,23 @@ struct stream_local_instance        /* structure allocated to each STREAM instan
       stream_node **node_entry_points;   /* all the nodes visible from this processor */
 };
 
+
+
+struct platform_proc_identification
+{    /* who am I ? */
+    uint16_t architecture;
+    uint16_t arch_id;
+    uint16_t proc_id;
+};
+
+
+struct platform_control_stream
+{   //uint32_t *graph;        
+    arm_stream_instance_t *instance;
+    uint32_t domain_settings;
+    uint8_t fw_idx;
+    data_buffer_t buffer;    // [{uint8_t *; int}]
+};
 
 
 /* stream parameters */
@@ -268,35 +341,29 @@ struct stream_local_instance        /* structure allocated to each STREAM instan
 extern p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS];
 
 /* three entry points */
-extern void arm_stream (uint32_t command, 
-        void *ptr1, void *ptr2, void *ptr3);
+extern void arm_stream (uint32_t command,  arm_stream_instance_t *inst, uint32_t *data);
 extern void arm_stream_io (uint32_t fw_io_idx, 
-        uint32_t *graph,
+        arm_stream_instance_t *stream_instance,
         uint8_t *data, uint32_t length);
-extern void arm_stream_services (uint32_t command, 
-        uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3);
+extern void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3);
 
-extern void stream_scan_graph (uint8_t stream_instance, int8_t return_option, 
-    int8_t script_option, int8_t reset_option);
+extern void stream_scan_graph (arm_stream_instance_t *stream_instance, int8_t reset_option);
 
 /* ---- REFERENCES --------------------------------------------*/
 
-extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3);
+extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3);
 
-extern arm_global_data_t arm_stream_global;
+//extern uint8_t * pack2linaddr_ptr(intPtr_t *long_offset, uint32_t data);
+//extern intPtr_t pack2linaddr_int(intPtr_t *long_offset, uint32_t data);
 
-extern intPtr_t convert_ptr_to_int (void *in);
-extern void * convert_int_to_ptr (intPtr_t in);
+extern uint8_t stream_execute_script(void);
+extern uint32_t physical_to_offset (arm_stream_instance_t *stream_instance, uint8_t *buffer);
+extern void arc_data_operations (arm_stream_instance_t *stream_instance, uint32_t *arc, uint8_t tag, uint8_t *buffer, uint32_t size);
 
-extern uint32_t * pack2linaddr_ptr(uint32_t data);
-extern intPtr_t pack2linaddr_int(uint32_t data);
-
-extern intPtr_t arc_extract_info_int (uint32_t *arc, uint8_t tag);
-extern intPtr_t * arc_extract_info_pt (uint32_t *arc, uint8_t tag);
-extern int stream_execute_script(void);
-extern uint32_t physical_to_offset (uint8_t *buffer);
-extern void arc_data_operations (uint32_t *arc, uint8_t tag, uint8_t *buffer, uint32_t size, uint32_t *format);
-
-extern void set_alignment_bit (uint32_t *arc, uint32_t *all_formats);
+extern void set_alignment_bit (uint32_t *all_formats, uint32_t *arc);
 
 #endif /* #ifndef cSTREAM_TYPES_H */
+
+#ifdef __cplusplus
+}
+#endif

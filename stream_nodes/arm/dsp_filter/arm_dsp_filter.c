@@ -1,5 +1,11 @@
 /* ----------------------------------------------------------------------
- * Project:      CMSIS Stream
+ 
+
+        WORK ON GOING
+
+
+
+* Project:      CMSIS Stream
  * Title:        arm_filter.c
  * Description:  filters
  *
@@ -24,13 +30,16 @@
  * limitations under the License.
  * 
  */
+#ifdef __cplusplus
+ extern "C" {
+#endif
 
 #ifdef _MSC_VER 
-#include "../../../stream_al/platform_windows.h"
+#include "../../../stream_al/platform_computer.h"
 #include "../../../stream_src/stream_const.h"      
 #include "../../../stream_src/stream_types.h"  
 #else
-#include "platform_windows.h"
+#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
 #endif
@@ -75,24 +84,23 @@ void arm_stream_dsp_filter (int32_t command, uint32_t *instance, data_buffer_t *
             uint8_t *pt8b, i, n;
             arm_filter_instance *pinstance = (arm_filter_instance *) (memresults[0]);
 
-            //pinstance->frameSize = RD(memresults[2], FRAMESIZE_FMT0);
-            //ST(pinstance->format, NUMSTAGE_FLT,  RD(command, PRESET_CMD));
-            //ST(pinstance->format, RAWDATA_FLT,   RD(memresults[2], RAW_FMT0));
-            //ST(pinstance->format, NBCHAN_FLT,  1+RD(memresults[3], NCHANM1_FMT1));
-            //ST(pinstance->format, INTERLEAV_FLT, RD(memresults[2], INTERLEAV_FMT0));
-            //ST(pinstance->format, TIMESTAMP_FLT, RD(memresults[3], TIMSTAMP_FMT1));
-            //ST(pinstance->format, NUMSTAGE_FLT,  RD(command, PRESET_CMD));
+            pinstance->frameSize = RD(memresults[2], FRAMESIZE_FMT0);
+            ST(pinstance->format, NUMSTAGE_FLT,  RD(command, PRESET_CMD));
+            ST(pinstance->format, RAWDATA_FLT,   RD(memresults[2], RAW_FMT0));
+            ST(pinstance->format, NBCHAN_FLT,  1+RD(memresults[3], NCHANM1_FMT1));
+            ST(pinstance->format, INTERLEAV_FLT, RD(memresults[2], INTERLEAV_FMT0));
+            ST(pinstance->format, TIMESTAMP_FLT, RD(memresults[3], TIMSTAMP_FMT1));
 
             /* TCM area (when possible), first field of the instance for MP */
-            /*pinstance->TCM_working = (intPtr_t *)(memresults[1]);   */
+            pinstance->TCM_working = (intPtr_t *)(memresults[1]);
 
             /* here reset */
-            //pt8b = (uint8_t *) &(pinstance->U.biq_q15);
-            //n = sizeof(arm_filter_biquad_q15);
-            //for (i = 0; i < n; i++)
-            //{   pt8b[i] = 0;
-            //}
-//arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), "FLTR", (uint8_t *)4, 0);
+            pt8b = (uint8_t *) &(pinstance->U.biq_q15);
+            n = sizeof(arm_filter_biquad_q15);
+            for (i = 0; i < n; i++)
+            {   pt8b[i] = 0;
+            }
+//arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), "FLTR", 0, (uint8_t *)4);
 
             break;
         }    
@@ -106,28 +114,28 @@ void arm_stream_dsp_filter (int32_t command, uint32_t *instance, data_buffer_t *
        {    uint8_t *pt8bsrc, *pt8bdst, i, n;
             arm_filter_instance *pinstance = (arm_filter_instance *) instance;
 
-            ///* copy the parameters */
-            //pt8bsrc = (uint8_t *) data;
-            //pinstance->numstages = (uint32_t)(*pt8bsrc);
-            //pt8bsrc = pt8bsrc+4;
+            /* copy the parameters */
+            pt8bsrc = (uint8_t *) data;
+            pinstance->numstages = (uint32_t)(*pt8bsrc);
+            pt8bsrc = pt8bsrc+4;
 
-            ///* arm_stream_dsp_filter can manage Q15 and float */
-            //if (RD(pinstance->format, RAWDATA_FLT) == STREAM_FP32)
-            //{   pt8bdst = (uint8_t *) &(pinstance->U.biq_float);
-            //    n = sizeof(arm_filter_biquad_float);
-            //}
-            //else
-            //{   pt8bdst = (uint8_t *) &(pinstance->U.biq_q15);
-            //    n = sizeof(arm_filter_biquad_q15);
-            //}
+            /* arm_stream_dsp_filter can manage Q15 and float */
+            if (RD(pinstance->format, RAWDATA_FLT) == STREAM_FP32)
+            {   pt8bdst = (uint8_t *) &(pinstance->U.biq_float);
+                n = sizeof(arm_filter_biquad_float);
+            }
+            else
+            {   pt8bdst = (uint8_t *) &(pinstance->U.biq_q15);
+                n = sizeof(arm_filter_biquad_q15);
+            }
 
 
-            //if (RD(command, TAG_CMD) == ALLPARAM_)
-            //{   for (i = 0; i < n; i++)
-            //    {   pt8bdst[i] = pt8bsrc[i];
-            //    }
-            //}
-//arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), "FLTS", (uint8_t *)4, 0);
+            if (RD(command, TAG_CMD) == ALLPARAM_)
+            {   for (i = 0; i < n; i++)
+                {   pt8bdst[i] = pt8bsrc[i];
+                }
+            }
+//arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), "FLTS", 0, (uint8_t *)4);
             break;
         }
 
@@ -183,17 +191,21 @@ void arm_stream_dsp_filter (int32_t command, uint32_t *instance, data_buffer_t *
             pt_pt ++;
             *(&(pt_pt->size)) = nb_data * sizeof(SAMP_OUT);   /* amount of data produced */
             
-            //arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), "FLTU", (uint8_t *)4, 0);
+            //arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), "FLTU", 0, (uint8_t *)4);
             break;
         }
 
 
 
-        /* func(command = STREAM_END, PRESET, TAG, NB ARCS IN/OUT)
+        /* func(command = STREAM_STOP, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = unused
            used to free memory allocated with the C standard library
         */  
-        case STREAM_END:  break;    
+        case STREAM_STOP:  break;    
     }
 }
+#ifdef __cplusplus
+}
+#endif
+    

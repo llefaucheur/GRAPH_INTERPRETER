@@ -144,16 +144,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\stream_al\platform_al.c" />
-    <ClCompile Include="..\..\..\stream_al\platform_windows.c" />
+    <ClCompile Include="..\..\..\stream_al\platform_computer.c" />
     <ClCompile Include="..\..\..\stream_demo\main.c" />
-    <ClCompile Include="..\..\..\stream_demo\stream_demo.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\audio_codec\arm_codec.c" />
-    <ClCompile Include="..\..\..\stream_nodes\arm\audio_codec\audio_codec_imadpcm\arm_code_imadpcm.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\data_conditioning\arm_data_conditioning.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_amp\arm_stream_amplitude.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_convert\arm_stream_converter.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_filter\arm_dsp_filter.c" />
-    <ClCompile Include="..\..\..\stream_nodes\arm\dsp_src\arm_rate_converter.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\generator\arm_stream_generator.c" />
@@ -169,12 +166,9 @@
     <ClCompile Include="..\..\..\stream_src\stream_services.c" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\..\stream_graph\graph_iir_gate.txt" />
-    <Text Include="..\..\..\stream_graph\graph_imadpcm.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\..\..\stream_al\platform_al.h" />
-    <ClInclude Include="..\..\..\stream_al\platform_windows.h" />
+    <ClInclude Include="..\..\..\stream_al\platform_computer.h" />
+    <ClInclude Include="..\..\..\stream_al\platform_sensor.h" />
     <ClInclude Include="..\..\..\stream_nodes\arm\dsp_filter\arm_dsp_filter.h" />
     <ClInclude Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector.h" />
     <ClInclude Include="..\..\..\stream_src\stream_nodes.h" />
@@ -184,6 +178,12 @@
     <ClInclude Include="..\..\..\stream_src\stream_macro.h" />
     <ClInclude Include="..\..\..\stream_src\stream_platform.h" />
     <ClInclude Include="..\..\..\stream_src\stream_types.h" />
+    <ClInclude Include="..\..\..\stream_tools\graph_bin_1.h" />
+    <ClInclude Include="..\..\..\stream_tools\graph_txt_1.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\stream_tools\graph_bin_1.txt" />
+    <Text Include="..\..\..\stream_tools\graph_txt_1.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -28,13 +28,18 @@
 #define platform_al_H
 
 /*------------------------*/
-#include "platform_windows.h"
+#include "platform_computer.h"
 
 //#include "platform_arduino_nano33.h"
 /*------------------------*/
 
 extern uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code);
-extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3);
+
+#define PACK_PARAM_AL3(a,b) ((a)<<24 | (b))
+#define UNPACK_PARAM_AL3_SIZE(c) ((c)&0x00FFFFFFL)
+#define UNPACK_PARAM_AL3_FWIDX(c) (((uint32_t)c)>>24)
+
+extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3);
  
 extern int32_t extract_sensor_field (const uint8_t *platform_bit_fields, 
                               const int32_t *settings,
@@ -42,15 +47,6 @@ extern int32_t extract_sensor_field (const uint8_t *platform_bit_fields,
                               uint8_t index);
 
 
-/*
-     8  3  nchan          3,   1, 2, 8,
-    16  4  FS             2,   16000, 48000, 
-     4  2  framesize [ms] 2,   10, 16, 
-*/
-extern const uint8_t platform_audio_out_bit_fields[];
-#define PLATFORM_AUDIO_OUT_NCHAN    0
-#define PLATFORM_AUDIO_OUT_FS       1
-#define PLATFORM_AUDIO_OUT_FRAMESIZE 2
-#define PLATFORM_AUDIO_OUT_MVRMS    3
+
 
 #endif /* #ifndef platform_al_H */

@@ -1,4 +1,10 @@
 /* ----------------------------------------------------------------------
+
+
+        WORK ON GOING
+
+
+
  * Project:      CMSIS Stream
  * Title:        arm_script.c
  * Description:  filters
@@ -25,12 +31,16 @@
  * 
  */
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #ifdef _MSC_VER 
-#include "../../../stream_al/platform_windows.h"
+#include "../../../stream_al/platform_computer.h"
 #include "../../../stream_src/stream_const.h"      
 #include "../../../stream_src/stream_types.h"  
 #else
-#include "platform_windows.h"
+#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
 #endif
@@ -84,7 +94,10 @@ int32_t arm_script_calls_stream (int32_t command, uint32_t *instance, data_buffe
   Word1_scripts : script size, global register used + backup MEM, stack size
   Wordn_scripts : stack and byte-codes, see stream_execute_script()  
 
-
+  AL commands : 
+    STREAM_FORMAT_IO => (PLATFORM_IO_SET_STREAM / PLATFORM_IO_STOP_STREAM, &stream (timer, sensor, ..));
+    read ARC content and debug data
+    write to ARC (and initiate 
 
  */
 void script_processing (arm_script_instance *instance, 
@@ -99,6 +112,22 @@ void script_processing (arm_script_instance *instance,
     }
 }
 
+
+
+/**
+  @brief         Debug script executed before/after node execution
+  @param[in]     none
+  @return        none
+
+  @par           Execute the script located at "GRAPH_DEBUG_SCRIPT"
+  @remark
+ */
+uint8_t stream_execute_script(void)
+{   // TBC  
+    //script_processing();
+    return 1;
+}
+
 /**
   @brief         
   @param[in]     command    bit-field
@@ -106,6 +135,40 @@ void script_processing (arm_script_instance *instance,
   @param[in/out] pdata      address and size of buffers
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
+
+  @par  
+    Script format : 
+        Word1 : script size, global register used + backup MEM, stack size
+        Wordn : stack 
+        Wordm : byte-codes 
+
+    Registers 
+        One register is used for test "t"
+        Other registers placed on the stack 
+        data types : X + time-stamp, Vector + time-stamp
+    Instructions (see TI57 programming manual)
+        load "t", from stack(i) = R(i) or #const
+        move R(i) to/from arc FIFOdata / debugReg / with/without read index update
+        compare R(i) with "t" : <> = != and skip next instruction 
+        jump to #label 
+        dsz decrement and jump on non-zero
+        arithmetic add,sub,(AND,shift), #const/R(j)
+        time difference, time comparison
+        long-term stats: mean, deviation, max with forget factor
+        set (a new configuration), start, stop an IO stream
+        call nodes for data conditioning
+
+    Use-cases:
+        Smart homes
+        When the Temperature > Thr1 and Light < Thr2 and Time in range [t1,t2], then Action_x
+        when someone enters or leaves the room take Action_Y
+        Smart manufacturing
+        move the filled bottle to the capping station in three steps .. 
+        Agriculture
+        Use of timers for watering, soil/air/.. analysis
+        Rain fall measurement: time measurement, valve control
+
+
  */
 void arm_script (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status)
 {
@@ -168,41 +231,19 @@ void arm_script (int32_t command, uint32_t *instance, data_buffer_t *data, uint3
         */         
         case STREAM_RUN:   
         {
-            arm_script_instance *pinstance = (arm_script_instance *) instance;
-            intPtr_t nb_data, data_buffer_size, bufferout_free;
-            data_buffer_t *pt_pt;
-            #define SAMP_IN uint8_t 
-            #define SAMP_OUT int16_t
-            SAMP_IN *inBuf;
-            SAMP_OUT *outBuf;
-
-            pt_pt = data;
-            inBuf  = (SAMP_IN *)pt_pt->address;   
-            data_buffer_size    = pt_pt->size;
-            pt_pt++;
-            outBuf = (SAMP_OUT *)(pt_pt->address); 
-            bufferout_free        = pt_pt->size;
-
-            nb_data = data_buffer_size / sizeof(SAMP_IN);
-
-            //processing(pinstance, inBuf, nb_data, outBuf);
-
-            pt_pt = data;
-            *(&(pt_pt->size)) = nb_data * sizeof(SAMP_IN); /* amount of data consumed */
-            pt_pt ++;
-            *(&(pt_pt->size)) = nb_data * sizeof(SAMP_OUT);   /* amount of data produced */
-
-            
-            break;
+           break;
         }
 
-
-
-        /* func(command = STREAM_END, PRESET, TAG, NB ARCS IN/OUT)
+        /* func(command = STREAM_STOP, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = unused
            used to free memory allocated with the C standard library
         */  
-        case STREAM_END:  break;    
+        case STREAM_STOP:  break;    
     }
 }
+
+#ifdef __cplusplus
+}
+#endif
+    

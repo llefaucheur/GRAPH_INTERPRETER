@@ -25,12 +25,17 @@
  * 
  */
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+   
+
 #ifdef _MSC_VER 
-#include "../../../stream_al/platform_windows.h"
+#include "../../../stream_al/platform_computer.h"
 #include "../../../stream_src/stream_const.h"      
 #include "../../../stream_src/stream_types.h"  
 #else
-#include "platform_windows.h"
+#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
 #endif
@@ -132,3 +137,8 @@ typedef struct /* total = 36 Bytes*/
 
 // Value of decremented counter is 2^log2decfMAX -1 to allow mask to be used to detect rollover
 #define decfMASK ((1 << (instance->config.log2decfMAX)) -1)
+
+#ifdef __cplusplus
+}
+#endif
+ 

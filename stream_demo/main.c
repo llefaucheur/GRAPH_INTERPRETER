@@ -25,56 +25,60 @@
  * 
  */
 
-#ifdef _MSC_VER 
-#include "../../CMSIS-Stream/stream_al/platform_windows.h"
+#ifdef _MSC_VER //VCPP path issue
+#include "../../CMSIS-Stream/stream_al/platform_computer.h"
 #include "../../CMSIS-Stream/stream_src/stream_const.h"      
 #include "../../CMSIS-Stream/stream_src/stream_types.h"  
 #else
-#include "platform_windows.h"
+#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
 #endif
+
+
 /* 
-    global parameters 
+    global parameters of this processor = 
+        compiled graph data, its address, memory offsets
 */
 
-const uint32_t graph_input[] = 
-{
-    #include "../stream_graph/graph_iir_gate.txt"
-    //#include "../stream_graph/graph_imadpcm.txt"
+uint32_t graph_input[] = 
+{   
+#include "../stream_tools/graph_bin_1.h"
 };
 
-arm_global_data_t arm_stream_global;
+
+/**
+  @brief            (main) demonstration
+  @param[in/out]    none
+  @return           int
+
+  @par              initialize a Stream instance : share the address of the graph and
+                    and the index of this instance within the application (other processors
+                    or RTOS processes are using different index). 
+                    Then start an infinite loop for the stream processing.
+  @remark
+ */
 
 int main(void)
 {
-    extern void stream_demo_init(uint8_t stream_instance, 
-            uint8_t total_nb_stream_instance,
-            const uint32_t *graph_input, 
-            uint32_t graph_size,
-            uint8_t warm_boot
-            );
-
 #define STREAM_CURRENT_INSTANCE 0
 #define STREAM_NB_INSTANCE 1
-#define STREAM_WARM_BOOT 0
 
-    stream_demo_init
-    (   STREAM_CURRENT_INSTANCE, 
-        STREAM_NB_INSTANCE, 
-        graph_input, 
-        sizeof(graph_input), 
-        STREAM_WARM_BOOT
-    );
+    arm_stream_instance_t instance;
+    instance.scheduler_control = PACK_STREAM_PARAM(
+            STREAM_NB_INSTANCE,
+            STREAM_WARM_BOOT,
+            STREAM_SCHD_NO_SCRIPT, 
+            STREAM_SCHD_RET_END_ALL_PARSED,
+            STREAM_CURRENT_INSTANCE
+            );
+
+	arm_stream (STREAM_RESET, &instance, graph_input);
 
     /* run the graph */
 	for (int i = 0; i < 1000000000L; i++)
-    {
-		arm_stream
-        (   STREAM_RUN, 
-            (void *)STREAM_CURRENT_INSTANCE,
-            (void *)STREAM_SCHD_RET_END_ALL_PARSED, 
-            (void *)STREAM_SCHD_NO_SCRIPT
-        );
+    {   arm_stream (STREAM_RUN, &instance, 0);
     }  
+
+    arm_stream (STREAM_STOP, &instance, 0);
 }

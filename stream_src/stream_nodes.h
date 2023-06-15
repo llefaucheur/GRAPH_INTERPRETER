@@ -22,8 +22,14 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-* 
+ * 
  */
+
+#ifdef __cplusplus
+ extern "C" {
+#endif
+   
+
 #ifndef cSTREAM_NODES_H
 #define cSTREAM_NODES_H
 
@@ -141,7 +147,16 @@
 #define MBANK_PMEM      U(6)    /* program RAM */
 #define MBANK_FLASH     U(7)    /* shared internal Flash, index [0] for graph */
 
-#define NB_MEMINST_OFFSET U(8)  /* offsets */
+#define MBANK_SRAM1     U(8)    /* memory mapping to specific blocks */
+#define MBANK_SRAM2     U(9)   
+#define MBANK_SRAM3     U(10)   
+#define MBANK_SRAM4     U(11)   
+#define MBANK_SRAM5     U(12)   
+#define MBANK_SRAM6     U(13)   
+#define MBANK_SRAM7     U(14)   
+#define MBANK_SRAM8     U(15)   
+
+#define NB_MEMINST_OFFSET U(16) /* 16 memory banks offsets */
 
 /* upon STREAM_MEMREQ commands the swc can return up to 6 memory requests for its instance 
     scratch fast, DTCM, static fast, internal L2, external */
@@ -149,9 +164,6 @@
 #define MAX_NB_MEM_REQ_PER_NODE U(6)  /* table of PACKSWCMEM requirements (speed, size, alignment..) see MAXNB_MEMORY_BASE_MALLOC */
 
 #define GRAPH_MEM_REQ (U(MEM_WORKING_INTERNAL)+U(1)) 
-
-#define MAX_NB_STREAM_SWC U(4)             
-
 
 /*
  * -----------------------------------------------------------------------
@@ -163,3 +175,8 @@
 /*
  * -----------------------------------------------------------------------
  */
+
+#ifdef __cplusplus
+}
+#endif
+ 

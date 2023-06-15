@@ -22,8 +22,13 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-* 
+ * 
  */
+#ifdef __cplusplus
+ extern "C" {
+#endif
+   
+    
 #ifndef cSTREAM_PLATFORM_H
 #define cSTREAM_PLATFORM_H
 
@@ -37,7 +42,7 @@
 #define PLATFORM_PROC_ID            1u   /* who am i ? */
 #define PLATFORM_MP_GRAPH_SHARED    2u   /* need to declare the graph area as "sharable" in S = MPU_RASR[18] */
 #define PLATFORM_MP_BOOT_SYNCHRO    3u   /* collission of access to the graph at boot time */
-#define PLATFORM_MP_BOOT_WAIT       4u   /* wait master processor copies the graph */
+#define PLATFORM_MP_BOOT_WAIT       4u   /* wait commander processor copies the graph */
 #define PLATFORM_MP_BOOT_DONE       5u   /* to confirm the graph was copied in RAM */
 #define PLATFORM_MP_RESET_WAIT      6u   /* wait the graph is initialized */
 #define PLATFORM_MP_RESET_DONE      7u   /* tell the reset sequence was executed for that Stream instance */
@@ -66,9 +71,9 @@
 ////enum io_buffer_allocation => duplicates with the information "IOCOMMAND_IOFMT" 
 //#define ALLOC_FROM_APPLICATION      0u
 //#define ALLOC_FROM_IO               1u
-////enum io_master_follower
-//#define IO_IS_MASTER                0u
-//#define IO_IS_FOLLOWER              1u
+////enum io_commander_servant
+#define IO_IS_COMMANDER               0u
+#define IO_IS_SERVANT                 1u
 //
 ///*---- Platform Sensor configuration : io_domain ----*/
 //#define     UNUSED_IOMEM_MSB        31u 
@@ -81,15 +86,15 @@
 //#define            PROC_IOMEM_LSB   15u /* 8  locks this IO to proc (among 8), 0=any from this architecture */
 //#define   MEM_SPACE_OFF_IOMEM_MSB   14u  
 //#define   MEM_SPACE_OFF_IOMEM_LSB   12u /* 3  64bits offset selection : 0/internal/external/io = idx_memory_base_offset */
-//#define MASTER_FOLLOWER_IOMEM_MSB   10u /*    "io_master_follower" */
-//#define MASTER_FOLLOWER_IOMEM_LSB   10u /* 1  Master=0 Follower=1  */
+//#define COMMANDER_SERVANT_IOMEM_MSB 10u /*    "io_commander_servant" */
+//#define COMMANDER_SERVANT_IOMEM_LSB 10u /* 1  commander=0 servant=1  */
 //#define PLATFORM_IO_IDX_IOMEM_MSB    9u /*    16 io_index of the same domain (16 GPIO, 16 ADC, ..) */  
 //#define PLATFORM_IO_IDX_IOMEM_LSB    6u /* 4  platform_io_idx from domains below */
 //#define          DOMAIN_IOMEM_MSB    5u
 //#define          DOMAIN_IOMEM_LSB    0u /* 6  64 physical domains = enum  stream_io_domain */
 //
-//#define PACK_IOMEMDOMAIN(ARCH,PROC,OFFSET,MASTER,IOIDX,DOMAIN) \
-//    (((ARCH)<<23)|((PROC)<<15)|((OFFSET)<<12)|((MASTER)<<10)|((IOIDX)<<6)|((DOMAIN)<<0))
+//#define PACK_IOMEMDOMAIN(ARCH,PROC,OFFSET,commander,IOIDX,DOMAIN) \
+//    (((ARCH)<<23)|((PROC)<<15)|((OFFSET)<<12)|((commander)<<10)|((IOIDX)<<6)|((DOMAIN)<<0))
 
 
 
@@ -98,16 +103,14 @@
     STREAM SERVICES
 */
 
-enum stream_command 
-{
 #define  UNUSED_SRV_MSB U(31)
-#define  UNUSED_SRV_LSB U(16) /* 16  */
+#define  UNUSED_SRV_LSB U(16) /* 16 reserved */
 #define    INST_SRV_MSB U(15)       
-#define    INST_SRV_LSB U(12) /* 4 instance */
+#define    INST_SRV_LSB U(12) /* 4  instance */
 #define   GROUP_SRV_MSB U(11)       
-#define   GROUP_SRV_LSB U( 8) /* 4 command family group */
+#define   GROUP_SRV_LSB U( 8) /* 4  command family group (DSP, Codec, Stdlib, ..) */
 #define COMMAND_SRV_MSB U( 7)       
-#define COMMAND_SRV_LSB U( 0) /* 8 command */
+#define COMMAND_SRV_LSB U( 0) /* 8  256 commands */
 
 #define STREAM_COMMAND_MASK   0x000000FF
 #define STREAM_COMMAND_GROUP  0x00000F00
@@ -115,6 +118,8 @@ enum stream_command
 #define PACK_SERVICE(INST,CMD) (((INST)<<12)|(CMD))
 
 
+enum stream_command 
+{
     /* Commands 0 ------------------------------------------------------------------- */
     STREAM_CONTROL = 0x000000000,           
 
@@ -217,3 +222,7 @@ enum stream_command
 /*
  * -----------------------------------------------------------------------
  */
+#ifdef __cplusplus
+}
+#endif
+ 

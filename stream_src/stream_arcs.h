@@ -22,8 +22,13 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-* 
+ * 
  */
+
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #ifndef cSTREAM_ARCS_H
 #define cSTREAM_ARCS_H
 
@@ -68,20 +73,15 @@
 
 /*============================================================================================================*/
 /* 
-    Format 22+2 for buffer BASE ADDRESS
-    Frame SIZE and ring indexes are using 24bits linear (0..16MB)
-
-    shifter 0 : linear space with Byte accuracy up to 4MB (1<<22)
-    shifter 1 : 16Bytes accuracy 0 .. 4MB<<4 = 64MB 
-    shifter 2 : 256Bytes accuracy 0 .. 4MB<<8 = 1GB
-    shifter 3 : 4096Bytes accuracy 0 .. 4MB<<12 = 16GB
+    Format 23+4_offsets for buffer BASE ADDRESS
+    Frame SIZE and ring indexes are using 22bits linear (0..4MB)
 
 */
 
 /* for MISRA-2012 compliance to Rule 10.4 */
 #define U(x) ((uint32_t)(x)) 
 #define U8(x) ((uint8_t)(x)) 
-#define S(x) ((int32_t)(x)) 
+//#define S(x) ((int32_t)(x)) 
 #define S8(x) ((int8_t)(x)) 
 
 //------------------------------------------------------------------------------------------------------
@@ -137,23 +137,28 @@
     #define FRAMESIZE_FMT0_MSB 23 /*    raw interleaved buffer size is framesize x nb channel, max = 16MB x nchan */
     #define FRAMESIZE_FMT0_LSB  0 /* 24 in swc manifests it gives the minimum input size (grain) before activating the swc
                                         A "frame" is the combination of several channels sampled at the same time 
-                                        A value =0 means the size is any or defined by the IO AL  */
+                                        A value =0 means the size is any or defined by the IO AL.
+                                        For sensors delivering burst of data not isochronous, it gives the maximum 
+                                        framesize; same comment for the sampling rate. */
 
     #define PACKSTREAMFORMAT0(RAW,INTERL,FRAMESIZE) ((U(RAW)<<26)|(U(INTERL)<<24)|U(FRAMESIZE))
 
 /*--------------- WORD 1 - sampling rate , nchan  -------------*/
 #define   SAMPINGNCHANM1_FMT1  U( 1)
-    #define    UNUSED_FMT1_MSB U(31) /* 4   */
-    #define    UNUSED_FMT1_LSB U(28)
-    #define  TIMSTAMP_FMT1_MSB U(27)
-    #define  TIMSTAMP_FMT1_LSB U(26) /* 2  time_stamp_format_type for time-stamped streams for each interleaved frame */
-    #define  SAMPLING_FMT1_MSB U(25) /*    21bits : mantissa [U19], exponent [U2], FS = M x 2^(1-(8xE)), 0<=>ASYNCHRONOUS/SLAVE */
-    #define  SAMPLING_FMT1_LSB U( 5) /* 21 range = (E=0,1,2,3) 0x3FFFF x 2^(1-4x0) .. 1 x 2^(1-8*3)) [524kHz .. 3 months] */
+    #define    UNUSED_FMT1_MSB U(31) /* 5   */
+    #define    UNUSED_FMT1_LSB U(27)
+    #define  TIMSTAMP_FMT1_MSB U(26) /* 2  time_stamp_format_type for time-stamped streams for each interleaved frame */
+    #define  TIMSTAMP_FMT1_LSB U(25) /*    0..262kHz +/- 2Hz   */
+    #define  SAMPLING_FMT1_MSB U(24) /*    mantissa 16b exponent 4b,  FS = (Mx4)/2^(3xE), 0 <=> ASYNCHRONOUS/SERVANT */
+    #define  SAMPLING_FMT1_LSB U( 5) /* 20 range = 0xFFFFx4 .. 4/2^(-41)) [262kHz(1Hz) .. 1.72years(0.1%)] */
     #define   NCHANM1_FMT1_MSB U( 4)
     #define   NCHANM1_FMT1_LSB U( 0) /* 5  nb channels-1 [1..32] */
 
     #define PACKSTREAMFORMAT1(TIMESTAMP,SAMPLING, NCHANM1) ((U(TIMESTAMP)<<26)|(U(SAMPLING)<<5)|U(NCHANM1))
-
+    #define FMT_FS_MAX_EXPONENT 15
+    #define FMT_FS_MAX_MANTISSA 65535
+    #define FMT_FS_EXPSHIFT 16
+    #define FMTQ2FS(E,M) ((M*4)/pow(2,(3*E)))
 
 /*--------------- WORD 2 -  direction, channel mapping (depends on the "stream_io_domain")------*/
 #define AUDIO_MAPPING_FMT2 U( 2)
@@ -181,23 +186,21 @@
 #define PRODUCFMT_ARCW0_MSB U(31) /* 5 bits  PRODUCER format  (intPtr_t) +[ixSTREAM_FORMAT_SIZE_W32]  */ 
 #define PRODUCFMT_ARCW0_LSB U(27) /*   Graph generator gives IN/OUT arc's frame size to be the LCM of SWC "grains" */
 #define BASEIDXOFFARCW0_MSB U(26) 
-#define   DATAOFF_ARCW0_MSB U(26) /*    arcs are using offset=0/1, same format for SWC instances: 0..4 */
-#define   DATAOFF_ARCW0_LSB U(24) /* 3 bits 64bits offset index see idx_memory_base_offset */
-#define BASESHIFT_ARCW0_MSB U(23) /*   check physical_to_offset() before changing data */
-#define BASESHIFT_ARCW0_LSB U(22) /* 2 bits shifter */
-#define   BASEIDX_ARCW0_MSB U(21) /*   buffer address (22 + 2) + offset = 27 bits */
-#define   BASEIDX_ARCW0_LSB U( 0) /*22   base address 22bits + 2bits exponent ((base) << ((shift) << 2)) */
-#define BASEIDXOFFARCW0_LSB U( 0) 
+#define   DATAOFF_ARCW0_MSB U(26) /*   address = offset[DATAOFF] + 4xBASEIDX [Bytes] */
+#define   DATAOFF_ARCW0_LSB U(25) /* 4 32/64bits offset index see idx_memory_base_offset */
+#define   BASEIDX_ARCW0_MSB U(22) /*   buffer address 23 + offset = 27 bits */
+#define   BASEIDX_ARCW0_LSB U( 0) /*23 base address 22bits linear address range in Bytes */
+#define BASEIDXOFFARCW0_LSB U( 0) /*   TODO : base coded in Word32 to address 32MBytes */
                                 
 #define BUFSIZDBG_ARCW1    U( 1)
-#define CONSUMFMT_ARCW1_MSB U(31) /* 5 bits  CONSUMER format  */ 
-#define CONSUMFMT_ARCW1_LSB U(27) /*    */
-#define   MPFLUSH_ARCW1_MSB U(26) /* 1  if "1" then flush the arc's buffer after processing (MProcessing) */ 
-#define   MPFLUSH_ARCW1_LSB U(26) /*     flush is optional when the consumer is run on the same processor */
+#define CONSUMFMT_ARCW1_MSB U(31) 
+#define CONSUMFMT_ARCW1_LSB U(27) /* 5 bits  CONSUMER format  */ 
+#define   MPFLUSH_ARCW1_MSB U(26) 
+#define   MPFLUSH_ARCW1_LSB U(26) /* 1  flush data used after processing */
 #define DEBUG_REG_ARCW1_MSB U(25)
 #define DEBUG_REG_ARCW1_LSB U(22) /* 4  debug result index for debug_arcs[0..15] debug_arc_computation_1D */
 #define BUFF_SIZE_ARCW1_MSB U(21) 
-#define BUFF_SIZE_ARCW1_LSB U( 0)  /* 22 Byte-acurate up to 4MBytes */
+#define BUFF_SIZE_ARCW1_LSB U( 0) /* 22 Byte-acurate up to 4MBytes */
 
 #define    RDFLOW_ARCW2    U( 2)  /* write access only from the SWC consumer */
 #define COMPUTCMD_ARCW2_MSB U(31)       
@@ -206,21 +209,21 @@
 #define UNDERFLRD_ARCW2_LSB U(26) /* 2  overflow task id 0=nothing , underflow_error_service_id */
 #define  OVERFLRD_ARCW2_MSB U(25)
 #define  OVERFLRD_ARCW2_LSB U(24) /* 2  underflow task id 0=nothing, overflow_error_service_id */
-#define SHAREDARC_ARCW2_MSB U(27) 
-#define SHAREDARC_ARCW2_LSB U(27) /* 1  null source, null sink  (no overflow, for metadata) */
-//#define   READY_W_ARCW2_MSB U(22) /*    "Buffer ready for refill" */
-//#define   READY_W_ARCW2_LSB U(22) /* 1  (size-write)>size/2 (or /4) */
+#define   ________ARCW2_MSB U(23) 
+#define   ________ARCW2_LSB U(23) /* 1  */
+#define   READY_W_ARCW2_MSB U(22) /*    "Buffer ready for refill" */
+#define   READY_W_ARCW2_LSB U(22) /* 1  (size-write)>size/2 (or /4) */
 #define      READ_ARCW2_MSB U(21)
 #define      READ_ARCW2_LSB U( 0) /* 22     data read index  Byte-acurate up to 4MBytes starting from base address */
 
-#define COLLISION_ARC_OFFSET_BYTE U(3)
+#define COLLISION_ARC_OFFSET_BYTE U(3) /* offset in bytes to the collision detection byte */
 #define  WRIOCOLL_ARCW3    U( 3) /* write access only from the SWC producer */
 #define COLLISION_ARCW3_MSB U(31) /* 8  MSB byte used to lock the SWC  */ 
 #define COLLISION_ARCW3_LSB U(24) 
 #define ALIGNBLCK_ARCW3_MSB U(23) /*    producer blocked */
 #define ALIGNBLCK_ARCW3_LSB U(23) /* 1  producer sets "need for data realignement"  */
-//#define   READY_R_ARCW3_MSB U(22) /*    "Buffer ready for read" */ 
-//#define   READY_R_ARCW3_LSB U(22) /* 1  (write-read)>size/2 (or /4) */
+#define   READY_R_ARCW3_MSB U(22) /*    "Buffer ready for read" */ 
+#define   READY_R_ARCW3_LSB U(22) /* 1  (write-read)>size/2 (or /4) */
 #define     WRITE_ARCW3_MSB U(21)
 #define     WRITE_ARCW3_LSB U( 0) /* 22 write read index  Byte-acurate up to 4MBytes starting from base address */
 
@@ -230,3 +233,8 @@
 
 
 #endif /* #ifndef cSTREAM_ARCS_H */
+
+#ifdef __cplusplus
+}
+#endif
+    

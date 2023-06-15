@@ -25,115 +25,125 @@
 * 
  */
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #include "stream_const.h"    /* #include <stdint.h> */
 #include "stream_types.h"
 
-/*----------------------------------------------------------*/
-/*
-        call back for the low layers of the platform
-        mode data to the ring buffers , as described in the graph
-          or simple assign the base address of the ring buffer to the data (no data move)
-        check there is no flow error
-  */
+//#define L stream_instance->long_offset
+//#define G stream_instance->graph
 
+/**
+  @brief         call back of the IO layers of the platform
+  @param[in]     command    operation to do
+  @param[in]     ptr1       1st data pointer 
+  @param[in/out] ptr2       2nd data pointer 
+  @param[in]     data3      3rd parameter integer
+  @return        none
+
+  @par           arm_stream_io do the data moves with arc descriptor update
+                 or simple assign the base address of the ring buffer to the data (no data move)
+                 check there is no flow error
+
+                 RX case : "I prepared for you a buffer of data, copy the data or use it directly 
+                 from this place, and for this amount of bytes". The address can change from last 
+                 callback in case the device driver is commander and using a ping-pong buffer protocol.
+
+                 TX case : IO is commander case : "I have completed the last transfer, you can fill 
+                 this buffer for the next transfer". IO is slave case : "I have completed the 
+                 transfer of this buffer you told me to move out using io_start() with this amount 
+                 of bytes, you can reset the flag telling the transfer is on-going". 
+  @remark
+ */
 void arm_stream_io (uint32_t fw_io_idx, 
-            uint32_t *graph,
+            arm_stream_instance_t *stream_instance,
             uint8_t *data, uint32_t data_size)
 {   
-    uint32_t arc_idx;
     uint32_t *arc;
-    uint32_t free_area;
-    uint32_t amount_of_data;
-    uint32_t size;
-    uint8_t rx0tx1;
-    uint8_t command;
-    uint8_t flow_error;
     uint32_t *pio;
-    uint32_t *all_formats;
 
-    pio = (uint32_t *)GRAPH_IO_CONFIG_ADDR();
+    pio = stream_instance->S0.pio;
     pio = &(pio[STREAM_IOFMT_SIZE_W32 * fw_io_idx]);
-    arc = GRAPH_ARC_LIST_ADDR();
-    arc_idx = RD(*pio, IOARCID_IOFMT);
-    arc = &(arc[SIZEOF_ARCDESC_W32 * arc_idx]);
-    rx0tx1 = (uint8_t) RD(*pio, RX0TX1_IOFMT);
-    command = (uint8_t) RD(*pio, IOCOMMAND_IOFMT);
-    size = data_size;
-    all_formats = GRAPH_FORMAT_ADDR();
+    arc = stream_instance->S0.all_arcs;
+    arc = &(arc[SIZEOF_ARCDESC_W32 * RD(*pio, IOARCID_IOFMT)]);
 
-    switch (rx0tx1)
-    {
-        /* stream to the graph */
-        case RX0_TO_GRAPH:
-            switch (command)
-            {
-            case IO_COMMAND_DATA_MOVE_RX:
-            {   /* free area = size - write */
-                free_area = RD(arc[1], BUFF_SIZE_ARCW1) - 
-                RD(arc[3], WRITE_ARCW3);
-                
-                if (free_area < data_size)
-                {   /* overflow issue */
-                    flow_error = (uint8_t) RD(arc[2], OVERFLRD_ARCW2);
-                    platform_al(PLATFORM_ERROR, 0,0,0);
-                    /* TODO : implement the flow management desired for "flow_error" */
-                    size = free_area;
-                }
-
-                arc_data_operations (arc, arc_move_to_arc, data, size, all_formats);   
-
-                break;
-            } 
-
-            case IO_COMMAND_SET_BUFFER_RX:
-            {   arc_data_operations (arc, arc_set_base_address_to_arc, data, size, all_formats);    
-                break;
+    /* RX : stream to the graph */
+    if (0 == TEST_BIT(*pio, RX0TX1_IOFMT_LSB))
+    {   if (IO_COMMAND_SET_BUFFER != TEST_BIT(*pio, IOCOMMAND_IOFMT_LSB))
+        {   uint32_t free_area; /* free area = size - write */
+            free_area = RD(arc[1], BUFF_SIZE_ARCW1) - RD(arc[3], WRITE_ARCW3);
+            
+            if (free_area < data_size)
+            {   /* overflow issue */
+                platform_al(PLATFORM_ERROR, 0,0,0);
+                /* TODO : implement the flow management desired for "flow_error" */
+                //flow_error = (uint8_t) RD(arc[2], OVERFLRD_ARCW2);
+                data_size = free_area;
             }
 
-            default :
-            case IO_COMMAND_NONE:   /* the IO path was disabled */
-                break;
-            }
-
-        /* stream from the graph */
-        case TX1_FROM_GRAPH:
-            switch (command)
-            {
-            case IO_COMMAND_DATA_MOVE_TX:
-            {   /* amount of data = write - read */
+            arc_data_operations (stream_instance, arc, arc_IO_move_to_arc, data, data_size);   
+        } 
+        else /* IO_COMMAND_SET_BUFFER */
+        {   arc_data_operations (stream_instance, arc, arc_set_base_address_to_arc, data, data_size);    
+        }
+    }
+    else /* TX: stream from the graph */
+    {   if (0u == TEST_BIT(*pio, SERVANT_IOFMT_LSB))
+        {   
+            /* the IO interface is commander : the buffer needs to be refilled before the next interrupt */
+            if (IO_COMMAND_SET_BUFFER != TEST_BIT(*pio, IOCOMMAND_IOFMT_LSB))
+            {   uint32_t amount_of_data;    /* amount of data = write - read */
                 amount_of_data = RD(arc[3], WRITE_ARCW3) -    
                 RD(arc[2], READ_ARCW2);
 
                 if (amount_of_data < data_size)
                 {   /* underflow issue */
-                    flow_error = (uint8_t) RD(arc[2], UNDERFLRD_ARCW2);
+                    platform_al(PLATFORM_ERROR, 0,0,0);
                     /* TODO : implement the flow management desired for "flow_error" */
-                    size = amount_of_data;
+                    //flow_error = (uint8_t) RD(arc[2], UNDERFLRD_ARCW2);
+                    data_size = amount_of_data;
                 }            
-                arc_data_operations (arc, arc_moved_from_arc, 0, size, all_formats);     
+                /* data copy ARC=>buffer */
+                arc_data_operations (stream_instance, arc, arc_IO_moved_from_arc, data, data_size);     
 
-                /* does data realignement must be done ? */
+                /* does data realignement must be done ? : realign and clear the bit */
                 if (0u != TEST_BIT (arc[3], ALIGNBLCK_ARCW3_LSB))
-                {   arc_data_operations (arc, arc_data_realignment_to_base, 0, 0, all_formats);
-                    DATA_MEMORY_BARRIER;
+                {   arc_data_operations (stream_instance, arc, arc_data_realignment_to_base, 0, 0);
                 }
-                break;
             } 
-
-            case IO_COMMAND_SET_BUFFER_TX :
-            {   arc_data_operations (arc, arc_set_base_address_from_arc, data, size, all_formats);    
-                break;
+            else /* IO_COMMAND_SET_BUFFER */
+            {   arc_data_operations (stream_instance, arc, arc_set_base_address_from_arc, data, data_size);    
             }
+        }
+        else
+        {   /* the IO interface is slave : just a pointer update */
+            {   uint32_t amount_of_data;    /* amount of data = write - read */
+                amount_of_data = RD(arc[3], WRITE_ARCW3) -    
+                RD(arc[2], READ_ARCW2);
 
-            default :
-            case IO_COMMAND_NONE:  /* the IO path was disabled */
-                break;
-            }
+                if (amount_of_data < data_size)
+                {   /* underflow issue */
+                    platform_al(PLATFORM_ERROR, 0,0,0);
+                    /* TODO : implement the flow management desired for "flow_error" */
+                    //flow_error = (uint8_t) RD(arc[2], UNDERFLRD_ARCW2);
+                    data_size = amount_of_data;
+                }            
+                arc_data_operations (stream_instance, arc, arc_IO_moved_from_arc_update, data, data_size);     
 
-        default:
-            break;
+                /* does data realignement must be done ? : realign and clear the bit */
+                if (0u != TEST_BIT (arc[3], ALIGNBLCK_ARCW3_LSB))
+                {   arc_data_operations (stream_instance, arc, arc_data_realignment_to_base, 0, 0);
+                }
+            } 
+        }
     }
 
-    /* data transfer done */
-    CLEAR_BIT_MP(*pio, REQMADE_IOFMT_LSB);
+    /* data transfer done when the IO is slave */
+    CLEAR_BIT_MP(stream_instance->S0.pinst[STREAM_INSTANCE_PARAMETERS], REQMADE_PARINST_LSB);
 }
+
+#ifdef __cplusplus
+}
+#endif

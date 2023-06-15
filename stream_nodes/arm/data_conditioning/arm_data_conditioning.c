@@ -1,6 +1,12 @@
 /* ----------------------------------------------------------------------
+
+
+        WORK ON GOING
+
+
+
  * Project:      CMSIS Stream
- * Title:        arm_data_conditioning.c
+ * Title:        arm_stream_data_conditioning.c
  * Description:  filters
  *
  * $Date:        15 February 2023
@@ -25,12 +31,16 @@
  * 
  */
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #ifdef _MSC_VER 
-#include "../../../stream_al/platform_windows.h"
+#include "../../../stream_al/platform_computer.h"
 #include "../../../stream_src/stream_const.h"      
 #include "../../../stream_src/stream_types.h"  
 #else
-#include "platform_windows.h"
+#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
 #endif
@@ -41,7 +51,7 @@ typedef struct
     intPtr_t *TCM;                      /* Stream provides a pointer to TCM */
     float state[2];
     float coef[5];
-} arm_data_conditioning_instance;
+} arm_stream_data_conditioning_instance;
 
 /**
   @brief         https://esphome.io/components/sensor/index.html#sensor-filters
@@ -53,7 +63,7 @@ typedef struct
  */
 
 
-void arm_data_conditioning_run(arm_data_conditioning_instance *instance, 
+void arm_stream_data_conditioning_run(arm_stream_data_conditioning_instance *instance, 
                      float *in,   
                      int32_t nb_samples, 
                      float *outBufs)
@@ -70,7 +80,7 @@ void arm_data_conditioning_run(arm_data_conditioning_instance *instance,
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void arm_data_conditioning (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status)
+void arm_stream_data_conditioning (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status)
 {
     *status = 1;    /* default return status, unless processing is not finished */
 
@@ -88,7 +98,7 @@ void arm_data_conditioning (int32_t command, uint32_t *instance, data_buffer_t *
             intPtr_t *memresults = (intPtr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
-            arm_data_conditioning_instance *pinstance = (arm_data_conditioning_instance *) *memresults;
+            arm_stream_data_conditioning_instance *pinstance = (arm_stream_data_conditioning_instance *) *memresults;
             memresults++;
             break;
         }    
@@ -131,7 +141,7 @@ void arm_data_conditioning (int32_t command, uint32_t *instance, data_buffer_t *
         */       
         case STREAM_RUN:   
         {
-            arm_data_conditioning_instance *pinstance = (arm_data_conditioning_instance *) instance;
+            arm_stream_data_conditioning_instance *pinstance = (arm_stream_data_conditioning_instance *) instance;
             intPtr_t nb_data, data_buffer_size, bufferout_free;
             data_buffer_t *pt_pt;
             #define SAMP_IN uint8_t 
@@ -161,11 +171,15 @@ void arm_data_conditioning (int32_t command, uint32_t *instance, data_buffer_t *
 
 
 
-        /* func(command = STREAM_END, PRESET, TAG, NB ARCS IN/OUT)
+        /* func(command = STREAM_STOP, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = unused
            used to free memory allocated with the C standard library
         */  
-        case STREAM_END:  break;    /* func(STREAM_END, instance, 0) */
+        case STREAM_STOP:  break;    /* func(STREAM_STOP, instance, 0) */
     }
 }
+
+#ifdef __cplusplus
+}
+#endif

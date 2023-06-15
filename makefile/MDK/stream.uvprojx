@@ -430,9 +430,9 @@
               <FilePath>..\..\stream_al\platform_al.c</FilePath>
             </File>
             <File>
-              <FileName>platform_windows.c</FileName>
+              <FileName>platform_computer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\stream_al\platform_windows.c</FilePath>
+              <FilePath>..\..\stream_al\platform_computer.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -448,11 +448,6 @@
               <FileName>stream_nodes.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\stream_nodes\stream_nodes.c</FilePath>
-            </File>
-            <File>
-              <FileName>arm_code_imadpcm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\stream_nodes\arm\audio_codec\audio_codec_imadpcm\arm_code_imadpcm.c</FilePath>
             </File>
             <File>
               <FileName>arm_stream_amplitude.c</FileName>

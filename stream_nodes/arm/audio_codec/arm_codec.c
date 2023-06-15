@@ -1,4 +1,10 @@
 /* ----------------------------------------------------------------------
+
+
+        WORK ON GOING
+
+
+
  * Project:      CMSIS Stream
  * Title:        arm_stream_codec.c
  * Description:  filters
@@ -26,15 +32,18 @@
  */
 
 #ifdef _MSC_VER 
-#include "../../../stream_al/platform_windows.h"
+#include "../../../stream_al/platform_computer.h"
 #include "../../../stream_src/stream_const.h"      
 #include "../../../stream_src/stream_types.h"  
 #else
-#include "platform_windows.h"
+#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
 #endif
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
 
 typedef struct
 {
@@ -46,14 +55,14 @@ typedef struct
 
 
 /**
-  @brief         Processing function for _______________
-  @param[in]     S         points to an instance of the floating-point Biquad cascade structure
-  @param[in]     pSrc      points to the block of input data
-  @param[out]    pDst      points to the block of output data
-  @param[in]     blockSize  number of samples to process
+  @brief        single entry point interface to the services of Stream 
+  @param[in]    command     service asked by the component
+  @param[in]    instance    holds the address of the Stream interface
+  @param[in]    data        buffer address
+  @param[in]    size        size of the buffer
   @return        none
  */
-int32_t arm_stream_codec_calls_stream (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status)
+int32_t arm_stream_codec_calls_stream (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *size)
 {
     stream_entrance *STREAM; /* function pointer used for debug/trace, memory move and free, signal processing */
     arm_stream_codec_instance *pinstance = (arm_stream_codec_instance *)instance;
@@ -192,11 +201,15 @@ void arm_stream_codec (int32_t command, uint32_t *instance, data_buffer_t *data,
 
 
 
-        /* func(command = STREAM_END, PRESET, TAG, NB ARCS IN/OUT)
+        /* func(command = STREAM_STOP, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = unused
            used to free memory allocated with the C standard library
         */  
-        case STREAM_END:  break;    
+        case STREAM_STOP:  break;    
     }
 }
+
+#ifdef __cplusplus
+}
+#endif

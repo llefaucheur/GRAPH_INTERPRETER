@@ -22,8 +22,13 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-* 
+ * 
  */
+#ifdef __cplusplus
+ extern "C" {
+#endif
+   
+    
 #ifndef cSTREAM_MACRO_H
 #define cSTREAM_MACRO_H
 
@@ -38,7 +43,8 @@
 
 #define MIN(a, b) (((a) > (b))?(b):(a))
 #define MAX(a, b) (((a) < (b))?(b):(a))
-#define MEMCPY(dst,src,n) {void *x; x=memcpy((dst),(src),(n));}
+//#define MEMCPY(dst,src,n) {void *x; uint32_t i; x=memcpy((dst),(src),(n));}
+#define MEMCPY(dst,src,n) {uint32_t i; for(i=0;i<n;i++){dst[i]=src[i];}}
 
 
 /* bit-field manipulations */
@@ -55,7 +61,7 @@
 #define INSERT_FIELD(arg, field, value)     INSERT_BITS((arg), field##_MSB, field##_LSB, value)
 #define ST(arg, field, value) INSERT_FIELD((arg), field, U(value)) 
 
-#define PACK2LINADDR(x,o) ((RD((x),BASEIDX_ARCW0)<<(RD((x),BASESHIFT_ARCW0)<<2))+(*((o)+RD(x, DATAOFF_ARCW0))))
+#define PACK2LINADDR(o,x) (RD((x),BASEIDX_ARCW0)+(*((o)+RD(x,DATAOFF_ARCW0))))
 
 #define SET_BIT(arg, bit)   ((arg) |= (U(1) << U(bit)))
 #define CLEAR_BIT(arg, bit) ((arg) = U(arg) & U(~(U(1) << U(bit))))
@@ -86,3 +92,7 @@
 /*
  * -----------------------------------------------------------------------
  */
+#ifdef __cplusplus
+}
+#endif
+ 
