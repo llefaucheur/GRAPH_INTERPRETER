@@ -31,21 +31,17 @@
    
 
 
-#ifdef _MSC_VER 
-#include "../../../stream_al/platform_computer.h"
-#include "../../../stream_src/stream_const.h"      
-#include "../../../stream_src/stream_types.h"  
-#else
 #include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
-#endif
 
-#define PRINTF 1
+
+#define PRINTF 0
 
 #include "arm_stream_detector.h"
 
 #include <inttypes.h>
+#include <stdbool.h>
 
 
 /*
@@ -74,56 +70,90 @@ void detector_processing (arm_detector_instance *instance,
 {
     // TODO:
     //  Add nullpointer and other memory checks if necessary
-    //  Windowing or ping-pong buffer to allow live stream data to be processed
+    //  Add Windowing or ping-pong buffer
 
-    // WIP We are using int16_t for outbuf now so types don't match, try this simple correction for now
     int32_t isamp = 0;
     int32_t input_data;
-    static long dbgZ4, dbgC;
 
-    // Filtering Cascade 
+    static long dbgZ4, dbgC;
+    static long counter = 0;
+
     while (isamp < inputLength) 
     {
-        input_data = ConvertSamp(in[isamp]);
+
+        // Algorithm sensitive to scaling and filter initialisation, adjust scaling up here samp*(2^shift)
+        // Clean voice: 8 to 12
+        // Noisy voice   9
+        // Acceleromter  9
+        int shift = 9;
+        input_data = ConvertSamp(in[isamp], shift);
+
+        int8_t audio_data = false;
+        if (counter ==0) {
+            // TODO Algorithm can be sensitive to these initialisation values; particularly z6 and z7. 
+            if(audio_data){
+                // Using input signal itself works better for audio while accelerometer prefers set values (.001, .01)
+                Z6 = input_data + F2Q31(0.0001);
+                Z7 = input_data + F2Q31(0.0001);
+                Z1 = input_data + F2Q31(0.0001);
+                Z8 = input_data + F2Q31(0.0001);
+            } else {
+             // Original values - Better performance for Accelerometer 
+                Z6 = F2Q31(0.001);
+                Z7 = F2Q31(0.01);
+                Z1 = F2Q31(0.001);
+                Z8 = F2Q31(0.001);
+            }
+        }
+
+        // Note: Adding two Q numbers may give a result in Q+1 making these steps prone to overflow
         Z2 = Z1  - DIVBIN(Z1 , SHPF) + input_data;
         Z3 = Z2 - Z1;
         Z1  = Z2;
 
         dbgZ4 = Z3;
         Z3 = (Z3 < 0) ? (-Z3) : Z3;
+
         Z6 = DIVBIN(Z3, SLPF) + (Z6 - DIVBIN(Z6, SLPF));
         Z8 = DIVBIN(Z6, SFloorPeak) + (Z8 - DIVBIN(Z8, SFloorPeak));
         Z8 = MAX(Z6, Z8);
+
         DECF = decfMASK & (DECF -1);
         if (DECF == 0)
         {
             Z7 = DIVBIN(Z6, SFloorPeak) + (Z7 - DIVBIN(Z7, SFloorPeak));
-            Z7 = MAX(lowestS, MIN(Z7, Z6));
+            Z7 = MAX(CLAMP_MIN, MIN(Z7, Z6));
             DECF = decfMASK;
         }
 
         if (Z8 > Z7 * THR)
-          ACCVAD = MIN(MAXVAD, ACCVAD + VADRISE);
-        else
-            ACCVAD = MAX(0, ACCVAD - VADFALL);
+          ACCVAD = MIN(CLAMP_MAX, ACCVAD + VADRISE);
+        else{
+            ACCVAD = MAX(CLAMP_MIN, ACCVAD - VADFALL);
+        }
 
-        if (ACCVAD > F2Q31(0.3))
-            FLAG = MIN(F2Q31(0.98), FLAG + VADFALL);
-        else
-            FLAG = MAX(0, FLAG - VADRISE);
+        if (ACCVAD > F2Q31(0.3)){
+            FLAG = MIN(CLAMP_MAX, FLAG + VADFALL);
+        }
+        else{
+            FLAG = MAX(CLAMP_MIN, FLAG - VADRISE);
+        }
         pResult[isamp] = (FLAG > F2Q31(0.5));
 
 #if PRINTF        
-        {   static long counter;
+        {   
+            // static long counter;
             counter++;
             if (pResult[isamp] != PREVIOUSVAD) 
-            {   printf("VAD toggled to %d at %i \n", pResult[isamp], counter);
+            {   
+                printf("VAD toggled to %d at %i \n", pResult[isamp], counter);
                 PREVIOUSVAD = (int8_t) (pResult[isamp]);
             }
         }
    
 
     {
+        #include <stdio.h>
         extern FILE *ptf_trace;
         long x; 
         if (dbgC++ == 73000)
@@ -133,16 +163,17 @@ void detector_processing (arm_detector_instance *instance,
         x = input_data;             fwrite(&x, 1, 4, ptf_trace);
         x = dbgZ4;                  fwrite(&x, 1, 4, ptf_trace);
 
-        x = Z8<<4;                  fwrite(&x, 1, 4, ptf_trace);
+        // x = Z8<<4;                  fwrite(&x, 1, 4, ptf_trace);
         x = ACCVAD;                 fwrite(&x, 1, 4, ptf_trace);
         x = FLAG;                   fwrite(&x, 1, 4, ptf_trace);
+        x = Z8<<4;                  fwrite(&x, 1, 4, ptf_trace);
+        x = in[isamp];   fwrite(&x, 1, 4, ptf_trace);
         x = (pResult[isamp])<<30;   fwrite(&x, 1, 4, ptf_trace);
     }
 #endif     
         isamp++;
     }
 }
-
 
 #ifdef __cplusplus
 }

@@ -41,22 +41,13 @@
 
 /*-----------------------------------------*/
 
-
-#ifdef _MSC_VER 
-#include "../../CMSIS-Stream/stream_al/platform_al.h"        /* defines */
-#include "../../CMSIS-Stream/stream_src/stream_arcs.h"       /* buffers */
-#include "../../CMSIS-Stream/stream_src/stream_macro.h"      /* defines */
-#include "../../CMSIS-Stream/stream_src/stream_nodes.h"      /* swc */
-#include "../../CMSIS-Stream/stream_src/stream_platform.h"   /* hw/sw dependencies */
-#include "../../CMSIS-Stream/stream_src/stream_graph.h"      /* graph list */
-#else
 #include "platform_al.h"       /* defines */
 #include "stream_arcs.h"       /* buffers */
 #include "stream_macro.h"      /* defines */
 #include "stream_nodes.h"      /* swc */
 #include "stream_platform.h"   /* hw/sw dependencies */
 #include "stream_graph.h"      /* graph list */
-#endif
+
 
 
 

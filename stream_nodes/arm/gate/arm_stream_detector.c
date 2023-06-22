@@ -35,17 +35,12 @@
 #include <stdio.h>  /* for sprintf */
 #include <string.h>  /* for memset */
 
-#ifdef _MSC_VER 
-#include "../../../stream_al/platform_computer.h"
-#include "../../../stream_src/stream_const.h"      
-#include "../../../stream_src/stream_types.h"  
-#else
 #include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
-#endif
 
 #include "arm_stream_detector.h"
+
 
 /*
     9.	stream_detector
@@ -63,10 +58,10 @@ const detector_parameters detector_preset [NB_PRESET] =
 {   /* log2counter, log2decfMAX, 
         high_pass_shifter, low_pass_shifter, low_pass_z7_z8,  
         vad_rise, vad_fall, THR */
-    { 12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #0 = VAD at 16kHz */
-    { 12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #1 = VAD at 48kHz */
-    { 12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #2 = peak detector 1 no HPF */
-    { 12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #3 = peak detector 2 TBD */
+    {12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #0 = VAD at 16kHz */
+    {12, 8,  3, 6, 12, MINIF(3,5),  MINIF(25,0),3},   /* preset #1 = VAD at 48kHz */
+    {12, 8,  4, 5,  5, MINIF(3,12), MINIF(1,7), 3},   /* preset #2 = Accelerometer 103Hz */
+    {12, 8,  3, 6, 12, MINIF(3,12), MINIF(1,7), 3},   /* preset #3 = peak detector */
 };
 
 char dbg[100];
@@ -87,13 +82,12 @@ extern void detector_processing (arm_detector_instance *instance,
 void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *data, uint32_t *status)
 {
     *status = 1;    /* default return status, unless processing is not finished */
-
     switch (RD(command,COMMAND_CMD))
     { 
         /* func(command = (STREAM_RESET, PRESET, TAG, NB ARCS IN/OUT)
                 instance = *memory_results,  
                 data = address of Stream function
-                
+
                 memory_results are followed by the first two words of STREAM_FORMAT_SIZE_W32 
                 memory pointers are in the same order as described in the SWC manifest
         */
@@ -120,30 +114,54 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
                 *instance, 
                 data = (one or all)
         */ 
-        case STREAM_SET_PARAMETER:  
-        {   
-            uint8_t *pt8bsrc, *pt8bdst, i, n;
+        case STREAM_SET_PARAMETER:
+        { 
             arm_detector_instance *pinstance = (arm_detector_instance *) instance;
+               if (RD(command,TAG_CMD) == 0xFF) {
 
-            /* copy the parameters */
-            pt8bsrc = (uint8_t *) data;
-            pt8bdst = (uint8_t *) &(pinstance->config);
+                switch (RD(command, PRESET_CMD)){
+                    case 0 :{ 
+                        // pinstance->config = detector_preset[0];
+                        printf("Unsupported Preset 0 \n");}
+                        break;
+                    case STREAM_DETECTOR_PRESET_VAD_48kHz :{
+                        pinstance->config = detector_preset[STREAM_DETECTOR_PRESET_VAD_48kHz];
+                        printf("Preset VAD 48kHz \n");}
 
-            /* copy all the parameter */
-            if (RD(command, TAG_CMD) == 0xFF)
-            {   n = sizeof(detector_parameters);
-                for (i = 0; i < n; i++)
-                {   pt8bdst[i] = pt8bsrc[i];
+                        break;
+                    case STREAM_DETECTOR_PRESET_ACCEL_103Hz : {
+                        pinstance->config = detector_preset[STREAM_DETECTOR_PRESET_ACCEL_103Hz];
+                        printf("Preset Accel 103Hz \n");}
+                        break;
+                    
+                    case 3 :{ 
+                        // pinstance->config = detector_preset[3];
+                        printf("Unsupported Preset 3\n");}
+                        break;
                 }
-                break;
-            } 
-            /* copy a single parameter indexed by TAG, after loading the preset */
-            else 
-            {   pinstance->config = detector_preset[RD(command, PRESET_CMD)];
-                pt8bdst = &(pt8bdst[RD(command, TAG_CMD)]);
-                (*pt8bdst) = (*pt8bsrc);
-                break;
             }
+            //TODO Add support for configuring individual parameters of presets
+            // uint8_t *pt8bsrc, *pt8bdst, i, n;
+            // arm_detector_instance *pinstance = (arm_detector_instance *) instance;
+
+            // /* copy the parameters */
+            // pt8bsrc = (uint8_t *) data;
+            // pt8bdst = (uint8_t *) &(pinstance->config);
+
+            // /* copy all the parameter */
+            // if (RD(command, TAG_CMD) == 0xFF)
+            // {   n = sizeof(detector_parameters);
+            //     for (i = 0; i < n; i++)
+            //     {   pt8bdst[i] = pt8bsrc[i];
+            //     }
+            //     break;
+            // } 
+            // /* copy a single parameter indexed by TAG, after loading the preset */
+            // else 
+            // {   pinstance->config = detector_preset[RD(command, PRESET_CMD)];
+            //     pt8bdst = &(pt8bdst[RD(command, TAG_CMD)]);
+            //     (*pt8bdst) = (*pt8bsrc);
+                break;
         }
 
         /* func(command = STREAM_RUN, PRESET, TAG, NB ARCS IN/OUT)
@@ -180,18 +198,18 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
 
             //--------------------DEBUG---------------------
             //sprintf (dbg, "Z2%5d Z7%3d Z8%4d VAD%2d", (pinstance->z2)>>12, (pinstance->z7)>>12, (pinstance->z8)>>12, outBuf[0]);
-            //arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), dbg, 0, (uint8_t *)strlen(dbg)); 
+            //arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), dbg, (uint8_t *)strlen(dbg), 0);            
 /*            x = (inBuf[0])<<12;  memcpy(&(dbg[0]), &x, 4);
             x = (pinstance->z2)<<2;  memcpy(&(dbg[4]), &x, 4);
             x = (pinstance->z3)<<2;  memcpy(&(dbg[8]), &x, 4);
             x = (pinstance->accvad)<<2; memcpy(&(dbg[12]),&x, 4);
             x = (outBuf[0])<<15;   memcpy(&(dbg[16]),&x, 4);
-            arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), dbg, 0, (uint8_t *)20 );     */       
+            arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_DEBUG_TRACE), dbg, (uint8_t *)20, 0);     */       
             
             break;
         }
 
-        /* func(command = STREAM_STOP, PRESET, TAG, NB ARCS IN/OUT)
+        /* func(command = STREAM_END, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = unused
            used to free memory allocated with the C standard library

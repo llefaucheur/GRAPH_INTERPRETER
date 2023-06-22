@@ -64,6 +64,9 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_convert\arm_stream_converter.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\dsp_src\arm_rate_converter.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\stream_al\platform_al.h">
@@ -122,22 +125,8 @@
     <Filter Include="stream_demo">
       <UniqueIdentifier>{2d4fe9c4-311b-4bb4-9d69-da408a0f0f1a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="stream_tools">
-      <UniqueIdentifier>{0764ecd7-d683-492b-9118-bd0eaf99d0b3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="NewFilter1">
-      <UniqueIdentifier>{d307a930-eaaf-4616-8a0a-d025026d9aad}</UniqueIdentifier>
-    </Filter>
     <Filter Include="graph_tool">
       <UniqueIdentifier>{217e6d7d-a6d0-4ddf-9437-030ed005e741}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\..\stream_tools\graph_bin_1.txt">
-      <Filter>stream_tools</Filter>
-    </Text>
-    <Text Include="..\..\..\stream_tools\graph_txt_1.txt">
-      <Filter>stream_tools</Filter>
-    </Text>
   </ItemGroup>
 </Project>

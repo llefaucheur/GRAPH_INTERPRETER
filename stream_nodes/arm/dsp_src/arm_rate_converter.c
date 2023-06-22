@@ -25,15 +25,10 @@
  * 
  */
 
-#ifdef _MSC_VER 
-#include "../../../stream_al/platform_windows.h"
-#include "../../../stream_src/stream_const.h"      
-#include "../../../stream_src/stream_types.h"  
-#else
-#include "platform_windows.h"
+
+#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
-#endif
 
 
 typedef struct
@@ -190,13 +185,5 @@ void arm_stream_rate_converter (int32_t command, uint32_t *instance, data_buffer
             break;
         }
 
-
-
-        /* func(command = STREAM_END, PRESET, TAG, NB ARCS IN/OUT)
-               instance,  
-               data = unused
-           used to free memory allocated with the C standard library
-        */  
-        case STREAM_END:  break;    
     }
 }

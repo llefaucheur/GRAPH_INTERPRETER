@@ -360,8 +360,6 @@ extern uint8_t stream_execute_script(void);
 extern uint32_t physical_to_offset (arm_stream_instance_t *stream_instance, uint8_t *buffer);
 extern void arc_data_operations (arm_stream_instance_t *stream_instance, uint32_t *arc, uint8_t tag, uint8_t *buffer, uint32_t size);
 
-extern void set_alignment_bit (uint32_t *all_formats, uint32_t *arc);
-
 #endif /* #ifndef cSTREAM_TYPES_H */
 
 #ifdef __cplusplus

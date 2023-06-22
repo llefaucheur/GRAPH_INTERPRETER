@@ -80,7 +80,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Work\stm32u5\EW\CMSIS-Stream\stream_al;C:\Work\stm32u5\EW\CMSIS-Stream\stream_src;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_al;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_src;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -151,6 +151,7 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_amp\arm_stream_amplitude.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_convert\arm_stream_converter.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_filter\arm_dsp_filter.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\dsp_src\arm_rate_converter.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\generator\arm_stream_generator.c" />
@@ -180,10 +181,6 @@
     <ClInclude Include="..\..\..\stream_src\stream_types.h" />
     <ClInclude Include="..\..\..\stream_tools\graph_bin_1.h" />
     <ClInclude Include="..\..\..\stream_tools\graph_txt_1.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\..\stream_tools\graph_bin_1.txt" />
-    <Text Include="..\..\..\stream_tools\graph_txt_1.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

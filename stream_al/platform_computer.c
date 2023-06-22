@@ -33,15 +33,10 @@
 #include "platform_al.h"
 #include "platform_sensor.h"
 
-#ifdef _MSC_VER 
-#include "../../CMSIS-Stream/stream_al/platform_computer.h"
-#include "../../CMSIS-Stream/stream_src/stream_const.h"      
-#include "../../CMSIS-Stream/stream_src/stream_types.h"  
-#else
 #include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
-#endif
+
 
 
 /*

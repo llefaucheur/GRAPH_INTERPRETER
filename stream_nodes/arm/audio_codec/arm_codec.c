@@ -31,15 +31,11 @@
  * 
  */
 
-#ifdef _MSC_VER 
-#include "../../../stream_al/platform_computer.h"
-#include "../../../stream_src/stream_const.h"      
-#include "../../../stream_src/stream_types.h"  
-#else
+
 #include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
-#endif
+
 
 #ifdef __cplusplus
  extern "C" {

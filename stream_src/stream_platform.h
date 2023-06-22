@@ -56,10 +56,9 @@
 #define PLATFORM_EXEC_TIME         15u   /* time counter since last call */
 #define PLATFORM_ERROR             16u   /* error to report to the application */
 #define PLATFORM_TIME_SET          17u
-#define PLATFORM_RTC_SET         18u
+#define PLATFORM_RTC_SET           18u
 #define PLATFORM_TIME_READ         19u
 #define PLATFORM_OFFSETS           20u   /* returns the pointer to the (long) platform offsets */
-#define PLATFORM_OFFSETS           20u
 #define PLATFORM_REMOTE_DATA       21u
 
 

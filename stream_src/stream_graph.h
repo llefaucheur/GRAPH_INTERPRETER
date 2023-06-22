@@ -463,9 +463,9 @@
     //STREAM_2D_INTERP, 
     //STREAM_MATH_TABLE, 
 
-//#define STREAM_RFFT 0x00010012u 
-//#define STREAM_CFFT 0x00020012u
-//#define STREAM_CIFFT 0x00030012u
+    //#define STREAM_RFFT 0x00010012u 
+    //#define STREAM_CFFT 0x00020012u
+    //#define STREAM_CIFFT 0x00030012u
     //STREAM_CNORM,                         
     //STREAM_RMAX,                          
     //STREAM_RSORT,                          
