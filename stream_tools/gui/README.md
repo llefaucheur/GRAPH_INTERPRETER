@@ -1,7 +1,6 @@
 The original code is from PaulStoffregen/Audio/tree/master/gui : 
 https://github.com/PaulStoffregen/Audio/blob/master/gui/index.html
 
-<!--
   Modified from original Node-Red source, for audio system visualization
 
   Copyright 2013 IBM Corp.
@@ -17,4 +16,3 @@ https://github.com/PaulStoffregen/Audio/blob/master/gui/index.html
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
--->
