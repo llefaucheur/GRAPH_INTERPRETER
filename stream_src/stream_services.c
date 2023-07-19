@@ -103,11 +103,12 @@ void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32
          // SECTIONS OF ARC APIs
          /* 
             read the SWC arc ID from its header in the graph :
-                    linked_list = &(linked_list[RD(S->S0.pinst[STREAM_INSTANCE_DYNAMIC], SWC_W32OFF_DINST)]);
+                    linked_list = &(linked_list[RD(S->S0.pinst[STREAM_INSTANCE_WHOAMI_PORTS], SWC_W32OFF_PARCH)]);
          */
 
         /* ----------------------------------------------------------------------------------
             arm_stream_services(PACK_SERVICE(instance index, STREAM_DEBUG_TRACE), *int8_t, 0, nb bytes);
+                the Stream instance index 
             arm_stream_services(DEBUG_TRACE_STAMPS, disable_0 / enable_1 time stamps);
          */
         case STREAM_DEBUG_TRACE:
@@ -129,7 +130,13 @@ void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32
             break;
         }
 
+        /* toggle a flag to insert/remove the time-stamps on each data pushed in the debug trace */
         case STREAM_DEBUG_TRACE_STAMPS:
+            break;
+
+        /* return the list of services available to let the SWC decide between its library or the accelerated ones 
+           by MVE architecture or specific acceleration schemes like coprocessors and custom instructions */
+        case STREAM_SERVICE_ENUMERATE:
             break;
 
         default:

@@ -39,14 +39,47 @@ extern uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code);
 #define UNPACK_PARAM_AL3_SIZE(c) ((c)&0x00FFFFFFL)
 #define UNPACK_PARAM_AL3_FWIDX(c) (((uint32_t)c)>>24)
 
+/*============================  ARCHITECTURES ============================================*/
+
+enum stream_processor_architectures  /* 8bits : 256 architectures */
+{
+    ANY_ARCH    = 0,    /* source code without intrinsics and inline assembly */
+    ARMv6_M0    = 1,    /* Cortex-M0+ */
+    ARMv6_M3    = 2,    /* Cortex-M3 */
+    ARMv7E_M    = 3,    /* Cortex-M4/M7 */
+    ARMv8_M     = 4,    /* Cortex-M33 */
+
+    ARMv7_R     = 11,   /* Cortex-R4 */
+    ARMv8_R     = 12,   /* Cortex-R52 */
+
+    ARMv7_A     = 21,   /* Cortex-A7 */
+
+    ARMv8_A32   = 31,   /* Cortex-A32 */
+    ARMv8_A64   = 32,   /* Cortex-A55 */
+
+    ARMv9_A     = 41,
+
+    C166        = 81, 
+    C51         = 82,  
+    LAST_ARCH,
+};
+
+enum stream_processor_sub_arch_fpu    /* bit-fields, coded on 6b max => 64 options */
+{
+    ARCH_INTEGER    = 1,  /* non constraint : computations on integers */
+    ARCH_FPU        = 2,  /* scalar fp32 */
+    ARCH_DPFPU      = 3,  /* scalar fp32 + fp64 */
+    ARCH_VECTOR     = 4,  /* NEON/MVE + fp16 + fp32 + dotProd8b */
+    ARCH_ADVANCED_VECTOR = 5, /* ARCH_VECTOR + NN CA55 */
+};
+
+/*======================================================================================*/
+
 extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3);
  
 extern int32_t extract_sensor_field (const uint8_t *platform_bit_fields, 
                               const int32_t *settings,
                               uint8_t setting_line,
                               uint8_t index);
-
-
-
 
 #endif /* #ifndef platform_al_H */

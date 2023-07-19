@@ -1,0 +1,72 @@
+; ------------------------------------------------------------------------------------------------------------
+; CMSIS-STREAM script for stream-based DSP/ML                                                                  
+; ------------------------------------------------------------------------------------------------------------
+;
+;
+;  +-------------+     +-------+
+;  |SIGNAL GEN1  +----->       |
+;  +-------------+     |       |
+;                      |       |
+;  +-------------+     |       |    +--------+   +-------+
+;  |ADC1         +----->MIXER2 +---->        +---> DAC1  |
+;  +-------------+     +-------+    |        |   +-------+
+;                                   |        |
+;  +-------------+     +-------+    |        |   +-------+
+;  |SIGNAL GEN2  +---->+AMP    +---->ROUTER4 +---> DAC2  |
+;  +-------------+     +-------+    +--------+   +-------+
+;  
+;
+; Algorithm :
+;  Read ADC1 peak data in the debug register 1
+;   debug_arc_computation_1D = ARC_PEAK_DATA
+;   DEBUG_REG_ARCW1 = 1; 
+;
+;  if the peak data is above a threshold
+;   then change the AMP parameter to preset 2
+;   else restore the AMP parameter to preset 1
+;
+;
+;
+;
+;
+;
+;  debug/verification of assembly
+;
+;LITN
+        LITN INT32  h55AA
+        LITN CHAR   "test"
+        LITN FP64   3.14159265359
+;
+;
+;LDSR
+        LDSR R0
+        LDSR R15
+;
+;
+;LDSP
+        LDSP P0
+        LDSP P1+
+        LDSP P2-
+;
+;
+;STSR
+        STSR R1
+        STSR R14
+;
+;
+;STSP
+        STSP P1
+        STSP P2+
+        STSP P3-
+;
+;
+;
+    JMPL
+    JMPC
+    CALP
+    CALS
+    OPRC
+    OPRA
+    CALL
+    CALC
+    LABL

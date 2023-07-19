@@ -134,35 +134,93 @@ uint8_t stream_execute_script(void)
 
   @par  
     Script format : 
-        Word1 : script size, global register used + backup MEM, stack size
-        Wordn : stack 
+        Word1 : script size, register used + backup MEM, stack size
         Wordm : byte-codes 
 
+        SCRIPTS in Flash : index given as a parmeter of arm_script()
+        Word0+n: table of index to the byte-codes (or ASCII strings)
+        Word1+n: Byte-codes 
+        Scripts in RAM are in the parameter field of arm_script()
+
     Registers 
-        One register is used for test "t"
-        Other registers placed on the stack 
-        data types : X + time-stamp, Vector + time-stamp
-    Instructions (see TI57 programming manual)
-        load "t", from stack(i) = R(i) or #const
-        move R(i) to/from arc FIFOdata / debugReg / with/without read index update
-        compare R(i) with "t" : <> = != and skip next instruction 
-        jump to #label 
-        dsz decrement and jump on non-zero
-        arithmetic add,sub,(AND,shift), #const/R(j)
-        time difference, time comparison
+        Bank of 2+2+12 registers (up to 8bytes each, loop counters, thresholds) + hidden DTYPE
+          DTYPE: FP8/16/32/64, INT8/16/32/64, TIME32/64, Characters(terminated with \0), 
+                pointer (27bits index, raw type), unused(4)
+        The stack lines are tagged with DTYPE
+        Bank of 4 "soft pointers". indexes + memory offset + hidden format
+        Flag "comparison OK" for conditional call/jump
+        assembler uses "DEF" for meaningfull data and automatic for labels
+
+    Instructions 
+        format 8its : IIIIXXXX
+
+        0000 dddd  LITN  constant(s) pushed on stack of DTYPE (4bits)
+        0001 rrrr  LDSR  load on stack[0] from register[16] (push[0..15])
+        0010 iipp  LDSP  load on stack[0] from pointer[4] + increments[0+-]    
+        0011 rrrr  STSR  save stack[0] to register[16] (pop[0..15])
+        0100 iipp  STSP  save stack[0] to *pointer[4] + increments[0+-.]
+        0101 llll  JMPL  jump to local labels (<16)
+        0110 llll  JMPC  conditional jump to local labels (<16)
+        0111 iipp  CALP  system call #IDP [4] returned result in pointer[4] and register[4] (arc buffer + size)
+        1000 iiii  CALS  system call #ID [16] result on stack and registers 
+        1001 cccc  OPRC  operations list for control
+        1010 aaaa  OPRA  operations list for arithmetics
+        1011 llll  CALL  call local Label (<16)
+        1100 llll  CALC  conditional call to local Label (<16)
+        1101 llll  LABL  entry-point label and its ID (<16), for code reuse and compactness
+        1110 ....
+        1111 .... 
+
+        OPRC  16 control operations:
+        0 RET   return from CALL
+        1 RETR  push R1/R2 on the stack and return from CALL
+        2 RETS  keep S0/S1 on the stack and return from CALL
+        3 EQUS  does S0 == S1 
+        4 EQUR  does S0 == R1
+        5 GTES  does S0 >= S1
+        6 GTER  does S0 >= R1
+        7 LTES  does S0 <= S1
+        8 LTER  does S0 <= R1
+        9 GTS   does S0 >  S1
+        A GTR   does S0 >  R1
+        B LTS   does S0 <  S1
+        C LTR   does S0 <  R1
+        D SWPS  swap S0 <->S1
+        E SWPR  swap R0 <->R1
+        F EXTC  8bits control extension
+
+        OPRA  16 arithmetics operations:
+        0 ADDS  S0 = S0 + S1 (pop)
+        1 SUBS  S0 = S0 - S1
+        2 MULS  S0 = S0 x S1
+        3 DIVS  S0 = S0 / S1
+        4 MODS  S0 = S0 mod S1
+        5 ADDR  S0 = S0 + R1
+        6 SUBR  S0 = S0 - R1
+        7 MULR  S0 = S0 x R1
+        8 DIVR  S0 = S0 / R1
+        9 MODR  S0 = S0 mod R1
+        A CNVS  S0 is translated to the format of R0 
+        B CNVR  R0 is translated to the format of S0 
+        C BANZ  R0 is decremented + check does R0 != 0 ?
+        D 
+        E 
+        F EXTA  8bits arithmetic extension  
+
+    Use-cases:
         long-term stats: mean, deviation, max with forget factor
         set (a new configuration), start, stop an IO stream
         call nodes for data conditioning
-
-    Use-cases:
         Smart homes
         When the Temperature > Thr1 and Light < Thr2 and Time in range [t1,t2], then Action_x
-        when someone enters or leaves the room take Action_Y
+        when someone enters or leaves the room send metadata to arc_x
         Smart manufacturing
         move the filled bottle to the capping station in three steps .. 
         Agriculture
         Use of timers for watering, soil/air/.. analysis
         Rain fall measurement: time measurement, valve control
+        detect button (rising edge) and wait falling edge time to decide 
+        polling initiated for next loop (wait or not)
 
 
  */
@@ -238,6 +296,35 @@ void arm_script (int32_t command, uint32_t *instance, data_buffer_t *data, uint3
         case STREAM_STOP:  break;    
     }
 }
+
+        //  format 6b control + 2b register
+        //  load "t", from stack(i) = R(i) or #const
+        //  move R(i) to/from arc FIFOdata / debugReg / with/without read index update
+        //  compare R(i) with "t" : <> = != and skip next instruction 
+        //  jump to #label 
+        //  dsz decrement and jump on non-zero
+        //  arithmetic add,sub,(AND,shift), #const/R(j)
+        //  Basic DSP: moving average, median(5), Max(using VAD's forgetting factors).
+        //  time difference, time comparison, change the setting of the timer (stop/restart)
+        //  time elapsed from today, from a reference, from reset, UTC/local time
+        //  computations on time-stamps
+        //  default implementation with SYSTICK
+        //  convert in ASCII format ISO 8601 
+        //  Modulo 60 function for the translation to mn. Wake me at 5AM.
+        //  Activate timer 0.1s , 1s, 10s 1h 1D 1M
+        //  Registers : 64bits(addressable in int8/16/32) + 8bits (type: time, temperature, pressure, 4xint16, counter-current-max)
+        //  if {data arrived from the button queue}
+        //  Registered callback for low-level operations for one or all instances
+        //    fixed format f(cmd,ptr,x,n)
+        //    example specific : IP address, password to share, Ping IP to blink the LED, read RSSI, read IP@
+        //  Default callbacks: sleep/deep-sleep activation, timer control, who am I
+        //    DAC/PWM/GPIO controlled with standard stream Arcs
+        //  Low-level interface : Fill the I2C control string and callback
+        //  Minimum services : average, timer, data formating/rescale/Interp, polling IOs
+        //  Power meter process is using 3 phases x voltage, current, reactive power
+        //  Save the state of a button (shutter button)
+        //Command from arm_stream_command_interpreter() : return the code version number, ..
+
 
 #ifdef __cplusplus
 }

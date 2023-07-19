@@ -75,15 +75,15 @@
 
 /*
    list of IO ports for the graph
-   see stream_local_instance : whoami_ports [BOUNDARY_PARCH]
+   see stream_local_instance : whoami_ports [BOUNDARY_IOMASK]
       and GRAPH_IO_CONFIG_ADDR
 
     list of streams available on this platform 
     (see also stream_types.h : enum stream_io_domain)
 */ 
-#define PLATFORM_APPLICATION_DATA_IN_INSTANCE_0    0u
-#define PLATFORM_AUDIO_OUT_INSTANCE_0              1u
-#define PLATFORM_COMMAND_OUT_INSTANCE_0            2u
+#define PLATFORM_DATA_STREAM_IN_INSTANCE_0  0u
+#define PLATFORM_AUDIO_OUT_INSTANCE_0       1u
+#define PLATFORM_COMMAND_OUT_INSTANCE_0     2u
 
 #define LAST_IO_FUNCTION_PLATFORM 3
 

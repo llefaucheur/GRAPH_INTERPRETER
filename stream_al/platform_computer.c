@@ -121,14 +121,14 @@ void platform_specific_long_offset(void)
     long_offset[MBANK_PMEM    ] = (const intPtr_t)&(PMEM[10]);
     long_offset[MBANK_FLASH   ] = (const intPtr_t)graph_input;
 
-    long_offset[MBANK_SRAM1   ] = (const intPtr_t)&(RAM1[10]);
-    long_offset[MBANK_SRAM2   ] = (const intPtr_t)&(RAM1[10]);
-    long_offset[MBANK_SRAM3   ] = (const intPtr_t)&(RAM1[10]);
-    long_offset[MBANK_SRAM4   ] = (const intPtr_t)&(RAM1[10]);
-    long_offset[MBANK_SRAM5   ] = (const intPtr_t)&(RAM1[10]);
-    long_offset[MBANK_SRAM6   ] = (const intPtr_t)&(RAM1[10]);
-    long_offset[MBANK_SRAM7   ] = (const intPtr_t)&(RAM1[10]);
-    long_offset[MBANK_SRAM8   ] = (const intPtr_t)&(RAM1[10]);
+    //long_offset[MBANK_SRAM1   ] = (const intPtr_t)&(RAM1[10]);
+    //long_offset[MBANK_SRAM2   ] = (const intPtr_t)&(RAM1[10]);
+    //long_offset[MBANK_SRAM3   ] = (const intPtr_t)&(RAM1[10]);
+    //long_offset[MBANK_SRAM4   ] = (const intPtr_t)&(RAM1[10]);
+    //long_offset[MBANK_SRAM5   ] = (const intPtr_t)&(RAM1[10]);
+    //long_offset[MBANK_SRAM6   ] = (const intPtr_t)&(RAM1[10]);
+    //long_offset[MBANK_SRAM7   ] = (const intPtr_t)&(RAM1[10]);
+    //long_offset[MBANK_SRAM8   ] = (const intPtr_t)&(RAM1[10]);
 };
 
 
@@ -331,7 +331,7 @@ void audio_render_transfer_done (uint8_t *data, uint32_t size)
  */
 
 void audio_ap_rx_transfer_done (uint8_t *data, uint32_t size) 
-{   platform_al(PLATFORM_IO_ACK, data, 0, PACK_PARAM_AL3(PLATFORM_APPLICATION_DATA_IN_INSTANCE_0, size));
+{   platform_al(PLATFORM_IO_ACK, data, 0, PACK_PARAM_AL3(PLATFORM_DATA_STREAM_IN_INSTANCE_0, size));
 }
 
 

@@ -56,7 +56,12 @@ enum STREAM_DETECTOR_PRESETS
 };
 typedef struct          /* 8 Bytes  */
 {
-    uint8_t log2counter;        /* sample counter= 2^log2counter: maintains the "detected" flag at least for this number of samples */
+#define       EXPONENT_MSB 7     
+#define       EXPONENT_LSB 3
+#define     MULTIPLIER_MSB 2     
+#define     MULTIPLIER_LSB 0
+    uint8_t log2counter;        /* sample counter= 2^(log2counter/8) x (2^(log2counter&7))/8  [0 .. ~2^32]
+                                    maintains the "detected" flag at least for this number of samples */
     uint8_t log2decfMAX;        /* decimation = a power of 2 (-1) */
     uint8_t high_pass_shifter;  /* for z1 */
     uint8_t low_pass_shifter;   /* for z6 */
@@ -73,16 +78,14 @@ typedef struct /* total = TBD Bytes*/
     int32_t z1;    /* memory of the high-pass filter (recursive part) */
     int32_t z2;    /* memory of the high-pass filter (direct part) */
     int32_t z3;    /* output of the high-pass filter */
-    // TODO This intermediate value frequently overflows and should be addressed
-    long z6;       /* memory of the first low-pass filter */
+    int32_t z6;    /* memory of the first low-pass filter */
     int32_t z7;    /* memory of the floor-noise tracking low-pass filter */
     int32_t z8;    /* memory of the envelope tracking low-pass filter */
     int32_t accvad;/* accumulator / estimation */
-    // Memory leak causes this to be modified if placed after Flag
-    uint8_t previous_vad; 
     int32_t Flag;  /* accumulator 2 / estimation  */
     int32_t down_counter;    /* memory of the debouncing downcounter  */
     int16_t decf;  /* memory of the decimator for z7/floor noise estimation */
+    uint8_t previous_vad; 
 } arm_detector_instance;
 
 #define F2Q31(f) (long)(0x7FFFFFFFL*(f))
@@ -120,6 +123,8 @@ typedef struct /* total = TBD Bytes*/
 #define SLPF instance->config.low_pass_shifter
 #define PREVIOUSVAD instance->previous_vad
 #define THR instance->config.THR
+#define RELOADCOUNTER instance->config.log2counter
+#define DOWNCOUNTER instance->down_counter
 
 // Replace below with #define SPeak  instance->config.peak_signal_shifter and change SLPF to SFloor 
 // if we do need separate values for each

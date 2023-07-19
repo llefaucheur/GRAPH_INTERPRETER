@@ -106,62 +106,37 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
             {   pt8bdst[i] = 0;
             }
             pinstance->config = detector_preset[preset];    /* preset data move */
+
+            pinstance->z1 = F2Q31(0.001);
+            pinstance->z6 = F2Q31(0.001);
+            pinstance->z7 = F2Q31(0.001);
+            pinstance->z8 = F2Q31(0.001);
+            
             break;
         }  
         
         /* func(command = bitfield (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
-                    TAG of a parameter to set, 0xFF means "set all the parameters" in a raw
+                TAG of a parameter to set, 0xFF means "set all the parameters" in a raw
                 *instance, 
                 data = (one or all)
         */ 
         case STREAM_SET_PARAMETER:
-        { 
-            arm_detector_instance *pinstance = (arm_detector_instance *) instance;
-               if (RD(command,TAG_CMD) == 0xFF) {
+        {   arm_detector_instance *pinstance = (arm_detector_instance *) instance;
+            pinstance->config = detector_preset[RD(command,TAG_CMD)];
 
-                switch (RD(command, PRESET_CMD)){
-                    case 0 :{ 
-                        // pinstance->config = detector_preset[0];
-                        printf("Unsupported Preset 0 \n");}
-                        break;
-                    case STREAM_DETECTOR_PRESET_VAD_48kHz :{
-                        pinstance->config = detector_preset[STREAM_DETECTOR_PRESET_VAD_48kHz];
-                        printf("Preset VAD 48kHz \n");}
+            if (RD(command,TAG_CMD) == 0xFF) 
+            {   if (RD(command, TAG_CMD) == 0xFF)  /* copy all the parameter */
+                {   uint8_t *pt8bsrc, *pt8bdst, i, n;
 
-                        break;
-                    case STREAM_DETECTOR_PRESET_ACCEL_103Hz : {
-                        pinstance->config = detector_preset[STREAM_DETECTOR_PRESET_ACCEL_103Hz];
-                        printf("Preset Accel 103Hz \n");}
-                        break;
-                    
-                    case 3 :{ 
-                        // pinstance->config = detector_preset[3];
-                        printf("Unsupported Preset 3\n");}
-                        break;
-                }
+                    n = sizeof(detector_parameters);
+                    pt8bsrc = (uint8_t *) data;     
+                    pt8bdst = (uint8_t *) &(pinstance->config);
+                    for (i = 0; i < n; i++)
+                    {   pt8bdst[i] = pt8bsrc[i];
+                    }
+                } 
             }
-            //TODO Add support for configuring individual parameters of presets
-            // uint8_t *pt8bsrc, *pt8bdst, i, n;
-            // arm_detector_instance *pinstance = (arm_detector_instance *) instance;
 
-            // /* copy the parameters */
-            // pt8bsrc = (uint8_t *) data;
-            // pt8bdst = (uint8_t *) &(pinstance->config);
-
-            // /* copy all the parameter */
-            // if (RD(command, TAG_CMD) == 0xFF)
-            // {   n = sizeof(detector_parameters);
-            //     for (i = 0; i < n; i++)
-            //     {   pt8bdst[i] = pt8bsrc[i];
-            //     }
-            //     break;
-            // } 
-            // /* copy a single parameter indexed by TAG, after loading the preset */
-            // else 
-            // {   pinstance->config = detector_preset[RD(command, PRESET_CMD)];
-            //     pt8bdst = &(pt8bdst[RD(command, TAG_CMD)]);
-            //     (*pt8bdst) = (*pt8bsrc);
-                break;
         }
 
         /* func(command = STREAM_RUN, PRESET, TAG, NB ARCS IN/OUT)
@@ -214,7 +189,6 @@ void arm_stream_detector (int32_t command, uint32_t *instance, data_buffer_t *da
                data = unused
            used to free memory allocated with the C standard library
         */  
-
         case STREAM_READ_PARAMETER:  
         case STREAM_STOP:  
             break;    

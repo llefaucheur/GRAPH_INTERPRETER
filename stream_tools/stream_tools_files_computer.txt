@@ -1,0 +1,18 @@
+;----------------
+; ROOT DIRECTORY
+;----------------
+..\..\
+;
+;---------------------------
+; PLATFORM DIGITAL, MIXED-SIGNAL AND IO MANIFEST
+;---------------------------
+stream_al\platform_proc_manifest_computer.txt
+;
+;-------------------------------
+; SOFTWARE COMPONENTS MANIFESTS
+;-------------------------------
+2
+stream_nodes\arm\gate\swc_manifest_gate.txt
+stream_nodes\arm\dsp_filter\swc_manifest_dsp_filter.txt
+;
+END

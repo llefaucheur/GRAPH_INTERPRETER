@@ -68,14 +68,14 @@
                                 
 
 //enum buffer_alignment_type            
-#define MEM_REQ_4BYTES_ALIGNMENT   0   /* 0 placed here as default value */
-#define MEM_REQ_8BYTES_ALIGNMENT   1
-#define MEM_REQ_16BYTES_ALIGNMENT  2
-#define MEM_REQ_32BYTES_ALIGNMENT  3
-#define MEM_REQ_64BYTES_ALIGNMENT  4
-#define MEM_REQ_128BYTES_ALIGNMENT 5
-#define MEM_REQ_NOALIGNMENT_REQ    6   /* address binary mask : */
-#define MEM_REQ_2BYTES_ALIGNMENT   7   /*   mask = ~((1 << (7&(mem_req_2bytes_alignment+2)) -1) */
+#define MEM_REQ_NOALIGNMENT_REQ    0    /* address binary mask : */
+#define MEM_REQ_2BYTES_ALIGNMENT   1    /*   mask = ~((1 << (7&mem_req_2bytes_alignment) -1) */
+#define MEM_REQ_4BYTES_ALIGNMENT   2    
+#define MEM_REQ_8BYTES_ALIGNMENT   3
+#define MEM_REQ_16BYTES_ALIGNMENT  4
+#define MEM_REQ_32BYTES_ALIGNMENT  5
+#define MEM_REQ_64BYTES_ALIGNMENT  6
+#define MEM_REQ_128BYTES_ALIGNMENT 7
 
 
 #define SWC_CONTROLS U(4)
@@ -138,25 +138,27 @@
 #define PACKSWCPARAM(PSZ,NBPST) (((PSZ)<<6)|(NBPST))
 
 //enum idx_memory_base_offset   
-#define MBANK_DMEM_EXT  U(0)    /* external shared memory, index [0] for graph */
-#define MBANK_DMEM      U(1)    /* internal shared memory, index [0] for graph */
+
+#define MBANK_DMEM_EXT  U(0)    /* shared external memory */
+#define MBANK_DMEM      U(1)    /* shared internal memory */
 #define MBANK_DMEMPRIV  U(2)    /* not shared memory space */
-#define MBANK_DMEMFAST  U(3)    /* DTCM Cortex-M/LLRAM Cortex-R, swapped between SWC calls if static */
-#define MBANK_BACKUP    U(4)    /* backup SRAM addressed only by STREAM */
-#define MBANK_HWIODMEM  U(5)    /* memory space for I/O and DMA buffers */
-#define MBANK_PMEM      U(6)    /* program RAM */
-#define MBANK_FLASH     U(7)    /* shared internal Flash, index [0] for graph */
+#define MBANK_DMEMFAST  U(3)    /* not shared DTCM Cortex-M/LLRAM Cortex-R, swapped between SWC calls if static */
+#define MBANK_BACKUP    U(4)    /* shared backup SRAM addressed only by STREAM */
+#define MBANK_HWIODMEM  U(5)    /* shared memory space for I/O and DMA buffers */
+#define MBANK_PMEM      U(6)    /* shared program RAM */
+#define MBANK_FLASH     U(7)    /* shared internal Flash */
 
-#define MBANK_SRAM1     U(8)    /* memory mapping to specific blocks */
-#define MBANK_SRAM2     U(9)   
-#define MBANK_SRAM3     U(10)   
-#define MBANK_SRAM4     U(11)   
-#define MBANK_SRAM5     U(12)   
-#define MBANK_SRAM6     U(13)   
-#define MBANK_SRAM7     U(14)   
-#define MBANK_SRAM8     U(15)   
+//#define MBANK_SRAM1     U(8)    /* memory mapping to specific physical blocks */
+//#define MBANK_SRAM2     U(9)   
+//#define MBANK_SRAM3     U(10)   
+//#define MBANK_SRAM4     U(11)   
+//#define MBANK_SRAM5     U(12)   
+//#define MBANK_SRAM6     U(13)   
+//#define MBANK_SRAM7     U(14)   
+//#define MBANK_SRAM8     U(15)   
 
-#define NB_MEMINST_OFFSET U(16) /* 16 memory banks offsets */
+#define NB_MEMINST_OFFSET_LOG2 (DATAOFF_ARCW0_MSB - DATAOFF_ARCW0_LSB + 1)
+#define NB_MEMINST_OFFSET U(1<<NB_MEMINST_OFFSET_LOG2) /* 8 memory banks offsets */
 
 /* upon STREAM_MEMREQ commands the swc can return up to 6 memory requests for its instance 
     scratch fast, DTCM, static fast, internal L2, external */

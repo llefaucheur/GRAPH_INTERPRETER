@@ -182,7 +182,7 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3)
 
     /* platform_al (PLATFORM_MP_RESET_DONE,0,0,instance_idx); */
     case PLATFORM_MP_RESET_DONE: 
-    {   stream_reset_synchro[data3] = 0;
+    {   stream_reset_synchro[data3] = 1;
         DATA_MEMORY_BARRIER;
         break;
     }

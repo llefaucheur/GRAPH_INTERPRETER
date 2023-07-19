@@ -39,7 +39,7 @@
 
 uint32_t graph_input[] = 
 {   
-#include "graph_bin_1.h"
+#include "graph_bin_1.txt"
 };
 
 

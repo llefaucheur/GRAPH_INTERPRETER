@@ -100,6 +100,7 @@
 
 /*
     STREAM SERVICES
+
 */
 
 #define  UNUSED_SRV_MSB U(31)
@@ -107,73 +108,87 @@
 #define    INST_SRV_MSB U(15)       
 #define    INST_SRV_LSB U(12) /* 4  instance */
 #define   GROUP_SRV_MSB U(11)       
-#define   GROUP_SRV_LSB U( 8) /* 4  command family group (DSP, Codec, Stdlib, ..) */
+#define   GROUP_SRV_LSB U( 8) /* 4  command family groups under compilation options (DSP, Codec, Stdlib, ..) */
 #define COMMAND_SRV_MSB U( 7)       
-#define COMMAND_SRV_LSB U( 0) /* 8  256 commands */
+#define COMMAND_SRV_LSB U( 0) /* 8  256 service IDs */
 
-#define STREAM_COMMAND_MASK   0x000000FF
-#define STREAM_COMMAND_GROUP  0x00000F00
-#define STREAM_INSTANCE       0x0000F000
+#define SERVICE_COMMAND_MASK   0x000000FF
+#define SERVICE_COMMAND_GROUP  0x00000F00
+#define SERVICE_INSTANCE       0x0000F000
 #define PACK_SERVICE(INST,CMD) (((INST)<<12)|(CMD))
 
 
-enum stream_command 
-{
+/*
+    Up to 16 family of processing extensions "SERVICE_COMMAND_GROUP"
+    EXTDSPML EXTMATH EXTCRYPTO EXTAUDIO EXTIMAGE EXTSTDLIB
+*/
+
+#define EXT_SERVICE_DSPML  1
+#define EXT_SERVICE_MATH   2
+#define EXT_SERVICE_CRYPTO 3 
+#define EXT_SERVICE_AUDIO  4
+#define EXT_SERVICE_IMAGE  5 
+#define EXT_SERVICE_STDLIB 6
+
+
+
+//enum stream_command 
+//{
     /* Commands 0 ------------------------------------------------------------------- */
-    STREAM_CONTROL = 0x000000000,           
+    //STREAM_CONTROL = 0x000000000,           
 
-    /* first call of SWC to Stream, to register its return address which must be identical for all
-       the later services asked by the SWC */
-    STREAM_NODE_REGISTER,     
+    ///* first call of SWC to Stream, to register its return address which must be identical for all
+    //   the later services asked by the SWC */
+    //STREAM_NODE_REGISTER,     
  
-    //STREAM_SET_BUFFER_NOTIFICATION,
+    ////STREAM_SET_BUFFER_NOTIFICATION,
 
-    STREAM_DEBUG_TRACE, STREAM_DEBUG_TRACE_STAMPS, 
-    STREAM_DEBUG_ARC_CALLBACK,
+    //STREAM_DEBUG_TRACE, STREAM_DEBUG_TRACE_STAMPS, 
+    //STREAM_DEBUG_ARC_CALLBACK,
 
-    STREAM_SAVE_HOT_PARAMETER, STREAM_DATA_FETCH, STREAM_CHECK_FETCH_COMPLETION,
-    /* dummy access to pre-load the cache when the algorithm is working somewhere else 
-        see draw_horiz_band() in FFMPEG */
-    /* Invalidate = flush  => clear valid bit to allow $line to be reused (no WB in memory)
-       Clean = force dirty D-$ line to be written to main memory (coherence between D-$ & mem) */
+    //STREAM_SAVE_HOT_PARAMETER, STREAM_DATA_FETCH, STREAM_CHECK_FETCH_COMPLETION,
+    ///* dummy access to pre-load the cache when the algorithm is working somewhere else 
+    //    see draw_horiz_band() in FFMPEG */
+    ///* Invalidate = flush  => clear valid bit to allow $line to be reused (no WB in memory)
+    //   Clean = force dirty D-$ line to be written to main memory (coherence between D-$ & mem) */
 
-    STREAM_READ_TIME, STREAM_READ_TIME_FROM_START, STREAM_TIME_DIFFERENCE, 
-    STREAM_TIME_CONVERSION,   /* linux time format conversion, ..  */
+    //STREAM_READ_TIME, STREAM_READ_TIME_FROM_START, STREAM_TIME_DIFFERENCE, 
+    //STREAM_TIME_CONVERSION,   /* linux time format conversion, ..  */
 
-    //STREAM_LOW_POWER,     /* interface to low-power platform settings, "wake-me in 24h with deep-sleep in-between" */
-    //STREAM_URGENT_TASKS,  /* from 1ms SYSTICK : call platform_io "get/put next" data stream */
-    //STREAM_PLL_SETTING,   /* tell the scheduler the processor's PLL was changed */
+    ////STREAM_LOW_POWER,     /* interface to low-power platform settings, "wake-me in 24h with deep-sleep in-between" */
+    ////STREAM_URGENT_TASKS,  /* from 1ms SYSTICK : call platform_io "get/put next" data stream */
+    ////STREAM_PLL_SETTING,   /* tell the scheduler the processor's PLL was changed */
 
 
-    /* STREAM_STANDARD_LIBRARIES  ------------------------------------------------------------------- */
-    STREAM_STANDARD_LIBRARIES = 0x00000100,           
+    ///* STREAM_STANDARD_LIBRARIES  ------------------------------------------------------------------- */
+    //STREAM_STANDARD_LIBRARIES = 0x00000100,           
 
-    /* stdio.h */
-    STREAM_FEOF, STREAM_FERROR, STREAM_FFLUSH, STREAM_FGETC, STREAM_FGETS, STREAM_FOPEN, STREAM_FPRINTF, STREAM_FPUTC,
-    STREAM_FPUTS, STREAM_FREAD, STREAM_FSCANF, STREAM_FWRITE,
+    ///* stdio.h */
+    //STREAM_FEOF, STREAM_FERROR, STREAM_FFLUSH, STREAM_FGETC, STREAM_FGETS, STREAM_FOPEN, STREAM_FPRINTF, STREAM_FPUTC,
+    //STREAM_FPUTS, STREAM_FREAD, STREAM_FSCANF, STREAM_FWRITE,
 
-    /* stdlib.h */
-    STREAM_ABS, STREAM_ATOF, STREAM_ATOI, STREAM_ATOL, STREAM_ATOLL, STREAM_CALLOC, STREAM_FREE, STREAM_LABS,
-    STREAM_LDIV, STREAM_LLABS, STREAM_LLDIV, STREAM_MALLOC, STREAM_RAND, STREAM_REALLOC, STREAM_SRAND, STREAM_STRTOD,
-    STREAM_STRTOF, STREAM_STRTOL, STREAM_STRTOLD, STREAM_STRTOLL, STREAM_STRTOUL, STREAM_STRTOULL,
+    ///* stdlib.h */
+    //STREAM_ABS, STREAM_ATOF, STREAM_ATOI, STREAM_ATOL, STREAM_ATOLL, STREAM_CALLOC, STREAM_FREE, STREAM_LABS,
+    //STREAM_LDIV, STREAM_LLABS, STREAM_LLDIV, STREAM_MALLOC, STREAM_RAND, STREAM_REALLOC, STREAM_SRAND, STREAM_STRTOD,
+    //STREAM_STRTOF, STREAM_STRTOL, STREAM_STRTOLD, STREAM_STRTOLL, STREAM_STRTOUL, STREAM_STRTOULL,
 
-    /* string.h */
-    STREAM_MEMCHR, STREAM_MEMCMP, STREAM_MEMCPY, STREAM_MEMMOVE, STREAM_MEMSET, STREAM_STRCHR, STREAM_STRLEN,
-    STREAM_STRNCAT, STREAM_STRNCMP, STREAM_STRNCPY, STREAM_STRSTR, STREAM_STRTOK,
+    ///* string.h */
+    //STREAM_MEMCHR, STREAM_MEMCMP, STREAM_MEMCPY, STREAM_MEMMOVE, STREAM_MEMSET, STREAM_STRCHR, STREAM_STRLEN,
+    //STREAM_STRNCAT, STREAM_STRNCMP, STREAM_STRNCPY, STREAM_STRSTR, STREAM_STRTOK,
 
-    /* STREAM_MATH_LIBRARIES 2 ------------------------------------------------------------------- */
-    STREAM_MATH_LIBRARIES = 0x00000200,           
+    ///* STREAM_MATH_LIBRARIES 2 ------------------------------------------------------------------- */
+    //STREAM_MATH_LIBRARIES = 0x00000200,           
 
-    /* math.h */
-    STREAM_SIN_FP32,  STREAM_COS_FP32, STREAM_ASIN_FP32, STREAM_ACOS_FP32, 
-    STREAM_TAN_FP32,  STREAM_ATAN_FP32, STREAM_ATAN2_FP32, 
-    STREAM_LOG10_FP32,STREAM_LOG2_FP32, STREAM_POW_FP32, STREAM_SQRT_FP32, 
+    ///* math.h */
+    //STREAM_SIN_FP32,  STREAM_COS_FP32, STREAM_ASIN_FP32, STREAM_ACOS_FP32, 
+    //STREAM_TAN_FP32,  STREAM_ATAN_FP32, STREAM_ATAN2_FP32, 
+    //STREAM_LOG10_FP32,STREAM_LOG2_FP32, STREAM_POW_FP32, STREAM_SQRT_FP32, 
 
-    /* CMSIS-DSP/ML */
-    STREAM_SET_ACCURACY, STREAM_SET_MEMORY_CONSTRAINT, STREAM_FREE_COMPUTE_INSTANCE, 
+    ///* CMSIS-DSP/ML */
+    //STREAM_SET_ACCURACY, STREAM_SET_MEMORY_CONSTRAINT, STREAM_FREE_COMPUTE_INSTANCE, 
 
-    //STREAM_CONJ,                          /* Conjugate */
-    STREAM_RFFT, STREAM_CFFT, STREAM_CIFFT,   /* FFT - there is a state and associated instance common for fft and ifft */
+    ////STREAM_CONJ,                          /* Conjugate */
+    //STREAM_RFFT, STREAM_CFFT, STREAM_CIFFT,   /* FFT - there is a state and associated instance common for fft and ifft */
 
     //STREAM_RADD, STREAM_CADD,
     //STREAM_RSUB, STREAM_CSUB,
@@ -199,24 +214,24 @@ enum stream_command
 
 
     /* STREAM_MULTIMEDIA_LIBRARIES 3 ------------------------------------------------------------------- */
-    STREAM_MULTIMEDIA_LIBRARIES = 0x00000300,           
+    //STREAM_MULTIMEDIA_LIBRARIES = 0x00000300,           
 
-    /* audio Codecs */
-    STREAM_ALAW_ENC, STREAM_ALAW_DEC, STREAM_MULAW_ENC, STREAM_MULAW_DEC, STREAM_IMADPCM_ENC, STREAM_IMADPCM_DEC,
-    STREAM_LPC_ENC, STREAM_LPC_DEC,
+    ///* audio Codecs */
+    //STREAM_ALAW_ENC, STREAM_ALAW_DEC, STREAM_MULAW_ENC, STREAM_MULAW_DEC, STREAM_IMADPCM_ENC, STREAM_IMADPCM_DEC,
+    //STREAM_LPC_ENC, STREAM_LPC_DEC,
 
-    /* image                   */
-    STREAM_JPEG_ENC, STREAM_JPEG_DEC, STREAM_PNG_ENC, STREAM_PNG_DEC,
+    ///* image                   */
+    //STREAM_JPEG_ENC, STREAM_JPEG_DEC, STREAM_PNG_ENC, STREAM_PNG_DEC,
 
-    /* STREAM_APPLICATION_LIBRARIES 4 ------------------------------------------------------------------- */
-    STREAM_APPLICATION_LIBRARIES = 0x00000400,
+    ///* STREAM_APPLICATION_LIBRARIES 4 ------------------------------------------------------------------- */
+    //STREAM_APPLICATION_LIBRARIES = 0x00000400,
 
-    STREAM_RAWDATA_FORMAT_CONVERSION,
-    STREAM_RFC8428_CONVERTER,
+    //STREAM_RAWDATA_FORMAT_CONVERSION,
+    //STREAM_RFC8428_CONVERTER,
 
-    STREAM_SECURITY_LIBRARY, 
-    STREAM_TEA,
-};
+    //STREAM_SECURITY_LIBRARY, 
+    //STREAM_TEA,
+//};
 #endif /* #ifndef cSTREAM_PLATFORM_H */
 /*
  * -----------------------------------------------------------------------

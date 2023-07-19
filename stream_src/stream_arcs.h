@@ -45,17 +45,26 @@
                               boundary of the graph, thresholds and flow errors, func_exchange_data
 */
 
-//enum arc_data_operations_threshold
-//enum debug_arc_computation_1D { /* 4bits */
-
-#define ARC_NO_COMPUTE 0
-#define ARC_DATA_RATE 1
-#define ARC_TIME_STAMP_LAST_ACCESS 2
-#define ARC_PEAK_DATA 3
-#define ARC_MEAN_DATA 4
-#define ARC_MIN_DATA 5
-#define ARC_ABSMEAN_DATA 6
-#define ARC_METADATA_TO_OTHER_ARC 6 /* when metada is changing (from last DEBUG_REG_ARCW1) the new data is push to another arc (DBG_IDX_ARCW5) */
+// enum arc_data_operations_threshold
+// enum debug_arc_computation_1D { /* 4bits */
+// extra_command_id (8 commands) used in EXDTCMD_IOFMT from STREAM_FORMAT_IO[]
+// other commands used with ARCs COMPUTCMD_ARCW2 (16 commands)
+#define ARC_NO_ACTION 0u                
+#define ARC_INCREMENT_REG 1u        /* increment DEBUG_REG_ARCW1 */
+#define ARC_SET_ZERO_ADDR 2u        /* set a 0 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to clear */
+#define ARC_SET_ONE_ADDR 3u         /* set a 1 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to set */
+#define ARC_INCREMENT_REG_ADDR 4u   /* increment *DEBUG_REG_ARCW1 */
+#define ARC_PROCESSOR_WAKEUP 5u     /* wake-up processor from DEBUG_REG_ARCW1=[ProcID, command] */
+#define ARC_____UNUSED1 6u
+#define ARC_____UNUSED2 7u
+#define ARC_DATA_RATE 8             /* data rate estimate in DEBUG_REG_ARCW1 */
+#define ARC_TIME_STAMP_LAST_ACCESS 9
+#define ARC_PEAK_DATA 10            /* peak/mean/min with forgeting factor 1/256 in DEBUG_REG_ARCW1 */
+#define ARC_MEAN_DATA 11
+#define ARC_MIN_DATA 12
+#define ARC_ABSMEAN_DATA 13
+#define ARC_DATA_TO_OTHER_ARC 14    /* when data is changing the new data is push to another arc DEBUG_REG_ARCW1=[ArcID] */
+#define ARC_unused3 15u
 //};
 
 //enum underflow_error_service_id{/* 2bits UNDERFLRD_ARCW2, OVERFLRD_ARCW2 */
@@ -119,9 +128,8 @@
 
 /*
 *   stream_data_stream_data_format (size multiple of 3 x uint32_t)
-*   format (4 x uint32_t) 
 *       word 0 : common to all domains : frame size, raw format, interleaving
-*       word 1 : common to all domains : sampling rate , nchan                  << SWC flexibility 
+*       word 1 : common to all domains : time-stamp, sampling rate, nchan         
 *       word 2 : specific to domains : hashing, direction, channel mapping 
 */
 
@@ -165,6 +173,11 @@
     #define MAPPING_FMT2_MSB U(31) /* 32 mapping of channels example of 7.1 format (8 channels): */
     #define MAPPING_FMT2_LSB U( 0) /*     FrontLeft, FrontRight, FrontCenter, LowFrequency, BackLeft, BackRight, SideLeft, SideRight ..*/
 
+#define IMU_FMT2 U( 2)
+    #define MAPPING_FMT2_MSB U(31) /* 32 mapping of channels example of 7.1 format (8 channels): */
+    #define MAPPING_FMT2_LSB U( 0) /*     FrontLeft, FrontRight, FrontCenter, LowFrequency, BackLeft, BackRight, SideLeft, SideRight ..*/
+
+
 #define     PICTURE_FMT2 U( 2)
     #define  UNUSED_FMT2_MSB U(31) /* 12b   */
     #define  UNUSED_FMT2_LSB U(20)
@@ -187,10 +200,12 @@
 #define PRODUCFMT_ARCW0_LSB U(27) /*   Graph generator gives IN/OUT arc's frame size to be the LCM of SWC "grains" */
 #define BASEIDXOFFARCW0_MSB U(26) 
 #define   DATAOFF_ARCW0_MSB U(26) /*   address = offset[DATAOFF] + 4xBASEIDX [Bytes] */
-#define   DATAOFF_ARCW0_LSB U(25) /* 4 32/64bits offset index see idx_memory_base_offset */
-#define   BASEIDX_ARCW0_MSB U(22) /*   buffer address 23 + offset = 27 bits */
-#define   BASEIDX_ARCW0_LSB U( 0) /*23 base address 22bits linear address range in Bytes */
-#define BASEIDXOFFARCW0_LSB U( 0) /*   TODO : base coded in Word32 to address 32MBytes */
+#define   DATAOFF_ARCW0_LSB U(24) /* 3 32/64bits offset index see idx_memory_base_offset */
+#define   ________ARCW0_MSB U(23) /*   We don't know yet if the base will be extended with a 2bits shifter */
+#define   ________ARCW0_LSB U(22) /* 2 or i the list of offsets must be increased */
+#define   BASEIDX_ARCW0_MSB U(21) /*   buffer address 24 + offset = 27 bits */
+#define   BASEIDX_ARCW0_LSB U( 0) /*22 base address 22bits linear address range in WORD32 */
+#define BASEIDXOFFARCW0_LSB U( 0) /*   Base coded in Word32 to address 32MBytes */
                                 
 #define BUFSIZDBG_ARCW1    U( 1)
 #define CONSUMFMT_ARCW1_MSB U(31) 

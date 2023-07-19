@@ -110,7 +110,7 @@ static void stream_calls_swc (p_stream_node address_swc, int32_t command,
 static intPtr_t pack2linaddr_int(intPtr_t *long_offset, uint32_t data)
 {
     intPtr_t dbg1, dbg2, dbg3;
-     dbg1 = RD((data),BASEIDX_ARCW0);
+     dbg1 = BASEINWORD32 * RD((data),BASEIDX_ARCW0);
      dbg2 = *((long_offset)+RD(data,DATAOFF_ARCW0));
      dbg3 = dbg1 + dbg2;
 
@@ -654,7 +654,7 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
     uint32_t *arc;
     struct platform_control_stream p_data_move;
     uint32_t *pio, *pio_base;
-    uint32_t io_mask = RD(S->S0.pinst[STREAM_INSTANCE_WHOAMI_PORTS], BOUNDARY_PARCH);
+    uint32_t io_mask = S->S0.pinst[STREAM_INSTANCE_IOMASK];
     uint32_t nio;
 
     pio_base = S->S0.pio;
@@ -675,7 +675,7 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
 
         /* a previous request is in process or if the IO is commander on the interface, then no 
             need to ask again */
-        if ((0u != TEST_BIT(S->S0.pinst[STREAM_INSTANCE_PARAMETERS], iio)) || 
+        if ((0u != TEST_BIT(S->S0.pinst[STREAM_INSTANCE_IOREQ], iio)) || 
             (0u == TEST_BIT(*pio, SERVANT_IOFMT_LSB)))
         {   continue;
         }
@@ -720,7 +720,7 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
                  characters on a display, ..).
                 data transfer on-going 
             */
-            SET_BIT(S->S0.pinst[STREAM_INSTANCE_PARAMETERS], REQMADE_PARINST_LSB);
+            SET_BIT(S->S0.pinst[STREAM_INSTANCE_IOREQ], REQMADE_IO_LSB);
 
             /* ask the firmware to awake this port */
             p_data_move.fw_idx = RD(*pio, FW_IO_IDX_IOFMT);
@@ -767,7 +767,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t reset_option)
     if (script_option & STREAM_SCHD_SCRIPT_START) { stream_execute_script();}
 
     /* continue from the last position, index in W32 */
-    S->linked_list_ptr = &((S->S0.linked_list)[RD(S->S0.pinst[STREAM_INSTANCE_DYNAMIC], SWC_W32OFF_DINST)]);
+    S->linked_list_ptr = &((S->S0.linked_list)[RD(S->S0.pinst[STREAM_INSTANCE_WHOAMI_PORTS], SWC_W32OFF_PARCH)]);
 
     /* loop until all the components are blocked by the data streams */
 	do 
@@ -948,8 +948,8 @@ static void read_header (arm_stream_instance_t *S)
     } 
 
     /* save word32 the position */
-    ST((S->S0.pinst)[STREAM_INSTANCE_DYNAMIC], 
-        SWC_W32OFF_DINST, 
+    ST((S->S0.pinst)[STREAM_INSTANCE_SIZE], 
+        SWC_W32OFF_PARCH, 
         (uint32_t)(S->linked_list_ptr - S->S0.linked_list));
 }
 

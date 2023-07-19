@@ -141,7 +141,7 @@ void arm_stream_io (uint32_t fw_io_idx,
     }
 
     /* data transfer done when the IO is slave */
-    CLEAR_BIT_MP(stream_instance->S0.pinst[STREAM_INSTANCE_PARAMETERS], REQMADE_PARINST_LSB);
+    CLEAR_BIT_MP(stream_instance->S0.pinst[STREAM_INSTANCE_IOREQ], REQMADE_IO_LSB);
 }
 
 #ifdef __cplusplus

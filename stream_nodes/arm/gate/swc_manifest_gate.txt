@@ -1,0 +1,49 @@
+; ------------------------------------------------------------------------------------------------------------
+; SOFTWARE COMPONENT MANIFEST - "GATE"
+; ------------------------------------------------------------------------------------------------------------
+;
+ARM developer name;
+GATE node name for the GUI; 1 input_arc_nb; 2 output_arc_nb; stream + metadata (signal to noise ratio)
+;
+; list of architectures the SWC is compatible with
+2 ARCH options; 0 source; 1 M0+; 
+1  FPU option ; 2 ARCH_FPU;
+0; 0; 0; 0; 0; 0; dependency to EXTDSPML EXTMATH EXTCRYPTO EXTAUDIO EXTIMAGE EXTSTDLIB
+;
+h0010 code version; 
+h0010 version of the scheduler it is compatible with; 
+    0 delivery as source code; 
+;
+2 number of arcs;
+;---------------------------------------------------
+1 memory bank allocation;                           just the node instance
+;   Memory Size = A + B x nb_channels_arc(i) + C x sampling_arc(j) + D x frame_size_arc(k)
+    h0038 =A; 0 =B; 0.0 arc(i); 0.0 =C; 0 arc(j); 0 =D; 0 arc(k); 2 aligned 1<<2 bytes; static type; 0 data; bestEffort speed; 0 relocation; MEMORY BANK
+;
+h0024 size of the parameter structure in bytes;
+1 preset;
+    h01234567 ; 4;  preset first 4 bytes
+    h89abcdef ; 4;  preset second 4 bytes
+;---------------------------------------------------
+; input_arc : "0"
+  0 rx0tx1;                                         input
+  audio_in domain; domain_name[]
+  int16 raw format; 0 time-stamp; 1 frame length format (0:in seconds 1:in samples); no time-stamps
+  1 interleaving option;  0 default;    0  no interleaving;
+  1 nb_channel option;    0 default index; 1 nb channels; 16bits signed, mono, 
+  1 frame options; 0 default index;     0;          any frame size in raw-format type
+  2 FS options; 1 default index; 16000; 48000;      sampling_rate in Hz
+  0 no inplace processing; -1;                      input buffer is preserved or '1' and output buffer in-place with input #n
+;
+;---------------------------------------------------
+; output_arc : "1"
+  1 rx0tx1;                                         output
+  audio_in domain; domain_name[]
+  int16 raw format; 0 time-stamp; 1 frame length format (0:in seconds 1:in samples); no time-stamps
+  1 interleaving option;  0 default;       0  no interleaving;
+  1 nb_channel option;    0 default index; 1 nb channels; 16bits signed, mono, 
+  1 frame options; 0 default index; 0;              any frame size in raw-format type
+  1 FS options; 0 default index; 0;                 Any sampling_rate in Hz
+  0 no inplace processing; -1;                      input buffer is preserved or '1' and output buffer in-place with input #n
+;
+END

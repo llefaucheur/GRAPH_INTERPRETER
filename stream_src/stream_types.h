@@ -85,19 +85,21 @@ typedef uint8_t (io_function_control) (uint32_t *setting, uint8_t *data, uint32_
 #define PACK_PLATFORM_DOMAIN(INST,DOMAIN) (((INST)<<6)|(DOMAIN))
 
 /* 
-    enum stream_io_domain : list of stream domains categories 
+    enum stream_io_domain : list of stream "domains" categories 
     each stream domain instance is controled by 3 functions and presets
     domain have common bitfields for settings (see example platform_audio_out_bit_fields[]).
+
+    a change in this list 
 */
 #define PLATFORM_DATA_IN                1
 #define PLATFORM_DATA_OUT               2
-#define PLATFORM_APPLICATION_DATA_IN    3
-#define PLATFORM_APPLICATION_DATA_OUT   4
+#define PLATFORM_DATA_STREAM_IN         3
+#define PLATFORM_DATA_STREAM_OUT        4
 #define PLATFORM_AUDIO_IN               5
 #define PLATFORM_AUDIO_OUT              6
 #define PLATFORM_GPIO_IN                7
 #define PLATFORM_GPIO_OUT               8
-#define PLATFORM_MOTION_CAPTURE         9
+#define PLATFORM_MOTION_IN              9
 #define PLATFORM_2D_IN                 10
 #define PLATFORM_2D_OUT                11  
 #define PLATFORM_USER_INTERFACE_IN     12 
@@ -109,7 +111,7 @@ typedef uint8_t (io_function_control) (uint32_t *setting, uint8_t *data, uint32_
 #define PLATFORM_RTC_IN                18 
 #define PLATFORM_RTC_OUT               19
 #define PLATFORM_STORAGE_OUT           20 
-
+#define PLATFORM_MAX_NB_DOMAINS        (PLATFORM_STORAGE_OUT+1)
 
 /*
     each stream is controled by 3 functions and presets

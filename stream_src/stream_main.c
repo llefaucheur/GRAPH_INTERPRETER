@@ -36,7 +36,7 @@
 
 
 static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *graph);
-static void stream_init(arm_stream_instance_t *stream_instance);
+static void stream_init_io(arm_stream_instance_t *stream_instance);
 
 #define L stream_instance->S0.long_offset
 #define G stream_instance->S0.graph
@@ -72,8 +72,8 @@ void arm_stream (uint32_t command,  arm_stream_instance_t *stream_instance, uint
         /* usage: arm_stream(STREAM_RESET, &instance,graph_input); */
 	    case STREAM_RESET: 
 	    {   stream_copy_graph (stream_instance, data);
-            stream_init (stream_instance);
             stream_scan_graph (stream_instance, 1);
+            stream_init_io (stream_instance);
             break;
 
         }
@@ -147,31 +147,18 @@ static uint8_t * pack2linaddr_ptr(intPtr_t *long_offset, uint32_t data)
                    long offsets, address of nodes, arcs, stream formats
 
                 The Graph is a table using uint32 :
-                [.] number of bytes on the graph
-                [0] bit-field configuration : 
-                    number of IOs with the external world of the graph
-                    flag to set the graph in shareable memory
-                    tell the graph will be copied fully or partially in RAM
-                      and which portion stays in Flash
-                [1] RAM destination address of the graph
-                [2] address of configuration structure of the IOs
-                [3] address of the stream formats used by Arcs
-                [4] address linked-list of graph (list of Nodes)
-                [5] address the stream instances specifics
-                    IOs the instance are in charge, on-going data transfer flags
-                    Processor ID and architecture, RTOS instances
-                    Trace buffer to use
-                [6] address of the arc descriptors
-                [7] address of the arc debug registers 
-                [8] base address of all the scripts 
+                - size of the graph in Words
+                [0] 27b RAM address of part/all the graph, HW-shared MEM configuration, which part is going in RAM
+                [1] number of FORMAT, size of SCRIPTS
+                [2] size of LINKEDLIST, number of STREAM_INSTANCES
+                [3] number of ARCS, number of DEBUG registers
 
-                The application shares a pointer, the register [1] tells the graph is either:
+                The application shares a pointer, the register [0] tells the graph is either:
                 - already in RAM : nothing to do
                 - to move in RAM (internal / external) partially or totally
                 
-                stream_copy_graph() implements this data move and calls the when the
-                processor is the main one, calls platform AL to synchronize the other processor 
-                to let them initialize the node instances
+                stream_copy_graph() implements this data move and calls platform AL to synchronize the other processor 
+                to let them initialize the node instances in parallel.
   @remark
  */
 /*---------------------------------------------------------------------------
@@ -361,7 +348,7 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
                 Interface to platform-specific stream controls (set, start)
   @remark
  */
-static void stream_init(arm_stream_instance_t *stream_instance)
+static void stream_init_io(arm_stream_instance_t *stream_instance)
 {
     uint32_t nio;
     uint32_t iio; 
@@ -374,6 +361,8 @@ static void stream_init(arm_stream_instance_t *stream_instance)
     uint32_t iarc; 
     uint32_t *all_arcs; 
 
+
+    /*-------------------------------------------*/
 
     /* if cold start : clear the backup area */
     if (TEST_BIT(stream_instance->scheduler_control, BOOT_SCTRL_LSB) == STREAM_COLD_BOOT)
@@ -393,7 +382,7 @@ static void stream_init(arm_stream_instance_t *stream_instance)
     /* 
         initialization of the graph IO ports 
     */     
-    io_mask = RD(stream_instance->S0.pinst[STREAM_INSTANCE_WHOAMI_PORTS], BOUNDARY_PARCH);
+    io_mask = stream_instance->S0.pinst[STREAM_INSTANCE_IOMASK];
     pio = stream_instance->S0.pio;
     nio = RD(stream_instance->S0.graph[1],NB_IOS_GR1);
     all_arcs = stream_instance->S0.all_arcs;

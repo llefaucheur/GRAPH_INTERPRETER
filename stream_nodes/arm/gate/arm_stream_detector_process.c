@@ -68,19 +68,14 @@ void detector_processing (arm_detector_instance *instance,
                      int16_t *in, int32_t inputLength, 
                      int16_t *pResult)
 {
-    // TODO:
-    //  Add nullpointer and other memory checks if necessary
-    //  Add Windowing or ping-pong buffer
-
     int32_t isamp = 0;
     int32_t input_data;
 
-    static long dbgZ4, dbgC;
-    static long counter = 0;
+    //static long dbgZ4, dbgC;
+    //static long counter = 0;
 
     while (isamp < inputLength) 
     {
-
         // Algorithm sensitive to scaling and filter initialisation, adjust scaling up here samp*(2^shift)
         // Clean voice: 8 to 12
         // Noisy voice   9
@@ -88,30 +83,13 @@ void detector_processing (arm_detector_instance *instance,
         int shift = 9;
         input_data = ConvertSamp(in[isamp], shift);
 
-        int8_t audio_data = false;
-        if (counter ==0) {
-            // TODO Algorithm can be sensitive to these initialisation values; particularly z6 and z7. 
-            if(audio_data){
-                // Using input signal itself works better for audio while accelerometer prefers set values (.001, .01)
-                Z6 = input_data + F2Q31(0.0001);
-                Z7 = input_data + F2Q31(0.0001);
-                Z1 = input_data + F2Q31(0.0001);
-                Z8 = input_data + F2Q31(0.0001);
-            } else {
-             // Original values - Better performance for Accelerometer 
-                Z6 = F2Q31(0.001);
-                Z7 = F2Q31(0.01);
-                Z1 = F2Q31(0.001);
-                Z8 = F2Q31(0.001);
-            }
-        }
 
         // Note: Adding two Q numbers may give a result in Q+1 making these steps prone to overflow
         Z2 = Z1  - DIVBIN(Z1 , SHPF) + input_data;
         Z3 = Z2 - Z1;
-        Z1  = Z2;
+        Z1 = Z2;
 
-        dbgZ4 = Z3;
+        //dbgZ4 = Z3;
         Z3 = (Z3 < 0) ? (-Z3) : Z3;
 
         Z6 = DIVBIN(Z3, SLPF) + (Z6 - DIVBIN(Z6, SLPF));
@@ -120,25 +98,45 @@ void detector_processing (arm_detector_instance *instance,
 
         DECF = decfMASK & (DECF -1);
         if (DECF == 0)
-        {
-            Z7 = DIVBIN(Z6, SFloorPeak) + (Z7 - DIVBIN(Z7, SFloorPeak));
+        {   Z7 = DIVBIN(Z6, SFloorPeak) + (Z7 - DIVBIN(Z7, SFloorPeak));
             Z7 = MAX(CLAMP_MIN, MIN(Z7, Z6));
             DECF = decfMASK;
         }
 
         if (Z8 > Z7 * THR)
-          ACCVAD = MIN(CLAMP_MAX, ACCVAD + VADRISE);
-        else{
-            ACCVAD = MAX(CLAMP_MIN, ACCVAD - VADFALL);
+        {   ACCVAD = MIN(CLAMP_MAX, ACCVAD + VADRISE);
+        }
+        else
+        {   ACCVAD = MAX(CLAMP_MIN, ACCVAD - VADFALL);
         }
 
-        if (ACCVAD > F2Q31(0.3)){
-            FLAG = MIN(CLAMP_MAX, FLAG + VADFALL);
+        if (ACCVAD > F2Q31(0.3))
+        {   FLAG = MIN(CLAMP_MAX, FLAG + VADFALL);
         }
-        else{
+        else
+        {
             FLAG = MAX(CLAMP_MIN, FLAG - VADRISE);
         }
-        pResult[isamp] = (FLAG > F2Q31(0.5));
+
+        if (DOWNCOUNTER > 0)
+        {   DOWNCOUNTER --;
+        }
+        else
+        {   PREVIOUSVAD = 0;
+        }
+
+        /* signal detected => maintain the decision for some time */
+        if (FLAG > F2Q31(0.5))
+        {   if (PREVIOUSVAD == 0)
+            {   uint64_t tmp64;
+                tmp64 = (uint64_t)1 << (uint64_t)(RD(RELOADCOUNTER, EXPONENT));
+                tmp64 = (uint64_t)tmp64 * RD(RELOADCOUNTER, MULTIPLIER);
+                DOWNCOUNTER = (uint32_t) (tmp64 >> (MULTIPLIER_MSB+1));
+                PREVIOUSVAD = 1;
+            }
+        }
+
+        pResult[isamp] = (DOWNCOUNTER > 0);
 
 #if PRINTF        
         {   
@@ -150,26 +148,25 @@ void detector_processing (arm_detector_instance *instance,
                 PREVIOUSVAD = (int8_t) (pResult[isamp]);
             }
         }
-   
 
-    {
-        #include <stdio.h>
-        extern FILE *ptf_trace;
-        long x; 
-        if (dbgC++ == 73000)
-            dbgC = dbgC;
-        x = Z6<<2;                  fwrite(&x, 1, 4, ptf_trace);
-        x = Z7<<2;                  fwrite(&x, 1, 4, ptf_trace);
-        x = input_data;             fwrite(&x, 1, 4, ptf_trace);
-        x = dbgZ4;                  fwrite(&x, 1, 4, ptf_trace);
+        {
+            #include <stdio.h>
+            extern FILE *ptf_trace;
+            long x; 
+            if (dbgC++ == 73000)
+                dbgC = dbgC;
+            x = Z6<<2;                  fwrite(&x, 1, 4, ptf_trace);
+            x = Z7<<2;                  fwrite(&x, 1, 4, ptf_trace);
+            x = input_data;             fwrite(&x, 1, 4, ptf_trace);
+            x = dbgZ4;                  fwrite(&x, 1, 4, ptf_trace);
 
-        // x = Z8<<4;                  fwrite(&x, 1, 4, ptf_trace);
-        x = ACCVAD;                 fwrite(&x, 1, 4, ptf_trace);
-        x = FLAG;                   fwrite(&x, 1, 4, ptf_trace);
-        x = Z8<<4;                  fwrite(&x, 1, 4, ptf_trace);
-        x = in[isamp];   fwrite(&x, 1, 4, ptf_trace);
-        x = (pResult[isamp])<<30;   fwrite(&x, 1, 4, ptf_trace);
-    }
+            // x = Z8<<4;                  fwrite(&x, 1, 4, ptf_trace);
+            x = ACCVAD;                 fwrite(&x, 1, 4, ptf_trace);
+            x = FLAG;                   fwrite(&x, 1, 4, ptf_trace);
+            x = Z8<<4;                  fwrite(&x, 1, 4, ptf_trace);
+            x = in[isamp];   fwrite(&x, 1, 4, ptf_trace);
+            x = (pResult[isamp])<<30;   fwrite(&x, 1, 4, ptf_trace);
+        }
 #endif     
         isamp++;
     }

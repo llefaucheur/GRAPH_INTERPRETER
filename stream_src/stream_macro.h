@@ -61,7 +61,9 @@
 #define INSERT_FIELD(arg, field, value)     INSERT_BITS((arg), field##_MSB, field##_LSB, value)
 #define ST(arg, field, value) INSERT_FIELD((arg), field, U(value)) 
 
-#define PACK2LINADDR(o,x) (RD((x),BASEIDX_ARCW0)+(*((o)+RD(x,DATAOFF_ARCW0))))
+#define LOG2BASEINWORD32 2
+#define BASEINWORD32 (1<<LOG2BASEINWORD32)
+#define PACK2LINADDR(o,x) ((((intPtr_t)RD((x),BASEIDX_ARCW0))<<2) + o[RD(x,DATAOFF_ARCW0)])
 
 #define SET_BIT(arg, bit)   ((arg) |= (U(1) << U(bit)))
 #define CLEAR_BIT(arg, bit) ((arg) = U(arg) & U(~(U(1) << U(bit))))
