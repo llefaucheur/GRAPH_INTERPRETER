@@ -42,14 +42,6 @@
 
 
 
-typedef struct
-{
-    stream_entrance *stream_entry;
-    float data0;
-    float data1;
-    float data2;
-} arm_script_instance;
-
 
 /**
   @brief         Processing function for _______________
@@ -96,33 +88,67 @@ int32_t arm_script_calls_stream (int32_t command, uint32_t *instance, data_buffe
     write to ARC (and initiate 
 
  */
-void script_processing (arm_script_instance *instance, 
-                     uint8_t *in, int32_t nb_data, 
-                     int16_t *outBufs)
+void script_processing (arm_script_instance *instance)
 {
-    /* fake decoder*/ 
-    int i;
-    for (i = 0; i < nb_data; i++)
-    {
-        outBufs[i] = (int16_t)((int16_t)(in[i])<<8);
+    /* byte-code interpreter*/ 
+#if 0
+    enum fct {
+      lit,opr,lod,sto,cal,Int,jmp,jpc
+    } ;
+
+    struct opcode {
+      int f:4; // 
+      int a:4; // 
+    };
+
+    enum { stacksize = 500 };
+    int p, b, t; //{program-, base-, topstack-registers}
+    int i; //{instruction register}
+    int s[stacksize]; //[1..stacksize];
+
+      t = 0; b = 1; p = 0;
+      s[1] = s[2] = s[3] = 0;
+      do {
+        printf("[%d]\n", p );
+        struct opcode i = code[p]; p = p + 1;
+        switch(i.f) { default:
+            break; case lit: { t++; s[t] = i.a; }
+            break; case opr:
+              switch(i.a) { default:
+                break; case 0:
+                  { // {return}
+                    t = b - 1; p = s[t + 3]; b = s[t + 2];
+                  }
+                break; case 1: s[t] = -s[t];
+                break; case 2: t--; s[t] = s[t] + s[t + 1];
+                break; case 3: t--; s[t] = s[t] - s[t + 1];
+                break; case 4: t--; s[t] = s[t] * s[t + 1];
+                break; case 5: t--; s[t] = s[t] / s[t + 1];
+                break; case 6: s[t] = (s[t] & 1); //ord(odd(s[t]));
+                break; case 8: t--; s[t] = (s[t] == s[t + 1]);
+                break; case 9: t--; s[t] = (s[t] != s[t + 1]);
+                break; case 10: t--; s[t] = (s[t] < s[t + 1]);
+                break; case 11: t--; s[t] = (s[t] >= s[t + 1]);
+                break; case 12: t--; s[t] = (s[t] > s[t + 1]);
+                break; case 13: t--; s[t] = (s[t] <= s[t + 1]);
+              }
+            break; case lod: t++; s[t] = s[base(i.l) + i.a];
+            break; case sto: s[base(i.l)+i.a] = s[t]; printf("%d\n",s[t]); t--;
+            break; case cal:
+              { //{generate new block mark}
+                s[t + 1] = base(i.l); s[t + 2] = b; s[t + 3] = p;
+                b = t + 1; p = i.a;
+              }
+            break; case Int: t = t + i.a;
+            break; case jmp: p = i.a;
+            break; case jpc: if( s[t] == 0) { p = i.a; t = t - 1; }
+          }
+      } while( p != 1 ); //< (sizeof(code)/sizeof(struct opcode)) );
+      puts(" end pl/0");
     }
+#endif
 }
 
-
-
-/**
-  @brief         Debug script executed before/after node execution
-  @param[in]     none
-  @return        none
-
-  @par           Execute the script located at "GRAPH_DEBUG_SCRIPT"
-  @remark
- */
-uint8_t stream_execute_script(void)
-{   // TBC  
-    //script_processing();
-    return 1;
-}
 
 /**
   @brief         
@@ -134,7 +160,7 @@ uint8_t stream_execute_script(void)
 
   @par  
     Script format : 
-        Word1 : script size, register used + backup MEM, stack size
+        Word1 : script size, stack size
         Wordm : byte-codes 
 
         SCRIPTS in Flash : index given as a parmeter of arm_script()
@@ -143,13 +169,15 @@ uint8_t stream_execute_script(void)
         Scripts in RAM are in the parameter field of arm_script()
 
     Registers 
-        Bank of 2+2+12 registers (up to 8bytes each, loop counters, thresholds) + hidden DTYPE
-          DTYPE: FP8/16/32/64, INT8/16/32/64, TIME32/64, Characters(terminated with \0), 
+        Instance static = 
+            Bank of 2+2+12 registers (up to 8bytes each, loop counters, thresholds) + hidden DTYPE
+            DTYPE: FP8/16/32/64, INT8/16/32/64, TIME32/64, Characters(terminated with \0), 
                 pointer (27bits index, raw type), unused(4)
-        The stack lines are tagged with DTYPE
-        Bank of 4 "soft pointers". indexes + memory offset + hidden format
-        Flag "comparison OK" for conditional call/jump
-        assembler uses "DEF" for meaningfull data and automatic for labels
+            Bank of 4 "soft pointers". indexes + memory offset + hidden format
+
+        Instance working = 
+            The stack lines are tagged with DTYPE
+            Flag "comparison OK" for conditional call/jump
 
     Instructions 
         format 8its : IIIIXXXX

@@ -71,9 +71,9 @@
     -----------------SHARED RAM-------------------------------
 
     STREAM INSTANCE "stream_local_instance" 3 words + 8 offsets max, 
-        total (32bits only) = 3+1=4 words minimum, 3+8=11 words with multi-instances 32bits
-        total (mix with 64bits) = 3+2=5 words, and 3+2*8=21 words with multiple-instances
-        granularity step is 21 words with multiple instances 32 or 64bits
+        total (32bits only) = 4+1=5 words minimum, 4+8=11 words with multi-instances 32bits
+        total (mix with 64bits) = 4+2=6 words, and 4+2*8=20 words with multiple-instances
+        granularity step is 20 words with multiple instances 32 or 64bits
        Word0: identification "whoami", next SWC to run
        Word1: trace arc, 
        Word2: IO streams to scan (<32)

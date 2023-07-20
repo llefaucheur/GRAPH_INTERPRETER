@@ -152,14 +152,14 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_convert\arm_stream_converter.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_filter\arm_dsp_filter.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_src\arm_rate_converter.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\frequency_estimator\arm_stream_frequency_estimator.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\gate\arm_stream_detector_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\generator\arm_stream_generator.c" />
-    <ClCompile Include="..\..\..\stream_nodes\arm\merge\arm_stream_merge.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\mixer\arm_stream_mixer.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\route\arm_stream_route.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_script.c" />
-    <ClCompile Include="..\..\..\stream_nodes\arm\split\arm_stream_split.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\serial_data\arm_stream_serial_data.c" />
     <ClCompile Include="..\..\..\stream_nodes\stream_nodes.c" />
     <ClCompile Include="..\..\..\stream_src\stream_io.c" />
     <ClCompile Include="..\..\..\stream_src\stream_main.c" />
@@ -179,8 +179,9 @@
     <ClInclude Include="..\..\..\stream_src\stream_macro.h" />
     <ClInclude Include="..\..\..\stream_src\stream_platform.h" />
     <ClInclude Include="..\..\..\stream_src\stream_types.h" />
-    <ClInclude Include="..\..\..\stream_tools\graph_bin_1.h" />
-    <ClInclude Include="..\..\..\stream_tools\graph_txt_1.h" />
+    <ClInclude Include="..\..\..\stream_tools\graph_bin_1.txt" />
+    <ClInclude Include="..\..\..\stream_tools\graph_txt_0.txt" />
+    <ClInclude Include="..\..\..\stream_tools\graph_txt_1.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

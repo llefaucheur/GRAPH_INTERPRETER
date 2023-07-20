@@ -72,7 +72,18 @@ void arm_stream (uint32_t command,  arm_stream_instance_t *stream_instance, uint
         /* usage: arm_stream(STREAM_RESET, &instance,graph_input); */
 	    case STREAM_RESET: 
 	    {   stream_copy_graph (stream_instance, data);
+            stream_instance->linked_list_ptr = stream_instance->S0.linked_list;
+
             stream_scan_graph (stream_instance, 1);
+
+            /* skip the first component = debug script node */
+            #define XX 8 // size of the SWC of the debug trace script
+            #define YY 3 // offset to the instance of the script
+            stream_instance->main_script = (arm_script_instance *)PACK2LINADDR(
+                stream_instance->S0.long_offset, stream_instance->S0.linked_list[YY]);
+            stream_instance->S0.linked_list = &(stream_instance->S0.linked_list[XX]);
+            stream_instance->linked_list_ptr = stream_instance->S0.linked_list;
+
             stream_init_io (stream_instance);
             break;
 
@@ -328,8 +339,6 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
 
     offsetWords += RD(graph[2], NB_ST_INSTANCE_GR2) * STREAM_INSTANCE_SIZE;
     stream_instance->S0.all_arcs = &(graph[offsetWords]);
-
-    stream_instance->linked_list_ptr = stream_instance->S0.linked_list;
 
     stream_instance->all_nodes = node_entry_point_table;
 

@@ -48,15 +48,27 @@ s  12;  length of script;
     h285954B7;
     hF878C4BE;
 ;
+;
 ; --------------------------------------------------
-l 9 FILTER; 1 arch; 0 proc; 0 verbose                   ; FILTER arc 1->2 with TCM
+l 1 SCRIPT; 0 arch; 0 proc; 0 verbose                   ; DEBUG SCRIPT
+    1 nb arcs; 0 nb streaming arcs; 1 index of TX arc used for locking;
+    1 rx0tx1; 4; TX
+;-  memory banks:  index (3bits NB_MEMINST_OFFSET) shift (2bits), base (22bits); check of overlays
+    1 nbmem max=6; 0 no TCM;
+; addresses:  memType (1 slow, 2 fast, 3 backup), LengthW32
+    1 memType; 16 length; 
+;-  parameter preset 0 : use the flash area for the code
+    0 preset; 0 skip words; 0 no params; 0 nbytes total; 
+;
+; --------------------------------------------------
+l 6 FILTER; 1 arch; 0 proc; 0 verbose                   ; FILTER arc 1->2 with TCM
     2 nb arcs; 2 nb streaming arcs; 1  index of TX arc used for locking; 
     0 rx0tx1 (MSB); 1 first arc; RX
     1 rx0tx1 (MSB); 2 second arc; TX
 ;-  memory banks:  index (3bits NB_MEMINST_OFFSET) base (24bits); check of overlays
     2 nbmem max=6; 1 TCM pointer loaded by scheduler; 
-    1; h00250; main instance 
-    1; h002A0; TCM address is dynamic
+    1 memType; 16 length; main instance 
+    2 memType; 16 length; TCM address is dynamic
 ;-  parameter settings - preset:  2 stages [B,A]=cheby2(2,0.5,1/11), dec2hex(round(16384*[B,A]));
     1 preset; 11 skip words; 255 all params; 21 Bytes; 
     h02;    1; numstage
@@ -71,13 +83,13 @@ l 9 FILTER; 1 arch; 0 proc; 0 verbose                   ; FILTER arc 1->2 with T
     h2166 ; 2;  a1
     hdef0 ; 2;  a2
 ;-------
-l 10 DETECTOR; 1 arch; 0 proc; 0 verbose                ; DETECTOR arc 2->3
+l 7 DETECTOR; 1 arch; 0 proc; 0 verbose                ; DETECTOR arc 2->3
     2 nb arcs; 2 nb streaming arcs; 1 index of TX arc used for locking;
     0 rx0tx1; 2; RX
     1 rx0tx1; 3; TX
 ;-  memory banks:  index (3bits NB_MEMINST_OFFSET) base (24bits); check of overlays
     1 nbmem max=6; 0 no TCM;
-    1; h002C0; main instance
+    1 memType; 16 length; main instance 
 ;-  parameter settings - preset:  2 stages [B,A]=cheby2(2,0.5,1/11), dec2hex(round(16384*[B,A]));
     1 preset; 0 skip words; 0 no params; 0 nbytes total; 
 ;

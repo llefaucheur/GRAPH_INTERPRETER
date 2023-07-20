@@ -72,6 +72,47 @@ typedef void (stream_node) (uint32_t command, uint32_t *instance, data_buffer_t 
 typedef uint8_t (*io_function_control_ptr)  (uint32_t *setting, uint8_t *data, uint32_t length);  
 typedef uint8_t (io_function_control) (uint32_t *setting, uint8_t *data, uint32_t length);  
 
+
+//------------------------------------------------------------------------------------------------------
+/*  Time format - 64 bits
+ *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
+ *  00ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq seconds and q14 seconds from reset (resolution ~50us)
+ *  10ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq seconds and q14 seconds from 1st of January, 1970 UTC (overflow in 2108)
+ *  systick increment of 1ms =      00000000000100000110001001001101 0x0010624D = 1ms/4 x 2^32 = 0.275 ppm resolution, 10 seconds/year
+ *  systick increment of 10ms =     00000000101000111101011100001010 0x00A3D70A = 10ms/4 x 2^32
+ */
+
+ /* at each systick ISR the time64 is incremented by 1ms x 2^32 = fraction increment */
+typedef uint64_t stream_time64;
+#define ABSOLUTE_TIM_MSB 63
+#define ABSOLUTE_TIM_LSB 63 /* 0: from reset, 1: from Jan-1st-2000 */
+#define   UNUSED_TIM_MSB 62
+#define   UNUSED_TIM_LSB 62 
+#define   SECOND_TIM_MSB 61
+#define   SECOND_TIM_LSB 32
+#define    FRACT_TIM_MSB 31 
+#define    FRACT_TIM_LSB  0
+
+#define LINK_NB_SOFTWARE_TIMERS 1
+
+/*
+ * stream_time_seconds in 32bits :
+ *  FEDCBA987654321 FEDCBA9876543210
+ *  00sssssssssssssssssqqqqqqqqqqqqq seconds and q13 seconds (8h +/-50us)
+ *  10ssssssssssssssssssssssssssssqq seconds and q2 seconds 
+ * 
+ * bits 31-30 = format   0: seconds from reset, 1:format U14.16 for IMU time-stamps (4h30mn)
+ * bit  29- 0 = time     (30bits seconds = 68years)
+ */
+typedef uint32_t stream_time32;
+#define ABSOLUTE_T32_MSB 31          
+#define ABSOLUTE_T32_LSB 31 /* 0: from reset, 1: from link_local_instance reftime32 (usually set to Jan-1st-2022) */
+#define   FORMAT_T32_MSB 30
+#define   FORMAT_T32_LSB 30 /* 0: Q28.2 (1/4 second) (28bits=8.5years)  1: U18.12 (0.250us) (18bits=3days)  */     
+#define     TIME_T32_MSB 29
+#define     TIME_T32_LSB  0 
+
+
 /* 
     MANIFEST of IO functions and capabilities
     used to interpret stream_setting in platform_xx.h
@@ -272,6 +313,15 @@ enum stream_raw_data
              (I))
 
 
+
+typedef struct
+{   stream_entrance *stream_entry;
+    uint32_t *registers;
+    uint32_t *stack;
+    uint32_t *code;
+} arm_script_instance;
+
+
 typedef struct  
 {   /* stream instance overlay */
     intPtr_t *long_offset;      
@@ -291,13 +341,15 @@ typedef struct
     uint32_t scheduler_control;     // PACK_STREAM_PARAM(..);
 
     p_stream_node address_swc;
-    uint32_t *linked_list_ptr;      // linked-list read pointer
+    uint32_t *linked_list_ptr;      // current position of the linked-list read pointer
 
-    uint32_t *swc_header;            // current swc
+    uint32_t *swc_header;           // current swc
     intPtr_t swc_instance_addr;
     uint16_t arcID[MAX_NB_STREAM_PER_SWC];
     uint8_t *pt8b_collision_arc;
     uint32_t pack_command;          // preset, narc, tag, instanceID, command
+
+    arm_script_instance *main_script;
 
     uint8_t swc_memory_banks_offset;// offset in words
     uint8_t swc_parameters_offset;
@@ -353,12 +405,8 @@ extern void stream_scan_graph (arm_stream_instance_t *stream_instance, int8_t re
 
 /* ---- REFERENCES --------------------------------------------*/
 
+extern void script_processing (arm_script_instance *instance);
 extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3);
-
-//extern uint8_t * pack2linaddr_ptr(intPtr_t *long_offset, uint32_t data);
-//extern intPtr_t pack2linaddr_int(intPtr_t *long_offset, uint32_t data);
-
-extern uint8_t stream_execute_script(void);
 extern uint32_t physical_to_offset (arm_stream_instance_t *stream_instance, uint8_t *buffer);
 extern void arc_data_operations (arm_stream_instance_t *stream_instance, uint32_t *arc, uint8_t tag, uint8_t *buffer, uint32_t size);
 

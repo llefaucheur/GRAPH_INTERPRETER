@@ -764,7 +764,7 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
 
 void stream_scan_graph (arm_stream_instance_t *S, int8_t reset_option) 
 {
-    if (script_option & STREAM_SCHD_SCRIPT_START) { stream_execute_script();}
+    if (script_option & STREAM_SCHD_SCRIPT_START) { script_processing (S->main_script);}
 
     /* continue from the last position, index in W32 */
     S->linked_list_ptr = &((S->S0.linked_list)[RD(S->S0.pinst[STREAM_INSTANCE_WHOAMI_PORTS], SWC_W32OFF_PARCH)]);
@@ -864,13 +864,13 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t reset_option)
         {   CLEAR_BIT(S->scheduler_control, STILDATA_SCTRL_LSB); 
             break;
         }
-        if (script_option & STREAM_SCHD_SCRIPT_END_PARSING) {stream_execute_script(); }
+        if (script_option & STREAM_SCHD_SCRIPT_END_PARSING) {script_processing (S->main_script); }
 
     } while ((return_option == STREAM_SCHD_RET_END_SWC_NODATA) && 
                 (0u != TEST_BIT(S->scheduler_control, STILDATA_SCTRL_LSB)));
 
 
-    if (script_option & STREAM_SCHD_SCRIPT_END) {stream_execute_script(); }
+    if (script_option & STREAM_SCHD_SCRIPT_END) {script_processing (S->main_script);}
 }
 
 
@@ -1189,7 +1189,7 @@ static void run_node (arm_stream_instance_t *S)
         *tmp = S->S0.long_offset[MBANK_DMEMFAST];
     }
     
-    if (script_option & STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC) {stream_execute_script(); }
+    if (script_option & STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC) {script_processing (S->main_script); }
     
     ST(S->pack_command, COMMAND_CMD, STREAM_RUN);
 
@@ -1210,7 +1210,7 @@ static void run_node (arm_stream_instance_t *S)
     while (check == SWC_TASK_NOT_COMPLETED);
     
     
-    if (script_option & STREAM_SCHD_SCRIPT_AFTER_EACH_SWC) {stream_execute_script(); }
+    if (script_option & STREAM_SCHD_SCRIPT_AFTER_EACH_SWC) {script_processing (S->main_script);}
     
     /*  output FIFO write pointer is incremented AND a check is made for data 
         re-alignment to base adresses (to avoid address looping)

@@ -34,16 +34,10 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\generator\arm_stream_generator.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\arm\merge\arm_stream_merge.c">
-      <Filter>stream_nodes</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\arm\mixer\arm_stream_mixer.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\arm\route\arm_stream_route.c">
-      <Filter>stream_nodes</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\arm\split\arm_stream_split.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_src\stream_io.c">
@@ -65,6 +59,12 @@
       <Filter>stream_nodes</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\arm\dsp_src\arm_rate_converter.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\frequency_estimator\arm_stream_frequency_estimator.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\serial_data\arm_stream_serial_data.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
   </ItemGroup>
@@ -105,10 +105,13 @@
     <ClInclude Include="..\..\..\stream_src\stream_types.h">
       <Filter>stream_src</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\stream_tools\graph_bin_1.h">
+    <ClInclude Include="..\..\..\stream_tools\graph_bin_1.txt">
       <Filter>graph_tool</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\stream_tools\graph_txt_1.h">
+    <ClInclude Include="..\..\..\stream_tools\graph_txt_1.txt">
+      <Filter>graph_tool</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_tools\graph_txt_0.txt">
       <Filter>graph_tool</Filter>
     </ClInclude>
   </ItemGroup>

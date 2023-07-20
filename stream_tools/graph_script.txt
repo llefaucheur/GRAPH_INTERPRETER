@@ -33,6 +33,7 @@
 ;  debug/verification of assembly
 ;
 ;LITN
+        LITN INT8   12
         LITN INT32  h55AA
         LITN CHAR   "test"
         LITN FP64   3.14159265359
@@ -60,13 +61,70 @@
         STSP P3-
 ;
 ;
+;JMPL
+        JMPL 1
+        JMPL 15
 ;
-    JMPL
-    JMPC
-    CALP
-    CALS
-    OPRC
-    OPRA
-    CALL
-    CALC
-    LABL
+;
+;JMPC
+        JMPC 2
+        JMPC 14
+;
+;
+;CALP
+        CALP 0 P1
+        CALP 3 P2
+;
+;
+;CALS
+        CALS 0
+        CALS 15
+;
+;
+;OPRC
+        OPRC RET 
+        OPRC RETR
+        OPRC RETS
+        OPRC EQUS
+        OPRC EQUR
+        OPRC GTES
+        OPRC GTER
+        OPRC LTES
+        OPRC LTER
+        OPRC GTS 
+        OPRC GTR 
+        OPRC LTS 
+        OPRC LTR 
+        OPRC SWPS
+        OPRC SWPR
+;
+;
+;OPRA
+        OPRA ADDS
+        OPRA SUBS
+        OPRA MULS
+        OPRA DIVS
+        OPRA MODS
+        OPRA ADDR
+        OPRA SUBR
+        OPRA MULR
+        OPRA DIVR
+        OPRA MODR
+        OPRA CNVS
+        OPRA CNVR
+        OPRA BANZ
+;
+;
+;CALL
+        CALL 0
+        CALL 15
+;
+;
+;CALC
+        CALC 1
+        CALC 14
+;
+;
+;LABL
+        LABL 0
+        LABL 15

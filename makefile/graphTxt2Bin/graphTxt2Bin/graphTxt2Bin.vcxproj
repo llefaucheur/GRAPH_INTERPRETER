@@ -21,7 +21,9 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\stream_al\platform_al.h" />
     <ClInclude Include="..\..\..\stream_al\platform_computer.h" />
+    <ClInclude Include="..\..\..\stream_al\platform_manifest_computer.txt" />
     <ClInclude Include="..\..\..\stream_al\platform_sensor.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\gate\swc_manifest_gate.txt" />
     <ClInclude Include="..\..\..\stream_src\stream_arcs.h" />
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\..\stream_src\stream_graph.h" />
@@ -29,12 +31,23 @@
     <ClInclude Include="..\..\..\stream_src\stream_nodes.h" />
     <ClInclude Include="..\..\..\stream_src\stream_platform.h" />
     <ClInclude Include="..\..\..\stream_src\stream_types.h" />
-    <ClInclude Include="..\..\..\stream_tools\graph_bin_1.h" />
-    <ClInclude Include="..\..\..\stream_tools\graph_txt_1.h" />
+    <ClInclude Include="..\..\..\stream_tools\graph_bin_1.txt" />
+    <ClInclude Include="..\..\..\stream_tools\graph_txt_0.txt" />
+    <ClInclude Include="..\..\..\stream_tools\graph_txt_1.txt" />
+    <ClInclude Include="..\..\..\stream_tools\graph_yaml.txt" />
+    <ClInclude Include="..\..\..\stream_tools\stream_tool_node_manifests.h" />
+    <ClInclude Include="..\..\..\stream_tools\stream_tool_platform_manifests.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\stream_tools\graphTxt2Bin.c" />
-    <ClCompile Include="..\..\..\stream_tools\graphTxt2Bin_process.c" />
+    <ClCompile Include="..\..\..\stream_tools\stream_tool_graph_translation.c" />
+    <ClCompile Include="..\..\..\stream_tools\stream_tool_graphTxt2Bin.c" />
+    <ClCompile Include="..\..\..\stream_tools\stream_tool_readManifests.c" />
+    <ClCompile Include="..\..\..\stream_tools\stream_tool_yaml2Txt.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\stream_nodes\arm\dsp_filter\swc_manifest_dsp_filter.txt" />
+    <Text Include="..\..\..\stream_tools\graph_script.txt" />
+    <Text Include="..\..\..\stream_tools\stream_tools_files_computer.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -96,7 +109,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_al;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_al;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
