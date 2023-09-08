@@ -25,617 +25,470 @@
  * 
  */
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+    
+
 #define _CRT_SECURE_NO_DEPRECATE 1
 #include <stdio.h>    
 #include <string.h>
 #include <stdint.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdarg.h>  /* for void fields_extract(char **pt_line, char *types,  ...) */
 
-#include "stream_const.h"
-#include "stream_types.h"
-
-#include "stream_tool_node_manifests.h"
-#include "stream_tool_platform_manifests.h"
+#include "stream_tool_include.h"
 
 
-#define SZ_LINE 200
-char current_line[SZ_LINE];
+#define MAXINPUT 100000
+char inputFile[MAXINPUT];
 
-/* ---------------------------------------------------------------------- */
-uint32_t INTTOFPE4M6(uint32_t x)
+/**
+  @brief            decode the domain name 
+  @param[in/out]    none
+  @return           none
+  @par
+  @remark
+ */
+void decode_domain(uint8_t *domain_index, char *input)
 {
-    uint32_t E, M;
-
-    for (E = 0; E <= PARAM_MAX_EXPONENT; E++)
-    {   for (M = 0; M <= PARAM_MAX_MANTISSA; M++)
-        {   if ((M << E) >= x)
-                return (E<<6) | M;
-        }
-    }
-    return 0;
+    if (0 == strcmp(input, "data_in"))              *domain_index = PLATFORM_DATA_IN; /* w/wo  sampling rates */
+    if (0 == strcmp(input, "data_out"))             *domain_index = PLATFORM_DATA_OUT;
+    if (0 == strcmp(input, "data_stream_in"))       *domain_index = PLATFORM_DATA_STREAM_IN; /* with sampling rate */
+    if (0 == strcmp(input, "data_stream_out"))      *domain_index = PLATFORM_DATA_STREAM_OUT;
+    if (0 == strcmp(input, "audio_in"))             *domain_index = PLATFORM_AUDIO_IN; /* for PDM, I2S, ADC */
+    if (0 == strcmp(input, "audio_out"))            *domain_index = PLATFORM_AUDIO_OUT;
+    if (0 == strcmp(input, "gpio_in"))              *domain_index = PLATFORM_GPIO_IN; /* extra data for BSP (delay, edge, HiZ, debouncing, analog mix..) */
+    if (0 == strcmp(input, "gpio_out"))             *domain_index = PLATFORM_GPIO_OUT;
+    if (0 == strcmp(input, "motion_in"))            *domain_index = PLATFORM_MOTION_IN;
+    if (0 == strcmp(input, "2d_in"))                *domain_index = PLATFORM_2D_IN; /* control of AGC, zoom in 1/4 image area */
+    if (0 == strcmp(input, "2d_out"))               *domain_index = PLATFORM_2D_OUT;
+    if (0 == strcmp(input, "user_interface_in"))    *domain_index = PLATFORM_USER_INTERFACE_IN; 
+    if (0 == strcmp(input, "user_interface_out"))   *domain_index = PLATFORM_USER_INTERFACE_OUT;
+    if (0 == strcmp(input, "command_in"))           *domain_index = PLATFORM_COMMAND_IN; /* USB/UART */
+    if (0 == strcmp(input, "command_out"))          *domain_index = PLATFORM_COMMAND_OUT;
+    if (0 == strcmp(input, "analog_sensor"))        *domain_index = PLATFORM_ANALOG_SENSOR; /* sensor with aging control */
+    if (0 == strcmp(input, "analog_transducer"))    *domain_index = PLATFORM_ANALOG_TRANSDUCER;
+    if (0 == strcmp(input, "rtc_in"))               *domain_index = PLATFORM_RTC_IN; /* ticks from clocks */
+    if (0 == strcmp(input, "rtc_out"))              *domain_index = PLATFORM_RTC_OUT;
+    if (0 == strcmp(input, "storage_out"))          *domain_index = PLATFORM_STORAGE_OUT; /* periodic dump of captured data */
+    if (0 == strcmp(input, "av_codec"))             *domain_index = PLATFORM_AV_CODEC; /* encoded audio/image/video */
 }
 
-/* ---------------------------------------------------------------------- */
-void jump2next_line(char **line)
+/**
+  @brief            decode the raw data type
+  @param[in/out]    none
+  @return           none
+  @par
+  @remark
+ */
+void decode_rawtype(uint8_t* domain_index, char* input)
 {
-    while (*(*line) != '\n') 
-    {   (*line)++;
-    };
-    (*line)++;
-}
-/* ---------------------------------------------------------------------- */
-static uint32_t jump2next_valid_line (char **line)
-{
-    while ((*line)[0] == ';')     /* skip lines starting with ';' */
-        jump2next_line(line);
-
-#define NOT_YET_END_OF_GRAPH 1
-#define FOUND_END_OF_GRAPH 2
-
-    if (0 == strncmp (*line,"ENDGRAPH",8))
-        return FOUND_END_OF_GRAPH;
-    else
-        return NOT_YET_END_OF_GRAPH;
-}    
-
-/* ---------------------------------------------------------------------- */
-uint32_t quantized_FS (float FS)
-{
-    /* 20bits : mantissa [U18], exponent [U2], FS = (Mx2)/2^(8xE), 0<=>ASYNCHRONOUS/SLAVE */
-    /* 20 range = (E=0,1,2,3) 262142/2^0 .. 2/2^24 [262kHz .. 3 months] */    
-    /* 524kHz  ..  1/8.388.608 Hz  [~1MHz .. 3months] */    
-    uint32_t E, M;
-    float x;
-
-    for (E = FMT_FS_MAX_EXPONENT; E >= 0; E--)
-    {   for (M = 0; M <= FMT_FS_MAX_MANTISSA; M++)
-        {   x = (float)FMTQ2FS(E,M);
-            if (x >= FS)
-            {   
-                return (E<<FMT_FS_EXPSHIFT) | M;
-            }
-        }
-    }
-    return 0;
-
-}
-
-/* ---------------------------------------------------------------------- */
-// fields_extract(&pt_line, 3, "III", &ARC_ID, &IFORMAT, &SIZE);
-
-void fields_extract(char **pt_line, char *types,  ...)
-{
-    char *ptstart, *ptstart0, S[200], *vaS;
-    uint32_t ifield, I, *vaI, nchar, n, nfields;
-    va_list vl;
-    float F, *vaF;
-#define COMMENTS 'c'
-#define FLOAT 'f'
-#define INTEGER 'i'
-#define HEXADECIMAL 'h'
-
-    va_start(vl,types);
-    ptstart = *pt_line;
-    nfields = (uint32_t)strlen(types);
-
-    while (*(*pt_line) == ';') 
-    {   jump2next_line(pt_line); 
-        ptstart = *pt_line;
+    if (0 == strcmp(input, "u8") || 0 == strcmp(input, "i8"))
+    {   *domain_index = STREAM_U8;
     }
 
-    for (ifield = 0; ifield < nfields; ifield++)
+    if (0 == strcmp(input, "u16") || 0 == strcmp(input, "i16") || 0 == strcmp(input, "h16"))
+    {   *domain_index = STREAM_U16;
+    }
+
+    if (0 == strcmp(input, "u32") || 0 == strcmp(input, "i32") || 0 == strcmp(input, "h32"))
+    {   *domain_index = STREAM_U32;
+    }
+
+    if (0 == strcmp(input, "u64") || 0 == strcmp(input, "i64") || 0 == strcmp(input, "h64"))
+    {   *domain_index = STREAM_U64;
+    }
+
+    if (0 == strcmp(input, "f32"))
+    {   *domain_index = STREAM_FP32;
+    }
+
+    if (0 == strcmp(input, "f64"))
+    {   *domain_index = STREAM_FP64;
+    }
+
+    if (0 == strcmp(input, "c"))
+    {   *domain_index = STREAM_U8;
+    }
+}
+
+/**
+  @brief            read the IMU manifest data (specific to IMU)
+  @param[in/out]    none
+  @return           none
+  @par
+  @remark
+ */
+void motion_in_specific(char **pt_line, struct stream_interfaces_motion_specific *pt)
+{   
+    /* digital stream format (see "imu_channel_format") */
+    read_data_v(pt_line, &(pt->channel_format), 0, 0);
+
+    /* skip the RFC8428 unit description */
+    while (*(*pt_line) == ';')   
+    {   jump2next_line(pt_line);
+    }
+
+    /* IMU options */
+    read_common_data_options(pt_line, &(pt->acc_sensitivity));
+    read_data_v(pt_line, &(pt->acc_scaling), 0, 0);
+    read_common_data_options(pt_line, &(pt->acc_averaging));
+
+    read_common_data_options(pt_line, &(pt->gyro_sensitivity));
+    read_data_v(pt_line, &(pt->gyro_scaling), 0, 0);
+    read_common_data_options(pt_line, &(pt->gyro_averaging));
+
+    read_common_data_options(pt_line, &(pt->mag_sensitivity));
+    read_data_v(pt_line, &(pt->mag_scaling), 0, 0);
+    read_common_data_options(pt_line, &(pt->mag_averaging));
+}
+
+/**
+  @brief            read the audio manifest data (specific to audio capture)
+  @param[in/out]    none
+  @return           none
+  @par
+  @remark
+ */
+void audio_in_specific(char** pt_line, struct stream_interfaces_audio_specific* pt)
+{
+    char line[MAXNBCHAR_LINE];
+
+    /* digital audio multichannel stream format  */
+    read_data_v(pt_line, line, 0, 0);
+    decode_audio_channels(pt->bitFieldChannel, line);
+
+    /* skip the RFC8428 unit description */
+    while (*(*pt_line) == ';')
+    {   jump2next_line(pt_line);
+    }
+
+   /* digital scaling from default sensitivity levels */
+    read_data_v(pt_line, &(pt->audio_scaling), 0, 0);
+
+    /* analog gain setting */
+    read_common_data_options(pt_line, &(pt->analog_gain));
+    read_common_data_options(pt_line, &(pt->digital_gain));
+    read_common_data_options(pt_line, &(pt->AGC));
+    read_common_data_options(pt_line, &(pt->DC_filter));
+}
+
+
+
+/**
+  @brief            decode the domain name to an index
+  @param[in/out]    none
+  @return           none
+  @par
+  @remark
+ */
+void read_common_data_options(char** pt_line, struct options *pt)
+{
+    read_data_v(pt_line, &(pt->default_index), 0, 0);
+    read_data_v(pt_line, (void *)&(pt->options), &(pt->raw_type), &(pt->nb_option));
+}
+
+/** 
+  @brief            read the platform manifest fields
+  @param[in/out]    none
+  @return           none
+  @par              
+  @remark
+ */
+void read_platform_digital_manifest(char* inputFile, struct stream_platform_manifest* platform)
+{
+    char* pt_line, cstring[NBCHAR_LINE];
+    uint32_t nb_io_stream, iB;
+    processor_memory_bank_t *ptm;
+    struct stream_IO_interfaces *pts;
+    struct arcStruct *pta;
+
+#define _Processor 'P'
+#define _IO_StreamManifest 'I'
+
+    pt_line = inputFile;
+    nb_io_stream = 0;
+
+    while (NOT_YET_END_OF_FILE == jump2next_valid_line(&pt_line))
     {
-        if (types[ifield] == COMMENTS)
-        {   ptstart0 = strchr (ptstart, '\n'); 
-        } else
-        {   ptstart0 = strchr (ptstart, ';'); 
-        }
-
-        switch(types[ifield])
+        switch (*pt_line)
         {
-            case COMMENTS:
-                nchar = (uint32_t)((uint64_t)ptstart0 - (uint64_t)ptstart);
-                vaS = va_arg (vl,char *);
-                strncpy(vaS, ptstart, nchar);
-                vaS[nchar] = 0;
-                break;
+        /* ============================================================= */
+        case _Processor:
+        {   int32_t iproc, ibank, iservices;
+            uint8_t nservices;
+            
+            jump2next_line(&pt_line);
+            read_data_v(&pt_line, &(platform->nb_processors), 0 ,0);
 
-            case FLOAT:
-                n = sscanf (ptstart,"%f",&F);
-                vaF = va_arg (vl,float *);
-                *vaF = F;
-                break;
+            for (iproc = 0; iproc < platform->nb_processors; iproc++)
+            {                
+                read_data_v(&pt_line, &(platform->processor[iproc].processorID), 0, 0);
+                read_data_v(&pt_line, &(platform->processor[iproc].IamTheMainProcessor), 0, 0);
+                read_data_v(&pt_line, &(platform->processor[iproc].architecture), 0, 0);
+                read_data_v(&pt_line, &(platform->processor[iproc].nbMemoryBank_simple), 0, 0);
+                read_data_v(&pt_line, &(platform->processor[iproc].nbMemoryBank_detailed), 0, 0);
 
-            default:
-            case INTEGER:
-                n = sscanf (ptstart,"%d",&I);
-                vaI = va_arg (vl,uint32_t *);
-                *vaI = I;
-                break;
+                for (ibank = 0; ibank < platform->processor[iproc].nbMemoryBank_simple +
+                    platform->processor[iproc].nbMemoryBank_detailed; ibank++)
+                {
+                    if (ibank < platform->processor[iproc].nbMemoryBank_simple)
+                    {
+                        iB = ibank;
+                        ptm = &(platform->processor[iproc].membank_simple[iB]);
+                    }
+                    else
+                    {
+                        iB = ibank - platform->processor[iproc].nbMemoryBank_simple;
+                        ptm = &(platform->processor[iproc].membank_detailed[iB]);
+                    }
 
-            case HEXADECIMAL:
-                n = sscanf (ptstart,"%s",S);
-                n = sscanf(&(S[1]),"%X",&I); /* remove the 'h' */
-                vaI = va_arg (vl,uint32_t *);
-                *vaI = I;
-                break;
+                    read_data_v(&pt_line, &(ptm->offsetID), 0, 0);
+                    read_data_v(&pt_line, &(ptm->offset64b), 0, 0);
+                    read_data_v(&pt_line, &(ptm->speed), 0, 0);
+                    read_data_v(&pt_line, &(ptm->shareable), 0, 0);
+                    read_data_v(&pt_line, &(ptm->data_access), 0, 0);
+                    read_data_v(&pt_line, &(ptm->backup), 0, 0);
+                    read_data_v(&pt_line, &(ptm->hwio), 0, 0);
+                    read_data_v(&pt_line, &(ptm->flash), 0, 0);
+                    read_data_v(&pt_line, &(ptm->base32), 0, 0);
+                    read_data_v(&pt_line, &(ptm->size), 0, 0);
+                }
+
+                /* bit-field of extended library / services */
+                read_data_v(&pt_line, &(nservices), 0, 0);
+
+                for (iservices = 0; iservices < nservices; iservices++)
+                {
+                    uint8_t tmp;
+                    read_data_v(&pt_line, &(tmp), 0, 0);
+                    platform->processor[iproc].libraries_b += (1 << tmp);
+                }
+            }
+            break; // case _Processor
         }
+        /* ============================================================= */
+        } // switch case
+    } // while not end of file
+    platform->nb_hwio_stream = nb_io_stream;
+}
 
-        ptstart = ptstart0 + 1;      /* skip the ';\n' separators */
-    }
-    *pt_line = ptstart;
-    va_end(vl);
+/** 
+  @brief            read the platform manifest fields
+  @param[in/out]    none
+  @return           none
+  @par              
+  @remark
+ */
+void read_platform_io_stream_manifest(char* inputFile, struct stream_platform_manifest* platform)
+{
+    char* pt_line, cstring[NBCHAR_LINE];
+    uint32_t nb_io_stream, iB;
+    processor_memory_bank_t *ptm;
+    struct stream_IO_interfaces *pts;
+    struct arcStruct *pta;
+
+#define _Processor 'P'
+#define _IO_StreamManifest 'I'
+
+    pt_line = inputFile;
+    nb_io_stream = 0;
+
+    while (NOT_YET_END_OF_FILE == jump2next_valid_line(&pt_line))
+    {
+        switch (*pt_line)
+        {
+        case _IO_StreamManifest:
+        {   
+            uint8_t iarc;
+
+            jump2next_line(&pt_line);
+            pts = &(platform->stream[nb_io_stream]);
+            nb_io_stream++;
+           
+            read_data_v(&pt_line, (pts->IO_name), 0, 0);
+            read_data_v(&pt_line, &(pts->nb_arc), 0, 0);
+
+            for (iarc = 0; iarc < pts->nb_arc; iarc++)
+            {   
+                pta = &((pts->arc_flow)[iarc]);
+
+                /* read standard digital format data */
+                read_data_v(&pt_line, cstring, 0, 0);
+                decode_domain(&(pta->domain), cstring);
+                read_data_v(&pt_line, &(pta->rx0tx1), 0, 0);
+                read_data_v(&pt_line, &(pta->setupTime), 0, 0);
+                read_data_v(&pt_line, &(pta->set0_copy1), 0, 0);
+                read_data_v(&pt_line, &(pta->extraCommandID), 0, 0);
+
+                read_data_v(&pt_line, &(pta->commander0_servant1), 0, 0);
+                read_data_v(&pt_line, &(pta->graphalloc0_bsp1), 0, 0);
+                read_data_v(&pt_line, &(pta->sram0_hwdmaram1), 0, 0);
+                read_data_v(&pt_line, &(pta->processorBitFieldAffinity), 0, 0);
+
+                read_data_v(&pt_line, cstring, 0, 0);
+                decode_rawtype(&(pta->raw), cstring);
+                read_data_v(&pt_line, &(pta->timestp), 0, 0);
+                read_data_v(&pt_line, &(pta->frameSizeFormat_0s_1sample), 0, 0);
+
+                read_common_data_options(&pt_line, &(pta->interleaving_option));
+                read_common_data_options(&pt_line, &(pta->nbchannel_option));
+                read_common_data_options(&pt_line, &(pta->frame_size_option));
+                read_common_data_options(&pt_line, &(pta->sampling_rate_option));
+
+                read_data_v(&pt_line, &(pta->FS_accuracy), 0, 0); /* allowed error on the sampling rate, in percentage */
+
+                /* read domain-specific digital format data */
+                /* read domain-specific mixed-signal format data */
+                switch (pta->domain)
+                {
+                case PLATFORM_MOTION_IN:
+                    motion_in_specific(&pt_line, &(pts->U.imu));
+                    break;
+                case PLATFORM_AUDIO_IN:
+                    audio_in_specific(&pt_line, &(pts->U.audio));
+                    break;
+                }
+            } // for iarc
+
+        break;
+        } // case _IO_StreamManifest:
+        /* ============================================================= */
+        } // switch case
+    } // while not end of file
+    platform->nb_hwio_stream = nb_io_stream;
 }
 
 
-/*  
-    first letters of the lines in the input file 
-*/
-#define _comments    'c'
-#define _offsets     'o'
-#define _header      'h'
-#define _format      'f'
-#define _stream_inst 'i'
-#define _linked_list 'l'
-#define _script      's'
-#define _arc         'a'
-#define _RAM         'r'
-#define _debug       'd'
+/**
+  @brief            read the node manifest fields
+  @param[in/out]    none
+  @return           none
+  @par
+  @remark
+ */
+void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
+{
 
-#define PRINTF(d) fprintf(ptf_graph_bin, "0x%08X, // %03X %03X\n", (d), addrBytes, addrBytes/4); addrBytes += 4;
-
-
-/* 
-    the number of coefficients per nodes can be large
-*/
-static uint32_t parameters[MAX_FPE4M6];
-
-
-/* 
-    list of all the memory banks, for debug
-*/
-#define MAX_MEMORY_BANK_DBG 1000
-static uint32_t memory_banks[MAX_MEMORY_BANK_DBG], nb_memory_banks;
-
+}
 
 /**
   @brief            (main) 
   @param[in/out]    none
   @return           int
 
-  @par              translates the graph intermediate format GraphTxt to GraphBin to be reused
-                    in CMSIS-Stream/stream_graph/*.txt
+  @par             
+                   
   @remark
  */
-void arm_stream_read_manifests (struct stream_platform_manifest *platform, struct stream_node_manifest *all_nodes, FILE *ptf_graph_all_files);
+void arm_stream_read_manifests (struct stream_platform_manifest *platform, struct stream_node_manifest *all_nodes, char *all_files)
 {
-    char *pt_line;
-    uint32_t addrBytes, FMT0, FMT1, FMT2, FMT3;
-    char comments[SZ_LINE];
-    char comment1[SZ_LINE];
-    char comment2[SZ_LINE];
-    char comment3[SZ_LINE];
-    static fpos_t pos_NWords, pos_PACKFORMATIOSSCRIPT, pos_PACKLINKEDLNBINSTANCE, pos_PACKNBARCDEBUG;
-    static uint32_t nFMT, LENscript, LinkedList, LinkedList0, NbInstance, nIOs, NBarc, SizeDebug;
-
-    pt_line = graph_txt;
-    addrBytes = 0;
-
-    while (NOT_YET_END_OF_GRAPH == jump2next_valid_line(&pt_line))
-    {
-        switch (*pt_line)
-        {   
-            /* ============================================================= */
-            case _comments:
-            {   pt_line++;     // skip the "c" field
-                fields_extract(&pt_line, "c", &(comments[0])); pt_line--;
-                fprintf (ptf_graph_bin, "//%s\n", comments);
-                break;
-            }
-            /* ============================================================= */
-            case _offsets:
-            {   uint32_t share, RAMsplit, off, base;
-
-                /* save the address for the last operation : saving the number of bytes in the file */
-                fgetpos (ptf_graph_bin, &pos_NWords);
-                fprintf (ptf_graph_bin, "0x%08X, // number of Words in this graph \n", 0); 
-
-                pt_line++;     // skip the "o" field
-                fields_extract(&pt_line, "iic", &share, &RAMsplit, &comment1);
-                fields_extract(&pt_line, "ihc", &off,  &base, &comment2);
-
-                FMT0 = 0;
-                ST(FMT0, DATAOFF_ARCW0, off);
-                ST(FMT0, BASEIDX_ARCW0, base);
-                ST(FMT0, PRODUCFMT_ARCW0, PACKSHARERAMSPLIT(share,RAMsplit));
-                fprintf(ptf_graph_bin, "0x%08X, // %03X %03X [0] 27b RAM address, HW-shared MEM & RAM copy config\n", FMT0, addrBytes, addrBytes/4); addrBytes += 4;
-
-                fgetpos (ptf_graph_bin, &pos_PACKFORMATIOSSCRIPT);
-                fprintf(ptf_graph_bin, "0x%08X, // %03X %03X [1] Scripts size, NB IOs, number of FORMAT, \n", 0, addrBytes, addrBytes/4); addrBytes += 4;
-
-                fgetpos (ptf_graph_bin, &pos_PACKLINKEDLNBINSTANCE);
-                fprintf(ptf_graph_bin, "0x%08X, // %03X %03X [2] size of LINKEDLIST, number of STREAM_INSTANCES\n", 0, addrBytes, addrBytes/4); addrBytes += 4;
-
-                fgetpos (ptf_graph_bin, &pos_PACKNBARCDEBUG);
-                fprintf(ptf_graph_bin, "0x%08X, // %03X %03X [3] number of ARCS, number of DEBUG registers\n", 0, addrBytes, addrBytes/4); addrBytes += 4;
-                break;
-            }
-
-            /* ============================================================= */
-            case _header:  /* Header and IOs stream_format_io */
-            {   uint32_t idxio, arc, fw_io_idx, rx0tx1, follower, iocommand, ext, inst, domain, settings;
-
-                pt_line++;     // skip the "h" field
-                fields_extract(&pt_line, "i", &nIOs);
-                for (idxio = 0; idxio < nIOs; idxio++)
-                {
-                    fields_extract(&pt_line, "iiiiiiiiic",  
-                        &arc, &fw_io_idx, &rx0tx1, &follower, &iocommand, &ext, &inst, &domain, &settings, comments);
-
-                    FMT0 = 0;
-                    ST(FMT0,   IOARCID_IOFMT, ARC_RX0TX1_CLEAR & arc);
-                    ST(FMT0, FW_IO_IDX_IOFMT, fw_io_idx);
-                    ST(FMT0,    RX0TX1_IOFMT, rx0tx1);
-                    ST(FMT0,   SERVANT_IOFMT, follower);
-                    ST(FMT0, IOCOMMAND_IOFMT, iocommand);
-                    ST(FMT0,   EXDTCMD_IOFMT, ext);
-                    ST(FMT0,  INSTANCE_IOFMT, inst);
-                    ST(FMT0,    DOMAIN_IOFMT, domain);
-                
-                    FMT1 = settings;
-
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X %03X IO [%d] %s\n", FMT0, addrBytes, addrBytes/4, idxio, comments); addrBytes += 4;
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X %03X    \n", FMT1, addrBytes, addrBytes/4); addrBytes += 4;
-
-                    FMT1 = 0;
-                }
-                break;
-            }
-
-
-            /* ============================================================= */
-            /* the list of formats includes the ones selected found in the IO manifests */
-            case _format:
-            {   uint32_t idxfmt, frameSize, raw, iFS, nchan, timestp, intlv, multiframe, specific;
-                uint32_t addrBytes_start;
-                float FS;
-                
-                pt_line++;     // skip the "f" field
-                fields_extract(&pt_line, "i", &nFMT);
-                addrBytes_start = addrBytes;
-
-                for (idxfmt = 0; idxfmt < nFMT; idxfmt++)
-                {
-                    fields_extract(&pt_line, "iiifiiiic",  
-                        &frameSize, &raw, &nchan, &FS, &timestp, &intlv, &multiframe, &specific, comments);
-
-                    FMT0 = 0;
-                    ST(FMT0, MULTIFRME_FMT0, multiframe);
-                    ST(FMT0,       RAW_FMT0, raw);
-                    ST(FMT0, INTERLEAV_FMT0, intlv);
-                    ST(FMT0, FRAMESIZE_FMT0, frameSize);
-
-                    FMT1 = 0;
-                    ST(FMT1, NCHANM1_FMT1,      nchan-1 );
-                    iFS = quantized_FS (FS);
-                    ST(FMT1, SAMPLING_FMT1,     iFS);
-                    ST(FMT1, TIMSTAMP_FMT1,     timestp);
-                    //iFS = quantized_FS (1.653e-6); // 1 week
-                    //iFS = quantized_FS (1.157e-5); // 1 day
-                    //iFS = quantized_FS (2.778e-4); // 1 hour
-
-                    FMT2 = 0;
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X %03X Format[%d] %s\n", FMT0, addrBytes, addrBytes/4, idxfmt, comments); addrBytes += 4;
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X %03X \n", FMT1, addrBytes, addrBytes/4); addrBytes += 4;
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X %03X \n", FMT2, addrBytes, addrBytes/4); addrBytes += 4;
-                }
-
-                break;
-            }
-
-            /* ============================================================= */
-            case _script:
-            {   uint32_t iscript, p;
-
-                pt_line++;     // skip the "s" field
-                fields_extract(&pt_line, "ic", &LENscript, comments);
-
-                for (iscript = 0; iscript < LENscript; iscript++)
-                {   fields_extract(&pt_line, "h", &p);
-                    PRINTF(p)
-                }
-                break;
-            }
-
-            /* ============================================================= */
-            case _linked_list:
-            {   uint32_t swcID, TCM, verb, narc, narc_streamed, arc[MAX_NB_STREAM_PER_SWC], iarc, rx0tx1;   
-                uint32_t nbmem, m[MAX_NB_MEM_REQ_PER_NODE], imem, off, base;
-                uint32_t preset, skip, arch, proc, nparam, nb, accubytes, locking_arc;
-                uint32_t iparam, p, nbytes;
-                uint8_t *p8;
-                
-                if (LinkedList0 == 0)
-                {   LinkedList0 = addrBytes;
-                }
-                pt_line++;     // skip the "l" field
-                fields_extract(&pt_line, "iiiic",  
-                    &swcID, &arch, &proc, &verb, comment1);      
-
-                fields_extract(&pt_line, "iiic",  
-                   &narc, &narc_streamed, &locking_arc, comment2);     
-                   
-                memset(arc, 0, MAX_NB_STREAM_PER_SWC * sizeof(uint32_t));
-                for (iarc = 0; iarc < narc; iarc++)
-                {   fields_extract(&pt_line, "iic",  &rx0tx1, &(arc[iarc]), comments);  
-                    arc[iarc] |= (rx0tx1 << ARC0_LW1_MSB);  // bit10 is the rx/tx direction
-                }
-
-                /* forced maximum value of ARCs = 4 */
-                if (narc >= MAX_NB_STREAM_PER_SWC)
-                {   fprintf(stderr, "\n TOO MUCH ARCS \n");
-                }
-
-                narc = MIN(narc, MAX_NB_STREAM_PER_SWC);
-
-                fields_extract(&pt_line, "iic",  
-                   &nbmem, &TCM, comment3);           
-                   
-                for (imem = 0; imem < nbmem; imem++)
-                {   fields_extract(&pt_line, "ihc",  &off, &base, comments);  
-                    FMT0 = 0;
-                    ST(FMT0, DATAOFF_ARCW0, off);
-                    ST(FMT0, BASEIDX_ARCW0, base);
-                    m[imem] = FMT0;
-                }
-
-                /* parameters */
-                fields_extract(&pt_line, "iiiic",  
-                    &preset, &skip,  &nparam, &nbytes, comment3);
-
-                //ST(linked_list_27b, BASEIDX_ARCW0, addrBytes); /* patch the base address, keep the memory bank */
-
-        /* word 1 - main Header */
-                FMT0 = 0;
-                ST(FMT0,  PROCID_LW0, proc);
-                ST(FMT0,  ARCHID_LW0, arch);
-                ST(FMT0,  NBARCW_LW0, narc);
-                ST(FMT0, ARCLOCK_LW0, locking_arc);
-                ST(FMT0, ARCSRDY_LW0, narc_streamed);
-                ST(FMT0, SWC_IDX_LW0, swcID);
-                fprintf (ptf_graph_bin, "0x%08X, // %03X -------%s\n", FMT0, addrBytes, comment1); addrBytes += 4;
-
-        /* word 2 - arcs */
-                for (iarc = 0; iarc < narc; iarc+=2)
-                {
-                    FMT0 = 0;
-                    ST(FMT0, ARC1_LW1, arc[iarc+1]);
-                    ST(FMT0, ARC0_LW1, arc[iarc]);
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X        %s \n", FMT0, addrBytes, comment2); addrBytes += 4;
-                }
-
-        /* word 3 - memory banks */
-                for (imem = 0; imem < nbmem; imem++) 
-                {
-                    memory_banks[nb_memory_banks++] = (swcID<<28) | m[imem];      // for debug
-
-                    FMT0 = 0;
-                    if (imem == 0) ST(FMT0, NBALLOC_LW2,  nbmem);  // instance pointer has the number of memory banks on MSBs
-                    ST(FMT0, BASEIDXOFFLW2, m[imem]);
-
-                    if (imem == 0)
-                    {   ST(FMT0, TCM_INST_LW2, TCM);
-                        fprintf (ptf_graph_bin, "0x%08X, // %03X %03X SWC MEM %d %s\n", FMT0, addrBytes, addrBytes/4, imem, comment3); addrBytes += 4;
-                    }
-                    else
-                    {   fprintf (ptf_graph_bin, "0x%08X, // %03X %03X SWC MEM %d \n", FMT0, addrBytes, addrBytes/4, imem); addrBytes += 4;
-                    }
-                }
-
-        /* word 4 - parameters */
-                FMT0 = 0;
-                ST(FMT0, SELPARAM_LW3,  0); // @@@ all parameters only
-
-                //{   int i, f, s; float fs = 1; s = 1;
-                //    for (i = 0; i < 2e6; i+=s)
-                //    {   fs = fs * 1.1; s = (int)fs; f = INTTOFP844(i);
-                //        printf("%9d %3X [%3d %3d] err = %9d\n", i, f, f>>6, f&0x3F, ((f&0x3F) << (f>>6))-i);
-                //    } }
-
-                //FPskip = INTTOFPE4M6(skip);
-                //skip = FPE4M6TOINT(FPskip);      // parameter size is increased by ~2%
-
-                ST(FMT0, W32LENGTH_LW3, skip);
-                ST(FMT0,   VERBOSE_LW3, verb);
-                ST(FMT0,  NEWPARAM_LW3, 0);
-                ST(FMT0,    PRESET_LW3, preset);
-
-                PRINTF(FMT0)
-
-                parameters[0] = 0;
-                p8 = (uint8_t *)parameters;
-
-#define NIBBLE3_MSB U(31)
-#define NIBBLE3_LSB U(24) 
-#define NIBBLE2_MSB U(23)
-#define NIBBLE2_LSB U(16) 
-#define NIBBLE1_MSB U(15)
-#define NIBBLE1_LSB U( 8) 
-#define NIBBLE0_MSB U( 7)
-#define NIBBLE0_LSB U( 0) 
-
-                /* 
-                    @@@ TODO @@@ 
-                    allow setting of few parameters instead of 0 or all
-                */
-
-                accubytes = 0;
-                while (nbytes > 0)
-                {   fields_extract(&pt_line, "hic", &p, &nb, comments);
-                    if (nb == 1)
-                    {   *p8++ = RD(p, NIBBLE0);
-                    }
-                    if (nb == 2)
-                    {   *p8++ = RD(p, NIBBLE0); *p8++ = RD(p, NIBBLE1);
-                    }
-                    if (nb == 4)
-                    {   *p8++ = RD(p, NIBBLE0); *p8++ = RD(p, NIBBLE1);
-                        *p8++ = RD(p, NIBBLE2); *p8++ = RD(p, NIBBLE3);
-                    }
-                    nbytes = nbytes -nb;
-                    accubytes = accubytes + nb;
-                }
-
-                for (iparam = 0; iparam < skip; iparam++)
-                {   PRINTF(parameters[iparam])
-                }
-                break;
-             }
-
-
-            /* ============================================================= */
-            case _stream_inst:
-            {   uint32_t idxinst, iomask, archID, procID, instanceID, traceArc, offsetsLength;
-                uint32_t last_word, ioffset;
-                
-                /* === END OF LINKED_LIST ===*/
-                LinkedList = (addrBytes - LinkedList0 + 3)/4;
-                last_word = 0;
-                ST(last_word, SWC_IDX_LW0, GRAPH_LAST_WORD);
-                fprintf(ptf_graph_bin, "0x%08X, // %03X %03X\n", last_word, addrBytes, addrBytes/4); addrBytes += 4;
-                /* === ================== ===*/
-
-                pt_line++;     // skip the "i" field
-                fields_extract(&pt_line, "i", &NbInstance);
-                for (idxinst = 0; idxinst < NbInstance; idxinst++)
-                {
-                    fields_extract(&pt_line, "iiiiic",  
-                        &iomask, &archID, &procID, &instanceID, &traceArc, &offsetsLength, comments);
-
-                    /* STREAM_INSTANCE_WHOAMI_PORTS */
-                    FMT0 = 0;
-                    ST(FMT0, INSTANCE_PARCH,    instanceID);
-                    ST(FMT0, PROCID_PARCH,      procID);
-                    ST(FMT0, ARCHID_PARCH,      archID);
-
-                    /* STREAM_INSTANCE_PARAMETERS */
-                    FMT1 = 0;
-                    ST(FMT1, TRACE_ARC_PARINST, traceArc);
-
-                    /* STREAM_INSTANCE_IOMASK */
-                    FMT2 = iomask;
-
-                    /* STREAM_INSTANCE_IOREQ */
-                    FMT3 = 0;
-
-                    //ST(linked_list_sharedRAM27b, BASEIDX_ARCW0, addrBytes); /* patch the base address, keep the memory bank */
-
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X %03X Stream Instance [%d] %s\n", FMT0, addrBytes, addrBytes/4, idxinst, comments); addrBytes += 4;
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X %03X  \n", FMT1, addrBytes, addrBytes/4); addrBytes += 4;
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X %03X  \n", FMT2, addrBytes, addrBytes/4); addrBytes += 4;
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X %03X  \n", FMT3, addrBytes, addrBytes/4); addrBytes += 4;
-
-                    /* fill the table of memory offsets */
-                    for (ioffset = 0; ioffset < offsetsLength; ioffset++)
-                    {   fprintf (ptf_graph_bin, "0x%08X, // %03X %03X  \n", 0x0F5E, addrBytes, addrBytes/4); addrBytes += 4;
-                    }
-                }
-                break;
-            }
-            /* ============================================================= */
-            case _arc:
-            {   uint32_t size, off, base, prodFMT, consFMT, reg, compute, overflow, underflow, MPflush;
-                uint32_t iarc, idxarc;
-
-                pt_line++;     // skip the "a" field
-                fields_extract(&pt_line, "ic", &NBarc);
-
-                for (iarc = 0; iarc < NBarc; iarc++)
-                {                             
-                    fields_extract(&pt_line, "iihhiiiiiiic", 
-                        &idxarc, &off, &base, &size, &prodFMT, &consFMT, &reg, &compute, &overflow, &underflow, &MPflush, comments);
-
-                    FMT0 = 0;
-                    ST(FMT0, PRODUCFMT_ARCW0, prodFMT);
-                    ST(FMT0,   DATAOFF_ARCW0, off);
-                    ST(FMT0,   BASEIDX_ARCW0, base);
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X %03X ARC[%d]%s\n", FMT0, addrBytes, addrBytes/4, idxarc, comments); addrBytes += 4;
-
-                    FMT1 = 0;
-                    ST(FMT1, CONSUMFMT_ARCW1, consFMT);
-                    ST(FMT1,   MPFLUSH_ARCW1, MPflush);
-                    ST(FMT1, DEBUG_REG_ARCW1, reg);
-                    ST(FMT1, BUFF_SIZE_ARCW1, size);
-
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X %03X\n", FMT1, addrBytes, addrBytes/4); addrBytes += 4;
-
-                    FMT2 = 0;
-                    ST(FMT2, COMPUTCMD_ARCW2, compute);
-                    ST(FMT2, UNDERFLRD_ARCW2, underflow);
-                    ST(FMT2,  OVERFLRD_ARCW2, overflow);
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X %03X\n", FMT2, addrBytes, addrBytes/4); addrBytes += 4;
-
-                    FMT0 = 0;
-                    fprintf (ptf_graph_bin, "0x%08X, // %03X %03X\n", FMT0, addrBytes, addrBytes/4); addrBytes += 4;
-                    
-                }
-                break;
-            };
-
-            /* ============================================================= */
-            case _debug:
-            {   uint32_t i;
-                pt_line++;     // skip the "d" field
-                fields_extract(&pt_line, "ic", &SizeDebug);
-
-                for (i = 0; i < SizeDebug; i++)
-                {   PRINTF(0)
-                }
-                break;
-            }
-            /* ============================================================= */
-            case _RAM:
-            {   uint32_t idxram, nbram, imem, membank;
-
-                pt_line++;     // skip the "r" field
-                fields_extract(&pt_line, "hc", &nbram, comments);
-
- for (imem = 0; imem < nb_memory_banks; imem++)
- {   
-     fprintf (stderr, "\n%8X %8X",memory_banks[imem], RD(memory_banks[imem],BASEIDX_LW2));
- }
-
-                for (idxram = 0; idxram < nbram/4; idxram++)
-                {   
-                    membank = 0;
-                    for (imem = 0; imem < nb_memory_banks; imem++)
-                    {   if (RD(memory_banks[imem],BASEIDX_LW2) == addrBytes)
-                        {   membank = 0x11110000 | (0Xffff & memory_banks[imem]);
-                        }
-                    }
-                    PRINTF(membank)
-                }
-                break;
-             }
-
-            /* ============================================================= */
-            default:
-                break;
-        }
-        jump2next_line(&pt_line);
+    char* pt_line;
+    char file_name[MAXNBCHAR_LINE];
+    char graph_platform_manifest_name[MAXNBCHAR_LINE];
+    uint32_t nb_nodes, inode;
+    char node_name[MAXNBCHAR_LINE];
+    char root_directory[MAXNBCHAR_LINE];
+
+    /*
+        STEP 1 : read the file names : and the digital platform capabilities
+    */
+    pt_line = all_files;
+    jump2next_valid_line(&pt_line);
+    sscanf(pt_line, "%s", root_directory);        /* read the ROOT directory name */
+    jump2next_line(&pt_line);
+
+    jump2next_valid_line(&pt_line);
+    sscanf(pt_line, "%s", graph_platform_manifest_name); /* read the platform_manifest name*/
+    jump2next_line(&pt_line);
+    strcpy(file_name, root_directory);
+    strcat(file_name, graph_platform_manifest_name);
+
+    read_input_file(file_name, inputFile);
+
+    read_platform_digital_manifest(inputFile, platform);
+
+
+    /*
+        STEP 2 : loop on all the list of IO stream manifests
+    */
+    jump2next_valid_line(&pt_line);
+    sscanf(pt_line, "%d", &nb_nodes);  /* read the number of nodes in this plaform */
+    jump2next_line(&pt_line);
+
+    if (nb_nodes > MAX_NB_NODES)
+    {   fprintf(stderr, "too much nodes !"); exit(-4);
     }
 
-    fsetpos (ptf_graph_bin, &pos_NWords);
-    fprintf (ptf_graph_bin, "0x%08X", addrBytes/4); 
-    
-    fsetpos (ptf_graph_bin, &pos_PACKFORMATIOSSCRIPT);
-    fprintf (ptf_graph_bin, "0x%08X", PACKFORMATIOSSCRIPT(LENscript,nIOs,nFMT));
+    for (inode = 0; inode < nb_nodes; inode++)
+    {
+        jump2next_valid_line(&pt_line);
+        sscanf (pt_line, "%s", node_name); /* read the number of node's manifest name */
+        jump2next_line(&pt_line);
+        strcpy(file_name, root_directory);
+        strcat(file_name, node_name);
 
-    fsetpos (ptf_graph_bin, &pos_PACKLINKEDLNBINSTANCE);
-    fprintf (ptf_graph_bin, "0x%08X", PACKLINKEDLNBINSTANCE(LinkedList,NbInstance) );
+        read_input_file(file_name, inputFile);
+        read_platform_io_stream_manifest(inputFile, &(all_nodes[inode]));
+    }
 
-    fsetpos (ptf_graph_bin, &pos_PACKNBARCDEBUG);
-    fprintf (ptf_graph_bin, "0x%08X", PACKNBARCDEBUG(SizeDebug,NBarc));
+    /* read the fw_io_idx mapping to platform capabilities @@@ */
+
+
+    /*
+        STEP 3 : loop on all the list of nodes manifests
+    */
+    jump2next_valid_line(&pt_line);
+    sscanf(pt_line, "%d", &nb_nodes);  /* read the number of nodes in this plaform */
+    jump2next_line(&pt_line);
+
+    if (nb_nodes > MAX_NB_NODES)
+    {   fprintf(stderr, "too much nodes !"); exit(-4);
+    }
+
+    for (inode = 0; inode < nb_nodes; inode++)
+    {
+        jump2next_valid_line(&pt_line);
+        sscanf (pt_line, "%s", node_name); /* read the number of node's manifest name */
+        jump2next_line(&pt_line);
+        strcpy(file_name, root_directory);
+        strcat(file_name, node_name);
+
+        read_input_file(file_name, inputFile);
+        read_node_manifest(inputFile, &(all_nodes[inode]));
+    }
 }
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+//jump2next_line(&pt_line);
+//read_data_v(&pt_line, &(platform->nb_processors));
+//{
+//uint16_t i16;
+//uint32_t i32;
+//uint64_t i64;
+//float f32;
+//double f64;
+//char stringt[120];
+////1    c;  TEST1            test1   FOR TEST
+////1   f64;   3.14159265432   test2   FOR TEST
+////1 i64; 05314573914857934875   test3   FOR TEST
+////1 i16; 33768           test4   FOR TEST
+////1 f64; 3.14159265432     test5   FOR TEST
+////1 h32; ABCD5678         test6   FOR TEST
+////1 i16; -12     test   FOR TEST
+//read_data_v(&pt_line, stringt);
+//read_data_v(&pt_line, &f64);
+//read_data_v(&pt_line, &i64);
+//read_data_v(&pt_line, &i16);
+//read_data_v(&pt_line, &f64);
+//read_data_v(&pt_line, &i32);
+//read_data_v(&pt_line, &i16);
+//i16 = 0;
+//            }

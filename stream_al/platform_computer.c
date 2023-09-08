@@ -112,7 +112,7 @@ intPtr_t long_offset[NB_MEMINST_OFFSET];
 
 void platform_specific_long_offset(void)
 {
-    long_offset[MBANK_DMEM_EXT] = (const intPtr_t)&(MEXT[10]);  
+    long_offset[MBANK_GRAPH   ] = (const intPtr_t)&(MEXT[10]);  
     long_offset[MBANK_DMEM    ] = (const intPtr_t)&(RAM1[10]);
     long_offset[MBANK_DMEMPRIV] = (const intPtr_t)&(RAM1[10]); /* random offsets */
     long_offset[MBANK_DMEMFAST] = (const intPtr_t)&(TCM1[10]);
@@ -134,29 +134,6 @@ void platform_specific_long_offset(void)
 
 #if MULTIPROCESSING != 0
 
-/**
-  @brief        Memory banks initialization
-  @param[in]    none
-  @return       none
-
-  @par          Loads the global variable of the platform holding the base addresses 
-                to the physical memory banks described in the "platform manifest"
-
-  @remark       
- */
-uint32_t check_hw_compatibility(uint32_t whoami, uint32_t header) 
-{
-    uint8_t match = 1;
-
-    if (RD(header, ARCHID_LW0) > 0u) /* do I care about the architecture ID ? */
-    {   match = (RD(header, ARCHID_LW0) == RD(whoami, ARCHID_PARCH));
-    }
-
-    if (RD(header, PROCID_LW0) > 0u) /* do I care about the processor ID ? */
-    {   match = match & (RD(header, PROCID_LW0) == RD(whoami, PROCID_PARCH));
-    }
-    return match;
-}
 
 /**
   @brief        Memory banks initialization
@@ -182,8 +159,6 @@ uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
 }
 
 #else
-
-#define check_hw_compatibility(whoami, bootParamsHeader) 1u  
 
 uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
 {   return 1u;

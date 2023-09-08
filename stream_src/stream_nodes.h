@@ -139,8 +139,8 @@
 
 //enum idx_memory_base_offset   
 
-#define MBANK_DMEM_EXT  U(0)    /* shared external memory */
-#define MBANK_DMEM      U(1)    /* shared internal memory */
+#define MBANK_GRAPH     U(0)    /* graph base address (shared) */
+#define MBANK_DMEM      U(1)    /* shared internal/external memory */
 #define MBANK_DMEMPRIV  U(2)    /* not shared memory space */
 #define MBANK_DMEMFAST  U(3)    /* not shared DTCM Cortex-M/LLRAM Cortex-R, swapped between SWC calls if static */
 #define MBANK_BACKUP    U(4)    /* shared backup SRAM addressed only by STREAM */

@@ -1,18 +1,19 @@
 ;----------------
 ; ROOT DIRECTORY
 ;----------------
-..\..\
+1  c; ..\..\..\
 ;
 ;---------------------------
 ; PLATFORM DIGITAL, MIXED-SIGNAL AND IO MANIFEST
 ;---------------------------
-stream_al\platform_proc_manifest_computer.txt
+1  c;   stream_al\platform_manifest_computer.txt
+1 u8;   2   number of IO streams
+1  c;   stream_al\platform_imu.txt
+1  c;   stream_al\platform_microphone.txt
 ;
 ;-------------------------------
 ; SOFTWARE COMPONENTS MANIFESTS
 ;-------------------------------
-2
-stream_nodes\arm\gate\swc_manifest_gate.txt
-stream_nodes\arm\dsp_filter\swc_manifest_dsp_filter.txt
-;
-END
+1 u8;   2   nodes 
+1  c;   stream_nodes\arm\gate\swc_manifest_gate.txt
+1  c;   stream_nodes\arm\dsp_filter\swc_manifest_dsp_filter.txt

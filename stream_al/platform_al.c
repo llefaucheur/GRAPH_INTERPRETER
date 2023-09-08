@@ -95,28 +95,37 @@ int32_t extract_sensor_field (const uint8_t *platform_bit_fields,
 
 void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3)
 {   
+    static uint32_t *graph;
+
     static uint8_t stream_boot_lock;        
     static uint8_t stream_initialization_done;
-    static uint8_t stream_reset_synchro[MAX_NB_STREAM_INSTANCES];
+    static uint8_t stream_mp_synchro[MAX_NB_STREAM_INSTANCES];
     static uint32_t platform_time;
 
     switch (command)            /*  */
     {
 
-    /* platform_al (PLATFORM_PROC_ID, uint_8_t *procID, uint_8_t *archID,0); */
-    case PLATFORM_PROC_ID:  
-    {   uint8_t *proc;
-        uint8_t *arch;
-        proc=ptr1;
-        arch=ptr2;
-        
-        /* [1,2,3] processor architectures 0="any" 1="commander processor architecture" */
-        *arch = 1;
-
-        /* processor index [0..7] for this architecture 0="commander processor" */  
-        *proc = 0;
+    /* platform_al (PLATFORM_MP_GRAPH_SHARED, start_address,end_address,0); */
+    case PLATFORM_INIT_AL: 
+    {   /* define MPU_RBAR[Region] */
+        /* set MPU_RASR[18] = 1 : the memory area is shared*/
         break;
     }
+
+    ///* platform_al (PLATFORM_PROC_ID, uint_8_t *procID, uint_8_t *archID,0); */
+    //case PLATFORM_PROC_ID:  
+    //{   uint8_t *proc;
+    //    uint8_t *arch;
+    //    proc=ptr1;
+    //    arch=ptr2;
+    //    
+    //    /* [1,2,3] processor architectures 0="any" 1="commander processor architecture" */
+    //    *arch = 1;
+
+    //    /* processor index [0..7] for this architecture 0="commander processor" */  
+    //    *proc = 0;
+    //    break;
+    //}
 
     /* platform_al (PLATFORM_OFFSETS, intPtr_t **,0,0); */
     case PLATFORM_OFFSETS: 
@@ -140,32 +149,6 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3)
         break;
     }
 
-    /* platform_al (PLATFORM_MP_SYNCHRO, *instance index, *copy allowed for you, 0); */
-    case PLATFORM_MP_BOOT_SYNCHRO: 
-    {   uint8_t check;
-        uint8_t instance_index;
-        uint8_t *copy_to_do;
-        instance_index = *(uint8_t *)ptr1;
-        copy_to_do=ptr2;
-
-        /* if the graph copy is on-going, return*/
-        RD_BYTE_MP_(check, &stream_boot_lock);
-        if (check != 0u)
-        {   *copy_to_do = 0;
-            break;
-        }
-
-        /* reservation attempt */
-        if (0 == WR_BYTE_AND_CHECK_MP_(&stream_boot_lock, instance_index))
-        {   *copy_to_do = 0;
-            break;
-        }
-
-        /* no collision */
-        *copy_to_do = 1;
-        break;
-    }
-
     /* platform_al (PLATFORM_MP_BOOT_WAIT, uint_8_t *wait, 0,0); */
     case PLATFORM_MP_BOOT_WAIT: 
     {   uint8_t *wait=ptr1;
@@ -182,7 +165,7 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3)
 
     /* platform_al (PLATFORM_MP_RESET_DONE,0,0,instance_idx); */
     case PLATFORM_MP_RESET_DONE: 
-    {   stream_reset_synchro[data3] = 1;
+    {   stream_mp_synchro[data3] = 1;
         DATA_MEMORY_BARRIER;
         break;
     }
@@ -200,22 +183,53 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3)
         /* all the instances must have set their flag at "1" to tell "reset completed" */
         *wait = 1;
         for (i = 0; i < nb; i++)
-        { *wait &= stream_reset_synchro[i];
+        { *wait &= stream_mp_synchro[i];
         }
         break;
     }
 
+
+    /* platform_al (PLATFORM_MP_SERVICE_LOCK, *instance index, *result, 0); */
+    case PLATFORM_MP_SERVICE_LOCK: 
+    {   
+    
+        uint8_t instance_index = *ptr1;
+        uint8_t *result = ptr2;
+
+        /* 
+            TBD @@@
+            use the MSB bits of each instance 27bits address (before the arcs descriptors)
+            for this synchronization requiring a small number of cycles (malloc/free of services):
+            1) set my own sync bit
+            2) check all the other are 0, if Yes continue, otherwise reset my bit, and loop to 1)
+        */
+        
+        *result = 1;
+        break;
+    }
+
+
+    /* platform_al (PLATFORM_MP_SERVICE_LOCK, *instance index, *result, 0); */
+    case PLATFORM_MP_SERVICE_UNLOCK: 
+    {
+        uint8_t instance_index = *ptr1;
+        uint8_t *result = ptr2;
+        
+        *result = 1;
+        break;
+    }
+
     /* interface callback to arm_stream_io : 
-            platform_al(PLATFORM_IO_ACK, data_ptr1, 0, PACK_PARAM_AL3(fw_idx, size));*/
+            platform_al(PLATFORM_IO_ACK, data_ptr1, 0, PACK_PARAM_AL3(fw_io_idx, size));*/
     case PLATFORM_IO_ACK:  
     {
-        uint32_t fw_idx;
+        uint32_t fw_io_idx;
         uint32_t size;
         arm_stream_instance_t *stream_instance;
-        fw_idx = UNPACK_PARAM_AL3_FWIDX(data3);
+        fw_io_idx = UNPACK_PARAM_AL3_FWIDX(data3);
         size = UNPACK_PARAM_AL3_SIZE(data3);
-        stream_instance = platform_io_callback_parameter[fw_idx];
-        arm_stream_io (fw_idx, stream_instance, ptr1, size);
+        stream_instance = platform_io_callback_parameter[fw_io_idx];
+        arm_stream_io (fw_io_idx, stream_instance, ptr1, size);
         break;
     }
 
@@ -226,21 +240,21 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3)
 	{   struct platform_control_stream *parameters;
         extern struct platform_io_control platform_io [LAST_IO_FUNCTION_PLATFORM];
         struct platform_io_control *io_manifest;
-        data_buffer_t *buffer;
+        stream_xdmbuffer_t *buffer;
         io_function_control_ptr io_func;
-        uint32_t fw_idx;
+        uint32_t fw_io_idx;
         uint32_t *settings;
         
         parameters = (struct platform_control_stream *)ptr1; 
         buffer = &(parameters->buffer);
-        fw_idx = parameters->fw_idx;
-        io_manifest = &(platform_io[fw_idx]);
+        fw_io_idx = parameters->fw_io_idx;
+        io_manifest = &(platform_io[fw_io_idx]);
         settings = &(parameters->domain_settings);
 
         switch (command)
         {
         case PLATFORM_IO_SET_STREAM:
-            platform_io_callback_parameter [parameters->fw_idx] = parameters->instance;
+            platform_io_callback_parameter [parameters->fw_io_idx] = parameters->instance;
             io_func = io_manifest->io_set;
             (*io_func)(settings, (uint8_t *)(buffer->address), (uint32_t)(buffer->size));
             break;
@@ -279,14 +293,27 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3)
     case PLATFORM_CLEAR_BACKUP_MEM: 
     break;
 
+    /* receive the index of a node(data3), returns its physical address(ptr1) */
+    case PLATFORM_NODE_ADDRESS:
+    {   
+        extern p_stream_node node_entry_point_table[]; 
+        ptr1 = (uint8_t *)node_entry_point_table[data3];  
+        break;
+    }
+
+    //Default callback(stream_script_callback)
+    //    - sleep / deep - sleep activation
+    //    - system regsters access : who am I ?
+    //    -timer control(default implementation with SYSTICK)
+
+    case PLATFORM_DEEPSLEEP_ENABLED:
     case PLATFORM_TIME_SET:
-        break;
-
+        /* @@@ set timer (SW timer) */
     case PLATFORM_RTC_SET:
-        break;
-
     case PLATFORM_TIME_READ:
     {   /* if the HAL is not ready then use a counter of calls */
+        /* return the time from boot/UTC/local-time 
+            converted to MMDDHHMMSS*/
         break;
     }
 

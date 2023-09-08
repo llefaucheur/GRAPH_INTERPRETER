@@ -1,0 +1,162 @@
+;                                                                         
+; ------+     +----------+      +----------+    +-------------+    +------
+;  ADC  +---->+  FILTER  +----->+ DETECTOR +--->+SCRIPT(GPIO) +--->| GPIO 
+; ------+     +----------+      +----------+    +-------------+    +------
+;
+;---------------
+; Graph configuration : mapping of the graph between :
+;   COPY_CONF_GRAPH0_COPY_ALL_IN_RAM    0
+;   COPY_CONF_GRAPH0_FROM_LINKEDLIST    1
+;   COPY_CONF_GRAPH0_FROM_ARCDESC       2
+;   COPY_CONF_GRAPH0_ALREADY_IN_RAM     3
+;
+_graph_configuration
+    1  u8;  0           1=all in RAM
+;
+_configuration
+;---------------
+; list of desired IOs (list of strings )
+;
+_interfaces
+    platform_data_in 
+    platform_gpio_out
+;
+;
+;---------------
+; List of nodes
+;
+_nodes
+;----------------------------------------------------------------------------------------
+; arm_stream_dsp_filter
+;----------------------------------------------------------------------------------------
+;   Operation : receives one multichannel stream and produces one filtered multichannel stream. 
+;   Filtering is identical on each channel. GUI parameters are given in float, implementation 
+;   is CMSIS-DSP through Stream services
+;   Parameters : biquad filters coefficients used in cascade. Implementation is 2 Biquads max.
+;   (see www.w3.org/TR/audio-eq-cookbook)
+;
+;   presets:
+;   #1 : LPF fc=fs/4
+;   #11..42: delay-line of 1..32 samples
+;
+;   parameter of filter : 
+;   - number of biquads in cascade (1 or 2)
+;   - coefficients in Q15
+;
+;
+arm_stream_dsp_filter
+    3  i8; 0 0 0        instance, preset, tag
+    PARAM
+    1  i8;  2                               Two biquads
+    5 i16; 16384 26257 16384 -12788  5573   [b,a] = ellip(4, 1, 40, 3600/8000, 'low')
+    5 i16; 16384 10089 16384  -4664 13296
+    PARAMEND
+;
+;   information produced in step 1, ready for patch
+    GRAPHDATA
+        2  i8;  0 0 0   arch proc verbose
+        2  i8;  0 0     arch proc
+        ;-  arcs
+        2  i8;  2 2 1   nb arcs; nb streaming arcs; index of TX arc used for locking
+        1  i8;  0 1     rx0tx1 (MSB); first arc
+        1  i8;  1 2     rx0tx1 (MSB); second arc;
+        ;-  memory banks:  index (3bits NB_MEMINST_OFFSET) base (24bits); check of overlays
+        1  i8;  2 1     nbmem max=6; 1 TCM pointer loaded by scheduler; 
+        1 i32;  1 16    memType; length; 
+        1 i32;  1 16    memType; length;
+    GRAPHDATAEND
+
+
+;----------------------------------------------------------------------------------------
+; 	arm_stream_detector
+;----------------------------------------------------------------------------------------
+;   Operation : provides a boolean output stream from the detection of a rising 
+;   edge above a tunable signal to noise ratio. 
+;   A tunable delay allows to maintain the boolean value for a minimum amount of time 
+;   Use-case example 1: debouncing analog input and LED / user-interface.
+;   Use-case example 2: IMU and voice activity detection (VAD)
+;   Parameters : time-constant to gate the output, sensitivity of the use-case
+;
+;   preset format : 
+;    bits 0,1,2 : preset control (below)
+;    bits 3,4,5 : 0 = default sensitivity or {1,2,3,4,5,6,7 lowest to highest} 
+;    bits 6,7 : unused
+;
+;   presets control
+;   #0 : manual tuning of the parameters
+;   #1 : no HPF pre-filtering, fast and high sensitivity detection (button debouncing)
+;   #2 : VAD with HPF pre-filtering, time constants tuned for ~10kHz
+;   #3 : VAD with HPF pre-filtering, time constants tuned for ~44.1kHz
+;   #4 : IMU detector : HPF, slow time constants
+;   #5 : IMU detector : HPF, fast time constants
+;
+;   Metadata information can be extracted with the command "parameter-read":
+;   TAG_CMD = 0 read the floor noise
+;   TAG_CMD = 1 read the current signal peak
+;   TAG_CMD = 2 read the signal to noise ratio
+;
+arm_stream_detector; 0 instance1; 2 preset (VAD); 0 line of optional parameter
+;
+;   information produced in step 1, ready for patch
+    GRAPHDATA
+        2  i8;  0 0 0   arch proc verbose
+        ;-  arcs
+        2  i8;  2 2 1   nb arcs; nb streaming arcs; index of TX arc used for locking
+        1  i8;  0 1     rx0tx1 (MSB); first arc
+        1  i8;  1 2     rx0tx1 (MSB); second arc;
+        ;-  memory banks:  index (3bits NB_MEMINST_OFFSET) base (24bits); check of overlays
+        1  i8;  2 1     nbmem max=6; 1 TCM pointer loaded by scheduler; 
+        1 i32;  1 16    memType; length; 
+        1 i32;  1 16    memType; length;
+    GRAPHDATAEND
+;
+;---------------
+arm_script; 0 instance; 24 (preset=bytes of static memory); 0 parameter;
+;
+;   information produced in step 1, ready for patch
+    GRAPHDATA
+        2  i8;  0 0 0   arch proc verbose
+        ;-  arcs
+        2  i8;  2 2 1   nb arcs; nb streaming arcs; index of TX arc used for locking
+        1  i8;  0 1     rx0tx1 (MSB); first arc
+        1  i8;  1 2     rx0tx1 (MSB); second arc;
+        ;-  memory banks:  index (3bits NB_MEMINST_OFFSET) base (24bits); check of overlays
+        1  i8;  2 1     nbmem max=6; 1 TCM pointer loaded by scheduler; 
+        1 i32;  1 16    memType; length; 
+        1 i32;  1 16    memType; length;
+    GRAPHDATAEND
+;
+;   algorithm: read arc #2 (input arc), set the GPIO depending on arc data is >threshold
+;
+    LITN INT8   0   ; detection threshold=0
+    STSR 0          ; load R0 for comparisons
+    LITN INT16  2   ; push arcID 2
+    LITN INT8   0   ; read channel 0
+    CALS READ_ARC   ; syscall: read content of arc(stack(-1),subchannel 0)
+    OPRC GTR        ; result=stack(-1) > R0 (threshold) ?
+    JMPC 0          ; yes: jump to 0 (set gpio=1)
+    LITN INT32  0   ; no:  set gpio=0
+    JMPL 1          ; set gpio and return
+    LABL 0          ; label 0
+    LITN INT32  1   ; no:  set gpio=1
+    LABL 1          ; label 1
+    LITN INT16  3   ; arcID 3 (output to GPIO)
+    CALS WRITE_ARC  ; syscall: write data32(stack(-2)) to arc(stack(-1))
+    OPRC RET
+    ENDSCRIPT
+;
+;---------------
+; ARCs {arc ID; Node/Stream name source and output port ID; destination and input port ID
+;
+arcs; 
+0 ID; DATA_IN ; 0 inst; 0 outID;    FILTER  ; 0 inst; 0 inID;
+1 ID; FILTER  ; 0 inst; 0 outID;    DETECTOR; 0 inst; 0 inID;
+2 ID; DETECTOR; 0 inst; 0 outID;    SCRIPT  ; 0 inst; 0 inID;
+3 ID; SCRIPT  ; 0 inst; 0 outID;    GPIO_OUT; 0 inst; 0 inID;
+;
+;
+;---- RAM FOR SERVICES = Static + working + fast working @@@
+;
+  1 h32;  200               static size
+  1 h32;  400               working size
+  1 h16;  20                critical working size

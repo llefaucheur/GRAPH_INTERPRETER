@@ -38,8 +38,8 @@
 static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *graph);
 static void stream_init_io(arm_stream_instance_t *stream_instance);
 
-#define L stream_instance->S0.long_offset
-#define G stream_instance->S0.graph
+#define L stream_instance->long_offset
+#define G stream_instance->graph
 
 /*
    Main entry point, used by the application and scripts
@@ -72,17 +72,17 @@ void arm_stream (uint32_t command,  arm_stream_instance_t *stream_instance, uint
         /* usage: arm_stream(STREAM_RESET, &instance,graph_input); */
 	    case STREAM_RESET: 
 	    {   stream_copy_graph (stream_instance, data);
-            stream_instance->linked_list_ptr = stream_instance->S0.linked_list;
+            stream_instance->linked_list_ptr = stream_instance->linked_list;
 
             stream_scan_graph (stream_instance, 1);
 
             /* skip the first component = debug script node */
             #define XX 8 // size of the SWC of the debug trace script
             #define YY 3 // offset to the instance of the script
-            stream_instance->main_script = (arm_script_instance *)PACK2LINADDR(
-                stream_instance->S0.long_offset, stream_instance->S0.linked_list[YY]);
-            stream_instance->S0.linked_list = &(stream_instance->S0.linked_list[XX]);
-            stream_instance->linked_list_ptr = stream_instance->S0.linked_list;
+
+            stream_instance->main_script = (uint32_t *)PACK2LINADDR(stream_instance->long_offset, stream_instance->linked_list[YY]);
+                        stream_instance->linked_list = &(stream_instance->linked_list[XX]);
+            stream_instance->linked_list_ptr = stream_instance->linked_list;
 
             stream_init_io (stream_instance);
             break;
@@ -91,7 +91,9 @@ void arm_stream (uint32_t command,  arm_stream_instance_t *stream_instance, uint
 
         /* usage: arm_stream(STREAM_RUN, &instance,0); */
 	    case STREAM_RUN:   
-	    {   stream_scan_graph (stream_instance, 0);
+	    {   if (RD(stream_instance->parameters, INSTANCE_ON_PARINST))
+            {   stream_scan_graph (stream_instance, 0);
+            }
             break;
         }   
 
@@ -109,6 +111,15 @@ void arm_stream (uint32_t command,  arm_stream_instance_t *stream_instance, uint
                 ARCs : check content, read/write => "PLATFORM_COMMAND_OUT"
              */
         }
+
+        //  Eight registered callback for scripts (CALS [8..15])
+        //  Default "CALS" callback(stream_script_callback)
+        //      #8  sleep / deep - sleep activation
+        //      #9  system regsters access : who am I ?
+        //      #10 timer control(default implementation with SYSTICK)
+        // 
+        //    example specific : IP address, password to share, Ping IP to blink the LED, read RSSI, read IP@
+
         default:
             break;
     }
@@ -180,11 +191,8 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
     uint32_t *graph_src;
     uint32_t *graph_dst; 
     uint32_t graph_words_in_ram;
-    uint8_t procID;
-    uint8_t archID;
-    uint8_t graph_copy;
     uint8_t RAMsplit;
-    uint32_t offsetWords;
+    uint32_t offsetWords; //, *offset1, *offset2, *offset3;
 
     /* 
         start copying the graph in RAM 
@@ -193,18 +201,12 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
     */
 
     /* read the processors' long_offset table */
-    platform_al (PLATFORM_OFFSETS, (uint8_t *)&(stream_instance->S0.long_offset),0,0);
+    platform_al (PLATFORM_OFFSETS, (uint8_t *)&(stream_instance->long_offset),0,0);
     
     /* default assignments in flash */
-    stream_instance->S0.graph = &(graph0[1]);;
+    stream_instance->graph = &(graph0[1]);;
     graph_src = graph_dst = &(graph0[1]);
-
-    /* if I am the commander processor (archID=1 + procID=0), copy the graph, or wait */
-    platform_al (PLATFORM_PROC_ID, &procID, &archID,0);
-
-    graph_copy = ((archID == 1U) && (procID == 0U));
-
-    RAMsplit = RD(RD(graph0[1],PRODUCFMT_ARCW0),RAMSPLIT_GRAPH0);
+    RAMsplit = RD((graph0[1]),RAMSPLIT_GRAPH0);
 
     switch (RAMsplit)
     {
@@ -225,13 +227,13 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
         graph_dst = (uint32_t *)GRAPH_RAM_OFFSET_PTR(L,G);
         graph_words_in_ram = graph0[0];
 
-        if (graph_copy) 
+        if (RD(stream_instance->scheduler_control, MAININST_SCTRL)) 
         {   uint32_t i; 
             for (i=0;i<graph_words_in_ram;i++)
             {   graph_dst[i]=graph_src[i];
             }
         }
-        stream_instance->S0.graph = graph_dst;
+        stream_instance->graph = graph_dst;
         break;
 
     /*
@@ -253,7 +255,9 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
         Debug registers, Buffers   RAM    RAM
     */
     case COPY_CONF_GRAPH0_FROM_LINKEDLIST:
-    case COPY_CONF_GRAPH0_FROM_ARCDESC:
+    case COPY_CONF_GRAPH0_FROM_STREAM_INST:
+
+    // @@@@ TO BETTER COMMENT ... 
 
         offsetWords = 
             RD(graph0[1+1], NB_IOS_GR1) * STREAM_IOFMT_SIZE_W32 +
@@ -263,10 +267,10 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
         graph_words_in_ram = 
             RD(graph0[1+2], LINKEDLIST_SIZE_GR2) +
             RD(graph0[1+2], NB_ST_INSTANCE_GR2) * STREAM_INSTANCE_SIZE +
-            RD(graph0[1+2], NB_ARCS_GR3) * SIZEOF_ARCDESC_W32 +
-            RD(graph0[1+2], DEBUGREG_SIZE_GR3);
+            RD(graph0[1+3], NB_ARCS_GR3) * SIZEOF_ARCDESC_W32 +
+            RD(graph0[1+3], DEBUGREG_SIZE_GR3);
 
-        if (RAMsplit == COPY_CONF_GRAPH0_FROM_ARCDESC)
+        if (RAMsplit == COPY_CONF_GRAPH0_FROM_STREAM_INST)
         {   offsetWords += RD(graph0[1+2], LINKEDLIST_SIZE_GR2);
             graph_words_in_ram -= RD(graph0[1+2], LINKEDLIST_SIZE_GR2);
         }
@@ -274,13 +278,13 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
         graph_src = (&(graph0[1+ offsetWords]));
         graph_dst = (uint32_t *)GRAPH_RAM_OFFSET_PTR(L,G);
 
-        if (graph_copy) 
+        if (RD(stream_instance->scheduler_control, MAININST_SCTRL)) 
         {   uint32_t i; 
             for (i=0;i<graph_words_in_ram;i++)
             {   graph_dst[i]=graph_src[i];
             }
         }
-        stream_instance->S0.graph = &(graph0[1]);
+        stream_instance->graph = &(graph0[1]);
         break;
 
     /*
@@ -292,7 +296,7 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
     }
 
     /* finalize the copy */   
-    if (graph_copy) 
+    if (RD(stream_instance->scheduler_control, MAININST_SCTRL)) 
     {   /* declare the graph memory as shared */
         if (RD(graph0[1],SHAREDRAM_GRAPH0))
         {   platform_al (PLATFORM_MP_GRAPH_SHARED, 
@@ -304,7 +308,7 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
         platform_al (PLATFORM_MP_BOOT_DONE,0,0,0); 
     }
     else
-    {   /* I wait the graph is copied in RAM */
+    {   /* wait until the graph is copied in RAM */
         uint8_t wait; 
         do {
             platform_al (PLATFORM_MP_BOOT_WAIT, &wait, 0,0);
@@ -312,38 +316,45 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
     }
 
     /*   local stream instance initialization 
-                                   2 options :
-        IO 2 words                 Flash  Flash
-        FORMAT 3 words             Flash  Flash
-        SCRIPTS                    Flash  Flash
-        LINKED-LIST                RAM    Flash
-        STREAM INSTANCE 3 words    RAM    RAM
-        ARC descriptors 4 words    RAM    RAM
-        Debug registers, Buffers   RAM    RAM
+                                   3 options :
+        IO 2 words                 RAM  Flash  Flash Offset1
+        FORMAT 3 words             RAM  Flash  Flash 
+        SCRIPTS                    RAM  Flash  Flash 
+        LINKED-LIST                RAM  RAM    Flash Offset2
+        STREAM INSTANCE 3 words    RAM  RAM    RAM   Offset3
+        ARC descriptors 4 words    RAM  RAM    RAM   
+        Debug registers, Buffers   RAM  RAM    RAM   
     */
-    { uint32_t *graph = stream_instance->S0.graph;
+    { uint32_t *graph = stream_instance->graph;
     offsetWords = GRAPH_HEADER_NBWORDS;
-    stream_instance->S0.pio = &(graph[offsetWords]);
+    stream_instance->pio = &(graph[offsetWords]);
 
     offsetWords += RD(graph[1], NB_IOS_GR1) * STREAM_IOFMT_SIZE_W32;
-    stream_instance->S0.all_formats = &(graph[offsetWords]);
+    stream_instance->all_formats = &(graph[offsetWords]);
 
     offsetWords += RD(graph[1], NBFORMATS_GR1) * STREAM_FORMAT_SIZE_W32;
-    stream_instance->S0.scripts = &(graph[offsetWords]);
+    stream_instance->main_script = &(graph[offsetWords]);
 
-    offsetWords += RD(graph[1], SCRIPTS_SIZE_GR1);;
-    stream_instance->S0.linked_list = &(graph[offsetWords]);
+    offsetWords += RD(graph[1], SCRIPTS_SIZE_GR1);
+    stream_instance->linked_list = &(graph[offsetWords]);
 
     offsetWords += RD(graph[2], LINKEDLIST_SIZE_GR2) + 1; /* add 1 for GRAPH_LAST_WORD */
-    stream_instance->S0.pinst = &(graph[offsetWords]);
+    //stream_instance->pinst = &(graph[offsetWords]);
 
     offsetWords += RD(graph[2], NB_ST_INSTANCE_GR2) * STREAM_INSTANCE_SIZE;
-    stream_instance->S0.all_arcs = &(graph[offsetWords]);
+    stream_instance->all_arcs = &(graph[offsetWords]);
 
-    stream_instance->all_nodes = node_entry_point_table;
+    /* if the application sets the debug option then don't use the one from the graph */
+    if (STREAM_SCHD_NO_SCRIPT == RD(stream_instance->scheduler_control, SCRIPT_SCTRL))
+    {   uint32_t debug_script_option;
+        debug_script_option = RD(graph0[1 + 3], SCRIPT_SCTRL_GR3);
+        ST(stream_instance->scheduler_control, SCRIPT_SCTRL, debug_script_option);
+    }
 
     /* initialize local static */
-    arm_stream_services(STREAM_SERVICE_RESET, (uint8_t *)&(stream_instance->S0), 0, 0); 
+    //@@@@ initialize stream_instance->whoami_ports .. 
+
+    arm_stream_services(STREAM_SERVICE_INTERNAL_RESET, (uint8_t *)&(stream_instance), 0, 0, 0); 
     }
 }
 
@@ -361,7 +372,7 @@ static void stream_init_io(arm_stream_instance_t *stream_instance)
 {
     uint32_t nio;
     uint32_t iio; 
-    uint32_t fw_idx;
+    uint32_t fw_io_idx;
     uint32_t *pio;
     uint32_t stream_format_io;
     uint32_t stream_format_io_setting;
@@ -391,10 +402,10 @@ static void stream_init_io(arm_stream_instance_t *stream_instance)
     /* 
         initialization of the graph IO ports 
     */     
-    io_mask = stream_instance->S0.pinst[STREAM_INSTANCE_IOMASK];
-    pio = stream_instance->S0.pio;
-    nio = RD(stream_instance->S0.graph[1],NB_IOS_GR1);
-    all_arcs = stream_instance->S0.all_arcs;
+    io_mask = stream_instance->iomask;
+    pio = stream_instance->pio;
+    nio = RD(stream_instance->graph[1],NB_IOS_GR1);
+    all_arcs = stream_instance->all_arcs;
 
 
     for (iio = 0; iio < nio; iio++)
@@ -406,8 +417,8 @@ static void stream_init_io(arm_stream_instance_t *stream_instance)
         if (0 == (io_mask & (1U << iio))) 
             continue; 
 
-        fw_idx = RD(stream_format_io, FW_IO_IDX_IOFMT);
-        set_stream.fw_idx = fw_idx;
+        fw_io_idx = RD(stream_format_io, FW_IO_IDX_IOFMT);
+        set_stream.fw_io_idx = fw_io_idx;
 
         /* default value settings */
         set_stream.domain_settings = stream_format_io_setting;
@@ -419,7 +430,7 @@ static void stream_init_io(arm_stream_instance_t *stream_instance)
         {
             iarc = SIZEOF_ARCDESC_W32 * RD(stream_format_io, IOARCID_IOFMT);
             set_stream.buffer.address = 
-                pack2linaddr_int(stream_instance->S0.long_offset, all_arcs[iarc + BUF_PTR_ARCW0]);
+                pack2linaddr_int(stream_instance->long_offset, all_arcs[iarc + BUF_PTR_ARCW0]);
             set_stream.buffer.size = 
                 (uint32_t)RD(all_arcs[iarc + BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
         }

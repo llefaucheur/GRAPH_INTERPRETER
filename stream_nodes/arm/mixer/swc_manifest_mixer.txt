@@ -1,0 +1,101 @@
+; ------------------------------------------------------------------------------------------------------------
+; SOFTWARE COMPONENT MANIFEST - "FILTER"
+; ------------------------------------------------------------------------------------------------------------
+;
+  1   c;    ARM             developer name
+  1  u8;    3               nb of I/O arcs                             
+  1   c;    FILTER          node name for the GUI
+  3  u8;    1 1 0           nb of : input, output, parameters arc
+;
+; list of architectures the SWC is compatible with
+  2  u8;    0 1             ARCH options= 0 source and 1 M0+
+  1  u8;    1               FPU option = 2 ARCH_FPU;
+;
+  6  u8;    0 0 0 0 0 0     dependency to EXTDSPML EXTMATH EXTAUDIO EXTIMAGE EXTSTDLIB
+;
+  1 h32;    0010            code version
+  1 h32;    0010            version of the scheduler it is compatible with
+  1  u8;    0               delivery as source code
+
+;---------------------------------------------------
+  1  u8;    2               memory bank allocation = instance + working area in TCM
+;
+;   Memory Size Bytes = A + B x nb_channels_arc(i) + C x sampling_arc(j) + D x frame_size_arc(k) + E x maxParameterSize
+;
+;   INSTANCE MEM
+  5 h32;    38 6 0 0 1      A B C D E, B<>0 because multichannel filtering is possible
+  3  u8;    0 0 0           indexes i,j,k
+  1 u16;    4               4 bytes alignment
+  1  u8;    0               static (enum mem_mapping_type static/working/pseudoW/retention)
+  1  u8;    0               best effort = any speed (enum mem_speed_type any/normal/fast/critical)
+  1  u8;    0               relocatable
+;
+;   TCM MEM
+  5 h32;    38 0 0 0 0      A B C D E 
+  3  u8;    0 0 0           indexes i,j,k
+  1 u16;    4               4 bytes alignment
+  1  u8;    1               working
+  1  u8;    3               critical
+  1  u8;    0               relocatable
+;
+;---------------------------------------------------
+;-------------------
+; input_arc : "0"
+;-------------------
+; Description of the frame format (common to all sensors)              
+  1   c; data_stream_in  domain name            
+  1  i8;     0      index in case of multiple devices                  
+  1  i8;     1      rx0tx1                                             
+  1 f32;     0      set-up time [ms]                                   
+  1  i8;     1      set0_copy1 data, pointer setting or data copy      
+  1  i8;     1      extra command                                      
+;                                                                      
+  1  i8;     0      commander=0 servant=1                              
+  1  i8;     0      buffer declared from the graph 0 or BSP 1          
+  1  i8;     0      in standard RAM=0, in HW IO RAM=1                  
+  1 i32;     1      processor affinity bit-field                       
+;                                                                      
+  1   c;   i16      raw format                                         
+  1  i8;     0      time-stamp                                         
+  1  i8;     1      frame length format (0:in milliseconds 1:in samples
+;                                                                      
+  1  i8;     0      default interleaving option  0  no interleaving    
+  1  i8;     0      interleaving options array                         
+;                                                                      
+  1  i8;     0      default nbchan index                               
+  1  i8;     2      nb channels options array                          
+;                                                                      
+  1  i8;     0      default frame size index                           
+  4 f32;     1  2  4  8  frame_size in samples  (or millis)            
+;                                                                      
+  1  i8;     1      default index of FS options                        
+  3 f32;     100  200  400  sampling_rate in Hz                        
+;                                                                      
+  1 f32;     3      percent FS accuracy                                
+  2 i64;     0  0   data hashing                                       
+
+
+; input_arc : "0"
+  0 rx0tx1;                                         input
+  audio_in domain; domain_name[]
+  int16 raw format; 0 time-stamp; 1 frame length format (0:in seconds 1:in samples); no time-stamps
+  1 interleaving option;  0 default;       0  no interleaving;
+  1 nb_channel option;    0 default index; 1 nb channels; 16bits signed, mono, 
+  1 frame options; 0 default index; 0;              any frame size in raw-format type
+  1 FS options; 0 default index; 0;                 any sampling_rate in Hz
+  100 percent FS accuracy;                          any sampling_rate accuracy
+  0 no inplace processing; -1;                      input buffer is preserved or '1' and output buffer in-place with input #n
+;
+;---------------------------------------------------
+; output_arc : "1"
+  1 rx0tx1;                                         output
+  audio_in domain; domain_name[]
+  int16 raw format; 0 time-stamp; 1 frame length format (0:in seconds 1:in samples); no time-stamps
+  1 interleaving option;  0 default;       0  no interleaving;
+  1 nb_channel option;    0 default index; 1 nb channels; 16bits signed, mono, 
+  1 frame options; 0 default index; 0;              any frame size in raw-format type
+  1 FS options; 0 default index; 0;                 Any sampling_rate in Hz
+  100 percent FS accuracy;                          any sampling_rate accuracy
+  0 no inplace processing; -1;                      input buffer is preserved or '1' and output buffer in-place with input #n
+;
+END

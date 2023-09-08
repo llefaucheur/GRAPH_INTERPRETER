@@ -43,6 +43,18 @@ uint32_t graph_input[] =
 };
 
 
+/*
+    Four registered callback for SWC and scripts (CALS #n)
+    Use-case : software timers, event detection trigger, metadata sharing
+*/
+p_stream_script_callback application_callbacks[MAX_NB_APP_CALLBACKS] =
+{   /*  0*/ (void*)0,
+    /*  1*/ (void*)0,
+    /*  2*/ (void*)0,
+    /*  2*/ (void*)0
+};
+
+
 /**
   @brief            (main) demonstration
   @param[in/out]    none
@@ -61,7 +73,9 @@ int main(void)
 #define STREAM_NB_INSTANCE 1
 
     arm_stream_instance_t instance;
+    instance.application_callbacks = application_callbacks;
     instance.scheduler_control = PACK_STREAM_PARAM(
+            STREAM_MAIN_INSTANCE,
             STREAM_NB_INSTANCE,
             STREAM_WARM_BOOT,
             STREAM_SCHD_NO_SCRIPT, 

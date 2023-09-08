@@ -156,17 +156,36 @@
     #define    UNUSED_FMT1_MSB U(31) /* 5   */
     #define    UNUSED_FMT1_LSB U(27)
     #define  TIMSTAMP_FMT1_MSB U(26) /* 2  time_stamp_format_type for time-stamped streams for each interleaved frame */
-    #define  TIMSTAMP_FMT1_LSB U(25) /*    0..262kHz +/- 2Hz   */
-    #define  SAMPLING_FMT1_MSB U(24) /*    mantissa 16b exponent 4b,  FS = (Mx4)/2^(3xE), 0 <=> ASYNCHRONOUS/SERVANT */
-    #define  SAMPLING_FMT1_LSB U( 5) /* 20 range = 0xFFFFx4 .. 4/2^(-41)) [262kHz(1Hz) .. 1.72years(0.1%)] */
+    #define  TIMSTAMP_FMT1_LSB U(25) 
+    #define  SAMPLING_FMT1_MSB U(24) /* 20 mantissa 16b + exponent 4b, FS= 0 <=> ASYNCHRONOUS/SERVANT */
+    #define  SAMPLING_FMT1_LSB U( 5) /*    FS = (Mx16)/2^(2xE) (High FS) FS = (Mx16)/2^(3xE) (Low FS) */
     #define   NCHANM1_FMT1_MSB U( 4)
     #define   NCHANM1_FMT1_LSB U( 0) /* 5  nb channels-1 [1..32] */
+
+    /* E=0, 1x16/2^0    16Hz ..  1MHz    48 kHz =  3000 x16 for example */
+    /* E=1, 1x16/2^2     4Hz ..262kHz   44100Hz = 11025 x 4, 88100 = 22050 x 4, 176400Hz = 44100Hz x 4 */
+    /* E=2, 1x16/2^4     1Hz .. 65kHz  */
+    /* E=3, 1x16/2^6   0.2Hz .. 16kHz  */
+    /* E=4, 1x16/2^8  0.06Hz ..  4kHz  */
+    /* E=5  1x16/2^10  15mHz ..  1kHz  */
+    /* E=6  1x16/2^12   4mHz .. 250Hz  */
+    /* E=7  1x16/2^14   1mHz ..  64Hz  */
+
+    /* E=8  1x16/2^17 122uHz ..   8Hz  */
+    /* E=9  1x16/2^20  15uHz ..   1Hz  */
+    /* E=10 1x16/2^23   2uHz ..125mHz  */
+    /* E=11 1x16/2^26 238uHz .. 16mHz  */
+    /* E=12 1x16/2^29  30nHz ..  2mHz  */
+    /* E=13 1x16/2^32   4nHz ..244uHz  1 day = 11.57407uHz = 12427 x 16/2^34, drift error of ~3 seconds/day */
+    /* E=14 1x16/2^35 0.5nHz .. 30uHz  1 week = 1.65344uHz = 28406 x 16/2^38, drift error of ~3 seconds/week */
+    /* E=15 1x16/2^38  58pHz ..  4uHz  1 month (30d) =386nHz, 3314 x 16/2^38, drift error of ~14 seconds/month */
 
     #define PACKSTREAMFORMAT1(TIMESTAMP,SAMPLING, NCHANM1) ((U(TIMESTAMP)<<26)|(U(SAMPLING)<<5)|U(NCHANM1))
     #define FMT_FS_MAX_EXPONENT 15
     #define FMT_FS_MAX_MANTISSA 65535
     #define FMT_FS_EXPSHIFT 16
-    #define FMTQ2FS(E,M) ((M*4)/pow(2,(3*E)))
+    #define HIGH_FMTQ2FS(E,M) ((M*16)/pow(2,(2*E)))
+    #define LOW_FMTQ2FS(E,M)  ((M*16)/pow(2,((3*E)-7)))
 
 /*--------------- WORD 2 -  direction, channel mapping (depends on the "stream_io_domain")------*/
 #define AUDIO_MAPPING_FMT2 U( 2)
@@ -202,10 +221,12 @@
 #define   DATAOFF_ARCW0_MSB U(26) /*   address = offset[DATAOFF] + 4xBASEIDX [Bytes] */
 #define   DATAOFF_ARCW0_LSB U(24) /* 3 32/64bits offset index see idx_memory_base_offset */
 #define   ________ARCW0_MSB U(23) /*   We don't know yet if the base will be extended with a 2bits shifter */
-#define   ________ARCW0_LSB U(22) /* 2 or i the list of offsets must be increased */
-#define   BASEIDX_ARCW0_MSB U(21) /*   buffer address 24 + offset = 27 bits */
-#define   BASEIDX_ARCW0_LSB U( 0) /*22 base address 22bits linear address range in WORD32 */
-#define BASEIDXOFFARCW0_LSB U( 0) /*   Base coded in Word32 to address 32MBytes */
+#define   ________ARCW0_LSB U(22) /* 2  or if the list of offsets must be increased */
+#define  BASESIGN_ARCW0_MSB U(21) /*   buffer address 21 + sign + offset = 25 bits (2bits margin) */
+#define  BASESIGN_ARCW0_LSB U( 0) /* 1 sign of the address with respect to the offset */
+#define   BASEIDX_ARCW0_MSB U(21) /*        */
+#define   BASEIDX_ARCW0_LSB U( 0) /*21 base address 22bits linear address range in WORD32 */
+#define BASEIDXOFFARCW0_LSB U( 0) /*   Base can address +/- 8MBytes around the offset */
                                 
 #define BUFSIZDBG_ARCW1    U( 1)
 #define CONSUMFMT_ARCW1_MSB U(31) 
@@ -224,8 +245,8 @@
 #define UNDERFLRD_ARCW2_LSB U(26) /* 2  overflow task id 0=nothing , underflow_error_service_id */
 #define  OVERFLRD_ARCW2_MSB U(25)
 #define  OVERFLRD_ARCW2_LSB U(24) /* 2  underflow task id 0=nothing, overflow_error_service_id */
-#define   ________ARCW2_MSB U(23) 
-#define   ________ARCW2_LSB U(23) /* 1  */
+#define    EXTEND_ARCW2_MSB U(23) /*    Size/Read/Write are used with 256 bytes chunks => 1GBytes buffers for */
+#define    EXTEND_ARCW2_LSB U(23) /* 1    arcs used to read NN models, video players, etc */
 #define   READY_W_ARCW2_MSB U(22) /*    "Buffer ready for refill" */
 #define   READY_W_ARCW2_LSB U(22) /* 1  (size-write)>size/2 (or /4) */
 #define      READ_ARCW2_MSB U(21)

@@ -62,7 +62,7 @@ l 9 FILTER; 1 arch; 0 proc; 0 verbose                   ; FILTER arc 1->2 with T
     1; h00250; main instance 
     1; h002A0; TCM address is dynamic
 ;-  parameter settings - preset:  2 stages [B,A]=cheby2(2,0.5,1/11), dec2hex(round(16384*[B,A]));
-    1 preset; 11 skip words; 255 all params; 21 Bytes; 
+    1 preset; 11 skip words; ALLPARAM_ all params; 21 Bytes; 
     h02;    1; numstage
     h5678 ; 2;  b0
     h2E5B ; 2;  b1

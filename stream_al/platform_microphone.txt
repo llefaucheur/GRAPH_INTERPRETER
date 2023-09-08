@@ -1,0 +1,88 @@
+;
+; ------------------------------------------------------------------------------------------------------------
+; microphone audio stream
+; ------------------------------------------------------------------------------------------------------------
+                                               
+  1   c; microphone_1    name for the GUI                               
+  1  u8;     1              nb of I/O arcs                              
+  1  i8;     0              instance index in case of multiple devices 
+;
+;-------------------                                                    
+; ouput 0 = stream of audion samples, mono                              
+;-------------------   
+  1  i8;    0               rx=0 tx=1 parameter=2 (rx never consumed)
+  1  i8;    1               set0_copy1 data, pointer setting or data copy      
+  1  i8;    0               commander0_servant1 : selection for polling protocol
+  1  i8;    0               buffer declared from the graph 0 or BSP 1          
+  1  i8;    0               in standard RAM=0, in HW IO RAM=1     
+  1  i8;    0               provision for extra command 
+; IOstream specific
+  1 i32;     1              processor HW affinity bit-field (system/SW information, hF..FF=any processor)
+;
+; common between IOstream and SWC
+;
+  1   c; audio_in           domain name (default = acc/gyro/mag)                
+  1  i8;     0              rx0tx1 from the graph scheduler's point of view
+  1  i8;     1              set0_copy1 data, pointer setting or data copy       
+;                                                                               
+  1  i8;     0              commander=0 servant=1 
+  1  i8;     0              buffer declared from the graph 0 or BSP 1           
+  1  i8;     0              in standard RAM=0, in HW IO RAM=1                   
+;
+
+;
+;                                                 
+; Description of the frame format (common to all sensors)               
+;                                                                               
+  1   c;   i16              raw format                                          
+  1  i8;     0              time-stamp                                          
+;                                                                               
+  1  i8;     0              default interleaving option  0  no interleaving     
+  1  i8;     0              interleaving options array                          
+;                                                                               
+  1  i8;     0              default nbchan index                                
+  1  i8;     1              nb channels options array                           
+;                                                                               
+  1  i8;     0              default frame size index              
+  1  i8;     0              frame length format (0:in milliseconds 1:in samples)  
+  2 f32;     10 16          frame_size in milliseconds
+  1 f32;     0              maximum % jitter when reading data (0=buffer, fifo if >0)
+;                                                                       
+  1  i8;     0              sampling unit (0:Hz, 1:seconds, 2:days)    
+  1  i8;     1              default index of FS options            
+  2 f32; 16000 44100        sampling_rate in Hz                         
+  1 f32;     2              percent FS accuracy (quite good sampling accuracy)                                
+;                                                                       
+  2 i64;     0  0           data hashing provision
+;-------------------
+; audio_in domain SPECIFIC (digital format) : list of the channels
+;
+;                  
+  1  c; FL          mono (Front Left), other example FL FR CE (left,right,center)
+;-------------------
+; audio_in SPECIFIC (mixed signal setting)
+  1 f32;     0      set-up time [ms]                                    
+;   1  u8;     1    nb of I/O arcs     (already provided)
+  1   c;   V        RFC8428 units per channel (Volt rms)
+;  
+;                   analog gain in dB, options of audio capture path for all the channels
+  1 f32; 0.707      scaling to reach RFC8428 1V, from full-scale input, with default sensitivity
+;
+  1  i8;   0        default analog gain setting index for all the channels
+  3 f32;  0 12 24   in [dB]
+;
+  1  i8;   0        default digital gain setting index for all the channels
+  3 f32;  -3 0 3    in [dB]
+;
+  1  i8;   0        default agc control index  (no AGC) for all the channels
+  1  i8;   0        boolean flag
+;  
+  1  i8;   0        default HPF filter cutoff setting
+  4 f32; 0 20 100 300 high-pass filter in [Hz] 
+;
+;-------------------
+; audio_in SPECIFIC (for the system integrator)
+;   1  u8;     1              nb of I/O arcs     (already provided)
+    3 p32;  0.05 0.0 -0.05      relative position to the center
+; ------------------------------------------------------------------------------------------------------------
+;

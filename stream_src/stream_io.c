@@ -64,9 +64,9 @@ void arm_stream_io (uint32_t fw_io_idx,
     uint32_t *arc;
     uint32_t *pio;
 
-    pio = stream_instance->S0.pio;
+    pio = stream_instance->pio;
     pio = &(pio[STREAM_IOFMT_SIZE_W32 * fw_io_idx]);
-    arc = stream_instance->S0.all_arcs;
+    arc = stream_instance->all_arcs;
     arc = &(arc[SIZEOF_ARCDESC_W32 * RD(*pio, IOARCID_IOFMT)]);
 
     /* RX : stream to the graph */
@@ -141,7 +141,7 @@ void arm_stream_io (uint32_t fw_io_idx,
     }
 
     /* data transfer done when the IO is slave */
-    CLEAR_BIT_MP(stream_instance->S0.pinst[STREAM_INSTANCE_IOREQ], REQMADE_IO_LSB);
+    CLEAR_BIT_MP(stream_instance->ioreq, REQMADE_IO_LSB);
 }
 
 #ifdef __cplusplus

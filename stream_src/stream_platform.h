@@ -39,27 +39,45 @@
 #define U8(x) ((uint8_t)(x))
 
 //enum platform_al_services       
-#define PLATFORM_PROC_ID            1u   /* who am i ? */
-#define PLATFORM_MP_GRAPH_SHARED    2u   /* need to declare the graph area as "sharable" in S = MPU_RASR[18] */
-#define PLATFORM_MP_BOOT_SYNCHRO    3u   /* collission of access to the graph at boot time */
-#define PLATFORM_MP_BOOT_WAIT       4u   /* wait commander processor copies the graph */
-#define PLATFORM_MP_BOOT_DONE       5u   /* to confirm the graph was copied in RAM */
-#define PLATFORM_MP_RESET_WAIT      6u   /* wait the graph is initialized */
-#define PLATFORM_MP_RESET_DONE      7u   /* tell the reset sequence was executed for that Stream instance */
-#define PLATFORM_IO_SET_STREAM_ALL  8u   /* launch all the graph interfaces */
-#define PLATFORM_IO_SET_STREAM      9u   /* share &platform_io(), buffer address, *selection of setting EXTENSION/option, data format */
-#define PLATFORM_IO_DATA           10u   /* "data exchanges */ 
-#define PLATFORM_IO_STOP_STREAM    11u   /*  */
-#define PLATFORM_IO_ACK            12u   /* interface callback to arm_stream_io */
-#define PLATFORM_CLEAR_BACKUP_MEM  13u   /* cold start : clear backup memory */
-#define PLATFORM_DEEPSLEEP_ENABLED 14u   /* deep-sleep activation is possible when returning from arm_stream(STREAM_RUN..) */
-#define PLATFORM_EXEC_TIME         15u   /* time counter since last call */
-#define PLATFORM_ERROR             16u   /* error to report to the application */
-#define PLATFORM_TIME_SET          17u
-#define PLATFORM_RTC_SET           18u
-#define PLATFORM_TIME_READ         19u
-#define PLATFORM_OFFSETS           20u   /* returns the pointer to the (long) platform offsets */
-#define PLATFORM_REMOTE_DATA       21u
+#define PLATFORM_INIT_AL           0x00   /* set the graph pointer */
+#define PLATFORM_PROC_ID           0x00   /* who am i ? */
+#define PLATFORM_MP_GRAPH_SHARED   0x01   /* need to declare the graph area as "sharable" in S = MPU_RASR[18] */
+#define PLATFORM_MP_BOOT_WAIT      0x02   /* wait commander processor copies the graph */
+#define PLATFORM_MP_BOOT_DONE      0x03   /* to confirm the graph was copied in RAM */
+#define PLATFORM_MP_RESET_WAIT     0x04   /* wait the graph is initialized */
+#define PLATFORM_MP_RESET_DONE     0x05   /* tell the reset sequence was executed for that Stream instance */
+#define PLATFORM_MP_SERVICE_LOCK   0x06   /* collission of access to the graph at boot time */
+#define PLATFORM_MP_SERVICE_UNLOCK 0x07   /* wait commander processor copies the graph */
+#define PLATFORM_IO_SET_STREAM_ALL 0x08   /* launch all the graph interfaces */
+#define PLATFORM_IO_SET_STREAM     0x09   /* share &platform_io(), buffer address, *selection of setting EXTENSION/option, data format */
+#define PLATFORM_IO_DATA           0x0A   /* "data exchanges */ 
+#define PLATFORM_IO_STOP_STREAM    0x0B   /*  */
+#define PLATFORM_IO_ACK            0x0C   /* interface callback to arm_stream_io */
+#define PLATFORM_CLEAR_BACKUP_MEM  0x0D   /* cold start : clear backup memory */
+#define PLATFORM_REMOTE_DATA       0x0E
+#define PLATFORM_EXEC_TIME         0x0F   /* time counter since last call */
+#define PLATFORM_ERROR             0x10   /* error to report to the application */
+#define PLATFORM_OFFSETS           0x11   /* returns the pointer to the (long) platform offsets */
+#define PLATFORM_NODE_ADDRESS      0x12   /* returns the physical address of a node */
+
+/*
+* system subroutines : 
+* - IO settings : 
+* - Get Time, in different formats, and conversion, extract time-stamps
+* - Get Peripheral data : RSSI, MAC/IP address
+* - Low-level : I2C string of commands, GPIO, physical address to perpherals
+*/
+#define PLATFORM_DEEPSLEEP_ENABLED 0x20   /* deep-sleep activation is possible when returning from arm_stream(STREAM_RUN..) */
+#define PLATFORM_TIME_SET          0x21
+#define PLATFORM_RTC_SET           0x22
+#define PLATFORM_TIME_READ         0x23
+#define PLATFORM_HW_WORD_READ      0x24  
+#define PLATFORM_HW_WORD_WRITE     0x25  
+#define PLATFORM_HW_BYTE_READ      0x26  
+#define PLATFORM_HW_BYTE_WRITE     0x27  
+                                     
+//#define PLATFORM_RSSI_READ     
+//#define PLATFORM_MACIP_READ    
 
 
 //enum error_codes 
@@ -112,23 +130,22 @@
 #define COMMAND_SRV_MSB U( 7)       
 #define COMMAND_SRV_LSB U( 0) /* 8  256 service IDs */
 
-#define SERVICE_COMMAND_MASK   0x000000FF
-#define SERVICE_COMMAND_GROUP  0x00000F00
-#define SERVICE_INSTANCE       0x0000F000
-#define PACK_SERVICE(INST,CMD) (((INST)<<12)|(CMD))
+//#define SERVICE_COMMAND_MASK   0x000000FF
+//#define SERVICE_COMMAND_GROUP  0x00000F00
+//#define SERVICE_INSTANCE       0x0000F000
+//#define PACK_SERVICE(INST,CMD) (((INST)<<12)|(CMD))
 
 
 /*
     Up to 16 family of processing extensions "SERVICE_COMMAND_GROUP"
-    EXTDSPML EXTMATH EXTCRYPTO EXTAUDIO EXTIMAGE EXTSTDLIB
+    EXTDSPML EXTMATH EXTAUDIO EXTIMAGE EXTSTDLIB
 */
 
-#define EXT_SERVICE_DSPML  1
-#define EXT_SERVICE_MATH   2
-#define EXT_SERVICE_CRYPTO 3 
-#define EXT_SERVICE_AUDIO  4
-#define EXT_SERVICE_IMAGE  5 
-#define EXT_SERVICE_STDLIB 6
+#define EXT_SERVICE_MATH   1
+#define EXT_SERVICE_DSPML  2
+#define EXT_SERVICE_AUDIO  3
+#define EXT_SERVICE_IMAGE  4 
+#define EXT_SERVICE_STDLIB 5
 
 
 
@@ -139,11 +156,11 @@
 
     ///* first call of SWC to Stream, to register its return address which must be identical for all
     //   the later services asked by the SWC */
-    //STREAM_NODE_REGISTER,     
+    //STREAM_SERVICE_INTERNAL_NODE_REGISTER,     
  
     ////STREAM_SET_BUFFER_NOTIFICATION,
 
-    //STREAM_DEBUG_TRACE, STREAM_DEBUG_TRACE_STAMPS, 
+    //STREAM_SERVICE_INTERNAL_DEBUG_TRACE, STREAM_SERVICE_INTERNAL_DEBUG_TRACE_STAMPS, 
     //STREAM_DEBUG_ARC_CALLBACK,
 
     //STREAM_SAVE_HOT_PARAMETER, STREAM_DATA_FETCH, STREAM_CHECK_FETCH_COMPLETION,

@@ -1,0 +1,87 @@
+#                                                                         
+# ------+     +----------+      +----------+    +-------------+    +------
+#  ADC  +---->+  FILTER  +----->+ DETECTOR +--->+SCRIPT(GPIO) +--->| GPIO 
+# ------+     +----------+      +----------+    +-------------+    +------
+#                                                                         
+#  
+version: '1.0'
+graph:
+  nodes:
+  - node: ADC1              # A/D converter
+    output:
+    - name: OPort0
+      kind: DATA_STREAM     # 
+      type: int16           # raw data format
+  - node: GPIO1
+    input:
+    - name: IPort0
+  - node: FILTER1
+    inputs:
+    - name: IPort0
+    outputs:
+    - name: OPort0
+  - node: DETECTOR1
+    inputs:
+    - name: IPort0
+    outputs:
+    - name: OPort0
+  - node: SCRIPT1
+    inputs:
+    - name: IPort0
+    outputs:
+    - name: OPort0
+  - node: GPIO1
+    inputs:
+    - name: IPort0
+    - name: IPort1
+    - name: IPort2
+    - name: IPort3
+    outputs:
+    - name: OPort0
+    - name: OPort1
+    - name: OPort2
+    - name: OPort3
+#
+  arcs:
+  - src:
+      node: adc1
+      output: OPort1
+    dst:
+      node: mixer2_1
+      input: IPort1
+  - src:
+      node: signal_gen1
+      output: OPort0
+    dst:
+      node: mixer2_1
+      input: IPort0
+  - src:
+      node: signal_gen2
+      output: OPort0
+    dst:
+      node: amp1
+      input: IPort0
+  - src:
+      node: amp1
+      output: OPort1
+    dst:
+      node: router4_1
+      input: IPort1
+  - src:
+      node: mixer2_1
+      output: OPort0
+    dst:
+      node: router4_1
+      input: IPort0
+  - src:
+      node: router4_1
+      output: OPort0
+    dst:
+      node: dac1
+      input: IPort0
+  - src:
+      node: router4_1
+      output: OPort0
+    dst:
+      node: dac2
+      input: IPort0

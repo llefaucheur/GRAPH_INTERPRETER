@@ -3,123 +3,63 @@
 ; 
 ; ------------------------------------------------------------------------------------------------------------
 ; list of processors and their memory 
-; Physical sizes reserved for the graph.
-; The RAM used for the graph have the DATAOFF_ = 0
-; shared memory blocks have the same DATAOFF_ [0..5]  by convention
+; The RAM memory bank index used for the graph is DATAOFF_ = 0
+; shared memory blocks have the same DATAOFF_ indexes [0..5]  by convention
 ;   which may not correspond to the same physical address on each processor
 ; unshare memory blocks (LLM/TCM) have DATAOFF_ [6..7] by convention
 ;
 ; Memory mapping per processor
-P 0 main; 0 arch; 2 Banks;  first processor
-  0 DATAOFF_; h20000000 physical address; 1 speed; 1 share; 1 data; 0 bckp; 0 hwio; 1 Flash; h0000 base; h4000 size; hcommon SRAM
-  7 DATAOFF_; h28000000 physical address; 1 speed; 0 share; 1 data; 0 bckp; 0 hwio; 1 Flash; h0000 base; h1000 size; TCM not shared
 ;
-; ------------------------------------------------------------------------------------------------------------
-F 3 number of extended librairies available;
-; extension options on top of the basic one embedded in Stream: EXTDSPML EXTMATH EXTCRYPTO EXTAUDIO EXTIMAGE EXTSTDLIB
-  EXTDSPML ;  
-  EXTAUDIO ;
-  EXTMATH  ;
+  1  i8;      1     number of processor 
 ;
-; ------------------------------------------------------------------------------------------------------------
-; IMU motion sensor
-; ------------------------------------------------------------------------------------------------------------
+  1  i8;      1     processor ID for the scheduler
+  1  i8;      1     is it the main processor   
+  1 i16;      0     arch ID
+  1  i8;      1     number of simple memory bank descriptions
+  1  i8;      2     number of advanced Banks (with TCM)  
+;      
+;   Default memory bank used in memory mapping step 1
 ;
-O accelero_gyro_1 name for the GUI; 0 nb arcin; 3 nbarc out;  3 I/O arcs
-;-------------------
-; ouput 0 = stream of multichannel accelero + gyro + magnetometer
-;-------------------
-; Description of the frame forma (common to all sensors)
-  1 rx0tx1;                         output
-  motion_in domain; 0 set-up[ms]; 0 commander; 0 buffer from graph; 0 in standard RAM; 0 processor affinity bit-field; 
-  int16 raw format; 0 time-stamp; 1 frame length format (0:in seconds 1:in samples);
-  1 interleaving option;  0 default;       0  no interleaving;
-  1 nb_channel option;    0 default index; 2 nb channels; 
-  4 frame options;        0 default index; 1; 2; 4; 8; frame_size in samples
-  3 FS options;           1 default index; 100; 200; 400;   sampling_rate in Hz
-  h5AC0EBD56E190844                 key64; provision for data hashing
-;-------------------
-; motion_in specific (digital format)
+  1  i8;      0     offset ID used of this bank 
+  1 h64;  20000000  physical address offset 
+  1  i8;      5     speed  
+  1  i8;      1     shareable  
+  1  i8;      1     program=0, data=1  
+  1  i8;      0     usable for backup/retention  
+  1  i8;      0     reserved for DMA and HW  
+  1  i8;      0     is it Flash  
+  1 h32;      5555  base offset from physical address offset
+  1 h32;      4000  size in bytes 
 ;
-  aXgXm0 raw channel_format;        interleaved acc(X)/gyro(X)/no magnetometer
-;-------------------
-; motion_in specific (mixed signal setting)
+;  detailed mapping 1/2 proposed for manual optimization
+;                               
+  1  i8;     0      offset ID used of this bank 
+  1 h64;  21000000  physical address offset   
+  1  i8;     1      speed  
+  1  i8;     1      shareable  
+  1  i8;     1      program=0, data=1  
+  1  i8;     0      usable for backup/retention  
+  1  i8;     0      reserved for DMA and HW  
+  1  i8;     0      is it Flash  
+  1 h32;     0      base offset from physical address offset
+  1 h32;     4000   size in bytes 
+;                    
+; detailed mapping 2/2 proposed for manual optimization
 ;
-  g; dps; G;                        RFC8428 units per channel (for information)
-  0.2; 1; 0;                        scaling for the acceleration, gyro, magneto
-  4 sensitivity options of accelerometer; 0 default; 2;4;8;16; in [g] max
-  4 averaging options; 0 default index; 1; 4; 16; 32; filtering
+  1  i8;     7      Critical fast index
+  1 h64;  28000000  physical address of this index    TCM address
+  1  i8;     1      speed  
+  1  i8;     0      TCM NOT SHARED  
+  1  i8;     1      data  
+  1  i8;     0      bckp  
+  1  i8;     0      hwio  
+  1  i8;     0      Flash  
+  1 h32;     0      base  
+  1 h32;     4000   size 
 ;
-;
-;-------------------
-; ouput 1 = metadata (shock detector)
-;-------------------
-; Description of the frame format (common to all sensors)
-  1 rx0tx1;                         output
-  data_in domain; 0 set-up[ms]; 0 commander; 0 buffer from graph; 0 in standard RAM; 0 processor affinity bit-field; 
-  int32 raw format; 0 time-stamp; 1 frame length format (0:in seconds 1:in samples);
-  1 interleaving option;  0 default;       0  no interleaving;
-  1 nb_channel option;    0 default index; 1 nb channels; 
-  1 frame options;        0 default index; 1; frame_size in samples
-  1 FS options;           1 default index; 0; no sampling-rate=asynchronous stream
-  h5AC0EBD56E190844                 key64; provision for data hashing
-;-------------------
-; metadata_out specific (format Word2) : nothing
-; metadata_out specific (mixed signal) : nothing
-;
-;
-;-------------------
-; ouput 2 = metadata (temperature sensor)
-;-------------------
-; Description of the frame format (common to all sensors)
-  1 rx0tx1;                         output
-  data_in domain; 0 set-up[ms]; 0 commander; 0 buffer from graph; 0 in standard RAM; 0 processor affinity bit-field; 
-  int32 raw format; 0 time-stamp; 1 frame length format (0:in seconds 1:in samples);
-  1 interleaving option;  0 default;       0  no interleaving;
-  1 nb_channel option;    0 default index; 1 nb channels; 
-  1 frame options;        0 default index; 1; frame_size in samples
-  1 FS options;           1 default index; 0; no sampling-rate=asynchronous stream
-  h5AC0EBD56E190844                 key64; provision for data hashing
-;-------------------
-; metadata_out specific (format Word2) : nothing
-; metadata_out specific (mixed signal) : nothing
-;
-;
-;
-;
-; ------------------------------------------------------------------------------------------------------------
-; microphone audio stream
-; ------------------------------------------------------------------------------------------------------------
-;
-O microphone_1 name for the GUI; 0 nb arcin; 1 nbarc out;   1 I/O arc
-;-------------------
-; input none
-;-------------------
-; ouput 0 = stream of audion samples, mono
-;-------------------
-; Description of the frame format (common to all sensors)
-  1 rx0tx1;                         output
-  audio_in domain; 0 set-up[ms]; 0 commander; 1 buffer from DMA; 1 in IO-RAM; 0 processor affinity bit-field; 
-  int16 raw format; 0 time-stamp; 0 frame length format (0:in seconds 1:in samples);
-  1 interleaving option;  0 default index; 0;   No interleaving
-  1 nb_channel option;    0 default index; 1;   mono audio capture
-  2 frame length options; 0 default index; 0.010; 0.020; frame_size in seconds
-  2 FS options;           1 default index; 16000; 48000;    sampling_rate in Hz
-  h5AC0EBD56E190844                 key64; provision for data hashing
-;-------------------
-; audio_in specific (digital format)
-;
-  FL channel_format;               mono (Front Left), FLFRCE (left,right,center);
-;-------------------
-; audio_in specific (mixed signal settings)
-;
-  V Vrms;                          RFC8428 units per channel
-  1.414;                           scaling to RFC8428 units 1.414Vpeak = 1Vrms
-  0 default analog gain index; 0; 12; 24;   gain in dB
-  0 default digital gain index; 0; -3; 3;   gain in dB
-  0 default agc control index; 0; 1;        no AGC
-  0 default DCfilter set; 0; 20; 100; 300;  high-pass filter in [Hz]
-;
-; ------------------------------------------------------------------------------------------------------------
-;
-END
+;   extension options on top of the basic one embedded in Stream: 
+;   EXT_SERVICE_MATH 1, EXT_SERVICE_DSPML 2, EXT_SERVICE_AUDIO 3, EXT_SERVICE_IMAGE 4, EXT_SERVICE_STDLIB 5
+  1  i8;     3      number of extended service librairies available for this processor 
+  1  i8;     1      EXT_SERVICE_MATH 
+  1  i8;     2      EXT_SERVICE_DSPML 
+  1  i8;     3      EXT_SERVICE_AUDIO 

@@ -43,6 +43,7 @@
 
 #define MIN(a, b) (((a) > (b))?(b):(a))
 #define MAX(a, b) (((a) < (b))?(b):(a))
+#define MAXINT32 0x7FFFFFFFL
 //#define MEMCPY(dst,src,n) {void *x; uint32_t i; x=memcpy((dst),(src),(n));}
 #define MEMCPY(dst,src,n) {uint32_t i; for(i=0;i<n;i++){dst[i]=src[i];}}
 
@@ -63,31 +64,16 @@
 
 #define LOG2BASEINWORD32 2
 #define BASEINWORD32 (1<<LOG2BASEINWORD32)
-#define PACK2LINADDR(o,x) ((((intPtr_t)RD((x),BASEIDX_ARCW0))<<2) + o[RD(x,DATAOFF_ARCW0)])
+#define PACK2LINADDR(o,x) (o[RD(x,DATAOFF_ARCW0)] + \
+        (RD(x,BASESIGN_ARCW0))? \
+            (1 + ~(((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32)):\
+            ( ((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32))
 
 #define SET_BIT(arg, bit)   ((arg) |= (U(1) << U(bit)))
 #define CLEAR_BIT(arg, bit) ((arg) = U(arg) & U(~(U(1) << U(bit))))
 #define TEST_BIT(arg, bit)  (U(arg) & (U(1) << U(bit)))
 
 #define FLOAT_TO_INT(x) ((x)>=0.0f?(int)((x)+0.5f):(int)((x)-0.5f))
-
-#ifdef _MSC_VER 
-#define DATA_MEMORY_BARRIER
-#define INSTRUCTION_SYNC_BARRIER
-#else
-#if MULTIPROCESS == 1
-#define DATA_MEMORY_BARRIER //DMB()
-#define INSTRUCTION_SYNC_BARRIER //ISB()
-#else
-#define DATA_MEMORY_BARRIER 
-#define INSTRUCTION_SYNC_BARRIER
-#endif
-#endif
-
-#define WR_BYTE_MP_(address,x) { *(volatile uint8_t *)(address) = (x); DATA_MEMORY_BARRIER; }
-#define RD_BYTE_MP_(x,address) { DATA_MEMORY_BARRIER; (x) = *(volatile uint8_t *)(address);}
-#define CLEAR_BIT_MP(arg, bit) {((arg) = U(arg) & U(~(U(1) << U(bit)))); DATA_MEMORY_BARRIER; }
- 
 
 
 #endif /* #ifndef cSTREAM_MACRO_H */

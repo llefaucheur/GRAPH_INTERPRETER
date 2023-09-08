@@ -25,145 +25,20 @@
  * 
  */
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+    
+
 #define _CRT_SECURE_NO_DEPRECATE 1
 #include <stdio.h>    
 #include <string.h>
 #include <stdint.h>
-#include <stdarg.h>
+#include <stdarg.h>  /* for void fields_extract(char **pt_line, char *types,  ...) */
 #include <stdlib.h>
 #include <math.h>
 
-#include "stream_const.h"
-#include "stream_types.h"
-
-#define SZ_LINE 200
-char current_line[SZ_LINE];
-
-/* ---------------------------------------------------------------------- */
-uint32_t INTTOFPE4M6(uint32_t x)
-{
-    uint32_t E, M;
-
-    for (E = 0; E <= PARAM_MAX_EXPONENT; E++)
-    {   for (M = 0; M <= PARAM_MAX_MANTISSA; M++)
-        {   if ((M << E) >= x)
-                return (E<<6) | M;
-        }
-    }
-    return 0;
-}
-
-/* ---------------------------------------------------------------------- */
-void jump2next_line(char **line)
-{
-    while (*(*line) != '\n') 
-    {   (*line)++;
-    };
-    (*line)++;
-}
-/* ---------------------------------------------------------------------- */
-static uint32_t jump2next_valid_line (char **line)
-{
-    while ((*line)[0] == ';')     /* skip lines starting with ';' */
-        jump2next_line(line);
-
-#define NOT_YET_END_OF_GRAPH 1
-#define FOUND_END_OF_GRAPH 2
-
-    if (0 == strncmp (*line,"ENDGRAPH",8))
-        return FOUND_END_OF_GRAPH;
-    else
-        return NOT_YET_END_OF_GRAPH;
-}    
-
-/* ---------------------------------------------------------------------- */
-uint32_t quantized_FS (float FS)
-{
-    /* 20bits : mantissa [U18], exponent [U2], FS = (Mx2)/2^(8xE), 0<=>ASYNCHRONOUS/SLAVE */
-    /* 20 range = (E=0,1,2,3) 262142/2^0 .. 2/2^24 [262kHz .. 3 months] */    
-    /* 524kHz  ..  1/8.388.608 Hz  [~1MHz .. 3months] */    
-    uint32_t E, M;
-    float x;
-
-    for (E = FMT_FS_MAX_EXPONENT; E >= 0; E--)
-    {   for (M = 0; M <= FMT_FS_MAX_MANTISSA; M++)
-        {   x = (float)FMTQ2FS(E,M);
-            if (x >= FS)
-            {   
-                return (E<<FMT_FS_EXPSHIFT) | M;
-            }
-        }
-    }
-    return 0;
-
-}
-
-/* ---------------------------------------------------------------------- */
-// fields_extract(&pt_line, 3, "III", &ARC_ID, &IFORMAT, &SIZE);
-
-void fields_extract(char **pt_line, char *types,  ...)
-{
-    char *ptstart, *ptstart0, S[200], *vaS;
-    uint32_t ifield, I, *vaI, nchar, n, nfields;
-    va_list vl;
-    float F, *vaF;
-#define COMMENTS 'c'
-#define FLOAT 'f'
-#define INTEGER 'i'
-#define HEXADECIMAL 'h'
-
-    va_start(vl,types);
-    ptstart = *pt_line;
-    nfields = (uint32_t)strlen(types);
-
-    while (*(*pt_line) == ';') 
-    {   jump2next_line(pt_line); 
-        ptstart = *pt_line;
-    }
-
-    for (ifield = 0; ifield < nfields; ifield++)
-    {
-        if (types[ifield] == COMMENTS)
-        {   ptstart0 = strchr (ptstart, '\n'); 
-        } else
-        {   ptstart0 = strchr (ptstart, ';'); 
-        }
-
-        switch(types[ifield])
-        {
-            case COMMENTS:
-                nchar = (uint32_t)((uint64_t)ptstart0 - (uint64_t)ptstart);
-                vaS = va_arg (vl,char *);
-                strncpy(vaS, ptstart, nchar);
-                vaS[nchar] = 0;
-                break;
-
-            case FLOAT:
-                n = sscanf (ptstart,"%f",&F);
-                vaF = va_arg (vl,float *);
-                *vaF = F;
-                break;
-
-            default:
-            case INTEGER:
-                n = sscanf (ptstart,"%d",&I);
-                vaI = va_arg (vl,uint32_t *);
-                *vaI = I;
-                break;
-
-            case HEXADECIMAL:
-                n = sscanf (ptstart,"%s",S);
-                n = sscanf(&(S[1]),"%X",&I); /* remove the 'h' */
-                vaI = va_arg (vl,uint32_t *);
-                *vaI = I;
-                break;
-        }
-
-        ptstart = ptstart0 + 1;      /* skip the ';\n' separators */
-    }
-    *pt_line = ptstart;
-    va_end(vl);
-}
+#include "stream_tool_include.h"
 
 
 /*  
@@ -210,17 +85,17 @@ void arm_stream_graphTxt2Bin (char *graph_txt, FILE *ptf_graph_bin)
 {
     char *pt_line;
     uint32_t addrBytes, FMT0, FMT1, FMT2, FMT3;
-    char comments[SZ_LINE];
-    char comment1[SZ_LINE];
-    char comment2[SZ_LINE];
-    char comment3[SZ_LINE];
+    char comments[MAXNBCHAR_LINE];
+    char comment1[MAXNBCHAR_LINE];
+    char comment2[MAXNBCHAR_LINE];
+    char comment3[MAXNBCHAR_LINE];
     static fpos_t pos_NWords, pos_PACKFORMATIOSSCRIPT, pos_PACKLINKEDLNBINSTANCE, pos_PACKNBARCDEBUG;
-    static uint32_t nFMT, LENscript, LinkedList, LinkedList0, NbInstance, nIOs, NBarc, SizeDebug;
+    static uint32_t nFMT, LENscript, LinkedList, LinkedList0, NbInstance, nIOs, NBarc, SizeDebug, dbgScript;
 
     pt_line = graph_txt;
     addrBytes = 0;
 
-    while (NOT_YET_END_OF_GRAPH == jump2next_valid_line(&pt_line))
+    while (NOT_YET_END_OF_FILE == jump2next_valid_line(&pt_line))
     {
         switch (*pt_line)
         {   
@@ -240,7 +115,7 @@ void arm_stream_graphTxt2Bin (char *graph_txt, FILE *ptf_graph_bin)
                 fprintf (ptf_graph_bin, "0x%08X, // number of Words in this graph \n", 0); 
 
                 pt_line++;     // skip the "o" field
-                fields_extract(&pt_line, "iic", &share, &RAMsplit, &comment1);
+                fields_extract(&pt_line, "iic", &share, &RAMsplit , &comment1);
                 fields_extract(&pt_line, "ihc", &off,  &base, &comment2);
 
                 FMT0 = 0;
@@ -585,7 +460,7 @@ void arm_stream_graphTxt2Bin (char *graph_txt, FILE *ptf_graph_bin)
             case _debug:
             {   uint32_t i;
                 pt_line++;     // skip the "d" field
-                fields_extract(&pt_line, "ic", &SizeDebug);
+                fields_extract(&pt_line, "iic", &SizeDebug, &dbgScript);
 
                 for (i = 0; i < SizeDebug; i++)
                 {   PRINTF(0)
@@ -634,5 +509,9 @@ void arm_stream_graphTxt2Bin (char *graph_txt, FILE *ptf_graph_bin)
     fprintf (ptf_graph_bin, "0x%08X", PACKLINKEDLNBINSTANCE(LinkedList,NbInstance) );
 
     fsetpos (ptf_graph_bin, &pos_PACKNBARCDEBUG);
-    fprintf (ptf_graph_bin, "0x%08X", PACKNBARCDEBUG(SizeDebug,NBarc));
+    fprintf (ptf_graph_bin, "0x%08X", PACKNBARCDEBUG(dbgScript,SizeDebug,NBarc));
 }
+
+#ifdef __cplusplus
+}
+#endif

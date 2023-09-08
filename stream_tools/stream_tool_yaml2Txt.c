@@ -25,6 +25,11 @@
  * 
  */
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+    
+
 #define _CRT_SECURE_NO_DEPRECATE 1
 #include <stdio.h>    
 #include <string.h>
@@ -103,156 +108,6 @@ char domain_name[PLATFORM_MAX_NB_DOMAINS][CHARLENDOMAINS] =
     "storage_out"              // #define PLATFORM_STORAGE_OUT           20
 };
 
-/* ---------------------------------------------------------------------- */
-uint32_t INTTOFPE4M6(uint32_t x)
-{
-    uint32_t E, M;
-
-    for (E = 0; E <= PARAM_MAX_EXPONENT; E++)
-    {   for (M = 0; M <= PARAM_MAX_MANTISSA; M++)
-        {   if ((M << E) >= x)
-                return (E<<6) | M;
-        }
-    }
-    return 0;
-}
-
-/* ---------------------------------------------------------------------- */
-void jump2next_line(char **line)
-{
-    while (*(*line) != '\n') 
-    {   (*line)++;
-    };
-    (*line)++;
-}
-/* ---------------------------------------------------------------------- */
-static uint32_t jump2next_valid_line (char **line)
-{
-    while ((*line)[0] == ';')     /* skip lines starting with ';' */
-        jump2next_line(line);
-
-#define NOT_YET_END_OF_GRAPH 1
-#define FOUND_END_OF_GRAPH 2
-
-    if (0 == strncmp (*line,"END",8))
-        return FOUND_END_OF_GRAPH;
-    else
-        return NOT_YET_END_OF_GRAPH;
-}    
-
-/* ---------------------------------------------------------------------- */
-uint32_t quantized_FS (float FS)
-{
-    /* 20bits : mantissa [U18], exponent [U2], FS = (Mx2)/2^(8xE), 0<=>ASYNCHRONOUS/SLAVE */
-    /* 20 range = (E=0,1,2,3) 262142/2^0 .. 2/2^24 [262kHz .. 3 months] */    
-    /* 524kHz  ..  1/8.388.608 Hz  [~1MHz .. 3months] */    
-    uint32_t E, M;
-    float x;
-
-    for (E = FMT_FS_MAX_EXPONENT; E >= 0; E--)
-    {   for (M = 0; M <= FMT_FS_MAX_MANTISSA; M++)
-        {   x = (float)FMTQ2FS(E,M);
-            if (x >= FS)
-            {   
-                return (E<<FMT_FS_EXPSHIFT) | M;
-            }
-        }
-    }
-    return 0;
-}
-
-/* ---------------------------------------------------------------------- */
-// fields_extract(&pt_line, 3, "III", &ARC_ID, &IFORMAT, &SIZE);
-
-void fields_extract(char **pt_line, char *types,  ...)
-{
-    char *ptstart, *ptstart0, S[200], *vaS;
-    uint32_t ifield, I, *vaI, nchar, n, nfields;
-    va_list vl;
-    float F, *vaF;
-#define COMMENTS 'c'
-#define FLOAT 'f'
-#define INTEGER 'i'
-#define HEXADECIMAL 'h'
-
-    va_start(vl,types);
-    ptstart = *pt_line;
-    nfields = strlen(types);
-
-    while (*(*pt_line) == ';') 
-    {   jump2next_line(pt_line); 
-        ptstart = *pt_line;
-    }
-
-    for (ifield = 0; ifield < nfields; ifield++)
-    {
-        if (types[ifield] == COMMENTS)
-        {   ptstart0 = strchr (ptstart, '\n'); 
-        } else
-        {   ptstart0 = strchr (ptstart, ';'); 
-        }
-
-        switch(types[ifield])
-        {
-            case COMMENTS:
-                nchar = ptstart0 - ptstart;
-                vaS = va_arg (vl,char *);
-                strncpy(vaS, ptstart, nchar);
-                vaS[nchar] = 0;
-                break;
-
-            case FLOAT:
-                n = sscanf (ptstart,"%f",&F);
-                vaF = va_arg (vl,float *);
-                *vaF = F;
-                break;
-
-            default:
-            case INTEGER:
-                n = sscanf (ptstart,"%d",&I);
-                vaI = va_arg (vl,uint32_t *);
-                *vaI = I;
-                break;
-
-            case HEXADECIMAL:
-                n = sscanf (ptstart,"%s",S);
-                n = sscanf(&(S[1]),"%X",&I); /* remove the 'h' */
-                vaI = va_arg (vl,uint32_t *);
-                *vaI = I;
-                break;
-        }
-
-        ptstart = ptstart0 + 1;      /* skip the ';\n' separators */
-    }
-    *pt_line = ptstart;
-    va_end(vl);
-}
-
-
-/*  
-    first letters of the lines in the input file 
-*/
-#define _processor    'P'
-#define _firmware     'F'
-#define _io_stream    'O'
-#define _end    'f'
-
-
-#define PRINTF(d) fprintf(ptf_graph_opt, "0x%08X, // %03X %03X\n", (d), addrBytes, addrBytes/4); addrBytes += 4;
-
-
-/* 
-    the number of coefficients per nodes can be large
-*/
-static uint32_t parameters[MAX_FPE4M6];
-
-
-/* 
-    list of all the memory banks, for debug
-*/
-#define MAX_MEMORY_BANK_DBG 1000
-static uint32_t memory_banks[MAX_MEMORY_BANK_DBG], nb_memory_banks;
-
 
 /**
   @brief            (main) 
@@ -264,9 +119,10 @@ static uint32_t memory_banks[MAX_MEMORY_BANK_DBG], nb_memory_banks;
   @remark
  */
 
-void arm_stream_yaml2opt (struct stream_platform_manifest *platform, struct stream_node_manifest *all_nodes, 
-                          char *yaml_txt, uint32_t ncharyaml, FILE *ptf_graph_opt)
+void arm_stream_yaml2txt (struct stream_platform_manifest *platform, struct stream_node_manifest *all_nodes, 
+                          char *yaml_txt, uint32_t yaml_length, FILE *ptf_graph_opt)
 {
+#if 0
     char *pt_line;
     uint32_t state, substate;
 
@@ -304,4 +160,10 @@ void arm_stream_yaml2opt (struct stream_platform_manifest *platform, struct stre
             if "inputs" :   fill fields of arc ; loop 
             if "outputs" :  fill fields of arc ; loop 
         }
+#endif
 }
+
+
+#ifdef __cplusplus
+}
+#endif
