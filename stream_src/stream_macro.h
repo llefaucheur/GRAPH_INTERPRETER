@@ -62,7 +62,7 @@
 #define INSERT_FIELD(arg, field, value)     INSERT_BITS((arg), field##_MSB, field##_LSB, value)
 #define ST(arg, field, value) INSERT_FIELD((arg), field, U(value)) 
 
-#define LOG2BASEINWORD32 2
+#define LOG2BASEINWORD32 2 
 #define BASEINWORD32 (1<<LOG2BASEINWORD32)
 #define PACK2LINADDR(o,x) (o[RD(x,DATAOFF_ARCW0)] + \
         (RD(x,BASESIGN_ARCW0))? \

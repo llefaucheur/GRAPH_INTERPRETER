@@ -82,6 +82,17 @@ extern uint8_t trace_stop(uint32_t *setting, uint8_t *data, uint32_t siz);
 #define SIZE_MBANK_HWIODMEM   0x100     /* DMA buffer */
 #define SIZE_MBANK_PMEM       0x100     /* patch */
 
+
+// MEMORY BANKS
+//#define MBANK_GRAPH     U(0)    /* graph base address (shared) */
+//#define MBANK_DMEM      U(1)    /* shared internal/external memory */
+//#define MBANK_DMEMPRIV  U(2)    /* not shared memory space */
+//#define MBANK_DMEMFAST  U(3)    /* not shared DTCM Cortex-M/LLRAM Cortex-R, swapped between SWC calls if static */
+//#define MBANK_BACKUP    U(4)    /* shared backup SRAM addressed only by STREAM */
+//#define MBANK_HWIODMEM  U(5)    /* shared memory space for I/O and DMA buffers */
+//#define MBANK_PMEM      U(6)    /* shared program RAM */
+//#define MBANK_FLASH     U(7)    /* shared internal Flash */
+
 static uint64_t MEXT[SIZE_MBANK_DMEM_EXT];
 static uint64_t RAM1[SIZE_MBANK_DMEM];
 static uint64_t RAM2[SIZE_MBANK_DMEM];

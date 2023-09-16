@@ -221,8 +221,8 @@
 #define  ARCHID_LW0_LSB U(22) /* 3 processor architectures */
 #define  NBARCW_LW0_MSB U(21) 
 #define  NBARCW_LW0_LSB U(18) /* 4  total nb arcs */
-#define ARCLOCK_LW0_MSB U(17) 
-#define ARCLOCK_LW0_LSB U(15) /* 3  arc(tx) index used for locking */
+//#define ARCLOCK_LW0_MSB U(17) 
+//#define ARCLOCK_LW0_LSB U(15) /* 3  arc(tx) index used for locking (always index #0) */
 #define ARCSRDY_LW0_MSB U(14) 
 #define ARCSRDY_LW0_LSB U(12) /* 3  nb arcs used in streaming and checked by the scheduler */
 #define SWC_IDX_LW0_MSB U(11) 
@@ -230,13 +230,14 @@
 
 #define MAX_NB_ARC_STREAM (1<<(NBARCW_LW0_MSB-NBARCW_LW0_LSB+1))
 
-        /* word 1+n - arcs */
+        /* word 1+n - arcs , 
+                starting with the one used for locking, the streaming arcs, then the metadata arcs */
 
 //#if (GRAPH_INTERPRETER_VERSION & 0xFF00) == 0x0100
 #define MAX_NB_STREAM_PER_SWC 16
 //#endif
 
-#define ARC_HEADER_BYTE_OFFSET 4  /* ARCs hearder starts 4bytes after main header */
+#define ARC_HEADER_BYTE_OFFSET 4  /* ARCs header starts 4bytes after main header */
 #define ARC_RX0TX1_MASK 0x800 /* MSB gives the direction of the arc */
 #define ARC_RX0TX1_CLEAR 0x7FF 
 
@@ -276,20 +277,23 @@
         /* word 3+n - parameters */
 
 /*      BOOTPARAMS    : 
-        unused      : 1  
-        paramtype   : 1  0:all params   1:params sent 1-by-1
-        skip        :20  nb of WORD32 to skip at run time, 0 means no parameter.
-        verbose     : 1  level of details in the debug trace
-        new param   : 1  a script has updated new parameters
-        preset LSB  : 4; preset index (SWC delivery)
+        unused        : 5  
+        SELPARAM_LW3  : 1  0:all params sent   1:params sent 1-by-1
+        W32LENGTH_LW3 :20  nb of WORD32 to skip at run time, 0 means no parameter.
+        VERBOSE_LW3   : 1  level of details in the debug trace
+        NEWPARAM_LW3  : 1  a script has updated new parameters
+        PRESET_LW3    : 4; preset index (SWC delivery)
 
         if skip> 0
             sequence of pairs {8b index/TAG / ALLPARAM_=ALL; 24b byte length} { parameter(s) }
+            early terminated by a tag with "24b byte length" = 0;
 
         SWC can use an input arc to receive a huge set of parameters, for example an NN model
         The arc read pointer is never incremented during the execution of the node.
         The command STREAM_SET_PARAMETER is used to notify a change in the arc parameter buffer
 */
+#define MAX_TMP_PARAMETERS 30   /* temporary buffer (words32) of parameters to send to the Node */
+
 #define PARAM_MAX_MANTISSA (1<<14)-1 /* SKIP = Mantissa << Exponent */
 #define PARAM_MAX_EXPONENT (1<<2)-1  /*  format: EE.MM.MMMM.MMMM.MMMM */
 #define FPE2M14TOINT(FP) (((FP) & PARAM_MAX_MANTISSA) << ((unsigned int)FP>>6))
@@ -299,8 +303,8 @@
 #define  __UNUSED_LW3_LSB U(27) /* 5    */
 #define    PRESET_LW3_MSB U(26)
 #define    PRESET_LW3_LSB U(23) /* 4 preset   precomputed configurations, manifest's uint8_t *parameter_presets; */
-#define  SELPARAM_LW3_MSB U(22) /*      */
-#define  SELPARAM_LW3_LSB U(22) /* 1 1 mean "send parameters one by one", 0 means "all parameters" */
+#define  CPYSTACK_LW3_MSB U(22) /*      */
+#define  CPYSTACK_LW3_LSB U(22) /* 1 1 mean copy the parameters on stack before calling the node */
 #define   VERBOSE_LW3_MSB U(21)
 #define   VERBOSE_LW3_LSB U(21) /* 1 verbose debug trace */
 #define  NEWPARAM_LW3_MSB U(20) /*   when the list is in flash the parameters at set once at reset */

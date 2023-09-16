@@ -49,10 +49,7 @@ extern void router_processing (arm_stream_router_instance *instance, stream_xdmb
 ;Node #2.	arm_stream_router
 ;----------------------------------------------------------------------------------------
 ;    I/O streams have the same RAW format size, if time-stamped then only with frame size of 1
-;    If there is one high-QoS input arc then there is also one High-QoS output arc
-;    1) find the frame size from the High-QoS I/O stream, or find a common denominator of all
-;    2) for each output stream: find *in *out m n p q , to do: out(m.i +n) = in(p.i +q)
-;    (clear output buffer before routing to avoid noises with unused subchannel with remaining data)
+;    
 ;
 ;
 ;   table of routing : a list of 16bits words (source 8b + destination 8b)
@@ -64,7 +61,7 @@ extern void router_processing (arm_stream_router_instance *instance, stream_xdmb
 arm_stream_router
     3  i8; 0 0 0        instance, preset, tag
     PARSTART
-    4  i8; 2 2 15 15    nb input/output arcs, indexes of input/output HQoS (or 15)
+    2  i8; 2 2          nb input/output arcs
     4 i16; 0 0 2 0      move arc0,chan0, to arc2,chan0
     4 i16; 0 1 2 1      move arc0,chan1, to arc2,chan1
     4 i16; 1 0 2 2      move arc1,chan0, to arc2,chan2

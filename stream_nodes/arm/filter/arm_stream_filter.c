@@ -141,7 +141,7 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
 
                 memresult[0] : instance of the component (one pointer and 2 bytes)
                 memresult[1] : pointer to the allocated memory (biquad states and coefs)
-                memresult[2] : input arc Word 0 SIZSFTRAW_FMT0 
+                memresult[2] : input arc Word 0 SIZSFTRAW_FMT0 (frame size..)
                 memresult[3] : input arc Word 1 SAMPINGNCHANM1_FMT1 
                 memresult[4] : output arc Word 0 SIZSFTRAW_FMT0 
                 memresult[5] : output arc Word 1 SAMPINGNCHANM1_FMT1 
@@ -229,7 +229,7 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
 
             nb_data = stream_xdmbuffer_size / sizeof(int16_t);
 
-            arm_stream_services(
+            pinstance->services(
                 pinstance->iir_service,
                 (uint8_t*)inBuf, 
                 (uint8_t*)outBuf,

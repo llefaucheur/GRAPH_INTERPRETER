@@ -46,30 +46,25 @@
 ;----------------------------------------------------------------------------------------
 ;4.	arm_stream_amplifier
 ;----------------------------------------------------------------------------------------
-;   Operation : control of the amplitude of the input stream with controlled time of ramp-up and ramp-down. 
-;   The gain control “mute” is used to store the current gain setting, being reloaded when the command “unmute” is sent
+;   Operation : control of the amplitude of the input stream with controlled time of ramp-up/ramp-down. 
+;   The gain control “mute” is used to store the current gain setting, being reloaded with the command “unmute”
 ;   Parameters :  new gain/mute/unmute, ramp-up/down slope, delay before starting the slope.
 ;
-;   Tags used for individual parameter-setting :
-;   TAG_CMD = 0 to unmute (default state at reset)
-;   TAG_CMD = 1 to mute
-;   TAG_CMD = 2 to change the gain (linear Q15.16 format, 0x00010000 (0dB) at reset)
-;   TAG_CMD = 3 delay before applying the ramp-up, in samples (uint16, reset value=0)
-;   TAG_CMD = 4 delay before applying the ramp-down, in samples (uint16)
-;   TAG_CMD = 5 ramp-up slope (uint8, 1st-order IIR shifter coefficient value, tbd)
-;   TAG_CMD = 6 ramp-down slope (uint8, reset value= 0 sample slope)
+;   parameters of amplifier (variable size): 
+;   TAG_CMD = 1, uint8_t, 1st-order IIR shifter coefficient value (0..75k samples)
+;   TAG_CMD = 2, uint16_t, desired gain FP_8m4e, 0dB=0x0805
+;   TAG_CMD = 3, uint8_t, set/reset mute state
+;   TAG_CMD = 4, uint16_t, delay before applying unmute, in samples
+;   TAG_CMD = 5, uint16_t, delay before applying mute, in samples
 ;
-;   Reset default state is 0dB amplification, 0 delays
-;
-arm_stream_amplifier; 
+node arm_stream_amplifier; 
     3  i8; 0 0 0        instance, no preset, tag=unmute
-    PARSTART
+    parameter_start <optional label for scripts>
+    1  i8;  1           rising/falling coefficient slope
+    1 h16;  805         gain -100dB .. +36dB (+/- 1%)
     1  i8;  0           muted state
-    1 h32;  10000       gain
     2 i16;  0 0         delay-up/down
-    2  i8;  4 4         rising/falling slope
-    PARSTOP 
-
+    parameter_end    
 */
 
 /**
@@ -98,10 +93,25 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
             intPtr_t *memresults = (intPtr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
-            arm_amplitude_instance *pinstance = (arm_amplitude_instance *)  *memresults;
-            memresults++;
             /* here reset */
+            arm_amplitude_instance *pinstance = (arm_amplitude_instance *) *memresults;
+            pinstance->services = (stream_services_entry *)(uint64_t)data;
 
+            memresults++;   /* memresult points to the */
+
+            /* copy the frame-size, interleaving scheme and nb of channels of each arc */
+            uint32_t tmp32;
+
+            tmp32 = RD(memresults[0], FRAMESIZE_FMT0);
+            ST(pinstance->channel_fmt, FRAMESIZE_FMT0_FMT, tmp32);
+
+            tmp32 = RD(memresults[0], INTERLEAV_FMT0);
+            ST(pinstance->channel_fmt, INTERLEAVING_FMT, tmp32);
+
+            tmp32 = RD(memresults[0], NCHANM1_FMT1);
+            ST(pinstance->channel_fmt, NBCHANM1_AMPLI_FMT, tmp32);
+            
+            /* reset here */
             break;
         }    
 
@@ -113,30 +123,18 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
         case STREAM_SET_PARAMETER:  
         {   arm_amplitude_instance *pinstance = (arm_amplitude_instance *) instance;
             uint8_t *pt8bsrc, *pt8bdst, i, n;
-            
+
             pt8bsrc = (uint8_t *) data;     
-            #define pII(n) (uint8_t *)&(pinstance->I[n])
-            switch (RD(command,TAG_CMD))
-            // uint16_t, Q16,   TAG_CMD = 1, ramp-up slope, 1st-order IIR shifter coefficient value
-            // uint16_t, Q16,   TAG_CMD = 2, ramp-down slope, 1st-order IIR shifter coefficient value
-            // uint16_t, U16,   TAG_CMD = 3 delay before applying the ramp-up, in samples
-            // uint16_t, U16,   TAG_CMD = 4 delay before applying the ramp-down, in samples
-            // uint32_t, Q15.16,TAG_CMD = 5 current gain (linear Q15.16 format, 0x00010000 (0dB) at reset)
-            // uint32_t, Q15.16,TAG_CMD = 6 desired gain in ramp-up/down process
-            // uint8_t, mute,   TAG_CMD = 7 to unmute (default state at reset)
-            //                  TAG_CMG = 8 to mute (state=1)
-            // Reset default state is 0dB amplification, 0 delays
+            pt8bdst = &(pinstance->parameters[0]); 
 
-            {   default :
-                case TAG_CMD_RAMPUP:        pt8bdst = pII(0); n = 2;  break;
-                case TAG_CMD_RAMPDOWN:      pt8bdst = pII(0); n = 2; pt8bdst = &(pt8bdst[2]); break;
-                case TAG_CMD_DELAY_RAMPUP:  pt8bdst = pII(1); n = 2;  break;
-                case TAG_CMD_DELAY_RAMPDOWN:pt8bdst = pII(1); n = 2; pt8bdst = &(pt8bdst[2]); break;
-                case TAG_CMD_CURRENT_GAIN:  pt8bdst = pII(2); n = 4; break;
-                case TAG_CMD_DESIRED_GAIN:  pt8bdst = pII(3); n = 4; break;
-                case TAG_CMD_UNMUTE:        pt8bdst = pII(4); n = 1; break;
-                case TAG_CMG_MUTE:          pt8bdst = pII(4); n = 1; break;
-                case ALLPARAM_:             pt8bdst = pII(0); n = 17;break;
+            switch (RD(command,TAG_CMD))
+            {   default : break;
+                case TAG_CMD_RAMP :         pt8bdst += 2; n = 1; break;
+                case TAG_CMD_DESIRED_GAIN:  pt8bdst += 0; n = 2; break;
+                case TAG_CMG_MUTE:          pt8bdst += 3; n = 1; break;
+                case TAG_CMD_DELAY_RAMPUP:  pt8bdst += 6; n = 2; break;
+                case TAG_CMD_DELAY_RAMPDOWN:pt8bdst += 4; n = 2; break;
+                case ALLPARAM_:             n = 8;               break;
             }
            
             for (i = 0; i < n; i++)
@@ -144,35 +142,7 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
             }
         }
 
-        /* func(command = STREAM_READ_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
-                    TAG/index of a parameter to read (Metadata, Needle), 0xFF means "read all the parameters"
-                *instance, 
-                data = *parameter(s) to read
-        */ 
-        case STREAM_READ_PARAMETER:  
-        {   arm_amplitude_instance *pinstance = (arm_amplitude_instance *) instance;
-            uint8_t *pt8bsrc, *pt8bdst, i, n;
-            
-            pt8bdst = (uint8_t *) data;     
-
-            switch (RD(command,TAG_CMD))
-            {   default:
-                case TAG_CMD_RAMPUP:        pt8bsrc = pII(0); n = 2; break;
-                case TAG_CMD_RAMPDOWN:      pt8bsrc = pII(0); n = 2; pt8bsrc = &(pt8bsrc[2]); break;
-                case TAG_CMD_DELAY_RAMPUP:  pt8bsrc = pII(1); n = 2; break;
-                case TAG_CMD_DELAY_RAMPDOWN:pt8bsrc = pII(1); n = 2; pt8bsrc = &(pt8bsrc[2]); break;
-                case TAG_CMD_CURRENT_GAIN:  pt8bsrc = pII(2); n = 4; break;
-                case TAG_CMD_DESIRED_GAIN:  pt8bsrc = pII(3); n = 4; break;
-                case TAG_CMD_UNMUTE:        pt8bsrc = pII(4); n = 1; break;
-                case TAG_CMG_MUTE:          pt8bsrc = pII(4); n = 1; break;
-                case ALLPARAM_:             pt8bsrc = pII(0); n = 17;break;
-            }
-           
-            for (i = 0; i < n; i++)
-            {   pt8bdst[i] = pt8bsrc[i];
-            }
-        }
-
+   
         /* func(command = STREAM_RUN, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = array of [{*input size} {*output size}]
@@ -197,8 +167,7 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
             outBuf = (SAMP_OUT *)(pt_pt->address); 
 
             nb_data = stream_xdmbuffer_size / sizeof(SAMP_IN);
-
-            arm_stream_amplitude_process(pinstance, inBuf, outBuf, &nb_data);
+            arm_stream_amplitude_process(pinstance, inBuf, outBuf, nb_data);
             
             break;
         }

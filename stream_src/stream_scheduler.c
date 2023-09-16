@@ -121,7 +121,7 @@ static intPtr_t pack2linaddr_int(intPtr_t *long_offset, uint32_t x)
      dbg2 =  BASEINWORD32 * RD((x),BASEIDX_ARCW0);
 
      if (RD(x,BASESIGN_ARCW0))  // to test @@@
-        dbg3 = dbg1 - dbg2;
+        dbg3 = dbg1 + ~(dbg2) +1; // dbg1-dbg2 with unsigned
       else
         dbg3 = dbg1 + dbg2;
 
@@ -815,12 +815,35 @@ static uint32_t check_hw_compatibility(uint32_t whoami, uint32_t header)
     }
     return match;
 }
+
+
+
+/*----------------------------------------------------------------------------*/
+/**
+    parameter setting:
+    - low-RAM devices, single processors :
+        scripts send parameters with CALS 
+
+    - systems with enough RAM, w/wo multiprocessing :
+        patch the linked-list area and use NEWPARAM_LW3
+    
+
+    Operations
+        - the script prepares the parameter structure (Node, InstanceAddress, locking arc, nbBytes, Tags, data) and pushes it to  
+            its stack. The instance address is known at graph and script compilation. There is a CALS service to call the node.
+        - from the application
+            - the instance address is in a header file, resulting from the graph compilation
+                There is a Stream API to push the parameter data structure, the same way as in the script way
+ */
+
+
+
    
 /*----------------------------------------------------------------------------*/
 /**
   @brief        Main scheduler loop of the linked list of nodes in the graph
   @param[in]    instance       pointer to the static area of the current Stream instance
-  @param[in]    reset_option   Tells if this is a scan for reset, run or stop the graph
+  @param[in]    command   Tells if this is a scan for reset, run or stop the graph
   @return       none
 
   @par          scan the graph and execute a node or all the nodes or all until no more data is available
@@ -835,7 +858,7 @@ static uint32_t check_hw_compatibility(uint32_t whoami, uint32_t header)
  */
 
 
-void stream_scan_graph (arm_stream_instance_t *S, int8_t reset_option) 
+void stream_scan_graph (arm_stream_instance_t *S, int8_t command) 
 {
     if (script_option & STREAM_SCHD_SCRIPT_START) { script_processing (S->main_script);}
 
@@ -857,7 +880,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t reset_option)
                 DEBUG_CNT = DEBUG_CNT;
             
             /* check the boundaries of the graph, not during end/stop periods */
-            if (reset_option == 0) 
+            if (command == STREAM_RUN) 
             {   check_graph_boundaries(S); 
             }
          
@@ -875,12 +898,10 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t reset_option)
             }
 
             /* ---------------- parameter was changed, or reset phase ? -------------------- */
-            if (reset_option > 0 ||
-                (TEST_BIT(S->scheduler_control,L_IN_RAM_SCTRL_LSB) && 
-                 TEST_BIT((S->swc_header)[S->swc_parameters_offset], NEWPARAM_LW3_LSB)))
+            if (command == STREAM_RESET || TEST_BIT((S->swc_header)[S->swc_parameters_offset], NEWPARAM_LW3_LSB))
             {   
                 /* reset phase of the graph ?  */
-                if (reset_option > 0)
+                if (command == STREAM_RESET)
                 {   reset_component (S);
                 }
 
@@ -889,13 +910,19 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t reset_option)
             }
 
             /* end of graph processing ? */
-            if (reset_option < 0)
+            if (command == STREAM_STOP)
             {   uint32_t returned;
                 ST(S->pack_command, COMMAND_CMD, STREAM_STOP);
                 stream_calls_swc (S,
                     S->swc_instance_addr, 0u, &returned);
             }
     
+            /* a script called scan_graph for a parameter change */
+            if (command  == STREAM_SET_PARAMETER)
+            {   /* if (/* the "arm_stream_instance_t" has all the details */
+                return;
+            }
+
             /* if the SWC generating the input data was blocked (ALIGNBLCK_ARCW3=1) 
                 then it is the responsibility of the consumer node (current SWC) to realign the 
                 data, and clear the flag. 
@@ -917,7 +944,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t reset_option)
             }
 
             /* check input arc has enough data and output arc is free */
-            if ((0 == reset_option) && 
+            if ((command == STREAM_RUN) && 
                 (0 != arcs_are_ready(S, RD(S->swc_header[0], ARCSRDY_LW0)))) 
             {   run_node (S);
             }
@@ -1004,8 +1031,9 @@ static void read_header (arm_stream_instance_t *S)
     }    
 
     /* byte pointer for locking the node */
-    x = RD(S->swc_header[0], ARCLOCK_LW0);
-    iarc = S->arcID[x];
+    //x = RD(S->swc_header[0], ARCLOCK_LW0);
+    //iarc = S->arcID[x];
+    iarc = S->arcID[0];
     x = WRIOCOLL_ARCW3 + SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & iarc);
     S->pt8b_collision_arc = (uint8_t *)&(S->all_arcs[x]);
     S->pt8b_collision_arc = &(S->pt8b_collision_arc[COLLISION_ARC_OFFSET_BYTE]);
@@ -1155,6 +1183,9 @@ static void set_new_parameters (arm_stream_instance_t *S)
 {
     uint8_t *ptr_param8b;
     uint32_t length, tmp, idata;
+    uint8_t parameters_tmp[4 *MAX_TMP_PARAMETERS], *ptdst, i;
+    uint8_t param_tag;
+    uint8_t param_nb_bytes;
 
     /* no parameter ? */
     length = RD((S->swc_header)[S->swc_parameters_offset], W32LENGTH_LW3);
@@ -1164,61 +1195,60 @@ static void set_new_parameters (arm_stream_instance_t *S)
 
     /*
       BOOTPARAMS  : 
-          BOOTPARAMS    : 
-            unused      : 1  
-            paramtype   : 1  0:all params   1:params sent 1-by-1
-            skip        :16  nb of word32 to skip at run time, 0 means no parameter.
-            verbose     : 1  level of details in the debug trace
-            new param   : 1  a script has updated new parameters
-            unused      : 4; 
-            preset LSB  : 4; preset index (SWC delivery)
+        unused        : 5  
+        SELPARAM_LW3  : 1  0:all params sent   1:params sent 1-by-1
+        W32LENGTH_LW3 :20  nb of WORD32 to skip at run time, 0 means no parameter.
+        VERBOSE_LW3   : 1  level of details in the debug trace
+        NEWPARAM_LW3  : 1  a script has updated new parameters
+        PRESET_LW3    : 4; preset index (SWC delivery)
 
             if skip> 0 and paramtype= 1
                 sequence of pairs {8b index/tag ; 24b byte length} { parameter(s) }
-
-      TODO : allocate a scratch area to copy the parameters, and avoid SWC 
-             to have access to Stream internal memory area
+                early terminated by a tag with "24b byte length" = 0;
     */
-    tmp = ((S->swc_header)[S->swc_parameters_offset]);
-    tmp = RD(tmp, SELPARAM_LW3);
 
-    /* start of the parameter byte-stream : one word after the header */
+
+    /* copy on Stack before the call ? */
+    /* default source of parameter is in the linkedList */
     ptr_param8b = (uint8_t *) &((S->swc_header)[1 + S->swc_parameters_offset]);
 
-    /* do we load the full set of parameters ? (default setting of pack_command) */
-    if (tmp == 0 /* SELPARAM_LW3 = "ALLPARAM_" */ )
+    /* copy to temporary buffer and size is not too big */
+    tmp = ((S->swc_header)[S->swc_parameters_offset]);
+    tmp = RD(tmp, CPYSTACK_LW3);
+    if (tmp & (length < MAX_TMP_PARAMETERS))
     {   
-        ST(S->pack_command, COMMAND_CMD, STREAM_SET_PARAMETER);
+        /* start of the parameter byte-stream : one word after the header */
+        for (i = 0, ptdst = parameters_tmp; i < length *4; i++)
+        {   *ptdst++ = *ptr_param8b++;
+        }
+        ptr_param8b = parameters_tmp;
+    }
+    
+    ST(S->pack_command, COMMAND_CMD, STREAM_SET_PARAMETER);
+    idata = 0;
 
-        stream_calls_swc (S,
+    while (idata < length/4)
+    {   /* sequence of pairs {8b index/tag ; 24b nb of bytes }  */
+        param_tag = *ptr_param8b;
+
+        ST(S->pack_command, TAG_CMD, param_tag);
+        ptr_param8b++;  
+        param_nb_bytes = *ptr_param8b++;
+        param_nb_bytes += (*ptr_param8b++)<<8;
+        param_nb_bytes += (*ptr_param8b++)<<16;
+
+        /* no more parameter to send ? */
+        if (param_nb_bytes == 0)
+        {   break;
+        }
+        idata += param_nb_bytes;
+        
+        stream_calls_swc (S, 
             S->swc_instance_addr,
             (stream_xdmbuffer_t *)ptr_param8b, 
             &tmp);
-    }
-    else /* SELPARAM_LW3 == send the parameters one-by-one */
-    {   uint8_t param_tag;
-        uint8_t param_nb_bytes;
 
-        ST(S->pack_command, COMMAND_CMD, STREAM_SET_PARAMETER);
-        idata = 0;
-
-        while (idata < length/4)
-        {   /* sequence of pairs {8b index/tag ; 24b nb of bytes }  */
-            param_tag = *ptr_param8b;
-            ST(S->pack_command, TAG_CMD, param_tag);
-            ptr_param8b++;  
-            param_nb_bytes = *ptr_param8b++;
-            param_nb_bytes += (*ptr_param8b++)<<8;
-            param_nb_bytes += (*ptr_param8b++)<<16;
-            idata += param_nb_bytes;
-            
-            stream_calls_swc (S, 
-                S->swc_instance_addr,
-                (stream_xdmbuffer_t *)ptr_param8b, 
-                &tmp);
-
-            ptr_param8b = &(ptr_param8b[param_nb_bytes]);
-        }
+        ptr_param8b = &(ptr_param8b[param_nb_bytes]);
     }
 
     /* ready to accept new parameters : clear the flag */

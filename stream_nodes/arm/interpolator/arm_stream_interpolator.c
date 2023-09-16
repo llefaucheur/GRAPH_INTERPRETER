@@ -116,20 +116,6 @@ void arm_stream_interpolator (int32_t command, stream_handle_t instance, stream_
             /* copy the parameters from preset or from the graph */
             if (RD(command, PRESET_CMD) == 0)
             { 
-            //    pt8bsrc = (uint8_t *) data;
-            //    pinstance->configuration = (uint32_t)(*((uint32_t *)pt8bsrc)); 
-            //    pt8bsrc = pt8bsrc+2;    /* copy of 2 uint16 */
-
-            //}
-            //else
-            //{   
-            //    pt8bsrc = router_preset[RD(command, PRESET_CMD)];
-            //    pinstance->configuration = PACKROUTERCONFIG(2, 2, 2, NO_ROUTER_HQOS_ARC, NO_ROUTER_HQOS_ARC);
-            //}
-
-            //n = RD(pinstance->configuration, NB_ROUTER_INDEX);
-            //pt8bdst = (uint8_t *)(pinstance->router_parameter);
-
             //arm_stream_interpolator_process ()
             }
             break;

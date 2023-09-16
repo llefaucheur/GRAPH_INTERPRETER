@@ -53,15 +53,12 @@ typedef struct
 #define          UNUSED_LSB 22
 #define NB_ROUTER_INDEX_MSB 21  /* 6 bits : max 64 indexes/PACKROUTERCHANNELS */
 #define NB_ROUTER_INDEX_LSB 16    
-#define   HQOS_OUTPUTID_MSB 15  /* 4bits  HQoS output, 15=none */     
-#define   HQOS_OUTPUTID_LSB 12
-#define    HQOS_INPUTID_MSB 11  /* 4bits  HQoS input, 15=none */     
-#define    HQOS_INPUTID_LSB 8
+
 #define     NBOUTPUTARC_MSB 7   /* 4bits  nb output arcs */     
 #define     NBOUTPUTARC_LSB 4
 #define      NBINPUTARC_MSB 3   /* 4bits  nb input arcs */     
 #define      NBINPUTARC_LSB 0
-#define NO_ROUTER_HQOS_ARC ((1<<(HQOS_OUTPUTID_MSB - HQOS_OUTPUTID_LSB +1))-1) /* 15=no HQoS */
+
     uint32_t configuration;
 #define PACKROUTERCONFIG(nidx,nin,nout,Hin,Hout) (((nidx) << 14) | ((Hout)<<10) | ((Hin)<<6) | ((nout)<<3) | (nin))
 

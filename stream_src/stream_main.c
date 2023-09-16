@@ -74,7 +74,7 @@ void arm_stream (uint32_t command,  arm_stream_instance_t *stream_instance, uint
 	    {   stream_copy_graph (stream_instance, data);
             stream_instance->linked_list_ptr = stream_instance->linked_list;
 
-            stream_scan_graph (stream_instance, 1);
+            stream_scan_graph (stream_instance, STREAM_RESET);
 
             /* skip the first component = debug script node */
             #define XX 8 // size of the SWC of the debug trace script
@@ -92,14 +92,14 @@ void arm_stream (uint32_t command,  arm_stream_instance_t *stream_instance, uint
         /* usage: arm_stream(STREAM_RUN, &instance,0); */
 	    case STREAM_RUN:   
 	    {   if (RD(stream_instance->parameters, INSTANCE_ON_PARINST))
-            {   stream_scan_graph (stream_instance, 0);
+            {   stream_scan_graph (stream_instance, STREAM_RUN);
             }
             break;
         }   
 
         /* usage: arm_stream (STREAM_STOP, &instance, 0); */
         case STREAM_STOP:
-	    {   stream_scan_graph (stream_instance, -1);
+	    {   stream_scan_graph (stream_instance, STREAM_STOP);
             break;
         }
 

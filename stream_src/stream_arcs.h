@@ -123,7 +123,7 @@
 #define IODIRECTION_RX 0              /* RX from the Graph pont of view */
 #define IODIRECTION_TX 1
 
-/*============================================================================================================*/
+/*===================================   FORMATS   =================================================*/
 #define STREAM_FORMAT_SIZE_W32 3            // digital, common part of the format 
 
 /*
@@ -135,15 +135,17 @@
 
 /*--------------- WORD 0 - producer frame size, raw format, interleaving --------------- */
 #define SIZSFTRAW_FMT0   0
-    #define MULTIFRME_FMT0_MSB 31 /*  1 allow the scheduler to push multiframes  */
+    #define MULTIFRME_FMT0_MSB 31 /* 1  allow the scheduler to push multiframes  */
     #define MULTIFRME_FMT0_LSB 31
     #define       RAW_FMT0_MSB 30
-    #define       RAW_FMT0_LSB 25 /*  6 stream_raw_data 6bits (0..63)  */
+    #define       RAW_FMT0_LSB 25 /* 6  stream_raw_data 6bits (0..63)  */
     #define INTERLEAV_FMT0_MSB 24       
-    #define INTERLEAV_FMT0_LSB 24 /*  1 interleaving : frame_format_type */
-                                  /*    frame size in bytes for one deinterleaved channel Byte-acurate up to 16MBytes */
-    #define FRAMESIZE_FMT0_MSB 23 /*    raw interleaved buffer size is framesize x nb channel, max = 16MB x nchan */
-    #define FRAMESIZE_FMT0_LSB  0 /* 24 in swc manifests it gives the minimum input size (grain) before activating the swc
+    #define INTERLEAV_FMT0_LSB 24 /* 1  interleaving : frame_format_type */
+    #define FRAME_EXT_FMT0_MSB 23 
+    #define FRAME_EXT_FMT0_LSB 22 /* 2  _____*/
+                                  /*    frame size in bytes for one deinterleaved channel Byte-acurate up to 4MBytes */
+    #define FRAMESIZE_FMT0_MSB 21 /*    raw interleaved buffer size is framesize x nb channel, max = 4MB x nchan */
+    #define FRAMESIZE_FMT0_LSB  0 /* 22 in swc manifests it gives the minimum input size (grain) before activating the swc
                                         A "frame" is the combination of several channels sampled at the same time 
                                         A value =0 means the size is any or defined by the IO AL.
                                         For sensors delivering burst of data not isochronous, it gives the maximum 
@@ -209,10 +211,10 @@
 
 
 
-/*------------------------------------------------------------------------------------*/
+/*==========================================  ARCS  ===================================================*/
 
-#define SIZEOF_ARCDESC_SHORT_W32 U(2)
-#define SIZEOF_ARCDESC_W32 U(4)
+#define SIZEOF_ARCDESC_SHORT_W32 2 /* number of arcdesc words shared at STREAM_RESET time */
+#define SIZEOF_ARCDESC_W32 4
 
 #define   BUF_PTR_ARCW0    U( 0)
 #define PRODUCFMT_ARCW0_MSB U(31) /* 5 bits  PRODUCER format  (intPtr_t) +[ixSTREAM_FORMAT_SIZE_W32]  */ 
@@ -222,11 +224,11 @@
 #define   DATAOFF_ARCW0_LSB U(24) /* 3 32/64bits offset index see idx_memory_base_offset */
 #define   ________ARCW0_MSB U(23) /*   We don't know yet if the base will be extended with a 2bits shifter */
 #define   ________ARCW0_LSB U(22) /* 2  or if the list of offsets must be increased */
-#define  BASESIGN_ARCW0_MSB U(21) /*   buffer address 21 + sign + offset = 25 bits (2bits margin) */
-#define  BASESIGN_ARCW0_LSB U( 0) /* 1 sign of the address with respect to the offset */
 #define   BASEIDX_ARCW0_MSB U(21) /*        */
-#define   BASEIDX_ARCW0_LSB U( 0) /*21 base address 22bits linear address range in WORD32 */
-#define BASEIDXOFFARCW0_LSB U( 0) /*   Base can address +/- 8MBytes around the offset */
+#define  BASESIGN_ARCW0_MSB U(21) /*   buffer address 21 + sign + offset = 25 bits (+2bits margin) */
+#define  BASESIGN_ARCW0_LSB U(21) /*   sign of the address with respect to the offset */
+#define   BASEIDX_ARCW0_LSB U( 0) /*22 base address 22bits linear address range in WORD32 */
+#define BASEIDXOFFARCW0_LSB U( 0) /*   Signed ase can address +/- 8MBytes around the offset */
                                 
 #define BUFSIZDBG_ARCW1    U( 1)
 #define CONSUMFMT_ARCW1_MSB U(31) 
@@ -249,18 +251,18 @@
 #define    EXTEND_ARCW2_LSB U(23) /* 1    arcs used to read NN models, video players, etc */
 #define   READY_W_ARCW2_MSB U(22) /*    "Buffer ready for refill" */
 #define   READY_W_ARCW2_LSB U(22) /* 1  (size-write)>size/2 (or /4) */
-#define      READ_ARCW2_MSB U(21)
-#define      READ_ARCW2_LSB U( 0) /* 22     data read index  Byte-acurate up to 4MBytes starting from base address */
+#define      READ_ARCW2_MSB U(21) /*    data read index  Byte-acurate up to 4MBytes starting from base address */
+#define      READ_ARCW2_LSB U( 0) /* 22   this is incremented by "frame_size" FRAMESIZE_FMT0  */
 
 #define COLLISION_ARC_OFFSET_BYTE U(3) /* offset in bytes to the collision detection byte */
 #define  WRIOCOLL_ARCW3    U( 3) /* write access only from the SWC producer */
-#define COLLISION_ARCW3_MSB U(31) /* 8  MSB byte used to lock the SWC  */ 
-#define COLLISION_ARCW3_LSB U(24) 
+#define COLLISION_ARCW3_MSB U(31) /* 8  MSB byte used to lock the SWC, loaded with arch+proc+instance ID */ 
+#define COLLISION_ARCW3_LSB U(24) /*       to check node-access collision from an other processor */
 #define ALIGNBLCK_ARCW3_MSB U(23) /*    producer blocked */
 #define ALIGNBLCK_ARCW3_LSB U(23) /* 1  producer sets "need for data realignement"  */
 #define   READY_R_ARCW3_MSB U(22) /*    "Buffer ready for read" */ 
 #define   READY_R_ARCW3_LSB U(22) /* 1  (write-read)>size/2 (or /4) */
-#define     WRITE_ARCW3_MSB U(21)
+#define     WRITE_ARCW3_MSB U(21) /*    write pointer is incremented by FRAMESIZE_FMT0 */
 #define     WRITE_ARCW3_LSB U( 0) /* 22 write read index  Byte-acurate up to 4MBytes starting from base address */
 
 /* arcs with indexes higher than IDX_ARCS_desc, see enum_arc_index */

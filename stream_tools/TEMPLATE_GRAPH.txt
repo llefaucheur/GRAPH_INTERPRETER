@@ -64,7 +64,7 @@ node arm_script
 ;
     PSHL INT8   arm_stream_amplitude ; this is in the symbol table (node_entry_point_table[])
     PSHL INT8   0   ; instance
-    PSHL PTR amplitude_set
+    PSHL PTR    amplitude_set
     CALS SETPARAM   ; syscall: setparam(amplitude, instance0, new_param=amplitude_set)
 ;
     PSHL INT8   arm_stream_amplitude ; this is in the symbol table (node_entry_point_table[])
@@ -90,12 +90,7 @@ node arm_script
 ;----------------------------------------------------------------------------------------
 ;2.	arm_stream_router
 ;----------------------------------------------------------------------------------------
-;    I/O streams have the same RAW format size, if time-stamped then only with frame size of 1
-;    If there is one high-QoS input arc then there is also one High-QoS output arc
-;    1) find the frame size from the High-QoS I/O stream, or find a common denominator of all
-;    2) for each output stream: find *in *out m n p q , to do: out(m.i +n) = in(p.i +q)
-;    (clear output buffer before routing to avoid noises with unused subchannel with remaining data)
-;
+;   I/O streams have the same RAW format size, if time-stamped then only with frame size of 1
 ;
 ;   table of routing : a list of 16bits words (source 8b + destination 8b)
 ;   format: router arc index (3b)           up to 8 arcs
@@ -105,8 +100,8 @@ node arm_script
 ;
 node arm_stream_router
     3  i8; 0 0 0        instance, preset, tag
-    parameter_start
-    4  i8; 2 2 15 15    nb input/output arcs, indexes of input/output HQoS (or 15)
+    parameter_start <optional label for scripts>
+    2  i8; 2 2          nb input/output arcs
     4 i16; 0 0 2 0      move arc0,chan0, to arc2,chan0
     4 i16; 0 1 2 1      move arc0,chan1, to arc2,chan1
     4 i16; 1 0 2 2      move arc1,chan0, to arc2,chan2
@@ -124,29 +119,24 @@ arm_stream_converter
 ;----------------------------------------------------------------------------------------
 ;4.	arm_stream_amplifier
 ;----------------------------------------------------------------------------------------
-;   Operation : control of the amplitude of the input stream with controlled time of ramp-up and ramp-down. 
-;   The gain control “mute” is used to store the current gain setting, being reloaded when the command “unmute” is sent
+;   Operation : control of the amplitude of the input stream with controlled time of ramp-up/ramp-down. 
+;   The gain control “mute” is used to store the current gain setting, being reloaded with the command “unmute”
 ;   Parameters :  new gain/mute/unmute, ramp-up/down slope, delay before starting the slope.
 ;
 ;   parameters of amplifier (variable size): 
-;   uint16_t, Q16 format, TAG_CMD = 1, ramp-up slope, 1st-order IIR shifter coefficient value
-;   uint16_t, Q16 format, TAG_CMD = 2, ramp-down slope, 1st-order IIR shifter coefficient value
-;   uint16_t, U16, TAG_CMD = 3 delay before applying the ramp-up, in samples
-;   uint16_t, U16, TAG_CMD = 4 delay before applying the ramp-down, in samples
-;   uint32_t, Q15.16, TAG_CMD = 5 current gain (linear Q15.16 format, 0x00010000 (0dB) at reset)
-;   uint32_t, Q15.16, TAG_CMD = 6 desired gain in ramp-up/down process
-;   uint8_t, mute state, TAG_CMD=7 to unmute (default state at reset)
-;        TAG_CMG=8 to mute (state=1)
-;   Reset default state is 0dB amplification, 0 delays
+;   TAG_CMD = 1, uint8_t, 1st-order shifter slope time (as stream_mixer, 0..75k samples)
+;   TAG_CMD = 2, uint16_t, desired gain FP_8m4e, 0dB=0x0805
+;   TAG_CMD = 3, uint8_t, set/reset mute state
+;   TAG_CMD = 4, uint16_t, delay before applying unmute, in samples
+;   TAG_CMD = 5, uint16_t, delay before applying mute, in samples
 ;
 node arm_stream_amplifier; 
     3  i8; 0 0 0        instance, no preset, tag=unmute
-    parameter_start
-    2 h16;  7800 7800   rising/falling coefficient slope
-    2 i16;  0 0         delay-up/down
-    1 h32;  10000       gain, current value
-    1 h32;  10000       gain, value to process throught the ramps
+    parameter_start <optional label for scripts>
+    1  i8;  1           rising/falling coefficient slope
+    1 h16;  805         gain -100dB .. +36dB (+/- 1%)
     1  i8;  0           muted state
+    2 i16;  0 0         delay-up/down
     parameter_end    
 ;
 ;----------------------------------------------------------------------------------------
@@ -154,49 +144,71 @@ node arm_stream_amplifier;
 ;----------------------------------------------------------------------------------------
 ;   Operation : receives several mono or multichannel streams and produces one output arc. 
 ;   Mixer manages up to 8 multichannels input arcs, the number is given at STREAM_RESET stage.
-;   One input arc can be tagged as “High QoS” and managed with priority : 
-;     whatever the data content on the other arcs, data is flowing synchronized by this one. 
-;     The other arcs are using interpolation scheme. 
 ;   Parameters : input arcs names, their associated gain and time-constant in [ms], name of the 
-;   output arc and an extra mixing gain, name of the High QoS arc
+;   output arc and an extra mixing gain
 ;
-;   presets : 3bits LSB
-;   #0 : all arcs unmuted with gain = 0dB
-;   #1 : mixing controlled with the table of parameters (below)
-;   #2 : all arcs unmuted with previous gains
-;   #3 : all arcs muted
-;   default slope is 16 samples.
+;   preset : 
+;   #0 (default) : mixer-4 with all arcs unmuted with gain = 0dB, slopes of 1000 samples
+;   #1 (shut-down) : mixer-4 with all arcs with gain = -96dB, slopes of 100 samples
+;   >1 : number of input channels
 ;
 ;   parameters of mixer (variable size): 
-;   - slopes of rising gains (identical to all channels)
-;   - slopes of falling gains
-;   - index of the input arc with HQoS
-;   - output mixer gain (format Q6.12 (mute, -72dB .. +36dB)) followed by a list of 32bits words
+;   - slopes of rising and falling gains, identical to all channels
+;     slope coefficient = 0..15 (iir_coef = 1-1/2^coef) = 0 .. 0.9999
+;     Convergence time to 90% of the target in samples:
+;      slope   nb of samples to converge
+;          0           0
+;          1           3
+;          2           8
+;          3          17
+;          4          36
+;          5          73
+;          6         146
+;          7         294
+;          8         588
+;          9        1178
+;         10        2357
+;         11        4715
+;         12        9430
+;         13       18862
+;         14       37724
+;         15       75450
+;         convergence in samples = abs(round(1./abs(log10(1-1./2.^[0:15])')))
+;
+;   - output mixer gain format FP_8m4e followed by a list of 32bits words
+;     FP_8m4em : 8b mantissa, e=4b exponent, (gain * X) = (m * X) >> (e + 2)
+;       max = FF0 = 255>>(0+2) = 63.75 = 36dB
+;       min = 01F = 1>>(15+2) = 7.6e-6 = -102dB
+;       reset = 805 = 128>>(5+2) = 1 = 0dB
+;       accuracy = 0.2% 
 ;
 ;   format to be packed in 32bits words: 
 ;           input arc index (4b)        up to 15 arcs
 ;           sub-channel index -1 (5b)   up to 32 channels per arc of the input arc
 ;           sub-channel index -1 (5b)   up to 32 channels per arc of the output arc
-;           gain (17b)                  format Q6.11 (-66dB .. +36dB) 0x00800 = 0dB
+;           gain (12b)                  format FP_8m4e (0.5% accuracy in -96..+36dB) 0dB = 0x80A
 ;           muted (1b)                  1 = "muted"
 ;
 node arm_stream_mixer            
 ;
 ;   Example: 4 input one mono, one stereo, output is stereo
     3  i8; 0 4 0            instance, number of arcs, preset/tag = 0 arcs unmuted with gain = 0dB
-    parameter_start
+;
+    parameter_start <optional label for scripts>
     2  i8; 6 6              rising/falling slope on all arcs
-    5  i8; 15               indexes of input/output HQoS (none=15)
-    1 h32; 200              -12dB output gain in H15.16 format; 
+    1 h32; 807              -12dB output gain in FP_8m4e format; 
 ;    
-    4 i16; 0 0 0            arcID0 inputChan0 outputChan0
-    1 h32; 800              0dB gain; mono mixed on the left output
-    4 i16; 0 0 1            arcID0 inputChan0 outputChan1
-    1 h32; 800              0dB gain; mono mixed on the right output
-    4 i16; 1 0 0            arcID1 inputChan0 outputChan0
-    1 h32; 10000            0dB gain; stereo input left to the left
-    4 i16; 1 1 1            arcID1 inputChan0 outputChan1
-    1 h32; 2000             +12dB gain; stereo input right to the right
+    4 i16; 0 0 0            arcID0 inputChan0 outputChan0 
+    1 h32; 805              0dB gain; mono mixed on the left output
+
+    4 i16; 0 0 1            arcID0 inputChan0 outputChan1 
+    1 h32; 805              0dB gain; mono mixed on the right output
+                   
+    4 i16; 1 0 0            arcID1 inputChan0 outputChan0 
+    1 h32; 805              0dB gain; stereo input left to the left
+
+    4 i16; 1 1 1            arcID1 inputChan0 outputChan1 
+    1 h32; 803             +12dB gain; stereo input right to the right
     parameter_end   
 ;
 ;----------------------------------------------------------------------------------------
@@ -220,7 +232,7 @@ node arm_stream_mixer
 node node arm_stream_filter
     3  i8; 0 0 0        instance, preset, tag
 ;
-    parameter_start
+    parameter_start <optional label for scripts>
     1  i8;  2                           Two biquads
     1  i8;  0                           postShift
     5 h16; 5678 2E5B 71DD 2166 70B0     b0/b1/b2/a1/a2 
@@ -255,7 +267,7 @@ node node arm_stream_filter
 node arm_stream_detector
     3  i8; 0 0 0        instance, preset, tag
 ;
-    parameter_start
+    parameter_start <optional label for scripts>
     8; i8; 1;2;3;4;5;6;7;8; the 8 bytes of "struct detector_parameters"
     parameter_end    
 ;
@@ -273,7 +285,7 @@ node arm_stream_detector
 ;
 node arm_stream_rescaler; 
     3  i8; 0 1 0        instance, preset, tag
-    parameter_start
+    parameter_start <optional label for scripts>
     2; i16; -32768; 32768;
     2; i16; -20000; 20000;  this table creates the abs(x) conversion
     2; i16; -10000; 10000;
@@ -331,7 +343,7 @@ node arm_stream_decompressor
 ;
 node arm_signal_modulator 
     3  i8; 0 0 0        instance, preset, tag
-    parameter_start
+    parameter_start <optional label for scripts>
     1  u8;  1       sinewave
     2 h16;  FFFF 0  full-scale, no offset
     1 f32;  1200    1200Hz
@@ -381,6 +393,27 @@ node arm_stream_demodulator
 ;
 node arm_stream_interpolator
     3  i8; 0 0 0        instance, no preset, no tag
+;
+;
+;----------------------------------------------------------------------------------------
+;14.	arm_stream_synchro
+;----------------------------------------------------------------------------------------
+;
+;    Operation : align the content of arc buffers with respect to an high-priority one. 
+;    Parameters : the list of arcs and the one taken as time-alignment reference 
+;
+node arm_stream_synchro
+    3  i8; 0 1 0        instance, preset, tag
+    parameter_start <optional label for scripts>
+    2; i16; -32768; 32768;
+    2; i16; -20000; 20000;  this table creates the abs(x) conversion
+    2; i16; -10000; 10000;
+    2; i16;      0;     0;
+    2; i16;  10000; 10000;
+    2; i16;  20000; 20000;
+    2; i16;  32767; 32767;
+    parameter_end
+;
 ;
 ;----------------------------------------------------------------------------------------
 ; ARCs 

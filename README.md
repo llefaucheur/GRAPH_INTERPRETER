@@ -43,7 +43,7 @@ description is generated in three steps:
     with extra fields to set board's presets. "No code" is objective number 1 of the project: go
     directly from this GUI to tests on target, without recompilation of
     the code running in target .
-    
+
 2.  **A targeted platform is selected with its associated list of
     "*manifests*"**. Each platform using Graph-Interpreter has a
     "*platform manifest*" giving the processing details (processor
@@ -54,7 +54,7 @@ description is generated in three steps:
     "presets", test-patterns and expected results. This second
     processing step generates the text file representation of the graph
     ("*graphTxt*") used by the scheduler, it is in a readable format and can be manually modified.
-    
+
 3.  **Finally, the binary file used by the target is generated**. The
     file format is either a C source file, or a *binary* hashed data to
     load in a specific flash memory block, to allow quick tuning without
@@ -67,7 +67,7 @@ description is generated in three steps:
     external memory, fast shared internal, fast private per processor (TCM). The AL
     has access to the entry points of the nodes installed in the
     device.
-    
+
 2.  **Call the graph boundary functions generating/consuming data
     streams,** declared in the platform manifest and addressed as
     indexes from the scheduler when the FIFOs at the boundary of the
@@ -113,7 +113,7 @@ Stream-based processing is facilitated using Graph-Interpreter:
 3.  Graph-Interpreter manages **TCM access**. When a nanoApp declares, in its manifest, the need for a "critical speed memory
     bank" of small size (ideally less than 16kBytes), the above "step 2,
     generation of *graphTxt* " will allocate TCM area.
-    
+
 4.  **Backup/Retention SRAM**. Some applications are requiring a fast recovery in
     case of failures ("warm boot") or when the system restores itself
     after deep-sleep periods. One of the 8 memory types allows
@@ -136,7 +136,7 @@ Stream-based processing is facilitated using Graph-Interpreter:
     recompile the application (Low-code/No-code strategy, for example
     toggling a GPIO, changing node parameter, building a JSON
     string\...) the graph scheduler interprets a compact byte-stream of
-    codes to execute simple scripts. 
+    codes to execute simple scripts.
 
 8.  **Process isolation**. The nodes never read the graph description
     data, and the memory mapping is made for operations with hardware
@@ -184,10 +184,9 @@ Stream-based processing is facilitated using Graph-Interpreter:
 
 16. **Graph-Interpreter design objectives**: Low RAM footprint. Graph
     descriptor can be placed in Flash with a small portion in RAM.
-    Use-cases go from small Cortex-M0 with 2kBytes RAM to
-    SMP/AMP/coprocessor and mix of 32/64bits thanks to the concept of
+    Use-cases go from small Cortex-M0 with 2kBytes RAM to SMP/AMP/coprocessor and mix of 32/64bits thanks to the concept of
     shared RAM and indexes to memory banks provided by the local
-    processor abstraction layer.
+    processor abstraction layer. Each arc descriptors can address buffer sizes of up to 1GBytes. 
     
 17. **Computing libraries** are provided under compilation options, to
     avoid replicating CMSIS-DSP in nodes with binary code deliveries,

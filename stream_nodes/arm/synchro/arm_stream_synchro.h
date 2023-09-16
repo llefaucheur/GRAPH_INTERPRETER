@@ -1,12 +1,6 @@
 /* ----------------------------------------------------------------------
-
-
-        WORK ON GOING
-
-
-
  * Project:      CMSIS Stream
- * Title:        arm_router_process.c
+ * Title:        arm_stream_synchro.h
  * Description:  filters
  *
  * $Date:        15 February 2023
@@ -36,23 +30,36 @@
 #endif
    
 
+#ifndef cARM_STREAM_MIXER_H
+#define cARM_STREAM_MIXER_H
+
 
 #include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
-#include "arm_stream_router.h"
 
 
-/**
-  @brief         Processing function 
-  @param[in]     S         points to an instance of the floating-point Biquad cascade structure
-  @param[in]     in_out    XDM buffer
-  @return        none
- */
-void arm_stream_router_process (arm_stream_router_instance *instance, stream_xdmbuffer_t *in_out)
+
+    /*
+        MIXER INSTANCE :
+            configuration bit-field and for each input arc
+    */
+typedef struct
 {
 
-}
+    uint32_t configuration;
+
+
+    /* CMSIS-STREAM "services" : debug traces, compute library, .. */
+    stream_services_entry *services;
+
+} arm_synchro_instance;
+
+extern void arm_stream_synchro_process (arm_synchro_instance *instance, stream_xdmbuffer_t *xdm_buf, uint8_t narc);
+
+
+
+#endif
 
 #ifdef __cplusplus
 }

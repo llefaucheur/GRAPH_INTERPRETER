@@ -6,6 +6,7 @@
   1  u8;    3               nb of I/O arcs                             
   1   c;    FILTER          node name for the GUI
   3  u8;    1 1 0           nb of : input, output, parameter-arcs (NN model..)
+  1  u8;    1               @@@ arc indexes used for streaming (scheduler synchronization)
 ;
 ; list of architectures the SWC is compatible with
   2  u8;    0 1             ARCH options= 0 source and 1 M0+
@@ -40,6 +41,7 @@
 ;
 ;---------------------------------------------------
   1  u8;    1               0:arc R/W managed in the SWC  1:all arcs are using the same frame size (see "xdm11")
+  1  u8:    1               0: no need the push the format of the arcs (see reset_component(S))
 ;---------------------------------------------------
 ;-------------------
 ; input_arc : "0"
@@ -56,7 +58,8 @@
   1  i8;     0      buffer declared from the graph 0 or BSP 1          
   1  i8;     0      in standard RAM=0, in HW IO RAM=1                  
   1 i32;     1      processor affinity bit-field                       
-;                                                                      
+;
+;                   push the format of the arcs (above) to manage the different formats options (below)
   2   c; i16 f32    raw format(s) selection made with the STREAM_RESET data exchange in "memresults"
   1  i8;     0      time-stamp                                         
   1  i8;     1      frame length format (0:in milliseconds 1:in samples)

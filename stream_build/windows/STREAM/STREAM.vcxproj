@@ -176,6 +176,8 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\router\arm_stream_router_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_script.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_script_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\synchro\arm_stream_synchro.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\synchro\arm_stream_synchro_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\stream_nodes.c" />
     <ClCompile Include="..\..\..\stream_src\stream_io.c" />
     <ClCompile Include="..\..\..\stream_src\stream_main.c" />
@@ -196,6 +198,8 @@
     <ClInclude Include="..\..\..\stream_nodes\arm\detector\arm_stream_detector.h" />
     <ClInclude Include="..\..\..\stream_nodes\arm\filter\arm_stream_filter.h" />
     <ClInclude Include="..\..\..\stream_nodes\arm\mixer\arm_stream_mixer.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\router\arm_stream_router.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\synchro\arm_stream_synchro.h" />
     <ClInclude Include="..\..\..\stream_src\stream_nodes.h" />
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\..\stream_src\stream_arcs.h" />

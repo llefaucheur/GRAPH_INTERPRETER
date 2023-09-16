@@ -68,7 +68,7 @@ typedef uint32_t stream_service_command;
  * 
  */
 
-typedef void (stream_services_entry) (stream_service_command *ID, uint8_t *ptr1, uint8_t *ptr2, uint32_t n); 
+typedef void (stream_services_entry) (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n); 
 typedef void (*p_stream_node) (uint32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *state);
 typedef void (stream_node)    (uint32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *state);
 

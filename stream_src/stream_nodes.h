@@ -48,8 +48,9 @@
 #define MEM_TYPE_PERIODIC_BACKUP 3    /* static parameters to reload for warm boot after a crash, holding for example 
            long-term estimators. This memory area is cleared at cold NODE_RESET and 
            refreshed for warm NODE_RESET. The SWC should not reset it (there is 
-           no "warm-boot reset" entry point.
-           the period of backup depends on platform capabilities, 10 seconds for example */
+           no "warm-boot reset" entry point. The period of backup depends on platform capabilities 
+           When MBANK_BACKUP is a retention-RAM there is nothing to do, when it is standard RAM area then on periodic
+            basis the AL will be call to transfer data to Flash */
   
 
 //enum mem_speed_type                         /* memory requirements associated to enum memory_banks */

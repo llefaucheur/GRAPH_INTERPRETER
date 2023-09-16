@@ -1,13 +1,7 @@
 /* ----------------------------------------------------------------------
-
-
-        WORK ON GOING
-
-
-
  * Project:      CMSIS Stream
- * Title:        arm_router_process.c
- * Description:  filters
+ * Title:        arm_stream_synchro_process.c
+ * Description:  synchro
  *
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
@@ -31,29 +25,29 @@
  * 
  */
 
+
 #ifdef __cplusplus
  extern "C" {
 #endif
    
-
-
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
-#include "arm_stream_router.h"
+#include "stream_const.h"
+#include "stream_types.h"
+#include "arm_stream_synchro.h"
 
 
 /**
-  @brief         Processing function 
-  @param[in]     S         points to an instance of the floating-point Biquad cascade structure
-  @param[in]     in_out    XDM buffer
-  @return        none
+  @brief         
+  @param[in]     pinst      instance of the component : format of channels + mixing parameters
+  @param[in/out] pdata      address and size of buffers
+  @return        status     finalized processing
  */
-void arm_stream_router_process (arm_stream_router_instance *instance, stream_xdmbuffer_t *in_out)
+void arm_stream_synchro_process (arm_synchro_instance *instance, stream_xdmbuffer_t *xdm_buf, uint8_t narc)
 {
 
-}
+    int16_t *psrc, *pdst;
 
+
+}
 #ifdef __cplusplus
 }
 #endif
