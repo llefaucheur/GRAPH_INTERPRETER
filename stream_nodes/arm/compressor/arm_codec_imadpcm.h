@@ -1,6 +1,7 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        arm_imadpcm.c
+ * Title:        arm_codec_imadpcm.h
+ * 
  * Description:  filters
  *
  * $Date:        15 February 2023

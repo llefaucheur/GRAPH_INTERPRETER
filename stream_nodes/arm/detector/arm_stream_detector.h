@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        arm_detector.h
+ * Title:        arm_stream_detector.h
  * Description:  filters
  *
  * $Date:        15 February 2023

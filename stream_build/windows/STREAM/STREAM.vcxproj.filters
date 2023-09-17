@@ -121,6 +121,9 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\synchro\arm_stream_synchro_process.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\shared\arm_stream_share.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\stream_al\platform_al.h">
@@ -196,6 +199,9 @@
       <Filter>stream_nodes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\arm\router\arm_stream_router.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\shared\arm_stream_share.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
   </ItemGroup>

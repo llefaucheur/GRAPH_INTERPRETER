@@ -6,7 +6,7 @@
 
 
  * Project:      CMSIS Stream
- * Title:        arm_router_process.c
+ * Title:        arm_stream_router_process.c
  * Description:  filters
  *
  * $Date:        15 February 2023

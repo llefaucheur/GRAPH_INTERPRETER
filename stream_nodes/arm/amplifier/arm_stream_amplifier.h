@@ -6,7 +6,7 @@
 
 
  * Project:      CMSIS Stream
- * Title:        arm_amplitude.h
+ * Title:        arm_stream_amplitude.h
  * Description:  filters
  *
  * $Date:        15 February 2023

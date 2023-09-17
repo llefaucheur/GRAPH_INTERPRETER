@@ -6,7 +6,7 @@
 
 
  * Project:      CMSIS Stream
- * Title:        arm_stream_mixer.c
+ * Title:        arm_stream_share.c
  * Description:  filters
  *
  * $Date:        15 February 2023
@@ -38,11 +38,11 @@
 #include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
-#include "arm_stream_mixer.h"
+#include "arm_stream_share.h"
 
 /*
 ;----------------------------------------------------------------------------------------
-;5.	arm_stream_mixer
+;5.	arm_stream_share
 ;----------------------------------------------------------------------------------------
 ;   Operation : receives several mono or multichannel streams and produces one output arc. 
 ;   Mixer manages up to 8 multichannels input arcs, the number is given at STREAM_RESET stage.
@@ -50,11 +50,11 @@
 ;   output arc and an extra mixing gain
 ;
 ;   preset : 
-;   #0 (default) : mixer-4 with all arcs unmuted with gain = 0dB, slopes of 1000 samples
-;   #1 (shut-down) : mixer-4 with all arcs with gain = -96dB, slopes of 100 samples
+;   #0 (default) : share-4 with all arcs unmuted with gain = 0dB, slopes of 1000 samples
+;   #1 (shut-down) : share-4 with all arcs with gain = -96dB, slopes of 100 samples
 ;   >1 : number of input channels
 ;
-;   parameters of mixer (variable size): 
+;   parameters of share (variable size): 
 ;   - slopes of rising and falling gains, identical to all channels
 ;     slope coefficient = 0..15 (iir_coef = 1-1/2^coef) = 0 .. 0.9999
 ;     Convergence time to 90% of the target in samples:
@@ -77,7 +77,7 @@
 ;         15       75450
 ;         convergence in samples = abs(round(1./abs(log10(1-1./2.^[0:15])')))
 ;
-;   - output mixer gain format FP_8m4e followed by a list of 32bits words
+;   - output share gain format FP_8m4e followed by a list of 32bits words
 ;     FP_8m4em : 8b mantissa, e=4b exponent, (gain * X) = (m * X) >> (e + 2)
 ;       max = FF0 = 255>>(0+2) = 63.75 = 36dB
 ;       min = 01F = 1>>(15+2) = 7.6e-6 = -102dB
@@ -91,7 +91,7 @@
 ;           gain (12b)                  format FP_8m4e (0.5% accuracy in -96..+36dB) 0dB = 0x80A
 ;           muted (1b)                  1 = "muted"
 ;
-node arm_stream_mixer            
+node arm_stream_share            
 ;
 ;   Example: 4 input one mono, one stereo, output is stereo
     3  i8; 0 4 0            instance, number of arcs, preset/tag = 0 arcs unmuted with gain = 0dB
@@ -116,14 +116,14 @@ node arm_stream_mixer
 */
 
 #define NB_PRESET 1
-const uint32_t mixer_parameter_presets [NB_PRESET][NB_W32_PARAMETERS] = 
+const uint32_t share_parameter_presets [NB_PRESET][NB_W32_PARAMETERS] = 
 {   
-    /* mixer-4 mono to mono output, gain-0dB, muted */
-    {   PACKMIXERCONFIG_W0(128,5,4,5),  
-        PACKMIXERCHANNELS_W2(128,2,0,0), PACKMIXERCHANNELS_W3(0,0),      
-        PACKMIXERCHANNELS_W2(128,2,0,0), PACKMIXERCHANNELS_W3(0,0),      
-        PACKMIXERCHANNELS_W2(128,2,0,0), PACKMIXERCHANNELS_W3(0,0),      
-        PACKMIXERCHANNELS_W2(128,2,0,0), PACKMIXERCHANNELS_W3(0,0),      
+    /* share-4 mono to mono output, gain-0dB, muted */
+    {   PACKSHARECONFIG_W0(128,5,4,5),  
+        PACKSHARECHANNELS_W2(128,2,0,0), PACKSHARECHANNELS_W3(0,0),      
+        PACKSHARECHANNELS_W2(128,2,0,0), PACKSHARECHANNELS_W3(0,0),      
+        PACKSHARECHANNELS_W2(128,2,0,0), PACKSHARECHANNELS_W3(0,0),      
+        PACKSHARECHANNELS_W2(128,2,0,0), PACKSHARECHANNELS_W3(0,0),      
     },
 };
 
@@ -135,7 +135,7 @@ const uint32_t mixer_parameter_presets [NB_PRESET][NB_W32_PARAMETERS] =
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void arm_stream_share (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
     *status = 1;    /* default return status, unless processing is not finished */
 
@@ -154,14 +154,14 @@ void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuff
             uint16_t preset = RD(command, PRESET_CMD);
             uint8_t iarc, nb_input_arc;
 
-            arm_mixer_instance *pinstance = (arm_mixer_instance *) *memresults;
+            arm_share_instance *pinstance = (arm_share_instance *) *memresults;
             pinstance->services = (stream_services_entry *)(uint64_t)data;
 
             memresults++;   /* memresult points to the */
 
             /* here reset */
             if (preset <= 1)
-            {   nb_input_arc = RD(mixer_parameter_presets[preset][0], NBINPUTARC_W0);
+            {   nb_input_arc = RD(share_parameter_presets[preset][0], NBINPUTARC_W0);
             }
             else
             {   nb_input_arc = preset;
@@ -178,7 +178,7 @@ void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuff
                 ST(pinstance->channel_fmt[iarc], INTERLEAVING_FMT, tmp32);
 
                 tmp32 = RD(memresults[0], NCHANM1_FMT1);
-                ST(pinstance->channel_fmt[iarc], NBCHANM1_MIXER_FMT, tmp32);
+                ST(pinstance->channel_fmt[iarc], NBCHANM1_SHARE_FMT, tmp32);
             }
             break;
         }    
@@ -190,7 +190,7 @@ void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuff
         */ 
         case STREAM_SET_PARAMETER:  
         {   uint8_t *pt8bsrc, *pt8bdst, i, n;
-            arm_mixer_instance *pinstance = (arm_mixer_instance *) instance;
+            arm_share_instance *pinstance = (arm_share_instance *) instance;
 
             pt8bsrc = (uint8_t *) data;     
             pt8bdst = &(pinstance->parameters[0]); 
@@ -219,7 +219,7 @@ void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuff
         */         
         case STREAM_RUN:   
         {   /* mixing of the 4 input arcs */
-            arm_stream_mixer_process((arm_mixer_instance *) instance, data, 4);
+            //arm_stream_share_process((arm_share_instance *) instance, data, 4);
             break;
         }
     }

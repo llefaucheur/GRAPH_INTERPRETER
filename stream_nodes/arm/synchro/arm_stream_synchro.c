@@ -6,7 +6,7 @@
 
 
  * Project:      CMSIS Stream
- * Title:        arm_synchro_process.c
+ * Title:        arm_synchro.c
  * Description:  filters
  *
  * $Date:        15 February 2023

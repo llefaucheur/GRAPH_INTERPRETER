@@ -302,7 +302,7 @@
 #define  __UNUSED_LW3_MSB U(31) /*      */
 #define  __UNUSED_LW3_LSB U(27) /* 5    */
 #define    PRESET_LW3_MSB U(26)
-#define    PRESET_LW3_LSB U(23) /* 4 preset   precomputed configurations, manifest's uint8_t *parameter_presets; */
+#define    PRESET_LW3_LSB U(23) /* 4 preset   precomputed configurations, manifest's uint8_t *mixer_parameter_presets; */
 #define  CPYSTACK_LW3_MSB U(22) /*      */
 #define  CPYSTACK_LW3_LSB U(22) /* 1 1 mean copy the parameters on stack before calling the node */
 #define   VERBOSE_LW3_MSB U(21)

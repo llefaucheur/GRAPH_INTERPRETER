@@ -1,36 +1,78 @@
+/* ----------------------------------------------------------------------
 
-// This file contains both the standard Intel/DVI/IMA ADPCM encoder & decoder,
 
-/***********************************************************
-Copyright 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+        WORK ON GOING
 
-All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its
-documentation for any purpose and without fee is hereby granted,
-provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in
-supporting documentation, and that the names of Stichting Mathematisch
-Centrum or CWI not be used in advertising or publicity pertaining to
-distribution of the software without specific, written prior permission.
 
-STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
-THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE
-FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
-OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
-******************************************************************/
+ * Project:      CMSIS Stream
+ * Title:        arm_codec_imadpcm.c
+ * Description:  filters
+ *
+ * $Date:        15 February 2023
+ * $Revision:    V0.0.1
+ * -------------------------------------------------------------------- */
+/*
+ * Copyright (C) 2010-2023 ARM Limited or its affiliates. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the License); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ */
 
 /*
-** Intel/DVI ADPCM coder/decoder.
-**
-** The algorithm for this coder was taken from the IMA Compatability Project
-** proceedings, Vol 2, Number 2; May 1992.
 
+    RFC 1890                       AV Profile                   January 1996
+
+    DVI4 is specified, with pseudo-code, in [6] as the IMA ADPCM wave
+    type. A specification titled "DVI ADPCM Wave Type" can also be found
+    in the Microsoft Developer Network Development Library CD ROM
+    published quarterly by Microsoft. The relevant section is found under
+    Product Documentation, SDKs, Multimedia Standards Update, New
+    Multimedia Data Types and Data Techniques, Revision 3.0, April 15,
+    1994. 
+   
+    The document, "IMA Recommended Practices for Enhancing Digital Audio
+    Compatibility in Multimedia Systems (version 3.0)", contains the
+    algorithm description.  It is available from:
+   
+    Interactive Multimedia Association
+    48 Maryland Avenue, Suite 202
+    Annapolis, MD 21401-8011
+    USA
+    phone: +1 410 626-1380
+
+   [6] IMA Digital Audio Focus and Technical Working Groups,
+       "Recommended practices for enhancing digital audio compatibility
+       in multimedia systems (version 3.00)," tech. rep., Interactive
+       Multimedia Association, Annapolis, Maryland, Oct. 1992.
+
+   Extracts :
+      Audio Compression and Decompression Algorithm Requirements:
+        - Public domain algorithm and stream format.
+        - Reference compression and decompression algorithms (pseudo-code or C) to be published by the IMA if 
+            not already available in public domain.
+        - Compressed data stream definition may allow more sophisticated compression algorithms to be 
+            used (scalability feature), however, published decompression algorithm must be able to play resulting 
+            data stream (compatibility requirement).
+        - No license fees or royalty associated with using the algorithm as published.
+        - Real-time decompression must be achievable on PC or workstation CPU (386/20 used for CPU utilization criteria).
+        - Scalability of decompression bandwidth, etc., to accommodate range of processor capability is acceptable.
+        - Non Real-time compression acceptable, or scaleable real-time compression on PC or workstation CPU.
+        - Applicable across multiple frequencies, especially 8.0, 11.025, 22.05, and 44.1 kHz.
+        - Low data storage overhead for minimum bits per audio sample.
+        - A data stream definition conducive to computer environments.
 */
 
 
@@ -38,7 +80,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdint.h>
 #include "arm_codec_imadpcm.h"
 
-// #include "codec.h"
 
 /* Intel ADPCM step variation table */
 static int8_t indexTable[16] = {

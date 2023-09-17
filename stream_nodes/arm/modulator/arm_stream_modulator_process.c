@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        arm_stream_rescaler_process.c
+ * Title:        arm_stream_modulator_process.c
  * Description:  filters
  *
  * $Date:        15 February 2023
