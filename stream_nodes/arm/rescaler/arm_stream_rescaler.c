@@ -36,10 +36,11 @@
 #endif
 
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
+
+#include "stream_const.h"
+#include "stream_types.h"
 #include "arm_stream_rescaler.h"
+
 /*
 ;----------------------------------------------------------------------------------------
 ;8.	arm_stream_rescaler

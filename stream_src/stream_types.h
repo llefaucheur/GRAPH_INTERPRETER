@@ -25,12 +25,17 @@
  * 
  */
 
-#ifndef cSTREAM_TYPES_H
-#define cSTREAM_TYPES_H
+#ifndef cSTREAM_TYPES__H
+#define cSTREAM_TYPES__H
 
 #ifdef __cplusplus
  extern "C" {
 #endif
+
+#include <stdint.h>
+#include "platform_al.h"
+
+
 /* 
     if 64 bits architectures are reading the graph:
     #define intPtr_t uint64_t
@@ -42,12 +47,6 @@
 #define intPtr_t uint64_t 
 #endif
 
-#define MAX_ADD_OFFSET 0x7FFFFFFFL
-
-/*
-    opaque access to the static area of the node 
-*/
-typedef void *stream_handle_t;  
 
 struct stream_xdmbuffer
 {   
@@ -58,6 +57,11 @@ struct stream_xdmbuffer
 typedef struct stream_xdmbuffer stream_xdmbuffer_t;
 
 typedef uint32_t stream_service_command;
+
+/*
+    opaque access to the static area of the node 
+*/
+typedef void *stream_handle_t;  
 
 /*==================================================== SWC  ======================================================================*/
 /* 
@@ -83,41 +87,37 @@ typedef void (*p_stream_script_callback) (uint32_t command, intPtr_t* ptr1, intP
 
 //------------------------------------------------------------------------------------------------------
 /*  Time format - 64 bits
- *  XXX = 000 Local time in bit-fields : years/../millisecond, WWW=day of the week 
- *      (0=Sunday, 1=Monday..)
- *      FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
- *      011_____________________ YYYYYYYYYYY MMM DDDD SSSSS MMMMMMMMM WW
- *  XXX = 001 UTC time in in bit-fields
+ *  Local time in bit-fields : years/../millisecond, WWW=day of the week 
+ *  (0=Sunday, 1=Monday..)
+ *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
+ *  000______________________.YY.YY.YY.YY.MMM.DDDD.SSSSS.MM.MM.MM.WW
  * 
- *      FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
- *      XXXsssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqq q31.28 seconds (68 Y +/- 4ns)
- *  XXX = 010 q31.28 seconds from Boot
+ *  q42.17 milliseconds from January 1st 1970 UTC (or internal AL reference)
+ *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
+ *  001mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmqqqqqqqqqqqqqqqqq q42.17 ms (140 Y +/- 8ns)
+ *  
+ *  q42.17 seconds "stream_time64"
+ *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
+ *  010ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqqq q32.29 s (140 Y +/- 2ns)
  * 
- *      FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
- *      XXXmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmqqqqqqqqqqqqqqqqqq q42.17 seconds (140 Y +/- 8ns)
- *  XXX = 011 q42.17 milliseconds from January 1st 1970 UTC
- *
  *  systick increment of 1ms =  0x00041893 = 1ms x 2^28 = 1.7 ppm resolution, 1minute/year
- *  systick increment of 10ms = 0x0028F5C3 = 10ms x 2^28
- *  In each systick ISR, time64 [010] is incremented by 1ms (or 10ms) x 2^32 = fraction increment
- *  Internal register : BootDate64 bit-field time at boot time
+ *  In each systick ISR, time64 is incremented by 1ms x 2^32 = fraction increment
  */
 
 typedef uint64_t stream_time64;
 #define   TYPE_T64_MSB 63
-#define   TYPE_T64_LSB 63 
-#define SECOND_T64_MSB 61
-#define SECOND_T64_LSB 30
-#define  FRACT_T64_MSB 29 
+#define   TYPE_T64_LSB 61 
+#define SECOND_T64_MSB 60
+#define SECOND_T64_LSB 29
+#define  FRACT_T64_MSB 28 
 #define  FRACT_T64_LSB  0
 
 /*
- * stream_time_seconds in 32bits :
- *  FEDCBA9876543210FEDCBA9876543210
- *  00ssssssssssssssqqqqqqqqqqqqqqqq q14.16 seconds (4hours 30mn, resolution 15us)
- *  01ssssssssssssssqqqqqqqqqqqqqqqq q14.16 relative time [s] from previous frame
- *  10ssssssssssssssssssssssssssssqq q28.2 seconds (8 years +/- 0.25s)
-  */
+ * stream_time_seconds in 32bits : "stream_time32"
+ *  F_______________________________FEDCBA9876543210FEDCBA9876543210
+ *  1_______________________________00ssssssssssssssqqqqqqqqqqqqqqqq q14.16 [s] (4hours 30mn, +/- 15us)
+ *  1_______________________________01ssssssssssssssssssssssssssssqq q28.2  [s] (8 years +/- 0.25s)
+ */
 typedef uint32_t stream_time32;
 #define   FORMAT_T32_MSB 31
 #define   FORMAT_T32_LSB 30 
@@ -125,16 +125,13 @@ typedef uint32_t stream_time32;
 #define     TIME_T32_LSB  0 
 
 /*
- * stream_time_seconds in 16bits :
- *  FEDCBA9876543210
- *  00qqqqqqqqqqqqqq q14 of 1/4s +/- 15us
- *  01qqqqqqqqqqqqqq relative time [q14 of 1/4s] from previous frame
- *  10ssssssssssssqq q12.2 seconds and q2 seconds (1 hour +/- 0.25s)
+ * stream_time_seconds in 16bits : "stream_time16"
+ *  F_______________________________F_______________FEDCBA9876543210
+ *  1_______________________________1_______________qqqqqqqqqqqqqqqq q15 x 250ms  (1/4 s +/- 15us)
+ *  1_______________________________1_______________ssssssssssssssqq q14.2 seconds (4 hours 30mn +/- 0.25s)
  */
 typedef uint32_t stream_time16;
-#define   FORMAT_T16_MSB 15
-#define   FORMAT_T16_LSB 14 
-#define     TIME_T16_MSB 13
+#define     TIME_T16_MSB 15
 #define     TIME_T16_LSB  0 
 
 /* 
@@ -150,41 +147,43 @@ typedef uint32_t stream_time16;
 #define PACK_PLATFORM_DOMAIN(INST,DOMAIN) (((INST)<<INSTANCE_PLATFORM_DOMAIN_LSB)|(DOMAIN))
 
 /* 
+    STREAM_IO_DOMAIN(s)
+
     enum stream_io_domain : list of stream "domains" categories, max 64
     each stream domain instance is controled by 3 functions and presets
     domain have common bitfields for settings (see example platform_audio_out_bit_fields[]).
 */
-#define PLATFORM_DATA_IN                 1
-#define PLATFORM_DATA_OUT                2
-#define PLATFORM_DATA_STREAM_IN          3
-#define PLATFORM_DATA_STREAM_OUT         4
-#define PLATFORM_AUDIO_IN                5
-#define PLATFORM_AUDIO_OUT               6
-#define PLATFORM_GPIO_IN                 7
-#define PLATFORM_GPIO_OUT                8
-#define PLATFORM_MOTION_IN               9
-#define PLATFORM_2D_IN                  10
-#define PLATFORM_2D_OUT                 11  
-#define PLATFORM_USER_INTERFACE_IN      12 
-#define PLATFORM_USER_INTERFACE_OUT     13 
-#define PLATFORM_COMMAND_IN             14
-#define PLATFORM_COMMAND_OUT            15
-#define PLATFORM_ANALOG_SENSOR          16 
-#define PLATFORM_ANALOG_TRANSDUCER      17 
-#define PLATFORM_RTC_IN                 18 
-#define PLATFORM_RTC_OUT                19
-#define PLATFORM_STORAGE_OUT            20 
-#define PLATFORM_AV_CODEC               21 
-#define PLATFORM_UNUSED_2               22 
-#define PLATFORM_UNUSED_3               23
-#define PLATFORM_UNUSED_4               24
-#define PLATFORM_UNUSED_5               25
-#define PLATFORM_UNUSED_6               26
-#define PLATFORM_UNUSED_7               27
-#define PLATFORM_UNUSED_8               28
-#define PLATFORM_UNUSED_9               29
-#define PLATFORM_UNUSED_10              30
-#define PLATFORM_MAX_NB_DOMAINS         (PLATFORM_UNUSED_10+1)
+#define IO_PLATFORM_DATA_IN                 1
+#define IO_PLATFORM_DATA_OUT                2
+#define IO_PLATFORM_DATA_STREAM_IN          3
+#define IO_PLATFORM_DATA_STREAM_OUT         4
+#define IO_PLATFORM_AUDIO_IN                5
+#define IO_PLATFORM_AUDIO_OUT               6
+#define IO_PLATFORM_GPIO_IN                 7
+#define IO_PLATFORM_GPIO_OUT                8
+#define IO_PLATFORM_MOTION_IN               9
+#define IO_PLATFORM_2D_IN                  10
+#define IO_PLATFORM_2D_OUT                 11  
+#define IO_PLATFORM_USER_INTERFACE_IN      12  /* slider, rotary button */
+#define IO_PLATFORM_USER_INTERFACE_OUT     13 
+#define IO_PLATFORM_COMMAND_IN             14  /* UART/I2C serial interface */
+#define IO_PLATFORM_COMMAND_OUT            15
+#define IO_PLATFORM_ANALOG_SENSOR          16 
+#define IO_PLATFORM_ANALOG_TRANSDUCER      17 
+#define IO_PLATFORM_RTC_IN                 18 
+#define IO_PLATFORM_RTC_OUT                19
+#define IO_PLATFORM_STORAGE_OUT            20 
+#define IO_PLATFORM_AV_CODEC               21 
+#define IO_PLATFORM_UNUSED_1               22 
+#define IO_PLATFORM_UNUSED_2               23
+#define IO_PLATFORM_UNUSED_3               24
+#define IO_PLATFORM_UNUSED_4               25
+#define IO_PLATFORM_UNUSED_5               26
+#define IO_PLATFORM_UNUSED_6               27
+#define IO_PLATFORM_UNUSED_7               28
+#define IO_PLATFORM_UNUSED_8               29
+#define IO_PLATFORM_UNUSED_9               30
+#define IO_PLATFORM_MAX_NB_DOMAINS         (IO_PLATFORM_UNUSED_9+1)
 
 
 /*
@@ -197,6 +196,8 @@ struct platform_io_control
     io_function_control *io_stop;
     const int32_t *stream_setting;
 };
+typedef struct platform_io_control platform_io_control_t;
+
 
 enum 
 {   arc_read_address,
@@ -304,17 +305,17 @@ enum stream_raw_data
 
 //enum stream_scheduling_options
 //{
-#define STREAM_SCHD_RET_END_EACH_SWC        S8(1)   /* return to caller after each SWC calls */
-#define STREAM_SCHD_RET_END_ALL_PARSED      S8(2)   /* return to caller once all SWC are parsed */
-#define STREAM_SCHD_RET_END_SWC_NODATA      S8(3)   /* return to caller when all SWC are starving */
-                            
-#define STREAM_SCHD_NO_SCRIPT               S8(0)
-#define STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC  S8(1)   /* script is called after each SWC called */
-#define STREAM_SCHD_SCRIPT_AFTER_EACH_SWC   S8(2)   /* script is called after each SWC called */
-#define STREAM_SCHD_SCRIPT_END_PARSING      S8(4)   /* script is called at the end of the loop */
-#define STREAM_SCHD_SCRIPT_START            S8(8)   /* script is called when starting */
-#define STREAM_SCHD_SCRIPT_END              S8(16)  /* script is called before return */
-#define STREAM_SCHD_SCRIPT_UNUSED           S8(32)  /* 6bits are reserved in SCRIPT_SCTRL */
+#define STREAM_SCHD_RET_END_EACH_SWC        1    /* return to caller after each SWC calls */
+#define STREAM_SCHD_RET_END_ALL_PARSED      2    /* return to caller once all SWC are parsed */
+#define STREAM_SCHD_RET_END_SWC_NODATA      3    /* return to caller when all SWC are starving */
+                                              
+#define STREAM_SCHD_NO_SCRIPT               0 
+#define STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC  1    /* script is called after each SWC called */
+#define STREAM_SCHD_SCRIPT_AFTER_EACH_SWC   2    /* script is called after each SWC called */
+#define STREAM_SCHD_SCRIPT_END_PARSING      4    /* script is called at the end of the loop */
+#define STREAM_SCHD_SCRIPT_START            8    /* script is called when starting */
+#define STREAM_SCHD_SCRIPT_END              16   /* script is called before return */
+#define STREAM_SCHD_SCRIPT_UNUSED           32   /* 6bits are reserved in SCRIPT_SCTRL */
 //};
 
 /*
@@ -325,7 +326,7 @@ enum stream_raw_data
 /* "registers / computing stack" of the Stream instance */
 typedef struct  
 {  
-    intPtr_t *long_offset;          /* pointer to "intPtr_t long_offset[NB_MEMINST_OFFSET];" */
+    intPtr_t *long_offset;          /* pointer to "intPtr_t long_offset[MAX_NB_MEMORY_OFFSET];" */
     uint32_t *graph;
     uint32_t *pio;
     uint32_t *all_formats;   
@@ -345,41 +346,40 @@ typedef struct
     uint8_t *pt8b_collision_arc;
     uint32_t pack_command;          // preset, narc, tag, instanceID, command
 
+    uint32_t *stack_services;       // memory reserved for stream_services.c
+    uint32_t stack_services_size;
+
     uint8_t swc_memory_banks_offset;// offset in words
     uint8_t swc_parameters_offset;
 
     uint8_t nb_stream_instances;    // stream instances pointers (in words) = &(all_arcs[ -nb_stream_instances])
-
-    uint32_t *stack_services;       // memory reserved for stream_services.c
-    uint32_t stack_services_size;
-
 
 #define STREAM_COLD_BOOT 0u
 #define STREAM_WARM_BOOT 1u
 #define STREAM_MAIN_INSTANCE 1
 
 #define   UNUSED_SCTRL_MSB U(31)   
-#define   UNUSED_SCTRL_LSB U(28)  /* 4 */ 
-#define L_IN_RAM_SCTRL_MSB U(27)  
-#define L_IN_RAM_SCTRL_LSB U(27)  /* 1 */
-#define MAININST_SCTRL_MSB U(26)   
-#define MAININST_SCTRL_LSB U(26)  /* 1 main instance to set the graph at boot time */
-#define NODE_EXECUTION_MSB U(25)   
-#define NODE_EXECUTION_LSB U(24)  /* 1 */
-#define ENDLLIST_SCTRL_MSB U(23)   
-#define ENDLLIST_SCTRL_LSB U(23)  /* 1 endLinkedList detected */
-#define STILDATA_SCTRL_MSB U(22)   
-#define STILDATA_SCTRL_LSB U(22)  /* 1 still some_components_have_data*/
-#define NBINSTAN_SCTRL_MSB U(21)   
-#define NBINSTAN_SCTRL_LSB U(16)  /* 6 */
-#define     BOOT_SCTRL_MSB U(15)   
-#define     BOOT_SCTRL_LSB U(15)  /* 1 cold0/warm1 boot */
-#define   SCRIPT_SCTRL_MSB U(14)   
-#define   SCRIPT_SCTRL_LSB U( 9)  /* 6 script call options bit-field (before/after SWC/loop/full) */
-#define   RETURN_SCTRL_MSB U( 8)
-#define   RETURN_SCTRL_LSB U( 6)  /* 3 return options (each SWC, each parse, once starving */
-#define INSTANCE_SCTRL_MSB U( 5)
-#define INSTANCE_SCTRL_LSB U( 0)  /* 6 instance index */
+#define   UNUSED_SCTRL_LSB U(26)  /* 6 */ 
+#define L_IN_RAM_SCTRL_MSB U(25)  
+#define L_IN_RAM_SCTRL_LSB U(25)  /* 1 */
+#define MAININST_SCTRL_MSB U(24)   
+#define MAININST_SCTRL_LSB U(24)  /* 1 main instance to set the graph at boot time */
+#define NODE_EXECUTION_MSB U(23)   
+#define NODE_EXECUTION_LSB U(22)  /* 1 */
+#define ENDLLIST_SCTRL_MSB U(21)   
+#define ENDLLIST_SCTRL_LSB U(21)  /* 1 endLinkedList detected */
+#define STILDATA_SCTRL_MSB U(20)   
+#define STILDATA_SCTRL_LSB U(20)  /* 1 still some_components_have_data*/
+#define NBINSTAN_SCTRL_MSB U(19)   
+#define NBINSTAN_SCTRL_LSB U(14)  /* 6 */
+#define     BOOT_SCTRL_MSB U(13)   
+#define     BOOT_SCTRL_LSB U(13)  /* 1 cold0/warm1 boot */
+#define   SCRIPT_SCTRL_MSB U(12)   
+#define   SCRIPT_SCTRL_LSB U( 7)  /* 6 script call options bit-field (before/after SWC/loop/full) */
+#define   RETURN_SCTRL_MSB U( 6)
+#define   RETURN_SCTRL_LSB U( 4)  /* 3 return options (each SWC, each parse, once starving */
+#define INSTANCE_SCTRL_MSB U( 3)
+#define INSTANCE_SCTRL_LSB U( 0)  /* 4 instance index */
 #define PACK_STREAM_PARAM(M,N,B,S,R,I) (    \
             ((M)<<MAININST_SCTRL_LSB) |     \
             ((N)<<NBINSTAN_SCTRL_LSB) |     \
@@ -395,7 +395,7 @@ typedef struct
     #define     WHOAMI_PARCH_MSB U(31)
     #define   INSTANCE_PARCH_MSB U(31)  /* avoid locking an arc by the same processor, but different RTOS instances*/
     #define   INSTANCE_PARCH_LSB U(30)  /* 2 [0..3] up to 4 instances per processors, 0=main instance at boot */
-    #define     PROCID_PARCH_MSB U(29)  /*   indexes from Manifest(tools) and PLATFORM_PROC_ID */
+    #define     PROCID_PARCH_MSB U(29)  /*   indexes from Manifest(tools) and PLATFORM_PROC_HW */
     #define     PROCID_PARCH_LSB U(27)  /* 3 processor index [0..7] for this architecture 0="commander processor" */  
     #define     ARCHID_PARCH_MSB U(26)
     #define     ARCHID_PARCH_LSB U(24)  /* 3 [1..7] processor architectures 1="commander processor architecture" */
@@ -440,11 +440,11 @@ typedef struct
 
 
 
-struct stream_local_instance        /* structure allocated to each STREAM instance */
-{     uint32_t whoami_ports;        /* PACKWHOAMI */
-      uint32_t parameters;
-      stream_node **node_entry_points;   /* all the nodes visible from this processor */
-};
+//struct stream_local_instance        /* structure allocated to each STREAM instance */
+//{     uint32_t whoami_ports;        /* PACKWHOAMI */
+//      uint32_t parameters;
+//      stream_node **node_entry_points;   /* all the nodes visible from this processor */
+//};
 
 
 
@@ -465,31 +465,6 @@ struct platform_control_stream
 };
 
 
-/* stream parameters */
-//struct stream_control 
-//{   const io_function_control_ptr io_set;     
-//    const io_function_control_ptr io_start; 
-//    const io_function_control_ptr io_stop; 
-//};
-
-extern p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS];
-
-/* three entry points */
-extern void arm_stream (uint32_t command,  arm_stream_instance_t *inst, uint32_t *data);
-extern void arm_stream_io (uint32_t fw_io_idx, 
-        arm_stream_instance_t *stream_instance,
-        uint8_t *data, uint32_t length);
-extern void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n);
-
-extern void stream_scan_graph (arm_stream_instance_t *stream_instance, int8_t reset_option);
-
-/* ---- REFERENCES --------------------------------------------*/
-
-extern void script_processing (uint32_t *instance);
-extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3);
-extern uint32_t physical_to_offset (arm_stream_instance_t *stream_instance, uint8_t *buffer);
-extern void arc_data_operations (arm_stream_instance_t *stream_instance, uint32_t *arc, uint8_t tag, uint8_t *buffer, uint32_t size);
-extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3);
 
 #ifdef __cplusplus
 }

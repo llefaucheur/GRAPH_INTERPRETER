@@ -1,50 +1,80 @@
 ; ------------------------------------------------------------------------------------------------------------
-; SOFTWARE COMPONENT MANIFEST - "GATE"
+; SOFTWARE COMPONENT MANIFEST - "arm_stream_detector"
 ; ------------------------------------------------------------------------------------------------------------
 ;
-ARM developer name;
-GATE node name for the GUI; 1 input_arc_nb; 2 output_arc_nb; stream + metadata (signal to noise ratio)
+    ARM             developer name
+    arm_stream_detector node name for the GUI and the graph compiler (node and arc src/dst)
+    1 1 0 1   0 1 0 31  
+;                   nb input arcs, 
+;                   nb output arcs, 
+;                   nb parameter-arcs arcs, (NN model..), nodes with parameter arc have "xdm11=0" to keep the read index on the parameter
+;                   arc index used for streaming (scheduler synchronization)
 ;
-; list of architectures the SWC is compatible with
-2 ARCH options; 0 source; 1 M0+; 
-1  FPU option ; 2 ARCH_FPU;
-0; 0; 0; 0; 0; 0; dependency to EXTDSPML EXTMATH EXTAUDIO EXTIMAGE EXTSTDLIB
+;                   0: arc R/W managed in the SWC  1: all arcs are using the same frame size (see "xdm11")
+;                   0: no need the push the format of the arcs (see reset_component(S)) 1: arc format is used by the component
+;                   delivery 0:source, 1:binary, 2: 2 binaries (fat binary)
+;                   mask: dependency to EXTDSPML EXTMATH EXTAUDIO EXTIMAGE EXTSTDLIB
 ;
-h0010 code version; 
-h0010 version of the scheduler it is compatible with; 
-    0 delivery as source code; 
+; list of (architectures+FPU option) the SWC is compatible with
+    1               number of architecture options below
+    0 2             0: arch (0=source code), 2: FPU option (enum stream_processor_sub_arch_fpu)
+;   0 2             other options (for fat binary files)
+
+    0 1             code version, version of the scheduler it is compatible with
+
+;----------------------------------------------------------------------------------------
+; Loop on memory banks
 ;
-2 number of arcs;
-;---------------------------------------------------
-1 memory bank allocation;                           just the node instance
-;   Memory Size = A + B x nb_channels_arc(i) + C x sampling_arc(j) + D x frame_size_arc(k)
-    h0038 =A; 0 =B; 0.0 arc(i); 0.0 =C; 0 arc(j); 0 =D; 0 arc(k); 2 aligned 1<<2 bytes; static type; 0 data; bestEffort speed; 0 relocation; MEMORY BANK
+    1               memory bank allocation = instance 
+
+; @@@@ update size with 32 + delta increase using 64bits arch
 ;
-;h0008 maximum size of the parameter structure in bytes;
-;    h01234567 ; 4;  preset first 4 bytes
-;    h89abcdef ; 4;  preset second 4 bytes
-;---------------------------------------------------
+;   Memory Size Bytes = A(32b) + Delta(64b) + B x nb_channels_arc(i) + C x samplingHz_arc(j) + D x frame_size_arc(k) + E x maxParameterSize
+;
+;   INSTANCE MEM is the first one, even if the size is null
+;
+;   [12]:   A D64 B C D E, indexes i,j,k,  alignment, static/working/retention,  any/normal/fast/critical,  relocatable
+    36 0 0 0 0  0 0 0  4 0 0 0
+
+
+;-------------------
 ; input_arc : "0"
-  0 rx0tx1;                                         input
-  audio_in domain; domain_name[]
-  int16 raw format; 0 time-stamp; 1 frame length format (0:in seconds 1:in samples); no time-stamps
-  1 interleaving option;  0 default;    0  no interleaving;
-  1 nb_channel option;    0 default index; 1 nb channels; 16bits signed, mono, 
-  1 frame options; 0 default index;     0;          any frame size in raw-format type
-  2 FS options; 1 default index; 16000; 48000;      sampling_rate in Hz
-  10 percent FS accuracy;                           allows a wide range of sampling rate
-  0 no inplace processing; -1;                      input buffer is preserved or '1' and output buffer in-place with input #n
-;
-;---------------------------------------------------
+;-------------------            
+
+    0   n = 0,1,2,NARC-1    n+NARC:input buffer is read and modified
+
+    0   rx0tx1  
+    6   raw format                                          
+    0   time-stamp                                          
+    1   frame length format (0:in milliseconds 1:in samples)
+    0   sampling rate format (0:Hz, 1:seconds, 2:days)    
+    3   percent FS accuracy                                 
+;    0   set-up time [ms]                                   
+
+    ;   Lists of options, starting with the default index 
+    0   0                   ;i interleaving options list
+    0   1                   ;i nb channels options list 
+    0   1 2 4               ;f frame_size option in samples  (or millis) 
+    0   101 202 404         ;f sampling rate options in Hz
+                            
+
+;-------------------
 ; output_arc : "1"
-  1 rx0tx1;                                         output
-  audio_in domain; domain_name[]
-  int16 raw format; 0 time-stamp; 1 frame length format (0:in seconds 1:in samples); no time-stamps
-  1 interleaving option;  0 default;       0  no interleaving;
-  1 nb_channel option;    0 default index; 1 nb channels; 16bits signed, mono, 
-  1 frame options; 0 default index; 0;              any frame size in raw-format type
-  1 FS options; 0 default index; 0;                 Any sampling_rate in Hz
-  10 percent FS accuracy;                           same as input accuracy
-  0 no inplace processing; -1;                      input buffer is preserved or '1' and output buffer in-place with input #n
-;
-END
+;-------------------            
+
+    1   n = 0,1,2,NARC-1    in-place processing to arc (n+NARC)
+
+    1   rx0tx1  
+    6   raw format                                          
+    0   time-stamp                                          
+    1   frame length format (0:in milliseconds 1:in samples)
+    0   sampling rate format (0:Hz, 1:seconds, 2:days)    
+    3   percent FS accuracy                                 
+;    0   set-up time [ms]                                    
+
+    ;   Lists of options, starting with the default index 
+    0   0                   ;i interleaving options list
+    0   1                   ;i nb channels options list 
+    0   1 2 4               ;f frame_size option in samples  (or millis) 
+    0   101 202 404         ;f sampling rate options in Hz
+_END_

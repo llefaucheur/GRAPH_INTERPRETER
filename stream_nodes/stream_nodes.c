@@ -31,10 +31,9 @@
    
     
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
 
+#include "stream_const.h"
+#include "stream_types.h"
 
 
 /* -----------------------------------
@@ -62,26 +61,28 @@ extern p_stream_node arm_stream_share;          /* 14*/
 /* 
     this table will be extended with pointers to nodes loaded 
     dynamically and compiled with position independent execution options
+
+    it is aligned with the list of SOFTWARE COMPONENTS MANIFESTS in "files_manifests_computer.txt"
 */
 p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
 {
     /*--------- ARM ---------*/
     /*  0*/ (void *)0,                          /* node disabled */
-    /*  1*/ (void *)&arm_script,                /* byte-code interpreter */
-    /*  2*/ (void *)&arm_stream_router,         /* copy input arcs and subchannel and output arcs and subchannels   */     
-    /*  3*/ (void *)&arm_stream_converter,      /* raw data format converter */
-    /*  4*/ (void *)&arm_stream_amplifier,      /* amplifier mute and un-mute with ramp and delay control */
-    /*  5*/ (void *)&arm_stream_mixer,          /* multichannel mixer with mute/unmute and ramp control */
+    ///*  1*/ (void *)&arm_script,                /* byte-code interpreter */
+    ///*  2*/ (void *)&arm_stream_router,         /* copy input arcs and subchannel and output arcs and subchannels   */     
+    ///*  3*/ (void *)&arm_stream_converter,      /* raw data format converter */
+    ///*  4*/ (void *)&arm_stream_amplifier,      /* amplifier mute and un-mute with ramp and delay control */
+    ///*  5*/ (void *)&arm_stream_mixer,          /* multichannel mixer with mute/unmute and ramp control */
     /*  6*/ (void *)&arm_stream_filter,         /* cascade of DF1 filters */
     /*  7*/ (void *)&arm_stream_detector,       /* estimates peaks/floor of the mono input and triggers a flag on high SNR */
-    /*  8*/ (void *)&arm_stream_rescaler,       /* raw data values remapping using "interp1" */
-    /*  9*/ (void *)&arm_stream_compressor,     /* raw data compression with adaptive prediction */
-    /* 10*/ (void *)&arm_stream_decompressor,   /* raw data decompression */
-    /* 11*/ (void *)&arm_stream_modulator,      /* signal generator with modulation */
-    /* 12*/ (void *)&arm_stream_demodulator,    /* signal demodulator, frequency estimator */
-    /* 13*/ (void *)&arm_stream_interpolator,   /* asynchronous sample-rate converter */
-    /* 14*/ (void *)&arm_stream_synchro,        /* raw data interpolator with synchronization with one HQoS stream */
-    /* 15*/ (void *)&arm_stream_share,          /* let a buffer be used by several nodes */
+    ///*  8*/ (void *)&arm_stream_rescaler,       /* raw data values remapping using "interp1" */
+    ///*  9*/ (void *)&arm_stream_compressor,     /* raw data compression with adaptive prediction */
+    ///* 10*/ (void *)&arm_stream_decompressor,   /* raw data decompression */
+    ///* 11*/ (void *)&arm_stream_modulator,      /* signal generator with modulation */
+    ///* 12*/ (void *)&arm_stream_demodulator,    /* signal demodulator, frequency estimator */
+    ///* 13*/ (void *)&arm_stream_interpolator,   /* asynchronous sample-rate converter */
+    ///* 14*/ (void *)&arm_stream_synchro,        /* raw data interpolator with synchronization with one HQoS stream */
+    ///* 15*/ (void *)&arm_stream_share,          /* let a buffer be used by several nodes */
 
     /*------ COMPANY #1 -----*/
     TBD,                           

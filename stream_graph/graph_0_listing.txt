@@ -1,0 +1,13 @@
+
+ARC0  @=    0    0 
+
+ARC1  @=    0    0 
+
+ARC2  @=    0    0 
+
+arm_stream_filter ----------------------------------------- 
+membank  0  @= 292  124 size   96  S 
+membank  1  @= 292  124 size    4  W 
+
+arm_stream_detector ----------------------------------------- 
+membank  0  @= 388  184 size   36  S 

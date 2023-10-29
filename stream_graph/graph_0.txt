@@ -1,0 +1,229 @@
+;                                                                         
+; ------+     +-------------+      +-------------+      +------
+;  ADC  +---->+  SUBGRAPH 1 +----->|SCRIPT(GPIO) +. . .>| GPIO 
+; ------+     +-------------+      +-------------+      +------
+;                                                     
+;----------------------------------------------------------------------------------------
+
+graph
+
+top_header
+
+;   34 integers, only (x) are 
+;   - format of the final binary graph file   (COPY_CONF_GRAPH0_COPY_ALL_IN_RAM) 
+;   - script control option in the scheduler (S->scheduler_control[SCRIPT_SCTRL])
+;   - bit-field of allowed processors (procid_allowed GR[4])
+
+    0 0 1
+
+    _end_
+
+
+;----------------------------------------------------------------------------------------
+;   file paths for sub graphs and scripts
+
+paths
+    3               three paths used for the included files
+    ./              path index 0 is local
+    ../stream_graph path index 1
+    ../stream_test  path index 2
+    _end_
+
+; --------------------------------------------------
+;   the the data stream format used in the graph are grouped here :
+;   { ID; FrameSize(22b); Raw; Nchan; FS(float); Timestp; Interleaving; specific(Word2); }
+format
+    2   two formats
+;   I F   R N    FS T I S
+    0 8  17 1 16000 0 0 3    
+    1 12 17 1 16000 0 0 4    formatID1; frameSize; raw; nchan; FS(float); timestp; intlv; specific(Word2);
+    _end_
+
+;----------------------------------------------------------------------------------------
+; list of HW IOs from "stream_tools_files_manifests_PLATFORMNAME.txt" + IO arc patched with this IO.
+;   nb HW IO interfaces
+;   - index
+;   - format index of this stream (for sub-graphs)
+;   - ID of the interface as given "files_manifests_computer" <=> FW_IO_IDX, 0="decided from the caller"
+;   - common setting (8MSB intlv/nchan/frame/FS = ARC0 producer format) + mixed-signal settings (24LSB)
+;
+;   in comments : the incremented index of the interface used when building the graph (arc section below)
+    
+top_graph_interface
+    2               2 interfaces 
+    0 0 1 0         index-0 for _graph_interface, format 0, FW_IDX=io_platform_stream_in_0, default settings
+    1 0 7 0         index-1, format 0, FW_IDX=io_platform_gpio_out_0, default settings
+    _end_
+
+;---------------
+;node
+;    arm_script 0       0= main script managing parameters, >0 = index of the script in the SCRIPT_LW0 table
+;
+;    2 6    2 1 0       number of registers, stack depth,  ARCs : input (stream, control) output (GPIO)  provision
+;                  
+;;
+;;   script with 2 input arcs, 1 TX arc
+;;   algorithm : read 1st arc 0 (mono input arc), GPIO is connected to TX arc
+;;       set the GPIO value to 0 or 1 depending if arc data is above a threshold
+;;       set new parameters to node "amplitude"
+;;
+;    SCRIPT          
+;
+;    PSHL INT8  12       ; detection threshold=12
+;    POPR 0              ; load R0 for this comparison
+;    PSHL INT8   ARC0    ; first arc to read
+;    CALS READ_ARC       ; read arc(stack(-1), implicit subchannel 0) to stack
+;    OPRC GTR            ; result=stack(-1) > R0 (threshold) ?
+;    PSHL INT8   ARC2    ; arc 2 (TX)
+;    JMPC 0              ; yes: jump to 0 (set gpio=1)
+;    PSHL INT8   0       ; no:  set gpio=0
+;    JMPL 1              ; set gpio and return
+;    LABL 0             ;  label 0
+;    PSHL INT8   1       ; no:  set gpio=1
+;    LABL 1             ;  label 1
+;    CALS WRITE_ARC      ; syscall: write data(stack(-1)) to arc[stack(-2)]
+;;
+;    PSHL INT8   arm_stream_amplitude ; this is in the symbol table (node_entry_point_table[])
+;    PSHL INT8   0       ; instance
+;    PSHL PTR    amplitude_set
+;    CALS SETPARAM       ; syscall: setparam(amplitude, instance0, new_param=amplitude_set)
+;;
+;    PSHL INT8   arm_stream_amplitude ; this is in the symbol table (node_entry_point_table[])
+;    PSHL INT8   0       ; instance
+;    PSHL INT8   2       ; parameter TAG_CMD
+;    PSHL FP32   3.14    ; parameter data
+;    CALS SETPARAM       ; syscall: setparam(amplitude, instance0, new_param=amplitude_set)
+;;
+;    OPRC RET            ; return to scheduler
+;;    
+;    parameters amplitude_set
+;        1  i8; 0        ; preset=0
+;        1  i8; 1        ; load only the gain (Tag=1)
+;        1 i32; h10000   ; gain; 
+;    parameter_end    
+;
+;    parameters router_set2
+;        1  i8; 1        ; preset=1
+;        1  i8; 1        ; load only the second index (Tag=2)
+;        4 i16; 0 0 2 0  ; move arc0,chan0, to arc2,chan0
+;    parameter_end    
+;
+;    SCRIPT_END          ; end of byte codes
+;
+;_end_
+
+
+;----------------------------------------------------------------------------------------
+; arm_stream_filter
+;----------------------------------------------------------------------------------------
+;   Operation : receives one multichannel stream and produces one filtered multichannel stream. 
+;   Filtering is identical on each channel. GUI parameters are given in float, implementation 
+;   is CMSIS-DSP through Stream services
+;   Parameters : biquad filters coefficients used in cascade. Implementation is 2 Biquads max.
+;   (see www.w3.org/TR/audio-eq-cookbook)
+;
+;   presets:
+;   #0 : bypass
+;   #1 : LPF fc=fs/4
+;   #11..42: delay-line of 1..32 samples
+;
+;   parameter of filter : 
+;   - number of biquads in cascade (1 or 2)
+;   - coefficients in Q15
+;
+node
+    arm_stream_filter 0         node subroutine name + instance ID
+;
+    1 0  0 0 0                  preset if no parameter / local script index (0=none)
+;                               no assignment to proc / arch / verbose debug trace 
+    0 4     when memory mapping is managed manually (top_header) list of VID 
+;             virtual memory banks defined in "platform_manifest_computer.txt"
+;             of each memory bank defined in swc_manifest_filter.txt
+;
+    parameters
+        2  u8; 0 255                        no preset, TAG = "all parameters"
+
+        1  u8;  2                           Two biquads
+        1  u8;  0                           postShift
+        5 h16; 5678 2E5B 71DD 2166 70B0     b0/b1/b2/a1/a2 
+        5 h16; 5678 2E5B 71DD 2166 70B0     second biquad
+        ;  _include    1   arm_stream_filter_parameters_x.txt      
+        _end_
+
+    _end_
+
+;----------------------------------------------------------------------------------------
+; 	arm_stream_detector
+;----------------------------------------------------------------------------------------
+;   Operation : provides a boolean output stream from the detection of a rising 
+;   edge above a tunable signal to noise ratio. 
+;   A tunable delay allows to maintain the boolean value for a minimum amount of time 
+;   Use-case example 1: debouncing analog input and LED / user-interface.
+;   Use-case example 2: IMU and voice activity detection (VAD)
+;   Parameters : time-constant to gate the output, sensitivity of the use-case
+;
+;   preset format : 
+;    bits 0,1,2 : preset control (below)
+;    bits 3,4,5 : 0 = default sensitivity or {1,2,3,4,5,6,7 lowest to highest} 
+;    bits 6,7 : unused
+;
+;   presets control
+;   #0 : manual tuning of the parameters
+;   #1 : no HPF pre-filtering, fast and high sensitivity detection (button debouncing)
+;   #2 : VAD with HPF pre-filtering, time constants tuned for ~10kHz
+;   #3 : VAD with HPF pre-filtering, time constants tuned for ~44.1kHz
+;   #4 : IMU detector : HPF, slow time constants
+;   #5 : IMU detector : HPF, fast time constants
+;
+;   Metadata information can be extracted with the command "parameter-read":
+;   TAG_CMD = 0 read the floor noise
+;   TAG_CMD = 1 read the current signal peak
+;   TAG_CMD = 2 read the signal to noise ratio
+;
+node 
+    arm_stream_detector         node name  + instance ID
+    2 0 0 0 0                   preset VAD + local script index (0=none)
+                          ;     no assignment to proc / arch / verbose debug trace
+    0         when memory mapping is managed manually (top_header) list of VID 
+;             virtual memory banks defined in "platform_manifest_computer.txt"
+;             of each memory bank defined in swc_manifest_detector.txt
+;             Put 0 as default VID
+
+    _end_
+
+;
+;--------------- LAST SECTION OF THE GRAPH-------------------------------------
+;           1      2       3    4         5     6   7   8   9   10    11
+; ARCs  ProdFMT ConsFMT VID IOSizeMulfac OVF UND CMD REG FLUSH EXTD
+;
+;       Memory bank virtual index(0 or speed control); buffer size scaling 
+;       factor (float >= 1.0) to apply to the minimum possible size between the producer and the consumer
+;
+;       Node/Stream name, instance source and its output port ID
+;       Node/destination, its instance and input port ID       
+;
+;       optional filling pattern to read from a file (file name, nb of data to read); 
+;
+arc
+    3                               3 arcs
+
+    0 1 0 1.0 0 0 0 0 0 0           ProdFMT ConsFMT VID IOSizeMulfac OVF, UND, CMD, REG, FLUSH, EXTD
+    _graph_interface    0  0         0= IO "interface" from application processor, second parameter=0
+    arm_stream_filter   0  0        [0]:filter instance       [0]:RX arc of the node
+;    parameters
+;       _include    2   TestPattern.txt filepathID and fileName (test-pattern, NN model, ...)
+;       parameter_end    
+
+    0 0 0 1.0 0 0 0 0 0 0           ProdFMT ConsFMT VID IOSizeMulfac OVF, UND, CMD, REG, FLUSH, EXTD
+    arm_stream_filter   0  1        [0]:instance of the node, [1]:index of the arc (TX)
+    arm_stream_detector 0  0        [0]:instance of the node, [0]:index of the arc (RX)
+
+
+    0 0 0 1.0 0 0 0 0 0 0           ProdFMT ConsFMT MEM IOSizeMulfac OVF, UND, CMD, REG, FLUSH, EXTD
+    arm_stream_detector 0  1   
+    _graph_interface    1  0        1=IO "interface" of PWM, [0]:RX arc of the "IO node"
+
+    _end_
+;
+
+_END_

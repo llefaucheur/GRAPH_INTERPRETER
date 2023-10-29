@@ -30,11 +30,10 @@
 #endif
    
 
-#ifndef cARM_STREAM_RESCALER_H
-#define cARM_STREAM_RESCALER_H
+#ifndef cARM_STREAM_DEMODULATOR_H
+#define cARM_STREAM_DEMODULATOR_H
 
 
-#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
 
@@ -53,7 +52,7 @@ extern void arm_stream_demodulator_process (arm_stream_demodulator_instance *ins
 
 
 
-#endif
+#endif  //cARM_STREAM_DEMODULATOR_H
 
 #ifdef __cplusplus
 }

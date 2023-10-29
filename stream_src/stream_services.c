@@ -31,6 +31,7 @@
 
 #include "stream_const.h" 
 #include "stream_types.h"
+#include "stream_extern.h"
 #include "dsp\filtering_functions.h"
 
 
@@ -146,6 +147,7 @@ void arm_stream_services_flow (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, u
     * Test-pattern injection from scripts and result verification
     * Test availability of data (R/W)
     * Read/write to arcs, return the pointer to read/write for scripts
+    * Data moves w/wo DMA
     */
 }
 

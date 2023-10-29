@@ -29,9 +29,12 @@
  extern "C" {
 #endif
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
+#include <stdint.h>
+
+
+#include "stream_const.h"
+#include "stream_types.h"
+#include "stream_extern.h"
 #include <string.h>         /* memcpy */
 
 
@@ -76,13 +79,12 @@ void arm_stream (uint32_t command,  arm_stream_instance_t *stream_instance, uint
 
             stream_scan_graph (stream_instance, STREAM_RESET);
 
-            /* skip the first component = debug script node */
-            #define XX 8 // size of the SWC of the debug trace script
-            #define YY 3 // offset to the instance of the script
-
-            stream_instance->main_script = (uint32_t *)PACK2LINADDR(stream_instance->long_offset, stream_instance->linked_list[YY]);
-                        stream_instance->linked_list = &(stream_instance->linked_list[XX]);
-            stream_instance->linked_list_ptr = stream_instance->linked_list;
+            //@@@@@ /* skip the first component = debug script node */
+            //#define XX 8 // size of the SWC of the debug trace script
+            //#define YY 3 // offset to the instance of the script
+            //stream_instance->main_script = (uint32_t *)PACK2LINADDR(stream_instance->long_offset, stream_instance->linked_list[YY]);
+            //stream_instance->linked_list = &(stream_instance->linked_list[XX]);
+            //stream_instance->linked_list_ptr = stream_instance->linked_list;
 
             stream_init_io (stream_instance);
             break;
@@ -152,7 +154,28 @@ void arm_stream (uint32_t command,  arm_stream_instance_t *stream_instance, uint
 /*----------------------------------------------------------*/
 static intPtr_t pack2linaddr_int(intPtr_t *long_offset, uint32_t data)
 {
-    return PACK2LINADDR(long_offset,data);
+/* should be implemented with simply : return PACK2LINADDR(long_offset,data);
+* 
+    #define PACK2LINADDR5(o,x) (o[RD(x,DATAOFF_ARCW0)] + (TEST_BIT(x,BASESIGN_ARCW0_LSB))? \
+            (1 + ~(((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32)):\
+            ( ((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32))
+*/
+    intPtr_t *o, x, t1, t2, t3, t4, t5;
+    o = long_offset;
+    x = data;
+
+    t1 = o[RD(x,DATAOFF_ARCW0)];
+    t2 = TEST_BIT(x,BASESIGN_ARCW0_LSB);
+    t3 = (1 + ~(((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32));
+    t4 =        ((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32;
+    if (t2)
+        t5 = t3;
+    else
+        t5 = t4;
+
+    t5 = t5 + t1;
+
+    return t5;
 }
 
 static uint8_t * pack2linaddr_ptr(intPtr_t *long_offset, uint32_t data)
@@ -223,7 +246,6 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
     */
     case COPY_CONF_GRAPH0_COPY_ALL_IN_RAM:
 
-        graph_src = &(graph0[1]);
         graph_dst = (uint32_t *)GRAPH_RAM_OFFSET_PTR(L,G);
         graph_words_in_ram = graph0[0];
 
@@ -266,7 +288,6 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
 
         graph_words_in_ram = 
             RD(graph0[1+2], LINKEDLIST_SIZE_GR2) +
-            RD(graph0[1+2], NB_ST_INSTANCE_GR2) * STREAM_INSTANCE_SIZE +
             RD(graph0[1+3], NB_ARCS_GR3) * SIZEOF_ARCDESC_W32 +
             RD(graph0[1+3], DEBUGREG_SIZE_GR3);
 
@@ -325,23 +346,20 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
         ARC descriptors 4 words    RAM  RAM    RAM   
         Debug registers, Buffers   RAM  RAM    RAM   
     */
-    { uint32_t *graph = stream_instance->graph;
+    { uint32_t A, *graph = stream_instance->graph;
     offsetWords = GRAPH_HEADER_NBWORDS;
     stream_instance->pio = &(graph[offsetWords]);
 
-    offsetWords += RD(graph[1], NB_IOS_GR1) * STREAM_IOFMT_SIZE_W32;
+    offsetWords += (A= RD(graph[1], NB_IOS_GR1) * STREAM_IOFMT_SIZE_W32);
     stream_instance->all_formats = &(graph[offsetWords]);
 
-    offsetWords += RD(graph[1], NBFORMATS_GR1) * STREAM_FORMAT_SIZE_W32;
+    offsetWords += (A= RD(graph[1], NBFORMATS_GR1) * STREAM_FORMAT_SIZE_W32);
     stream_instance->main_script = &(graph[offsetWords]);
 
-    offsetWords += RD(graph[1], SCRIPTS_SIZE_GR1);
+    offsetWords += (A= RD(graph[1], SCRIPTS_SIZE_GR1));
     stream_instance->linked_list = &(graph[offsetWords]);
 
-    offsetWords += RD(graph[2], LINKEDLIST_SIZE_GR2) + 1; /* add 1 for GRAPH_LAST_WORD */
-    //stream_instance->pinst = &(graph[offsetWords]);
-
-    offsetWords += RD(graph[2], NB_ST_INSTANCE_GR2) * STREAM_INSTANCE_SIZE;
+    offsetWords += (A= RD(graph[2], LINKEDLIST_SIZE_GR2));
     stream_instance->all_arcs = &(graph[offsetWords]);
 
     /* if the application sets the debug option then don't use the one from the graph */
@@ -352,7 +370,19 @@ static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *
     }
 
     /* initialize local static */
-    //@@@@ initialize stream_instance->whoami_ports .. 
+
+    // initialize stream_instance->whoami_ports .. 
+    {
+        uint32_t procID_archID;
+        platform_al (PLATFORM_PROC_HW, (uint8_t *)&procID_archID, (uint8_t *)&(stream_instance->iomask), 0);
+        ST (stream_instance->whoami_ports, PROCID_PARCH, procID_archID);
+        ST (stream_instance->whoami_ports, ARCHID_PARCH, (procID_archID >> (PROCID_LW0_LSB - ARCHID_LW0_LSB)));
+        ST (stream_instance->whoami_ports, INSTANCE_PARCH, RD(stream_instance->scheduler_control, INSTANCE_SCTRL));
+    }
+
+    stream_instance->ioreq = 0;         
+    stream_instance->parameters = 0;
+    ST (stream_instance->parameters, INSTANCE_ON_PARINST, 1);
 
     arm_stream_services(STREAM_SERVICE_INTERNAL_RESET, (uint8_t *)&(stream_instance), 0, 0, 0); 
     }
@@ -395,7 +425,7 @@ static void stream_init_io(arm_stream_instance_t *stream_instance)
     {   uint8_t wait; 
         do {
             platform_al (PLATFORM_MP_RESET_WAIT, &wait, 0, RD(stream_instance->scheduler_control, NBINSTAN_SCTRL));
-        } while (wait);
+        } while (wait == 0);
     }
 
     /*-------------------------------------------*/

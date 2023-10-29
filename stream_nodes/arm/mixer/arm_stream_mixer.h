@@ -34,11 +34,9 @@
 #define cARM_STREAM_MIXER_H
 
 
-#include "platform_computer.h"
+
 #include "stream_const.h"      
 #include "stream_types.h"  
-
-
 
     /*
         MIXER INSTANCE :

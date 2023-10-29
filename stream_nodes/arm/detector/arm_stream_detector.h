@@ -29,8 +29,10 @@
  extern "C" {
 #endif
    
+#ifndef cARM_STREAM_DETECTOR_H
+#define cARM_STREAM_DETECTOR_H
 
-#include "platform_computer.h"
+
 #include "stream_const.h"      
 #include "stream_types.h"  
 
@@ -71,7 +73,7 @@ typedef struct          /* 8 Bytes  */
     uint8_t THR;                /* detection threshold z8/z7 */
 } detector_parameters;
 
-// TODO Liam Revise byte counts and address memory leak causing struct variables to be overwritten
+// TODO @@@@ Liam Revise byte counts and address memory leak causing struct variables to be overwritten
 typedef struct /* total = TBD Bytes*/
 {
     detector_parameters config; /* 9 bytes */
@@ -136,6 +138,8 @@ typedef struct /* total = TBD Bytes*/
 extern void arm_stream_detector_process (arm_detector_instance *instance, 
                      int16_t *in, int32_t inputLength, 
                      int16_t *pResult);
+
+#endif //cARM_STREAM_DETECTOR_H
 
 #ifdef __cplusplus
 }

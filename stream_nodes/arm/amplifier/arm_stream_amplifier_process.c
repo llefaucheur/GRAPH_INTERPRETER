@@ -36,9 +36,8 @@
 #endif
    
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
+#include "stream_const.h"
+#include "stream_types.h"
 #include "arm_stream_amplifier.h"
 #include "dsp/none.h"
 
@@ -51,9 +50,9 @@
  */
 void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input, void *output, intPtr_t *nsamp)
 {
-    uint8_t iparam, slope, ichan;
+    uint8_t slope, ichan;
     int16_t *psrc, *pdst, exp, delayup, delaydown;
-    uint32_t param, format, config, incsrc, incdst, isamp, W0, W1;
+    uint32_t format, incsrc, incdst, isamp, W0, W1;
     int32_t current_mantissa, target_mantissa;
 
     delayup = RD(instance->current_delay, DELAY_UP);

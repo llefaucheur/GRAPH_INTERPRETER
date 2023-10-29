@@ -35,9 +35,9 @@
  extern "C" {
 #endif
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
+
+#include "stream_const.h"
+#include "stream_types.h"
 #include "arm_stream_synchro.h"
 
 
@@ -141,7 +141,6 @@ void arm_stream_synchro (int32_t command, stream_handle_t instance, stream_xdmbu
         {   stream_services_entry *stream_entry = (stream_services_entry *)(uint64_t)data;
             intPtr_t *memresults = (intPtr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
-            uint8_t iarc, nb_input_arc;
 
             arm_synchro_instance *pinstance = (arm_synchro_instance *) *memresults;
             pinstance->services = (stream_services_entry *)(uint64_t)data;
@@ -198,8 +197,12 @@ void arm_stream_synchro (int32_t command, stream_handle_t instance, stream_xdmbu
             else
             {   /*  report an error on parameter input 
                 typedef void (stream_services_entry) (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n); */
-                pinstance->services(PACK_SERVICE(0, RD(command,INST_CMD_SSRV), STREAM_SERVICE_INTERNAL_DEBUG_TRACE, STREAM_SERVICE_INTERNAL), 
-                    "MIX4 PARAM ERROR\n", 0, 0, (uint8_t *)17);    
+                pinstance->services(
+                    PACK_SERVICE(0, RD(command,INST_CMD_SSRV), STREAM_SERVICE_INTERNAL_DEBUG_TRACE, STREAM_SERVICE_INTERNAL), 
+                    "MIX4 PARAM ERROR\n", 
+                    0, 
+                    0, 
+                    17);    
             }
             break;
         }

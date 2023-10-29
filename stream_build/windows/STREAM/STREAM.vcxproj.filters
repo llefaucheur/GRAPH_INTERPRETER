@@ -91,7 +91,7 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\rescaler\arm_stream_rescaler_process.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\arm\compressor\arm_codec_imadpcm.c">
+    <ClCompile Include="..\..\..\stream_nodes\arm\compressor\arm_enc_imadpcm.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\arm\decompressor\arm_stream_decompressor_process.c">
@@ -124,6 +124,9 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\shared\arm_stream_share.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\decompressor\arm_dec_imadpcm.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\stream_al\platform_al.h">
@@ -135,40 +138,16 @@
     <ClInclude Include="..\..\..\stream_al\platform_sensor.h">
       <Filter>stream_al</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\stream_src\stream_arcs.h">
-      <Filter>stream_src</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\stream_src\stream_const.h">
-      <Filter>stream_src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_src\stream_graph.h">
-      <Filter>stream_src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_src\stream_macro.h">
-      <Filter>stream_src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_src\stream_nodes.h">
-      <Filter>stream_src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_src\stream_platform.h">
       <Filter>stream_src</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\stream_src\stream_types.h">
       <Filter>stream_src</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\stream_tools\graph_bin_1.txt">
-      <Filter>graph_tool</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_tools\graph_txt_1.txt">
-      <Filter>graph_tool</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_tools\graph_txt_0.txt">
-      <Filter>graph_tool</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\stream_nodes\arm\compressor\arm_codec_imadpcm.h">
+    <ClInclude Include="..\..\..\stream_nodes\arm\compressor\arm_enc_imadpcm.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\arm\compressor\arm_stream_compressor.h">
@@ -203,6 +182,15 @@
     </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\arm\shared\arm_stream_share.h">
       <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\decompressor\arm_dec_imadpcm.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_libraries\CMSIS-DSP\Include\dsp\none.h">
+      <Filter>library-cmsis-dsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_extern.h">
+      <Filter>stream_src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -255,6 +243,18 @@
     </Text>
     <Text Include="..\..\..\stream_nodes\arm\script\swc_manifest_script.txt">
       <Filter>graph_tool</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_tools\detector_ggraph.txt">
+      <Filter>graph_tool</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\graph_0.txt">
+      <Filter>graph_tool</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\graph_0_bin.txt">
+      <Filter>graph_tool</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\stream_tools_files_computer.txt">
+      <Filter>stream_al</Filter>
     </Text>
   </ItemGroup>
 </Project>

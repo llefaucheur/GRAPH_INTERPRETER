@@ -26,9 +26,12 @@
  */
 
 
-#include "platform_computer.h"
+#include <string.h> // for memset
+#include "platform_al.h"
+
 #include "stream_const.h"      
 #include "stream_types.h"  
+#include "stream_extern.h"
 
 
 
@@ -39,7 +42,7 @@
 
 uint32_t graph_input[] = 
 {   
-#include "graph_bin.txt"
+#include "graph_0_bin.txt"
 };
 
 
@@ -73,6 +76,9 @@ int main(void)
 #define STREAM_NB_INSTANCE 1
 
     arm_stream_instance_t instance;
+
+
+    memset (&instance, 0, sizeof(instance));
     instance.application_callbacks = application_callbacks;
     instance.scheduler_control = PACK_STREAM_PARAM(
             STREAM_MAIN_INSTANCE,

@@ -21,7 +21,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\stream_al\platform_al.h" />
     <ClInclude Include="..\..\..\stream_al\platform_computer.h" />
-    <ClInclude Include="..\..\..\stream_al\platform_manifest_computer.txt" />
     <ClInclude Include="..\..\..\stream_al\platform_sensor.h" />
     <ClInclude Include="..\..\..\stream_src\stream_arcs.h" />
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
@@ -30,29 +29,46 @@
     <ClInclude Include="..\..\..\stream_src\stream_nodes.h" />
     <ClInclude Include="..\..\..\stream_src\stream_platform.h" />
     <ClInclude Include="..\..\..\stream_src\stream_types.h" />
-    <ClInclude Include="..\..\..\stream_tools\graph_bin_1.txt" />
-    <ClInclude Include="..\..\..\stream_tools\graph_txt_1.txt" />
-    <ClInclude Include="..\..\..\stream_tools\stream_tool_graph.h" />
+    <ClInclude Include="..\..\..\stream_tools\stream_tool_define.h" />
     <ClInclude Include="..\..\..\stream_tools\stream_tool_include.h" />
-    <ClInclude Include="..\..\..\stream_tools\stream_tool_manifests.h" />
+    <ClInclude Include="..\..\..\stream_tools\stream_tool.h" />
     <ClInclude Include="..\..\..\stream_tools\stream_tool_platform_manifests.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\stream_tools\arm_stream_graphFormatChecks.c" />
     <ClCompile Include="..\..\..\stream_tools\stream_tool_main.c" />
-    <ClCompile Include="..\..\..\stream_tools\stream_tool_graphTxt2Bin.c" />
+    <ClCompile Include="..\..\..\stream_tools\stream_tool_graph2Bin.c" />
     <ClCompile Include="..\..\..\stream_tools\stream_tool_library.c" />
     <ClCompile Include="..\..\..\stream_tools\stream_tool_readManifests.c" />
     <ClCompile Include="..\..\..\stream_tools\stream_tool_script_assembler.c" />
-    <ClCompile Include="..\..\..\stream_tools\stream_tool_ggraph2pgraph.c" />
+    <ClCompile Include="..\..\..\stream_tools\stream_tool_read_graph.c" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\..\stream_al\platform_imu.txt" />
-    <Text Include="..\..\..\stream_al\platform_microphone.txt" />
-    <Text Include="..\..\..\stream_nodes\arm\detector\swc_manifest_gate.txt" />
+    <Text Include="..\..\..\stream_graph\arm_stream_filter_parameters_x.txt" />
+    <Text Include="..\..\..\stream_graph\files_manifests_computer.txt" />
+    <Text Include="..\..\..\stream_graph\graph_0.txt" />
+    <Text Include="..\..\..\stream_graph\graph_0_bin.txt" />
+    <Text Include="..\..\..\stream_graph\graph_1.txt" />
+    <Text Include="..\..\..\stream_graph\graph_1_bin.txt" />
+    <Text Include="..\..\..\stream_graph\io_platform_analog_sensor_0.txt" />
+    <Text Include="..\..\..\stream_graph\io_platform_command_in_0.txt" />
+    <Text Include="..\..\..\stream_graph\io_platform_command_out_0.txt" />
+    <Text Include="..\..\..\stream_graph\io_platform_gpio_out_0.txt" />
+    <Text Include="..\..\..\stream_graph\io_platform_gpio_out_1.txt" />
+    <Text Include="..\..\..\stream_graph\io_platform_imu_metadata_0.txt" />
+    <Text Include="..\..\..\stream_graph\io_platform_imu_temperature_0.txt" />
+    <Text Include="..\..\..\stream_graph\io_platform_imu_XYZ_0.txt" />
+    <Text Include="..\..\..\stream_graph\io_platform_line_in_0.txt" />
+    <Text Include="..\..\..\stream_graph\io_platform_line_out_0.txt" />
+    <Text Include="..\..\..\stream_graph\io_platform_microphone_0.txt" />
+    <Text Include="..\..\..\stream_graph\io_platform_stream_in_0.txt" />
+    <Text Include="..\..\..\stream_graph\platform_manifest_computer.txt" />
+    <Text Include="..\..\..\stream_graph\rfc8428.txt" />
+    <Text Include="..\..\..\stream_graph\stream_tools_files_computer.txt" />
+    <Text Include="..\..\..\stream_graph\graph_1_sub.txt" />
+    <Text Include="..\..\..\stream_graph\TEMPLATE_GRAPH.txt" />
+    <Text Include="..\..\..\stream_nodes\arm\detector\swc_manifest_detector.txt" />
     <Text Include="..\..\..\stream_nodes\arm\filter\swc_manifest_filter.txt" />
-    <Text Include="..\..\..\stream_tools\detector_ggraph.txt" />
-    <Text Include="..\..\..\stream_tools\stream_tools_files_manifests_computer.txt" />
-    <Text Include="..\..\..\stream_tools\TEMPLATE_GRAPH.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

@@ -35,24 +35,29 @@
  extern "C" {
 #endif
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
+
+#include "stream_const.h"
+#include "stream_types.h"
 #include "arm_stream_decompressor.h"
 
-
-//;----------------------------------------------------------------------------------------
-//;10.	arm_stream_decompressor
-//;----------------------------------------------------------------------------------------
-//;   Operation : wave decompression
-//;   Parameters : coding scheme 
-//;
-//;   presets control
-//;   #1 : standard IMADPCM decoder (packets of 4 encoded samples in words of int32)
-//;
-//arm_stream_decompressor
-//    3  i8; 0 1 0        instance, preset, tag IMADPCM 8kHz decoder 
-//;
+/*
+;----------------------------------------------------------------------------------------
+;10.    arm_stream_decompressor
+;----------------------------------------------------------------------------------------
+;   Operation : wave decompression of MONO encoded data
+;   Parameters : coding scheme and a block of 16 parameter bytes for codecs
+;
+;   presets control
+;   #1 : standard IMADPCM decoder 
+;   #2 : WAV player  
+;
+node arm_stream_decompressor
+    3  i8; 0 1 0        instance, preset IMADPCM 8kHz decoder, no tag
+;
+    parameter_start <optional label for scripts>
+    4; i32; 0 0 0 0     provision for extra parameters in other codecs
+    parameter_end
+*/
 
 /**
   @brief         
@@ -141,7 +146,7 @@ void arm_stream_decompressor (int32_t command, stream_handle_t instance, stream_
 
             nb_data = stream_xdmbuffer_size / sizeof(SAMP_IN);
 
-            arm_stream_decompressor_process (pinstance, inBuf, outBuf, &nb_data);
+            arm_stream_decompressor_process (pinstance, inBuf, outBuf, (uint32_t *)&nb_data);
 
             /* the SWC is producing an amount of data different from the consumed one (see xdm11 in the manifest) */
             pt_pt = data;
@@ -157,7 +162,6 @@ void arm_stream_decompressor (int32_t command, stream_handle_t instance, stream_
         /* func(command = STREAM_STOP, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = unused
-           used to free memory allocated with the C standard library
         */  
         case STREAM_STOP:  break;    
     }

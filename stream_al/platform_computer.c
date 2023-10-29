@@ -24,19 +24,21 @@
  * limitations under the License.
 * 
  */
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #define _CRT_SECURE_NO_DEPRECATE 1
 #include <stdio.h>
 
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "platform_al.h"
-#include "platform_sensor.h"
 
-#include "platform_computer.h"
+
 #include "stream_const.h"      
-#include "stream_types.h"  
 
+#include "platform_al.h"
+#include "stream_types.h"
 
 
 /*
@@ -84,30 +86,30 @@ extern uint8_t trace_stop(uint32_t *setting, uint8_t *data, uint32_t siz);
 
 
 // MEMORY BANKS
-//#define MBANK_GRAPH     U(0)    /* graph base address (shared) */
-//#define MBANK_DMEM      U(1)    /* shared internal/external memory */
-//#define MBANK_DMEMPRIV  U(2)    /* not shared memory space */
-//#define MBANK_DMEMFAST  U(3)    /* not shared DTCM Cortex-M/LLRAM Cortex-R, swapped between SWC calls if static */
-//#define MBANK_BACKUP    U(4)    /* shared backup SRAM addressed only by STREAM */
-//#define MBANK_HWIODMEM  U(5)    /* shared memory space for I/O and DMA buffers */
-//#define MBANK_PMEM      U(6)    /* shared program RAM */
-//#define MBANK_FLASH     U(7)    /* shared internal Flash */
+#define MBANK_GRAPH     U(0)    /* graph base address (shared) */
+#define MBANK_DMEMFAST  U(1)    /* not shared DTCM Cortex-M/LLRAM Cortex-R, swapped between SWC calls if static */
+//#define MBANK_DMEM            /* shared internal/external memory */
+//#define MBANK_DMEMPRIV        /* not shared memory space */
+//#define MBANK_BACKUP          /* shared backup SRAM addressed only by STREAM */
+//#define MBANK_HWIODMEM        /* shared memory space for I/O and DMA buffers */
+//#define MBANK_PMEM            /* shared program RAM */
+//#define MBANK_FLASH           /* shared internal Flash */
 
-static uint64_t MEXT[SIZE_MBANK_DMEM_EXT];
-static uint64_t RAM1[SIZE_MBANK_DMEM];
-static uint64_t RAM2[SIZE_MBANK_DMEM];
-static uint64_t RAM3[SIZE_MBANK_DMEM];
-static uint64_t RAM4[SIZE_MBANK_DMEM];
-static uint64_t TCM1[SIZE_MBANK_DMEMFAST]; 
-static uint64_t TCM2[SIZE_MBANK_DMEMFAST]; 
-static uint64_t BKUP[SIZE_MBANK_BACKUP]; 
-static uint64_t HWIO[SIZE_MBANK_HWIODMEM];
-static uint64_t PMEM[SIZE_MBANK_PMEM];
+static uint32_t MEXT[SIZE_MBANK_DMEM_EXT];
+static uint32_t RAM1[SIZE_MBANK_DMEM];
+static uint32_t RAM2[SIZE_MBANK_DMEM];
+static uint32_t RAM3[SIZE_MBANK_DMEM];
+static uint32_t RAM4[SIZE_MBANK_DMEM];
+static uint32_t TCM1[SIZE_MBANK_DMEMFAST]; 
+static uint32_t TCM2[SIZE_MBANK_DMEMFAST]; 
+static uint32_t BKUP[SIZE_MBANK_BACKUP]; 
+static uint32_t HWIO[SIZE_MBANK_HWIODMEM];
+static uint32_t PMEM[SIZE_MBANK_PMEM];
 
 #define PROC_ID 0 
 extern const uint32_t graph_input[];
 
-intPtr_t long_offset[NB_MEMINST_OFFSET];
+intPtr_t long_offset[MAX_NB_MEMORY_OFFSET];
 
 
 /**
@@ -121,16 +123,26 @@ intPtr_t long_offset[NB_MEMINST_OFFSET];
   @remark       
  */
 
-void platform_specific_long_offset(void)
+void platform_specific_long_offset(intPtr_t long_offset[])
 {
-    long_offset[MBANK_GRAPH   ] = (const intPtr_t)&(MEXT[10]);  
-    long_offset[MBANK_DMEM    ] = (const intPtr_t)&(RAM1[10]);
-    long_offset[MBANK_DMEMPRIV] = (const intPtr_t)&(RAM1[10]); /* random offsets */
-    long_offset[MBANK_DMEMFAST] = (const intPtr_t)&(TCM1[10]);
-    long_offset[MBANK_BACKUP  ] = (const intPtr_t)&(BKUP[10]);
-    long_offset[MBANK_HWIODMEM] = (const intPtr_t)&(HWIO[10]);
-    long_offset[MBANK_PMEM    ] = (const intPtr_t)&(PMEM[10]);
-    long_offset[MBANK_FLASH   ] = (const intPtr_t)graph_input;
+    /* all the addresses can fit in the +/- 8MB range around [0] */
+    long_offset[MBANK_GRAPH]    = (intPtr_t)&(MEXT[10]); 
+    long_offset[MBANK_DMEMFAST] = (intPtr_t)&(TCM1[10]); 
+    //long_offset[2] = 0;
+    //long_offset[3] = 0;
+    //long_offset[4] = 0;
+    //long_offset[5] = 0;
+    //long_offset[6] = 0;
+    //long_offset[7] = 0;
+
+    //long_offset[MBANK_GRAPH   ] = (const intPtr_t)&(MEXT[10]);  
+    //long_offset[MBANK_DMEM    ] = (const intPtr_t)&(RAM1[10]);
+    //long_offset[MBANK_DMEMPRIV] = (const intPtr_t)&(RAM1[10]); 
+    //long_offset[MBANK_DMEMFAST] = (const intPtr_t)&(TCM1[10]);
+    //long_offset[MBANK_BACKUP  ] = (const intPtr_t)&(BKUP[10]);
+    //long_offset[MBANK_HWIODMEM] = (const intPtr_t)&(HWIO[10]);
+    //long_offset[MBANK_PMEM    ] = (const intPtr_t)&(PMEM[10]);
+    //long_offset[MBANK_FLASH   ] = (const intPtr_t)graph_input;
 
     //long_offset[MBANK_SRAM1   ] = (const intPtr_t)&(RAM1[10]);
     //long_offset[MBANK_SRAM2   ] = (const intPtr_t)&(RAM1[10]);
@@ -140,6 +152,26 @@ void platform_specific_long_offset(void)
     //long_offset[MBANK_SRAM6   ] = (const intPtr_t)&(RAM1[10]);
     //long_offset[MBANK_SRAM7   ] = (const intPtr_t)&(RAM1[10]);
     //long_offset[MBANK_SRAM8   ] = (const intPtr_t)&(RAM1[10]);
+};
+
+
+/**
+  @brief        Read the HW processor ID and its architecture 
+  @param[in]    none
+  @return       none
+
+  @par          
+
+  @remark       
+ */
+
+void platform_specific_processor_arch_iomask(uint8_t *procID, uint8_t *archID, uint32_t *ioMask)
+{
+    *procID = 1; 
+    *archID = 0; 
+
+    /* this mask is aligned with files_manifests_computer.txt , max 32 IOs => iomask */
+    *ioMask = 0x01F; /* 5 ISR/Streams can trigger data moves, all are visible from this processor */ 
 };
 
 
@@ -197,17 +229,7 @@ extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t
    Declaration of scaling factor to reach the RFC8428 (sensiml) unit
     used during the graph creation for the insertion of gain compensation
 */
-    #if 0
-    /* physical units rfc8428 rfc8798 */
-    enum stream_units_physical_t {   
-        unused_unit=0,      /* int16_t format */            /* int32_t format */           
-        unit_linear,        /* PCM and default format */    /* PCM and default format */
-        unit_dBm0, 
-        unit_decibel,       /* Q11.4 :   1dB <> 0x0010      Q19.12 :   1dB <> 0x0000 1000  */
-        unit_percentage,    /* Q11.4 :   1 % <> 0x0010      Q19.12 :   1 % <> 0x0000 1000 */
-        unit_meter,         /* Q11.4 :  10 m <> 0x00A0      Q19.12 :  10 m <> 0x0000 A000 */
-        . . . 
-    #endif
+
 /*
  * --- Digital HW Manifest ------------------------------------------------------------
 
@@ -250,33 +272,96 @@ const int32_t audio_render_settings [] = {
 
 
 /* --------------------------------------------------------------------------------------- 
-    data in Flash :
+    replicated fw_io_dx : platform_computer.h <=> manifest_computer.txt 
+
+    #define PLATFORM_STREAM_IN_0      1       interface to the application processor see stream_al\platform_stream_in_0 
+    #define PLATFORM_IMU_0            2       3D motion sensor see stream_al\platform_imu 
+    #define PLATFORM_MICROPHONE_0     3       audio in mono see stream_al\platform_microphone_0.txt  
+    #define PLATFORM_LINE_IN_0        4       audio in stereo  stream_al\platform_line_in_0.txt     
+    #define PLATFORM_LINE_OUT_0       5       audio out stereo stream_al\platform_line_out_0.txt    
+    #define PLATFORM_ANALOG_SENSOR_0  6       analog converter stream_al\platform_analog_sensor_0.txt 
+    #define PLATFORM_GPIO_OUT_0       7       PWM              stream_al\platform_gpio_out_0.txt    
+    #define PLATFORM_GPIO_OUT_1       8       LED              stream_al\platform_gpio_out_1.txt    
+    #define PLATFORM_COMMAND_IN_0     9       UART command     stream_al\platform_command_in_0.txt  
+    #define PLATFORM_COMMAND_OUT_0   10       UART trace       stream_al\platform_command_out_0.txt 
+
+    functions corresponding to the platform capabilities, indexed with fw_io_idx :
  */
 struct platform_io_control platform_io [LAST_IO_FUNCTION_PLATFORM] = 
 {
-    {   /* PLATFORM_APPLICATION_DATA_IN_INSTANCE_0 */
+    { /* INDEX 0 IS NOT USED */ .io_set = 0, .io_start = 0, .io_stop = 0, .stream_setting = 0, 
+    },
+
+    {   /* stream_al\platform_stream_in_0.txt      1 interface to the application processor */
     .io_set = audio_ap_rx_set_stream,
     .io_start = audio_ap_rx_start_data_move,
     .io_stop = audio_ap_rx_stop_stream,
     .stream_setting = 0, 
     },
 
-    {   /* PLATFORM_AUDIO_OUT_INSTANCE_0 */
+    {   /* stream_al\platform_imu_0.txt            2 3D motion sensor */
+    .io_set = 0,
+    .io_start = 0,
+    .io_stop = 0,
+    .stream_setting = 0, 
+    },
+
+    {   /* stream_al\platform_microphone_0.txt     3 audio in mono    */
+    .io_set = 0,
+    .io_start = 0,
+    .io_stop = 0,
+    .stream_setting = 0, 
+    },
+
+    {   /* stream_al\platform_line_in_0.txt        4 audio in stereo  */
+    .io_set = 0,
+    .io_start = 0,
+    .io_stop = 0,
+    .stream_setting = 0, 
+    },
+
+    {   /* stream_al\platform_line_out_0.txt       5 audio out stereo */
+    .io_set = 0,
+    .io_start = 0,
+    .io_stop = 0,
+    .stream_setting = 0, 
+    },
+
+    {   /* stream_al\platform_analog_sensor_0.txt  6 ADC              */
+    .io_set = 0,
+    .io_start = 0,
+    .io_stop = 0,
+    .stream_setting = 0, 
+    },
+
+    {   /* stream_al\platform_gpio_out_0.txt       7 PWM              */
     .io_set = audio_render_set_stream,
     .io_start = audio_render_start_data_move,
     .io_stop = audio_render_stop_stream,
     .stream_setting = audio_render_settings,
     },
 
-    {   /* PLATFORM_COMMAND_OUT_INSTANCE_0 */
+    {   /* stream_al\platform_gpio_out_1.txt       8 LED              */
+    .io_set = 0,
+    .io_start = 0,
+    .io_stop = 0,
+    .stream_setting = 0, 
+    },
+
+    {   /* stream_al\platform_command_in_0.txt     9 UART command     */
+    .io_set = 0,
+    .io_start = 0,
+    .io_stop = 0,
+    .stream_setting = 0, 
+    },
+
+    {   /* stream_al\platform_command_out_0.txt   10 UART trace       */
     .io_set = trace_set,
     .io_start = trace_start,
     .io_stop = trace_stop,
     .stream_setting = 0,
     },
 };
-
-
 
 
 /* --------------------------------------------------------------------------------------- 
@@ -302,7 +387,7 @@ uint32_t frame_size_audio_render;
  */
 
 void audio_render_transfer_done (uint8_t *data, uint32_t size) 
-{   platform_al(PLATFORM_IO_ACK, data, 0, PACK_PARAM_AL3(PLATFORM_AUDIO_OUT_INSTANCE_0, size));
+{   platform_al(PLATFORM_IO_ACK, data, 0, PACK_PARAM_AL3(IO_PLATFORM_AUDIO_OUT, size));
 }
 
 
@@ -317,7 +402,7 @@ void audio_render_transfer_done (uint8_t *data, uint32_t size)
  */
 
 void audio_ap_rx_transfer_done (uint8_t *data, uint32_t size) 
-{   platform_al(PLATFORM_IO_ACK, data, 0, PACK_PARAM_AL3(PLATFORM_DATA_STREAM_IN_INSTANCE_0, size));
+{   platform_al(PLATFORM_IO_ACK, data, 0, PACK_PARAM_AL3(IO_PLATFORM_DATA_IN, size));
 }
 
 
@@ -332,7 +417,7 @@ void audio_ap_rx_transfer_done (uint8_t *data, uint32_t size)
  */
 
 void trace_ap_rx_transfer_done (uint8_t *data, uint32_t size) 
-{   platform_al(PLATFORM_IO_ACK, data, 0, PACK_PARAM_AL3(PLATFORM_COMMAND_OUT_INSTANCE_0, size));
+{   platform_al(PLATFORM_IO_ACK, data, 0, PACK_PARAM_AL3(IO_PLATFORM_COMMAND_OUT, size));
 }
 
 
@@ -396,7 +481,7 @@ uint8_t audio_ap_rx_start_data_move (uint32_t *setting, uint8_t *data, uint32_t 
     int16_t *data16;
 
     data16 = (int16_t *)data;
-    for (i = 0; i < (size/2); i++) 
+    for (j = i = 0; i < (size/2); i++) 
     {   j = fscanf(ptf_in_audio_ap_rx_data, "%d,", &tmp); 
         data16[i] = (int16_t)tmp; 
     }
@@ -424,7 +509,7 @@ uint8_t audio_ap_rx_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size)
 uint8_t audio_ap_rx_set_stream (uint32_t *setting, uint8_t *data, uint32_t size) 
 { 
 
-#define FILE_IN "..\\TestPattern.txt"
+#define FILE_IN "..\\..\\..\\stream_test\\TestPattern.txt"
 
     if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rt")))
 //    if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rb")))
@@ -470,7 +555,7 @@ uint8_t audio_render_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size
 /* --------------------------------------------------------------------------------------- */
 uint8_t audio_render_set_stream (uint32_t *setting, uint8_t *data, uint32_t size)
 {   uint8_t index_frame_size = 0;
-#define FILE_OUT "..\\audio_out.raw"
+#define FILE_OUT "..\\..\\..\\stream_test\\audio_out.raw"
     if (NULL == (ptf_in_audio_render_data = fopen(FILE_OUT, "wb")))
     {   exit (-1);
     }

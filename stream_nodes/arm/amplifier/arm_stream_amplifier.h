@@ -39,7 +39,6 @@
 #ifndef CARM_STREAM_AMPLIFIER_H
 #define CARM_STREAM_AMPLIFIER_H
 
-#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
 

@@ -31,6 +31,7 @@
 #endif
    
 #include "stream_const.h"
+
 #include "stream_types.h"
 #include "arm_stream_synchro.h"
 
@@ -43,9 +44,6 @@
  */
 void arm_stream_synchro_process (arm_synchro_instance *instance, stream_xdmbuffer_t *xdm_buf, uint8_t narc)
 {
-
-    int16_t *psrc, *pdst;
-
 
 }
 #ifdef __cplusplus

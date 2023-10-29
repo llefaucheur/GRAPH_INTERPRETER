@@ -35,29 +35,11 @@
 #endif
 
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
 
+#include "stream_const.h"
+#include "stream_types.h"
 #include "dsp\filtering_functions.h"
-
 #include "arm_stream_filter.h"
-
-#define NB_PRESET 1
-
-const arm_biquad_casd_df1_q15_preset filter_preset [NB_PRESET] = 
-{   
-    {
-       /* PRESET #1 = LPF at fc = fs/4 */
-        2,  
-        { 4657,  7464,  4657, 25576, -11147,
-          2329,  1434,  2329,  9328, -26591,
-           0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0,   
-        },
-        2,
-    }
-};
 
 /*
 ;----------------------------------------------------------------------------------------
@@ -152,25 +134,19 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
         case STREAM_RESET: 
         {   
             uint8_t *pt8b, i, n;
+            intPtr_t *memreq;
+            arm_filter_instance *pinstance;
 
-            arm_filter_instance *pinstance = (arm_filter_instance *) instance;
-            pinstance->services = (stream_services_entry *)(uint64_t)data;
-            pinstance->biquad_casd_df1_inst_q15.pState = pinstance->state;
-            pinstance->biquad_casd_df1_inst_q15.pCoeffs = pinstance->coefs;
+            memreq = (intPtr_t *)instance;
+            pinstance = (arm_filter_instance *) (*memreq++);
 
             /* here reset */
-            pt8b = (uint8_t *) (pinstance->state);
-            n = sizeof(pinstance->state);
+            pt8b = (uint8_t *) (pinstance->static_mem.state);
+            n = sizeof(pinstance->static_mem.state);
             for (i = 0; i < n; i++) { pt8b[i] = 0; }
 
-            /* is there a preset ?  then copy it */
-            if (RD(command, PRESET_CMD))
-            {   pinstance->biquad_casd_df1_inst_q15.numStages = (filter_preset[RD(command, PRESET_CMD)]).numStages;
-                for (i = 0; i < 5 * pinstance->biquad_casd_df1_inst_q15.numStages; i++)
-                {   
-                    pinstance->coefs[i] = (filter_preset[RD(command, PRESET_CMD)]).coefs[i];
-                }
-            }
+            pinstance->services = (stream_services_entry *)(uint64_t)data;
+
 
             break;
         }       
@@ -181,7 +157,7 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
                 data = (one or all)
         */ 
         case STREAM_SET_PARAMETER:  
-       {    uint8_t *pt8bsrc, *pt8bdst, i;
+       {    uint8_t *pt8bsrc, *pt8bdst,*pt8b, i;
             arm_filter_instance *pinstance = (arm_filter_instance *) instance;
 
             /* copy the parameters 
@@ -192,14 +168,15 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
                 5 h16; 5678 2E5B 71DD 2166 70B0     second biquad
                 parameter_end                
             */
-            pt8bsrc = (uint8_t *) data;
-            pinstance->biquad_casd_df1_inst_q15.numStages = (*pt8bsrc++);
-            pinstance->biquad_casd_df1_inst_q15.postShift = (*pt8bsrc++);
-            pt8bdst = (uint8_t *)(&(pinstance->coefs[0]));
+            pt8b = (uint8_t *) (pinstance->static_mem.state);
+            for (i = 0; i < sizeof(pinstance->static_mem.state); i++) { pt8b[i] = 0; }
 
-            for (i = 0; i < sizeof(q15_t) * 5 * pinstance->biquad_casd_df1_inst_q15.numStages; i++)
-            {   
-                *pt8bdst++ = *pt8bsrc++;
+            pt8bsrc = (uint8_t *) data;
+            pinstance->static_mem.biquad_casd_df1_inst_q15.numStages = (*pt8bsrc++);
+            pinstance->static_mem.biquad_casd_df1_inst_q15.postShift = (*pt8bsrc++);
+            pt8bdst = (uint8_t *)(&(pinstance->static_mem.coefs[0]));
+            for (i = 0; i < sizeof(q15_t) * 5 * pinstance->static_mem.biquad_casd_df1_inst_q15.numStages; i++)
+            {   *pt8bdst++ = *pt8bsrc++;
             }
 
             /* optimized kernels */
@@ -233,10 +210,10 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
                 pinstance->iir_service,
                 (uint8_t*)inBuf, 
                 (uint8_t*)outBuf,
-                (uint8_t*)(&(pinstance->biquad_casd_df1_inst_q15)),
+                (uint8_t*)(&(pinstance->static_mem.biquad_casd_df1_inst_q15)),
                 (uint32_t)nb_data
                 );
-           
+          
             break;
         }
 

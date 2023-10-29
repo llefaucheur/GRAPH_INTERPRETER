@@ -36,10 +36,8 @@
 #endif
    
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
-
+#include "stream_const.h"
+#include "stream_types.h"
 #include "arm_stream_amplifier.h"
 
 /*
@@ -125,7 +123,7 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
             uint8_t *pt8bsrc, *pt8bdst, i, n;
 
             pt8bsrc = (uint8_t *) data;     
-            pt8bdst = &(pinstance->parameters[0]); 
+            pt8bdst = (uint8_t *) &(pinstance->parameters[0]); 
 
             switch (RD(command,TAG_CMD))
             {   default : break;
@@ -167,7 +165,7 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
             outBuf = (SAMP_OUT *)(pt_pt->address); 
 
             nb_data = stream_xdmbuffer_size / sizeof(SAMP_IN);
-            arm_stream_amplitude_process(pinstance, inBuf, outBuf, nb_data);
+            arm_stream_amplitude_process(pinstance, inBuf, outBuf, &nb_data);
             
             break;
         }
@@ -177,7 +175,6 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
         /* func(command = STREAM_STOP, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = unused
-           used to free memory allocated with the C standard library
         */  
         case STREAM_STOP:  break;    
     }

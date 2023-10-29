@@ -32,28 +32,33 @@
  */
 
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
+
+#include "stream_const.h"
+#include "stream_types.h"
 #include "arm_stream_compressor.h"
 
 
 #ifdef __cplusplus
  extern "C" {
 #endif
-//
-//;----------------------------------------------------------------------------------------
-//;9.	arm_stream_compressor
-//;----------------------------------------------------------------------------------------
-//;   Operation : wave compression using IMADPCM(4bits/sample)
-//;   Parameters : coding scheme 
-//;
-//;   presets:
-//;   #1 : standard IMADPCM encoder made for <10kHz sampling rate
-//;
-//arm_stream_compressor;
-//    3  i8; 0 1 0        instance, preset, tag IMADPCM 8kHz encoder IMADPCM 8kHz encoder 
-//;
+/*
+;----------------------------------------------------------------------------------------
+;9.	    arm_stream_compressor
+;----------------------------------------------------------------------------------------
+;   Operation : wave compression using IMADPCM(4bits/sample)
+;   Parameters : coding scheme 
+;
+;   presets:
+;   #1 : standard IMADPCM encoder 
+;   Provision for other coding schemes
+;
+node arm_stream_compressor;
+    3  i8; 0 1 0        instance, preset, tag IMADPCM 8kHz encoder IMADPCM 8kHz encoder 
+;
+    parameter_start <optional label for scripts>
+    4; i32; 0 0 0 0     provision for extra parameters in other codecs
+    parameter_end
+*/
 
 /**
   @brief         
@@ -157,7 +162,6 @@ void arm_stream_compressor (int32_t command, stream_handle_t instance, stream_xd
         /* func(command = STREAM_STOP, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
                data = unused
-           used to free memory allocated with the C standard library
         */  
         case STREAM_STOP:  break;    
     }

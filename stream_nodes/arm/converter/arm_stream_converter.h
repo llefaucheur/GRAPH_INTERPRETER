@@ -34,7 +34,6 @@
 #define CARM_STREAM_CONVERTER_H
 
 
-#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
 

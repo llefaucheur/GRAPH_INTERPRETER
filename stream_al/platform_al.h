@@ -24,10 +24,16 @@
  * limitations under the License.
 * 
  */
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 #ifndef platform_al_H
 #define platform_al_H
 
 /*------------------------*/
+#include <stdint.h>
+
 #include "platform_computer.h"
 
 //#include "platform_arduino_nano33.h"
@@ -35,9 +41,6 @@
 
 extern uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code);
 
-#define PACK_PARAM_AL3(a,b) ((a)<<24 | (b))
-#define UNPACK_PARAM_AL3_SIZE(c) ((c)&0x00FFFFFFL)
-#define UNPACK_PARAM_AL3_FWIDX(c) (((uint32_t)c)>>24)
 
 /*============================  ARCHITECTURES ============================================*/
 
@@ -48,16 +51,17 @@ enum stream_processor_architectures  /* 8bits : 256 architectures */
     ARMv6_M3    = 2,    /* Cortex-M3 */
     ARMv7E_M    = 3,    /* Cortex-M4/M7 */
     ARMv8_M     = 4,    /* Cortex-M33 */
+    ARMv8p1_M   = 5,    /* Cortex-M55 */
 
-    ARMv7_R     = 11,   /* Cortex-R4 */
-    ARMv8_R     = 12,   /* Cortex-R52 */
+    ARMv7_R     = 21,   /* Cortex-R4 */
+    ARMv8_R     = 22,   /* Cortex-R52 */
 
-    ARMv7_A     = 21,   /* Cortex-A7 */
+    ARMv7_A     = 31,   /* Cortex-A7 */
 
-    ARMv8_A32   = 31,   /* Cortex-A32 */
-    ARMv8_A64   = 32,   /* Cortex-A55 */
+    ARMv8_A32   = 41,   /* Cortex-A32 */
+    ARMv8_A64   = 42,   /* Cortex-A55 */
 
-    ARMv9_A     = 41,
+    ARMv9_A     = 51,
 
     C166        = 81, 
     C51         = 82,  
@@ -66,12 +70,13 @@ enum stream_processor_architectures  /* 8bits : 256 architectures */
 
 enum stream_processor_sub_arch_fpu    /* bit-fields, coded on 6b max => 64 options */
 {
-    ARCH_INTEGER    = 1,  /* non constraint : computations on integers */
+    ARCH_INTEGER    = 1,  /* computations with integers */
     ARCH_FPU        = 2,  /* scalar fp32 */
     ARCH_DPFPU      = 3,  /* scalar fp32 + fp64 */
     ARCH_VECTOR     = 4,  /* NEON/MVE + fp16 + fp32 + dotProd8b */
-    ARCH_ADVANCED_VECTOR = 5, /* ARCH_VECTOR + NN CA55 */
+    ARCH_ADV_VECTOR = 5,  /* NN CA55 */
 };
+
 
 /*======================================================================================*/
 
@@ -83,3 +88,7 @@ extern int32_t extract_sensor_field (const uint8_t *platform_bit_fields,
                               uint8_t index);
 
 #endif /* #ifndef platform_al_H */
+#ifdef __cplusplus
+}
+#endif
+ 

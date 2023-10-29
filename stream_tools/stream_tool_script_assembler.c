@@ -28,13 +28,6 @@
 #ifdef __cplusplus
  extern "C" {
 #endif
-    
-#define _CRT_SECURE_NO_DEPRECATE 1
-#include <stdio.h>    
-#include <string.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <math.h>
 
 #include "stream_tool_include.h"
 
@@ -51,12 +44,12 @@
      if (0 == (ptf_graph_script = fopen(GRAPH_YML, "rt"))) exit(-1); idx = 0;
      while (1) if (0 == fread(script[idx++], 1, 1, ptf_graph_script)) break;
 
-     arm_stream_script_assembler(script, idx, ptf_graph_script_bytecode, script_bytecode, &nbByteCodes);
+     arm_stream_script_assembler(script, ptf_graph_script_bytecode, script_bytecode, &nbByteCodes);
      fclose(ptf_graph_script); fclose(ptf_graph_script_bytecode);
 
  */
 
-void arm_stream_script_assembler (char *script, uint32_t length, FILE *ptf_graph_script_bytecode, char *script_bytecode, uint32_t *nbByteCodes)
+void arm_stream_script_assembler (char *script, FILE *ptf_graph_script_bytecode, char *script_bytecode, uint32_t *nbByteCodes)
 {
  
 }

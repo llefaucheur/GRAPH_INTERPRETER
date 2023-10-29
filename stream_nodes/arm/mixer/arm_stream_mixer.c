@@ -35,9 +35,9 @@
  extern "C" {
 #endif
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
+
+#include "stream_const.h"
+#include "stream_types.h"
 #include "arm_stream_mixer.h"
 
 /*
@@ -164,7 +164,7 @@ void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuff
             {   nb_input_arc = RD(mixer_parameter_presets[preset][0], NBINPUTARC_W0);
             }
             else
-            {   nb_input_arc = preset;
+            {   nb_input_arc = (uint8_t)preset;
             }
 
             /* copy the frame-size, interleaving scheme and nb of channels of each arc */
@@ -193,7 +193,7 @@ void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuff
             arm_mixer_instance *pinstance = (arm_mixer_instance *) instance;
 
             pt8bsrc = (uint8_t *) data;     
-            pt8bdst = &(pinstance->parameters[0]); 
+            pt8bdst = (uint8_t *) &(pinstance->parameters[0]); 
 
             switch (RD(command,TAG_CMD))
             {   default : break;

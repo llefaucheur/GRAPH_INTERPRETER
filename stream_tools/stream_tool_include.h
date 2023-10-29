@@ -33,27 +33,34 @@
 #ifndef cSTREAM_TOOL_INCLUDE_H
 #define cSTREAM_TOOL_INCLUDE_H
 
+#ifdef _MSC_VER 
+#define _CRT_SECURE_NO_DEPRECATE 1
+#endif
+#include <stdio.h>    
+#include <string.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <math.h>
+#include <stdarg.h>  /* for void fields_extract(char **pt_line, char *types,  ...) */
+
 #include "stream_const.h"
 #include "stream_types.h"
-#include "stream_tool_node_manifests.h"
-#include "stream_tool_manifests.h"
+#include "stream_tool_define.h"
+#include "stream_tool_platform_manifests.h"
+#include "stream_tool.h"
 
-#define MAXINPUT 100000
-#define MAXOUTPUT 100000
-#define MAX_NB_NODES 100
-
-
-#define MAXNBCHAR_LINE 200
-#define NOT_YET_END_OF_FILE 1
-#define FOUND_END_OF_FILE 2
 
 extern uint32_t INTTOFPE4M6 (uint32_t x);
 extern void     jump2next_line (char** line);
 extern uint32_t quantized_FS (float FS);
-extern uint32_t jump2next_valid_line (char** line);
-extern void     read_data_v(char** pt_line, void* X, uint8_t* raw_type, uint32_t* nb_option);
+extern int      jump2next_valid_line (char** line);
+extern void     read_binary_param(char** pt_line, void* X, uint8_t* raw_type, uint32_t* nb_option);
 extern void     read_common_data_options(char** pt_line, struct options* pt);
 extern void     read_input_file(char* file_name, char* inputFile);
+extern void     fields_extract(char **pt_line, char *types,  ...);
+extern void     fields_list(char **pt_line, struct options *opt);
+extern int      stream_bitsize_of_raw(uint8_t raw);
+extern void arm_stream_script_assembler (char *script, FILE *ptf_graph_script_bytecode, char *script_bytecode, uint32_t *nbByteCodes);
 
 #endif /* #ifndef cSTREAM_TOOL_INCLUDE_H */
 

@@ -31,7 +31,9 @@
     
 
 #include "stream_const.h"      /* graph list */
+#include "platform_al.h"
 #include "stream_types.h"
+#include "stream_extern.h"
 
 #include <string.h>             /* for memcpy */
 
@@ -125,7 +127,7 @@ static intPtr_t pack2linaddr_int(intPtr_t *long_offset, uint32_t x)
       else
         dbg3 = dbg1 + dbg2;
 
-    return PACK2LINADDR(long_offset,x);
+    return dbg3; // PACK2LINADDR(long_offset,x);
 }
 
 static uint8_t * pack2linaddr_ptr(intPtr_t *long_offset, uint32_t data)
@@ -233,35 +235,35 @@ static uint8_t * arc_extract_info_pt (arm_stream_instance_t *S, uint32_t *arc, u
 /*----------------------------------------------------------------------------
     convert a physical address to a portable multiprocessor address 
  *----------------------------------------------------------------------------*/
-uint32_t physical_to_offset (arm_stream_instance_t *S, uint8_t *buffer)
+uint32_t lin2pack (arm_stream_instance_t *S, uint8_t *buffer)
 {
     uint64_t mindist;
     uint64_t pack;
     uint64_t buff;
+    int64_t distance;
     uint8_t i;
-    uint8_t ibest;
+
+    /* packed address range is [ long_offset[IDX]  +/- 8MB ]*/
+#define MAX_PACK_ADDR_RANGE (((1<<(BASEIDX_ARCW0_MSB - BASEIDX_ARCW0_LSB-1))-1))
 
     buff = (uint64_t)buffer;
+    pack = 0;
 
     /* find the base offset */
-    mindist = MAX_ADD_OFFSET;
-    ibest = 0;
-    for (i = 0; i < (uint8_t)NB_MEMINST_OFFSET; i++)
+    mindist = MAX_PACK_ADDR_RANGE;
+    for (i = 0; i < (uint8_t)MAX_NB_MEMORY_OFFSET; i++)
     {
-        if (S->long_offset[i] > buff) 
-        { continue; }
-
-        {   uint64_t tmp64;
-            tmp64 = buff - S->long_offset[i];
-            if (tmp64 < mindist)
-            {   mindist = tmp64;
-                ibest = i;
-            }
+        distance = S->long_offset[i] - buff;
+        if (ABS(distance) > MAX_PACK_ADDR_RANGE) 
+        {   continue; 
+        }
+        else
+        {   mindist = distance & MAX_PACK_ADDR_RANGE;
+            pack = mindist | ((uint64_t)i << (uint8_t)DATAOFF_ARCW0_LSB);
         }
     }
-  
-    pack = mindist | ((uint64_t)ibest << (uint8_t)DATAOFF_ARCW0_LSB);
-    
+
+    /* @@@ to check */
     return (uint32_t)pack;
 }
 
@@ -467,6 +469,7 @@ void arc_data_operations (
     switch (tag)
     {
     /* data is left shifted to the base address to avoid circular addressing */ 
+    /*   or, buffer is empty but R/W are at the end of the buffer => reset/loop the indexes */ 
     case arc_data_realignment_to_base:
         read =  RD(arc[2], READ_ARCW2);
         if (read == 0)
@@ -536,7 +539,7 @@ void arc_data_operations (
         */
     case arc_set_base_address_to_arc :
         ST(arc[2], READ_ARCW2, 0);
-        ST(arc[0], BASEIDXOFFARCW0, physical_to_offset(S, buffer));
+        ST(arc[0], BASEIDXOFFARCW0, lin2pack(S, buffer));
         ST(arc[3], WRITE_ARCW3, datasize);
 
         DATA_MEMORY_BARRIER;
@@ -544,7 +547,7 @@ void arc_data_operations (
 
     case arc_set_base_address_from_arc :
         ST(arc[2], READ_ARCW2, 0);
-        ST(arc[0], BASEIDXOFFARCW0, physical_to_offset(S, buffer));
+        ST(arc[0], BASEIDXOFFARCW0, lin2pack(S, buffer));
         ST(arc[3], WRITE_ARCW3, 0);
 
         DATA_MEMORY_BARRIER;
@@ -580,16 +583,12 @@ static void arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *xdm_
     uint32_t fifosize, read, write;
     uint32_t increment;
     uint32_t *arc;
-    uint16_t iarc, arcID, *pt8_arc;
+    uint16_t iarc, arcID;
     uint8_t xdm11;
-                           
-    /* push all the ARCs on the data on the stack */
-    pt8_arc = (uint16_t *)(S->swc_header);
-    pt8_arc = &(pt8_arc[ARC_HEADER_BYTE_OFFSET]);    /* points to the start of the ARCs area in the header */
      
     xdm11 = TEST_BIT(S->swc_header[1], XDM11_LW1_LSB);
 
-    for (iarc = 0; iarc < RD(*(S->swc_header), NBARCW_LW0); iarc++, pt8_arc++)
+    for (iarc = 0; iarc < RD(*(S->swc_header), NBARCW_LW0); iarc++)
     {   
         arcID = (S->arcID[iarc]);
         arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
@@ -627,6 +626,10 @@ static void arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *xdm_
                 { /* @@@ TODO : implement the data monitoring 
                     arm_arc_monitor(*, n, RD(,COMPUTCMD_ARCW2), RD(,DEBUG_REG_ARCW1))
                    */
+
+                   /* @@@ TODO : implement the pointer loop to base if there is not enough free-space
+                    for the next dump 
+                   */
                 }
 
                 /* check for data flush : done when the consumers are not on the same processor */
@@ -645,6 +648,17 @@ static void arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *xdm_
                 }
                 else /* input buffer of the SWC : size = data amount in the buffer */
                 {   xdm_data[iarc].size    = arc_extract_info_int (S, arc, arc_data_amount);
+                }
+
+                /* is there debug/monitoring activity to do ? */
+                if (RD(arc[2], COMPUTCMD_ARCW2) != 0u)
+                { /* @@@ TODO : implement the data monitoring 
+                    arm_arc_monitor(*, n, RD(,COMPUTCMD_ARCW2), RD(,DEBUG_REG_ARCW1))
+                   */
+
+                   /* @@@ TODO : implement the pointer loop to base if there is not enough data
+                    for the next read (continuous play of a test pattern) 
+                   */
                 }
             }
             else
@@ -821,12 +835,8 @@ static uint32_t check_hw_compatibility(uint32_t whoami, uint32_t header)
 /*----------------------------------------------------------------------------*/
 /**
     parameter setting:
-    - low-RAM devices, single processors :
-        scripts send parameters with CALS 
-
-    - systems with enough RAM, w/wo multiprocessing :
-        patch the linked-list area and use NEWPARAM_LW3
-    
+    - lock attempt to lock the SWC with the synchronization arc Byte
+        scripts send parameters with CALS, translated in SET_PARAM commands
 
     Operations
         - the script prepares the parameter structure (Node, InstanceAddress, locking arc, nbBytes, Tags, data) and pushes it to  
@@ -834,7 +844,10 @@ static uint32_t check_hw_compatibility(uint32_t whoami, uint32_t header)
         - from the application
             - the instance address is in a header file, resulting from the graph compilation
                 There is a Stream API to push the parameter data structure, the same way as in the script way
- */
+
+    Application (and upper-layer-graphs) set parameters through the main Script of the sub-graph
+        External side of a sub-graph cannot address directly the SWC (only for debug)
+*/
 
 
 
@@ -860,7 +873,7 @@ static uint32_t check_hw_compatibility(uint32_t whoami, uint32_t header)
 
 void stream_scan_graph (arm_stream_instance_t *S, int8_t command) 
 {
-    if (script_option & STREAM_SCHD_SCRIPT_START) { script_processing (S->main_script);}
+    //if (script_option & STREAM_SCHD_SCRIPT_START) { script_processing (S->main_script);}
 
     /* continue from the last position, index in W32 */
     S->linked_list_ptr = &((S->linked_list)[RD(S->whoami_ports, SWC_W32OFF_PARCH)]);
@@ -898,14 +911,11 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command)
             }
 
             /* ---------------- parameter was changed, or reset phase ? -------------------- */
-            if (command == STREAM_RESET || TEST_BIT((S->swc_header)[S->swc_parameters_offset], NEWPARAM_LW3_LSB))
+            if (command == STREAM_RESET)
             {   
-                /* reset phase of the graph ?  */
-                if (command == STREAM_RESET)
-                {   reset_component (S);
-                }
+                reset_component (S);
 
-                /* set the parameters at reset or when a script loaded new parameters (and set NEWPARAM_GI) */
+                ST(S->pack_command, COMMAND_CMD, STREAM_SET_PARAMETER);
                 set_new_parameters (S);
             }
 
@@ -1009,7 +1019,6 @@ static void read_header (arm_stream_instance_t *S)
         ALLPARAM_,
         RD((S->swc_header)[S->swc_parameters_offset], PRESET_LW3),
         narc,
-        RD(S->scheduler_control, INSTANCE_SCTRL),
         0);
 
     /* physical address of the instance and the code */
@@ -1020,7 +1029,7 @@ static void read_header (arm_stream_instance_t *S)
         );
 
     /* read the physical address, let the platform configure the memory protections */
-    platform_al(PLATFORM_NODE_ADDRESS, (uint8_t *)(S->address_swc), 0, idx_swc);   
+    platform_al(PLATFORM_NODE_ADDRESS, (uint8_t *)&(S->address_swc), 0, idx_swc);   
 
     /* read the arc indexes */
     for (iarc = 0; iarc < MIN(narc, MAX_NB_STREAM_PER_SWC); iarc+=2)
@@ -1039,12 +1048,12 @@ static void read_header (arm_stream_instance_t *S)
     S->pt8b_collision_arc = &(S->pt8b_collision_arc[COLLISION_ARC_OFFSET_BYTE]);
 
     /* set the linkedList pointer to the next node */
-    x = 1+ (uint16_t)RD((S->swc_header)[S->swc_parameters_offset], W32LENGTH_LW3) +
+    x = (uint16_t)RD((S->swc_header)[S->swc_parameters_offset], W32LENGTH_LW3) +
         S->swc_parameters_offset;
         
     S->linked_list_ptr = &(S->linked_list_ptr[x]);      // linked_list_ptr => next SWC.
 
-    /* check for a rewind to the start of the list */
+    /* check for a rewind to the start of the list (end = SWC index 0b11111..111) */
     if (GRAPH_LAST_WORD == RD(*S->linked_list_ptr,SWC_IDX_LW0))
     {   /* rewind the index when the last word is detected */
         SET_BIT(S->scheduler_control, ENDLLIST_SCTRL_LSB);
@@ -1075,12 +1084,9 @@ static uint8_t lock_this_component (arm_stream_instance_t *S)
 {
     uint32_t tmp;
     uint8_t check;
-    uint32_t j;
 
     /* ---------------------SWC reservation attempt -------------------*/            
     /* if the SWC is already used skip it */
-    j = U(4u*WRIOCOLL_ARCW3 + COLLISION_ARC_OFFSET_BYTE);
-
     RD_BYTE_MP_(check, S->pt8b_collision_arc);
     if (check != U8(0))
     {   return 0;
@@ -1164,97 +1170,34 @@ static void reset_component (arm_stream_instance_t *S)
   @param[in]     instance   pointer to the static area of the current Stream instance
 
   @return        none
-
-  @par           When the silicon device has a small RAM footprint, the linked-list is graph
-                 is organised with a part in flash (the data format does not change) and other
-                 in RAM (arcs descriptors). When the Linked-List of nodes is in Flash the
-                 parameters are loaded one at Reset time, otherwise the bit "NEWPARAM_GI" 
-                 indicates a new parameter set (replacing the one at graph creation) must be 
-                 reloaded in the Node instance. There is no risk of collision when writing
-                 this bit: only the instance who locked it can have access to this word.
-                 The default parameters are given with the "preset" code, and the graph can 
-                 have a some patched of "nparam" parameters on top this preset. When "nparam"
-                 is "ALLPARAM_" the full set of new parameters is loaded.
-
+    
   @remark
  */
 
 static void set_new_parameters (arm_stream_instance_t *S)
 {
     uint8_t *ptr_param8b;
-    uint32_t length, tmp, idata;
-    uint8_t parameters_tmp[4 *MAX_TMP_PARAMETERS], *ptdst, i;
-    uint8_t param_tag;
-    uint8_t param_nb_bytes;
-
-    /* no parameter ? */
-    length = RD((S->swc_header)[S->swc_parameters_offset], W32LENGTH_LW3);
-    if (0 == length)
-    {   return;
-    }
+    int status;
 
     /*
-      BOOTPARAMS  : 
-        unused        : 5  
-        SELPARAM_LW3  : 1  0:all params sent   1:params sent 1-by-1
-        W32LENGTH_LW3 :20  nb of WORD32 to skip at run time, 0 means no parameter.
-        VERBOSE_LW3   : 1  level of details in the debug trace
-        NEWPARAM_LW3  : 1  a script has updated new parameters
-        PRESET_LW3    : 4; preset index (SWC delivery)
+        BOOTPARAMS    : 
 
-            if skip> 0 and paramtype= 1
-                sequence of pairs {8b index/tag ; 24b byte length} { parameter(s) }
-                early terminated by a tag with "24b byte length" = 0;
+        TAG       : 8  for TAG_CMD (255='all parameters')
+        unused    : 4  (extension of W32LENGTH?)
+        PRESET    : 4  preset index (SWC delivery)
+        W32LENGTH :16  nb of WORD32 to skip at run time, 0 means no parameter, max=256kB
+
+        SWC can use an input arc to receive a huge set of parameters, for example a NN model
+        The arc read pointer is never incremented during the execution of the node.
     */
-
-
-    /* copy on Stack before the call ? */
-    /* default source of parameter is in the linkedList */
-    ptr_param8b = (uint8_t *) &((S->swc_header)[1 + S->swc_parameters_offset]);
-
-    /* copy to temporary buffer and size is not too big */
-    tmp = ((S->swc_header)[S->swc_parameters_offset]);
-    tmp = RD(tmp, CPYSTACK_LW3);
-    if (tmp & (length < MAX_TMP_PARAMETERS))
-    {   
-        /* start of the parameter byte-stream : one word after the header */
-        for (i = 0, ptdst = parameters_tmp; i < length *4; i++)
-        {   *ptdst++ = *ptr_param8b++;
-        }
-        ptr_param8b = parameters_tmp;
-    }
     
-    ST(S->pack_command, COMMAND_CMD, STREAM_SET_PARAMETER);
-    idata = 0;
-
-    while (idata < length/4)
-    {   /* sequence of pairs {8b index/tag ; 24b nb of bytes }  */
-        param_tag = *ptr_param8b;
-
-        ST(S->pack_command, TAG_CMD, param_tag);
-        ptr_param8b++;  
-        param_nb_bytes = *ptr_param8b++;
-        param_nb_bytes += (*ptr_param8b++)<<8;
-        param_nb_bytes += (*ptr_param8b++)<<16;
-
-        /* no more parameter to send ? */
-        if (param_nb_bytes == 0)
-        {   break;
-        }
-        idata += param_nb_bytes;
-        
-        stream_calls_swc (S, 
+    /* +1 : the first word holds preset, tag and length */
+    ptr_param8b = (uint8_t *) &((S->swc_header)[1+ S->swc_parameters_offset]);
+    
+    stream_calls_swc (S, 
             S->swc_instance_addr,
             (stream_xdmbuffer_t *)ptr_param8b, 
-            &tmp);
-
-        ptr_param8b = &(ptr_param8b[param_nb_bytes]);
-    }
-
-    /* ready to accept new parameters : clear the flag */
-    if (TEST_BIT(S->scheduler_control,L_IN_RAM_SCTRL_LSB))
-    {   CLEAR_BIT_MP((S->swc_header)[S->swc_parameters_offset], NEWPARAM_LW3_LSB);
-    }
+            &status);
 }
 
 
@@ -1282,13 +1225,6 @@ static void run_node (arm_stream_instance_t *S)
    
     /* push all the ARCs on the stack */
     arc_index_update(S, xdm_data, 0); 
-    
-    /* if the SWC is using a relocatable memory segment to TCM (multiprocessing with TCM), the base 
-        address is loaded in the first address of its instance */
-    if (0u != TEST_BIT((S->swc_header)[S->swc_memory_banks_offset], TCM_INST_LW2_LSB))
-    {   intPtr_t *tmp = (intPtr_t *)S->swc_instance_addr;
-        *tmp = S->long_offset[MBANK_DMEMFAST];
-    }
     
     if (script_option & STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC) {script_processing (S->main_script); }
     

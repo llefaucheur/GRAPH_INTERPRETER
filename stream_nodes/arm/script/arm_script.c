@@ -36,9 +36,8 @@
 #endif
 
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
+#include "stream_const.h"
+#include "stream_types.h" 
 #include "arm_script.h"
 
 extern void arm_script_interpreter (uint32_t *instance, uint8_t reset);
@@ -46,6 +45,12 @@ extern void arm_script_interpreter (uint32_t *instance, uint8_t reset);
 void script_processing (uint32_t *instance)
 {
 }
+
+
+/*
+    scripts can have 
+*/
+
 
 void arm_script (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {

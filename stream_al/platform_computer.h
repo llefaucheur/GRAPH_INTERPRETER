@@ -26,7 +26,6 @@
  */
 #ifndef PLATFORM_COMPUTER_H
 #define PLATFORM_COMPUTER_H
-#include <stdint.h>
 
 #define PLATFORM_COMPUTER 1
 
@@ -36,8 +35,20 @@
 
 
 /*============================ SWITCHES =====================================*/
-//#define PLATFORM_ARCH_32BIT
-#define PLATFORM_ARCH_64BIT
+#define PLATFORM_ARCH_32BIT
+//#define PLATFORM_ARCH_64BIT
+
+/* 
+    if 64 bits architectures are reading the graph:
+    #define intPtr_t uint64_t
+    #define MAX_ADD_OFFSET 0x7FFFFFFFFFFFFFFFL
+*/
+#ifdef PLATFORM_ARCH_32BIT
+#define intPtr_t uint32_t 
+#else
+#define intPtr_t uint64_t 
+#endif
+
 
 /* code size saving switch */
 #define STREAM_SERVICE_LOW_MEMORY 1 /* FFT tables are computed */
@@ -88,24 +99,44 @@
 
 
 /*
-   list of IO ports for the graph
-   see stream_local_instance : whoami_ports [BOUNDARY_IOMASK]
-      and GRAPH_IO_CONFIG_ADDR
-
     list of streams available on this platform 
     (see also stream_types.h : enum stream_io_domain)
 
-    this data is reported to "stream_tools_files_manifests_XXXXXX.txt"
-*/ 
-#define PLATFORM_DATA_STREAM_IN_INSTANCE_0  1u
-#define PLATFORM_AUDIO_OUT_INSTANCE_0       2u
-#define PLATFORM_COMMAND_OUT_INSTANCE_0     3u
+    this data is reported to "stream_tools_files_manifests_XXXXXX.txt" :
 
-#define LAST_IO_FUNCTION_PLATFORM 4
+   c;   stream_al\platform_imu.txt          
+   c;   stream_al\platform_microphone.txt   
+   c;   stream_al\platform_line_in.txt   
+   c;   stream_al\platform_gpio0.txt   
+   c;   stream_al\platform_gpio1.txt  
+*/ 
+
+/* replicated fw_io_dx : stream_al/platform_computer.h <=> stream_tools/files_manifests_computer.txt */
+#define IO_PLATFORM_STREAM_IN_0      1       /* interface to the application processor see stream_al\io_platform_stream_in_0 */
+#define IO_PLATFORM_IMU_0            2       /* 3D motion sensor see stream_al\io_platform_imu_0 */
+#define IO_PLATFORM_MICROPHONE_0     3       /* audio in mono see stream_al\io_platform_microphone_0.txt  */
+#define IO_PLATFORM_LINE_IN_0        4       /* audio in stereo  stream_al\io_platform_line_in_0.txt     */
+#define IO_PLATFORM_LINE_OUT_0       5       /* audio out stereo stream_al\io_platform_line_out_0.txt    */
+#define IO_PLATFORM_ANALOG_SENSOR_0  6       /* analog converter stream_al\io_platform_analog_sensor_0.txt */
+#define IO_PLATFORM_GPIO_OUT_0       7       /* PWM              stream_al\io_platform_gpio_out_0.txt    */
+#define IO_PLATFORM_GPIO_OUT_1       8       /* LED              stream_al\io_platform_gpio_out_1.txt    */
+#define IO_PLATFORM_COMMAND_IN_0     9       /* UART command     stream_al\io_platform_command_in_0.txt  */
+#define IO_PLATFORM_COMMAND_OUT_0   10       /* UART trace       stream_al\io_platform_command_out_0.txt */
+#define IO_PLATFORM_DATA_IN_0       11       /* shock detector   stream_al\io_platform_imu_metadata_0.txt */
+#define IO_PLATFORM_DATA_IN_1       12       /* temp. sensor     stream_al\io_platform_imu_temperature_0.txt */
+
+#define LAST_IO_FUNCTION_PLATFORM (IO_PLATFORM_DATA_IN_1+1) /* table of platform_io[fw_io_idx] */
+
+/*===========================================================================
+ in platform_computer.c : 
+    void platform_specific_long_offset(intPtr_t long_offset[])
+        long_offset[MBANK_GRAPH]    = (const intPtr_t)&(MEXT[10]); 
+        long_offset[MBANK_DMEMFAST] = (const intPtr_t)&(TCM1[10]); 
+*/
+#define MAX_NB_MEMORY_OFFSET 2 /* 2 memory banks offsets */
+
 
 #endif /* #ifndef PLATFORM_COMPUTER_H */
-
-
 
 
 /*===========================================================================*/

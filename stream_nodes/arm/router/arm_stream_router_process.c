@@ -37,8 +37,7 @@
    
 
 
-#include "platform_computer.h"
-#include "stream_const.h"      
+#include "stream_const.h"
 #include "stream_types.h"  
 #include "arm_stream_router.h"
 

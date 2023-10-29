@@ -35,10 +35,9 @@
 #include <stdio.h>  /* for sprintf */
 #include <string.h>  /* for memset */
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
 
+#include "stream_const.h"
+#include "stream_types.h"
 #include "arm_stream_detector.h"
 
 
@@ -154,6 +153,7 @@ void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmb
                     }
                 } 
             }
+            break;
         }
 
         /* func(command = STREAM_RUN, PRESET, TAG, NB ARCS IN/OUT)

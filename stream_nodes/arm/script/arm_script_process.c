@@ -36,9 +36,8 @@
 #endif
 
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
+#include "stream_const.h"
+#include "stream_types.h"
 #include "arm_script.h"
 
 
@@ -47,33 +46,39 @@
   @param[in]     pinst      instance of the component
   @param[in]     reset      tells to set the conditional flag before the call
   @return        status     finalized processing
+                 reference SWEET16 https://archive.org/details/BYTE_Vol_02-11_1977-11_Sweet_16
 
   @par  
     Script format : 
         Word1 : script size, stack size
         Wordm : byte-codes 
 
-        Scripts are in the parameter field of arm_script()
+        Scripts receive parameters:
+            - Flag "comparison OK" set during the RESET sequence
+            - R0, PT0 
 
     Registers 
         Instance static = 
             Bank of 8+8 registers ( 8bytes each, loop counters, thresholds) + hidden DTYPE
                 R0 used for data comparison with the stack(top) = "S0"
                 R1 used for arithmetics operations
-                R2 used for loop counting
+                R2 used as loop counter
                 R3 general purpose and pointer post-increments
                 R4/PT0, R5/PT1, R6/PT2, R7/PT3 pointers addressed by "pp" fields
-                R8..R15 for general purpose
+
+                R8 for general purpose and pointer DTYPE control
+                R9..R15 for general purpose 
                 "PT(i)" are portable pointer (27bits see BASEIDXOFFARCW0)
-                   the type of the object is DTYPE:
+
             DTYPE 4bits: 
                 0,1,2,3: FP8_E4M3/FP16/FP32/FP64, 
                 4,5,6,7: INT8/INT16/INT32/INT64, 
                 8,9,10: STREAM_TIME16/32/64, 
                 11: 8-bits characters (terminated with /0), 
                 12: boolean result from comparison
-                13: pointer returned from CALS
-                unused(2)
+                13: pointer to an object of R8's type
+                14: time-stamped (MSB) data (LSB) of R8's type
+                15: void
 
         Instance memory area = 
                 rising address :       <----------->>>>--------->
@@ -101,23 +106,23 @@
 
         0000 dddd  PSHL  following constant of type DTYPE (4bits) pushed on stack 
         0001 rrrr  PSHR  push register[0..15] on stack (*--SP)
-        0010 iipp  PSHP  gather: push (*pointer[0..3] + increments[0,+,-,R3]) on stack (*--SP)
+        0010 iipp  PSHP  push *pointer[0..3] DTYPE(R8) + increments[0,+,-,R3]) on stack (*--SP)
         0011 rrrr  POPR  pop stack (*SP++) to register[0..15] 
-        0100 iipp  POPP  scatter: pop stack (*SP++) to (*pointer[0..3] + increments[0,+,-,R3])
-        0101 llll  JMPL  jump to local-labels (1..15), label#0 means relative jump to [PC + POP S0]
+        0100 iipp  POPP  pop stack (*SP++) to *pointer[0..3] DTYPE(R8) + increments[0,+,-,R3]
+        0101 llll  JUMP  unconditional jump to local-labels (1..15), label#0 means jump to [PC + POP S0]
         0110 llll  JMPC  conditional jump to local-labels (1..15), label#0 means jump to [PC + POP S0]
         0111 iiii  CALS  system call and application callbacks, results on stack and registers
-        1000 ssss  CALL  call label (1..15, #0 reserved) save the R8..R15 and flag
+        1000 ssss  CALL  call label (1..7 local, 8..15 global(0-7), #0 reserved) callee saves registers not the flag
         1001 cccc  OPRC  operations for control
         1010 aaaa  OPRA  operations for arithmetics
         1011 llll  LABL  local-label (1..15) (label#0 reserved)
-        1100 ssss  LABS  subroutine-label (1..15) (label#0 reserved)
+        1100 ....
         1101 ....
         1110 ....
         1111 ....  
 
         OPRC  16 control operations:
-        0 RET   return from call, restore SP,flag (and R8..R15?)
+        0 RET   return from call, restore SP,flag (not R9..R15?)
         1 RETS  keep S0 and S1 on the stack, restore and return
         2 EQUS  does S0 == S1               NES   does S0 != S1
         3 EQUR  does S0 == R0               NER   does S0 != R0
@@ -125,14 +130,14 @@
         5 GTER  does S0 >= R0               LTR   does S0 <  R0
         6 LTES  does S0 <= S1               GTS   does S0 >  S1
         7 LTER  does S0 <= R0               GTR   does S0 >  R0
-        8 TOGF  Toggle the comparison Flag to have ^^^^^^
+        8 INVF  invert the comparison to have ^^^^^^^^^^^^^^^^^
         9 MAXS  S0 = max (S0, S1)
         A MAXR  S0 = max (S0, R0)
         B MINS  S0 = min (S0, S1)
         C MINR  S0 = min (S0, R0)
         D PSHT  push test result on stack for OPRA logical operations (DTYPE = boolean)
-        E -
-        F -
+        E ----
+        F ----
 
         OPRA  16 arithmetics/logical operations:
         0 ADDS  S0 = S0 + S1                OPRA  ORS : logical  OR for booleans 
@@ -168,7 +173,7 @@
     PSHL INT8   2   ; push arcID 2
     CALS READ_ARC   ; push arc data and base address (for pp addressing)
     OPRC GTR        ; result=stack(-1) > R0 (threshold) ?
-    PSHL INT8   3   ; arcID 3 (output to GPIO)
+    PSHL INT8   3   ; arcID 3 (output to GPIO(x))
     JMPC 0          ; yes: jump to 0 (set gpio=1)
     PSHL INT8   0   ; no:  set gpio=0
     JMPL 1          ; set gpio and return
@@ -208,7 +213,7 @@
 
  */
 
-void arm_script_interpreter (uint32_t *instance, uint8_t reset)
+void arm_script_interpreter (uint32_t *instance, uint8_t flag_reset)
 {
     /* byte-code interpreter*/ 
 

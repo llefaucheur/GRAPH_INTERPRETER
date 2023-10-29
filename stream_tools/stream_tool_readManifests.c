@@ -51,29 +51,29 @@ char inputFile[MAXINPUT];
   @par
   @remark
  */
-void decode_domain(uint8_t *domain_index, char *input)
-{
-    if (0 == strcmp(input, "data_in"))              *domain_index = PLATFORM_DATA_IN; /* w/wo  sampling rates */
-    if (0 == strcmp(input, "data_out"))             *domain_index = PLATFORM_DATA_OUT;
-    if (0 == strcmp(input, "data_stream_in"))       *domain_index = PLATFORM_DATA_STREAM_IN; /* with sampling rate */
-    if (0 == strcmp(input, "data_stream_out"))      *domain_index = PLATFORM_DATA_STREAM_OUT;
-    if (0 == strcmp(input, "audio_in"))             *domain_index = PLATFORM_AUDIO_IN; /* for PDM, I2S, ADC */
-    if (0 == strcmp(input, "audio_out"))            *domain_index = PLATFORM_AUDIO_OUT;
-    if (0 == strcmp(input, "gpio_in"))              *domain_index = PLATFORM_GPIO_IN; /* extra data for BSP (delay, edge, HiZ, debouncing, analog mix..) */
-    if (0 == strcmp(input, "gpio_out"))             *domain_index = PLATFORM_GPIO_OUT;
-    if (0 == strcmp(input, "motion_in"))            *domain_index = PLATFORM_MOTION_IN;
-    if (0 == strcmp(input, "2d_in"))                *domain_index = PLATFORM_2D_IN; /* control of AGC, zoom in 1/4 image area */
-    if (0 == strcmp(input, "2d_out"))               *domain_index = PLATFORM_2D_OUT;
-    if (0 == strcmp(input, "user_interface_in"))    *domain_index = PLATFORM_USER_INTERFACE_IN; 
-    if (0 == strcmp(input, "user_interface_out"))   *domain_index = PLATFORM_USER_INTERFACE_OUT;
-    if (0 == strcmp(input, "command_in"))           *domain_index = PLATFORM_COMMAND_IN; /* USB/UART */
-    if (0 == strcmp(input, "command_out"))          *domain_index = PLATFORM_COMMAND_OUT;
-    if (0 == strcmp(input, "analog_sensor"))        *domain_index = PLATFORM_ANALOG_SENSOR; /* sensor with aging control */
-    if (0 == strcmp(input, "analog_transducer"))    *domain_index = PLATFORM_ANALOG_TRANSDUCER;
-    if (0 == strcmp(input, "rtc_in"))               *domain_index = PLATFORM_RTC_IN; /* ticks from clocks */
-    if (0 == strcmp(input, "rtc_out"))              *domain_index = PLATFORM_RTC_OUT;
-    if (0 == strcmp(input, "storage_out"))          *domain_index = PLATFORM_STORAGE_OUT; /* periodic dump of captured data */
-    if (0 == strcmp(input, "av_codec"))             *domain_index = PLATFORM_AV_CODEC; /* encoded audio/image/video */
+void decode_domain(int *domain_index, char *input)
+{                                                       
+    if (0 == strncmp(input, "data_in",           strlen("data_in")))            *domain_index = IO_PLATFORM_DATA_IN; /* w/wo  sampling rates */
+    if (0 == strncmp(input, "data_out",          strlen("data_out")))           *domain_index = IO_PLATFORM_DATA_OUT;
+    if (0 == strncmp(input, "data_stream_in",    strlen("data_stream_in")))     *domain_index = IO_PLATFORM_DATA_STREAM_IN; /* with sampling rate */
+    if (0 == strncmp(input, "data_stream_out",   strlen("data_stream_out")))    *domain_index = IO_PLATFORM_DATA_STREAM_OUT;
+    if (0 == strncmp(input, "audio_in",          strlen("audio_in")))           *domain_index = IO_PLATFORM_AUDIO_IN; /* for PDM, I2S, ADC */
+    if (0 == strncmp(input, "audio_out",         strlen("audio_out")))          *domain_index = IO_PLATFORM_AUDIO_OUT;
+    if (0 == strncmp(input, "gpio_in",           strlen("gpio_in")))            *domain_index = IO_PLATFORM_GPIO_IN; /* extra data for BSP (delay, edge, HiZ, debouncing, analog mix..) */
+    if (0 == strncmp(input, "gpio_out",          strlen("gpio_out")))           *domain_index = IO_PLATFORM_GPIO_OUT;
+    if (0 == strncmp(input, "motion_in",         strlen("motion_in")))          *domain_index = IO_PLATFORM_MOTION_IN;
+    if (0 == strncmp(input, "2d_in",             strlen("2d_in")))              *domain_index = IO_PLATFORM_2D_IN; /* control of AGC, zoom in 1/4 image area */
+    if (0 == strncmp(input, "2d_out",            strlen("2d_out")))             *domain_index = IO_PLATFORM_2D_OUT;
+    if (0 == strncmp(input, "user_interface_in", strlen("user_interface_in")))  *domain_index = IO_PLATFORM_USER_INTERFACE_IN; 
+    if (0 == strncmp(input, "user_interface_out",strlen("user_interface_out"))) *domain_index = IO_PLATFORM_USER_INTERFACE_OUT;
+    if (0 == strncmp(input, "command_in",        strlen("command_in")))         *domain_index = IO_PLATFORM_COMMAND_IN; /* USB/UART */
+    if (0 == strncmp(input, "command_out",       strlen("command_out")))        *domain_index = IO_PLATFORM_COMMAND_OUT;
+    if (0 == strncmp(input, "analog_sensor",     strlen("analog_sensor")))      *domain_index = IO_PLATFORM_ANALOG_SENSOR; /* sensor with aging control */
+    if (0 == strncmp(input, "analog_transducer", strlen("analog_transducer")))  *domain_index = IO_PLATFORM_ANALOG_TRANSDUCER;
+    if (0 == strncmp(input, "rtc_in",            strlen("rtc_in")))             *domain_index = IO_PLATFORM_RTC_IN; /* ticks from clocks */
+    if (0 == strncmp(input, "rtc_out",           strlen("rtc_out")))            *domain_index = IO_PLATFORM_RTC_OUT;
+    if (0 == strncmp(input, "storage_out",       strlen("storage_out")))        *domain_index = IO_PLATFORM_STORAGE_OUT; /* periodic dump of captured data */
+    if (0 == strncmp(input, "av_codec",          strlen("av_codec")))           *domain_index = IO_PLATFORM_AV_CODEC; /* encoded audio/image/video */
 }
 
 /**
@@ -124,7 +124,7 @@ void decode_rawtype(uint8_t* domain_index, char* input)
 void motion_in_specific(char **pt_line, struct stream_interfaces_motion_specific *pt)
 {   
     /* digital stream format (see "imu_channel_format") */
-    read_data_v(pt_line, &(pt->channel_format), 0, 0);
+    read_binary_param(pt_line, &(pt->channel_format), 0, 0);
 
     /* skip the RFC8428 unit description */
     while (*(*pt_line) == ';')   
@@ -133,15 +133,15 @@ void motion_in_specific(char **pt_line, struct stream_interfaces_motion_specific
 
     /* IMU options */
     read_common_data_options(pt_line, &(pt->acc_sensitivity));
-    read_data_v(pt_line, &(pt->acc_scaling), 0, 0);
+    read_binary_param(pt_line, &(pt->acc_scaling), 0, 0);
     read_common_data_options(pt_line, &(pt->acc_averaging));
 
     read_common_data_options(pt_line, &(pt->gyro_sensitivity));
-    read_data_v(pt_line, &(pt->gyro_scaling), 0, 0);
+    read_binary_param(pt_line, &(pt->gyro_scaling), 0, 0);
     read_common_data_options(pt_line, &(pt->gyro_averaging));
 
     read_common_data_options(pt_line, &(pt->mag_sensitivity));
-    read_data_v(pt_line, &(pt->mag_scaling), 0, 0);
+    read_binary_param(pt_line, &(pt->mag_scaling), 0, 0);
     read_common_data_options(pt_line, &(pt->mag_averaging));
 }
 
@@ -154,25 +154,25 @@ void motion_in_specific(char **pt_line, struct stream_interfaces_motion_specific
  */
 void audio_in_specific(char** pt_line, struct stream_interfaces_audio_specific* pt)
 {
-    char line[MAXNBCHAR_LINE];
-
-    /* digital audio multichannel stream format  */
-    read_data_v(pt_line, line, 0, 0);
-    decode_audio_channels(pt->bitFieldChannel, line);
-
-    /* skip the RFC8428 unit description */
-    while (*(*pt_line) == ';')
-    {   jump2next_line(pt_line);
-    }
-
-   /* digital scaling from default sensitivity levels */
-    read_data_v(pt_line, &(pt->audio_scaling), 0, 0);
-
-    /* analog gain setting */
-    read_common_data_options(pt_line, &(pt->analog_gain));
-    read_common_data_options(pt_line, &(pt->digital_gain));
-    read_common_data_options(pt_line, &(pt->AGC));
-    read_common_data_options(pt_line, &(pt->DC_filter));
+//    char line[MAXNBCHAR_LINE];
+//
+//    /* digital audio multichannel stream format  */
+//    read_binary_param(pt_line, line, 0, 0);
+//    decode_audio_channels(pt->bitFieldChannel, line);
+//
+//    /* skip the RFC8428 unit description */
+//    while (*(*pt_line) == ';')
+//    {   jump2next_line(pt_line);
+//    }
+//
+//   /* digital scaling from default sensitivity levels */
+//    read_binary_param(pt_line, &(pt->audio_scaling), 0, 0);
+//
+//    /* analog gain setting */
+//    read_common_data_options(pt_line, &(pt->analog_gain));
+//    read_common_data_options(pt_line, &(pt->digital_gain));
+//    read_common_data_options(pt_line, &(pt->AGC));
+//    read_common_data_options(pt_line, &(pt->DC_filter));
 }
 
 
@@ -186,8 +186,8 @@ void audio_in_specific(char** pt_line, struct stream_interfaces_audio_specific* 
  */
 void read_common_data_options(char** pt_line, struct options *pt)
 {
-    read_data_v(pt_line, &(pt->default_index), 0, 0);
-    read_data_v(pt_line, (void *)&(pt->options), &(pt->raw_type), &(pt->nb_option));
+    read_binary_param(pt_line, &(pt->default_index), 0, 0);
+    read_binary_param(pt_line, (void *)&(pt->options), 0/*STREAM_FP32*/, &(pt->nb_option));
 }
 
 /** 
@@ -199,80 +199,53 @@ void read_common_data_options(char** pt_line, struct options *pt)
  */
 void read_platform_digital_manifest(char* inputFile, struct stream_platform_manifest* platform)
 {
-    char* pt_line, cstring[NBCHAR_LINE];
-    uint32_t nb_io_stream, iB;
-    processor_memory_bank_t *ptm;
-    struct stream_IO_interfaces *pts;
-    struct arcStruct *pta;
-
-#define _Processor 'P'
-#define _IO_StreamManifest 'I'
+    char* pt_line;
+    uint32_t nb_io_stream, ioffset;
+    uint32_t iproc, ibank;
 
     pt_line = inputFile;
     nb_io_stream = 0;
 
-    while (NOT_YET_END_OF_FILE == jump2next_valid_line(&pt_line))
-    {
-        switch (*pt_line)
+    fields_extract(&pt_line, "II", &(platform->nb_architectures), &(platform->nb_processors));
+
+
+    for (iproc = 0; iproc < platform->nb_processors; iproc++)
+    {        
+        fields_extract(&pt_line, "iiii", 
+            &(platform->processor[iproc].processorID),
+            &(platform->processor[iproc].nb_long_offset),
+            &(platform->processor[iproc].nbMemoryBank_detailed),
+            &(platform->processor[iproc].IamTheMainProcessor)
+         );    
+
+        fields_extract(&pt_line, "i", &(platform->processor[iproc].libraries_b));
+        
+        /* read the table of offset 64b for debug / listing */
+        for (ioffset = 0; ioffset < platform->processor[iproc].nb_long_offset; ioffset++)
         {
-        /* ============================================================= */
-        case _Processor:
-        {   int32_t iproc, ibank, iservices;
-            uint8_t nservices;
-            
-            jump2next_line(&pt_line);
-            read_data_v(&pt_line, &(platform->nb_processors), 0 ,0);
-
-            for (iproc = 0; iproc < platform->nb_processors; iproc++)
-            {                
-                read_data_v(&pt_line, &(platform->processor[iproc].processorID), 0, 0);
-                read_data_v(&pt_line, &(platform->processor[iproc].IamTheMainProcessor), 0, 0);
-                read_data_v(&pt_line, &(platform->processor[iproc].architecture), 0, 0);
-                read_data_v(&pt_line, &(platform->processor[iproc].nbMemoryBank_simple), 0, 0);
-                read_data_v(&pt_line, &(platform->processor[iproc].nbMemoryBank_detailed), 0, 0);
-
-                for (ibank = 0; ibank < platform->processor[iproc].nbMemoryBank_simple +
-                    platform->processor[iproc].nbMemoryBank_detailed; ibank++)
-                {
-                    if (ibank < platform->processor[iproc].nbMemoryBank_simple)
-                    {
-                        iB = ibank;
-                        ptm = &(platform->processor[iproc].membank_simple[iB]);
-                    }
-                    else
-                    {
-                        iB = ibank - platform->processor[iproc].nbMemoryBank_simple;
-                        ptm = &(platform->processor[iproc].membank_detailed[iB]);
-                    }
-
-                    read_data_v(&pt_line, &(ptm->offsetID), 0, 0);
-                    read_data_v(&pt_line, &(ptm->offset64b), 0, 0);
-                    read_data_v(&pt_line, &(ptm->speed), 0, 0);
-                    read_data_v(&pt_line, &(ptm->shareable), 0, 0);
-                    read_data_v(&pt_line, &(ptm->data_access), 0, 0);
-                    read_data_v(&pt_line, &(ptm->backup), 0, 0);
-                    read_data_v(&pt_line, &(ptm->hwio), 0, 0);
-                    read_data_v(&pt_line, &(ptm->flash), 0, 0);
-                    read_data_v(&pt_line, &(ptm->base32), 0, 0);
-                    read_data_v(&pt_line, &(ptm->size), 0, 0);
-                }
-
-                /* bit-field of extended library / services */
-                read_data_v(&pt_line, &(nservices), 0, 0);
-
-                for (iservices = 0; iservices < nservices; iservices++)
-                {
-                    uint8_t tmp;
-                    read_data_v(&pt_line, &(tmp), 0, 0);
-                    platform->processor[iproc].libraries_b += (1 << tmp);
-                }
-            }
-            break; // case _Processor
+            fields_extract(&pt_line, "iH", 
+                &(platform->processor[iproc].offset_ID[ioffset]), 
+                &(platform->processor[iproc].offset_base[ioffset]));    
         }
-        /* ============================================================= */
-        } // switch case
-    } // while not end of file
-    platform->nb_hwio_stream = nb_io_stream;
+
+        /*  memory mapping managed using several memory bank */
+        for (ibank = 0; ibank < platform->processor[iproc].nbMemoryBank_detailed -1; ibank ++)
+        {
+        fields_extract(&pt_line, "iiiiiiiII",
+             &(platform->processor[iproc].membank[ibank].offsetID),
+             &(platform->processor[iproc].membank[ibank].virtualID),
+
+             &(platform->processor[iproc].membank[ibank].speed),
+             &(platform->processor[iproc].membank[ibank].working),
+             &(platform->processor[iproc].membank[ibank].private),
+             &(platform->processor[iproc].membank[ibank].hwio),
+             &(platform->processor[iproc].membank[ibank].data_access),
+
+             &(platform->processor[iproc].membank[ibank].size),
+             &(platform->processor[iproc].membank[ibank].base32)
+         );
+        }
+    }
 }
 
 /** 
@@ -282,83 +255,52 @@ void read_platform_digital_manifest(char* inputFile, struct stream_platform_mani
   @par              
   @remark
  */
-void read_platform_io_stream_manifest(char* inputFile, struct stream_platform_manifest* platform)
+void read_platform_io_stream_manifest(char* inputFile, struct stream_IO_interfaces *io_stream)
 {
     char* pt_line, cstring[NBCHAR_LINE];
-    uint32_t nb_io_stream, iB;
-    processor_memory_bank_t *ptm;
-    struct stream_IO_interfaces *pts;
+    int32_t nb_io_stream;
     struct arcStruct *pta;
-
-#define _Processor 'P'
-#define _IO_StreamManifest 'I'
 
     pt_line = inputFile;
     nb_io_stream = 0;
 
-    while (NOT_YET_END_OF_FILE == jump2next_valid_line(&pt_line))
-    {
-        switch (*pt_line)
-        {
-        case _IO_StreamManifest:
-        {   
-            uint8_t iarc;
+    pta = &(io_stream->arc_flow);
 
-            jump2next_line(&pt_line);
-            pts = &(platform->stream[nb_io_stream]);
-            nb_io_stream++;
-           
-            read_data_v(&pt_line, (pts->IO_name), 0, 0);
-            read_data_v(&pt_line, &(pts->nb_arc), 0, 0);
+    fields_extract(&pt_line, "c", (io_stream->IO_name));
+    fields_extract(&pt_line, "c", cstring);
+    decode_domain(&(pta->si.domain), cstring);
 
-            for (iarc = 0; iarc < pts->nb_arc; iarc++)
-            {   
-                pta = &((pts->arc_flow)[iarc]);
+    fields_extract(&pt_line, "i", &(pta->si.set0_copy1)); 
+    fields_extract(&pt_line, "i", &(pta->si.commander0_servant1)); 
+    fields_extract(&pt_line, "i", &(pta->si.graphalloc0_bsp1)); 
+    fields_extract(&pt_line, "i", &(pta->si.sram0_hwdmaram1)); 
+    fields_extract(&pt_line, "i", &(pta->si.processorBitFieldAffinity)); 
 
-                /* read standard digital format data */
-                read_data_v(&pt_line, cstring, 0, 0);
-                decode_domain(&(pta->domain), cstring);
-                read_data_v(&pt_line, &(pta->rx0tx1), 0, 0);
-                read_data_v(&pt_line, &(pta->setupTime), 0, 0);
-                read_data_v(&pt_line, &(pta->set0_copy1), 0, 0);
-                read_data_v(&pt_line, &(pta->extraCommandID), 0, 0);
+    fields_extract(&pt_line, "i", &(pta->sc.rx0tx1)); 
+    fields_extract(&pt_line, "i", &(pta->sc.raw_type)); 
+    fields_extract(&pt_line, "i", &(pta->sc.timestamp)); 
+    fields_extract(&pt_line, "i", &(pta->sc.framelength_format)); 
+    fields_extract(&pt_line, "i", &(pta->sc.samplingRate_format)); 
+    fields_extract(&pt_line, "f", &(pta->sc.percentFSaccuracy)); 
 
-                read_data_v(&pt_line, &(pta->commander0_servant1), 0, 0);
-                read_data_v(&pt_line, &(pta->graphalloc0_bsp1), 0, 0);
-                read_data_v(&pt_line, &(pta->sram0_hwdmaram1), 0, 0);
-                read_data_v(&pt_line, &(pta->processorBitFieldAffinity), 0, 0);
+    fields_list(&pt_line, &(pta->interleaving_option)); 
+    fields_list(&pt_line, &(pta->nbchannel_option)); 
+    fields_list(&pt_line, &(pta->frame_size_option)); 
+    fields_list(&pt_line, &(pta->sampling_rate_option)); 
 
-                read_data_v(&pt_line, cstring, 0, 0);
-                decode_rawtype(&(pta->raw), cstring);
-                read_data_v(&pt_line, &(pta->timestp), 0, 0);
-                read_data_v(&pt_line, &(pta->frameSizeFormat_0s_1sample), 0, 0);
+    /* read domain-specific digital format data */
+    /* read domain-specific mixed-signal format data */
 
-                read_common_data_options(&pt_line, &(pta->interleaving_option));
-                read_common_data_options(&pt_line, &(pta->nbchannel_option));
-                read_common_data_options(&pt_line, &(pta->frame_size_option));
-                read_common_data_options(&pt_line, &(pta->sampling_rate_option));
-
-                read_data_v(&pt_line, &(pta->FS_accuracy), 0, 0); /* allowed error on the sampling rate, in percentage */
-
-                /* read domain-specific digital format data */
-                /* read domain-specific mixed-signal format data */
-                switch (pta->domain)
-                {
-                case PLATFORM_MOTION_IN:
-                    motion_in_specific(&pt_line, &(pts->U.imu));
-                    break;
-                case PLATFORM_AUDIO_IN:
-                    audio_in_specific(&pt_line, &(pts->U.audio));
-                    break;
-                }
-            } // for iarc
-
-        break;
-        } // case _IO_StreamManifest:
-        /* ============================================================= */
-        } // switch case
-    } // while not end of file
-    platform->nb_hwio_stream = nb_io_stream;
+    // @@@@@@@@@@@@@ 
+    //switch (pta->si.domain)
+    //{
+    //case IO_PLATFORM_MOTION_IN:
+    //    motion_in_specific(&pt_line, &(io_stream->U.imu));
+    //    break;
+    //case IO_PLATFORM_AUDIO_IN:
+    //    audio_in_specific(&pt_line, &(io_stream->U.audio));
+    //    break;
+    //}
 }
 
 
@@ -371,7 +313,81 @@ void read_platform_io_stream_manifest(char* inputFile, struct stream_platform_ma
  */
 void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
 {
+    char *pt_line;
+    uint32_t iarch, iarc, ibank, NARCS, iscripts = 0;
+    struct arcStruct *pta;
 
+    pt_line = inputFile;
+
+   /* -------------------------- HEADER -------------------------------------- */
+
+    fields_extract(&pt_line, "c", node->developerName);     /* developer's name */
+    fields_extract(&pt_line, "c", node->nodeName);          /*  node name for the GUI */
+    fields_extract(&pt_line, "iiiiiiii", &(node->nbInputArc), &(node->nbOutputArc), &(node->nbParameArc), 
+        &(node->idxStreamingArcSync),  
+        &(node->RWinSWC),           /* XDM11 read/write index is managed in SWC, for variable buffer consumption */
+        &(node->formatUsed),        /* buffer format is used by the component */
+        &(node->deliveryMode),      /* 0:source, 1:binary, 2: 2 binaries (fat binary)*/
+        &(node->masklib));          /* dependency to Stream conpute libraries */
+ 
+    fields_extract(&pt_line, "i", &(node->nbArch));
+    for (iarch = 0; iarch < node->nbArch; iarch++)
+    {   fields_extract(&pt_line, "ii", &(node->arch), &(node->fpu));  
+    }
+    
+    /* code version sub-version */
+    fields_extract(&pt_line, "ii", &(node->codeVersion), &(node->schedulerVersion));  
+
+    /* number of memory banks */
+    fields_extract(&pt_line, "i", &(node->nbMemorySegment));  
+
+    for (ibank =0; ibank < node->nbMemorySegment; ibank++)
+    {
+        fields_extract(&pt_line, "iffffiiiiiii", 
+            &(node->memreq[ibank].size0),           /* 'A' */
+            &(node->memreq[ibank].sizeNchan),       /* 'B' */
+            &(node->memreq[ibank].sizeFS),          /* 'C' */
+            &(node->memreq[ibank].sizeFrame),       /* 'D' */
+            &(node->memreq[ibank].sizeParameter),   /* 'E' */
+
+            &(node->memreq[ibank].iarcChannelI),
+            &(node->memreq[ibank].iarcSamplingJ),
+            &(node->memreq[ibank].iarcFrameK),
+
+            &(node->memreq[ibank].alignmentBytes),
+            &(node->memreq[ibank].usage),
+            &(node->memreq[ibank].speed),
+            &(node->memreq[ibank].relocatable) );  
+    }
+    
+    NARCS = node->nbInputArc +  node->nbOutputArc + node->nbParameArc;
+    for (iarc = 0; iarc < NARCS; iarc++)
+    {
+        pta = &(node->arc[iarc]);
+
+        /* inplace buffer destination = n + NARCS */
+        fields_extract(&pt_line, "i", &(node->inPlaceProcessing)); 
+        if (iarc == node->inPlaceProcessing)
+        {   node->arcIDbufferOverlay = 0;
+            node->inPlaceProcessing = 0;
+        }
+        else
+        {   node->arcIDbufferOverlay = NARCS - node->inPlaceProcessing;
+            node->inPlaceProcessing = 1;
+        }
+
+        fields_extract(&pt_line, "i", &(pta->sc.rx0tx1)); 
+        fields_extract(&pt_line, "i", &(pta->sc.raw_type)); 
+        fields_extract(&pt_line, "i", &(pta->sc.timestamp)); 
+        fields_extract(&pt_line, "i", &(pta->sc.framelength_format)); 
+        fields_extract(&pt_line, "i", &(pta->sc.samplingRate_format)); 
+        fields_extract(&pt_line, "f", &(pta->sc.percentFSaccuracy)); 
+
+        fields_list(&pt_line, &(pta->interleaving_option)); 
+        fields_list(&pt_line, &(pta->nbchannel_option)); 
+        fields_list(&pt_line, &(pta->frame_size_option)); 
+        fields_list(&pt_line, &(pta->sampling_rate_option)); 
+    }
 }
 
 /**
@@ -383,27 +399,34 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
                    
   @remark
  */
-void arm_stream_read_manifests (struct stream_platform_manifest *platform, struct stream_node_manifest *all_nodes, char *all_files)
+void arm_stream_read_manifests (struct stream_platform_manifest *platform, char *all_files)
 {
     char* pt_line;
     char file_name[MAXNBCHAR_LINE];
     char graph_platform_manifest_name[MAXNBCHAR_LINE];
-    uint32_t nb_nodes, inode;
+    uint32_t nb_nodes, inode, nb_stream, istream;
     char node_name[MAXNBCHAR_LINE];
-    char root_directory[MAXNBCHAR_LINE];
+    char IO_name[MAXNBCHAR_LINE];
+    char paths[MAX_NB_PATH][NBCHAR_LINE];
+    int32_t nb_paths, ipath;
 
     /*
         STEP 1 : read the file names : and the digital platform capabilities
     */
     pt_line = all_files;
     jump2next_valid_line(&pt_line);
-    sscanf(pt_line, "%s", root_directory);        /* read the ROOT directory name */
+    sscanf(pt_line, "%d", &nb_paths);        /* read the PATH directory name */
     jump2next_line(&pt_line);
+    for (ipath  = 0; ipath < nb_paths; ipath++)
+    {
+        sscanf(pt_line, "%s", paths[ipath]);        
+        jump2next_line(&pt_line);
+    }
 
     jump2next_valid_line(&pt_line);
-    sscanf(pt_line, "%s", graph_platform_manifest_name); /* read the platform_manifest name*/
+    sscanf(pt_line, "%d %s", &ipath, graph_platform_manifest_name); /* read the platform_manifest name*/
     jump2next_line(&pt_line);
-    strcpy(file_name, root_directory);
+    strcpy(file_name, paths[ipath]);
     strcat(file_name, graph_platform_manifest_name);
 
     read_input_file(file_name, inputFile);
@@ -415,23 +438,19 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, struc
         STEP 2 : loop on all the list of IO stream manifests
     */
     jump2next_valid_line(&pt_line);
-    sscanf(pt_line, "%d", &nb_nodes);  /* read the number of nodes in this plaform */
+    sscanf(pt_line, "%d", &nb_stream);  /* read the number of streams in this plaform */
     jump2next_line(&pt_line);
+    platform->nb_hwio_stream = nb_stream;
 
-    if (nb_nodes > MAX_NB_NODES)
-    {   fprintf(stderr, "too much nodes !"); exit(-4);
-    }
-
-    for (inode = 0; inode < nb_nodes; inode++)
+    for (istream = 0; istream < nb_stream; istream++)
     {
         jump2next_valid_line(&pt_line);
-        sscanf (pt_line, "%s", node_name); /* read the number of node's manifest name */
-        jump2next_line(&pt_line);
-        strcpy(file_name, root_directory);
-        strcat(file_name, node_name);
+        sscanf (pt_line, "%d %s", &ipath, IO_name); /* read the number of node's manifest name */
+        strcpy(file_name, paths[ipath]);
+        strcat(file_name, IO_name);
 
         read_input_file(file_name, inputFile);
-        read_platform_io_stream_manifest(inputFile, &(all_nodes[inode]));
+        read_platform_io_stream_manifest(inputFile, &(platform->io_stream[istream]));
     }
 
     /* read the fw_io_idx mapping to platform capabilities @@@ */
@@ -448,16 +467,17 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, struc
     {   fprintf(stderr, "too much nodes !"); exit(-4);
     }
 
-    for (inode = 0; inode < nb_nodes; inode++)
+    strcpy(platform->all_nodes[_INTERFACE_NODE_ID].nodeName, _INTERFACE_NODE);      /* node[0] = IO interface */
+    platform->nb_nodes = nb_nodes;
+    for (inode = 1; inode < nb_nodes+1; inode++)
     {
         jump2next_valid_line(&pt_line);
-        sscanf (pt_line, "%s", node_name); /* read the number of node's manifest name */
-        jump2next_line(&pt_line);
-        strcpy(file_name, root_directory);
+        sscanf (pt_line, "%d %s", &ipath, node_name); /* read the node's manifest name */
+        strcpy(file_name, paths[ipath]);
         strcat(file_name, node_name);
 
         read_input_file(file_name, inputFile);
-        read_node_manifest(inputFile, &(all_nodes[inode]));
+        read_node_manifest(inputFile, &(platform->all_nodes[inode]));
     }
 }
 
@@ -466,29 +486,3 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, struc
 }
 #endif
 
-
-//jump2next_line(&pt_line);
-//read_data_v(&pt_line, &(platform->nb_processors));
-//{
-//uint16_t i16;
-//uint32_t i32;
-//uint64_t i64;
-//float f32;
-//double f64;
-//char stringt[120];
-////1    c;  TEST1            test1   FOR TEST
-////1   f64;   3.14159265432   test2   FOR TEST
-////1 i64; 05314573914857934875   test3   FOR TEST
-////1 i16; 33768           test4   FOR TEST
-////1 f64; 3.14159265432     test5   FOR TEST
-////1 h32; ABCD5678         test6   FOR TEST
-////1 i16; -12     test   FOR TEST
-//read_data_v(&pt_line, stringt);
-//read_data_v(&pt_line, &f64);
-//read_data_v(&pt_line, &i64);
-//read_data_v(&pt_line, &i16);
-//read_data_v(&pt_line, &f64);
-//read_data_v(&pt_line, &i32);
-//read_data_v(&pt_line, &i16);
-//i16 = 0;
-//            }

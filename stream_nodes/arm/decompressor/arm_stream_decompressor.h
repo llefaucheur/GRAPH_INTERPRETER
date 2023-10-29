@@ -30,30 +30,26 @@
 #endif
    
 
-#ifndef cARM_STREAM_RESCALER_H
-#define cARM_STREAM_RESCALER_H
+#ifndef cARM_STREAM_DECOMPRESSOR_H
+#define cARM_STREAM_DECOMPRESSOR_H
 
 
-#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
-
+#include "arm_dec_imadpcm.h"
 
 typedef struct
 {
     stream_services_entry *stream_entry;
-    float data0;
-    float data1;
-    float data2;
+    CodecState* state;
 } arm_stream_decompressor_instance;
 
 
 
-extern void arm_stream_decompressor_process (arm_stream_decompressor_instance *instance, void *input, void *output, intPtr_t *nsamp);
+extern void arm_stream_decompressor_process (arm_stream_decompressor_instance *instance, void *input, void *output, uint32_t *nsamp);
 
 
-
-#endif
+#endif //cARM_STREAM_DECOMPRESSOR_H
 
 #ifdef __cplusplus
 }

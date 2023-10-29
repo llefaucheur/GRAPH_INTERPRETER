@@ -52,36 +52,27 @@
     <ClInclude Include="..\..\..\stream_al\platform_sensor.h">
       <Filter>Stream</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\stream_tools\graph_bin_1.txt">
-      <Filter>GraphSteps</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_tools\graph_txt_1.txt">
-      <Filter>GraphSteps</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_al\platform_manifest_computer.txt">
-      <Filter>PlatformsManifests</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\stream_tools\stream_tool_include.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\stream_tools\stream_tool_graph.h">
+    <ClInclude Include="..\..\..\stream_tools\stream_tool_platform_manifests.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\stream_tools\stream_tool_platform_manifests.h">
-      <Filter>PlatformsManifests</Filter>
+    <ClInclude Include="..\..\..\stream_tools\stream_tool.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\stream_tools\stream_tool_manifests.h">
-      <Filter>PlatformsManifests</Filter>
+    <ClInclude Include="..\..\..\stream_tools\stream_tool_define.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\stream_tools\stream_tool_graphTxt2Bin.c">
+    <ClCompile Include="..\..\..\stream_tools\stream_tool_graph2Bin.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_tools\stream_tool_main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_tools\stream_tool_ggraph2pgraph.c">
+    <ClCompile Include="..\..\..\stream_tools\stream_tool_read_graph.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_tools\stream_tool_readManifests.c">
@@ -93,28 +84,85 @@
     <ClCompile Include="..\..\..\stream_tools\stream_tool_library.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\stream_tools\arm_stream_graphFormatChecks.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\..\stream_tools\detector_ggraph.txt">
-      <Filter>GraphSteps</Filter>
-    </Text>
-    <Text Include="..\..\..\stream_tools\TEMPLATE_GRAPH.txt">
-      <Filter>GraphSteps</Filter>
-    </Text>
-    <Text Include="..\..\..\stream_nodes\arm\detector\swc_manifest_gate.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\..\stream_al\platform_microphone.txt">
-      <Filter>PlatformsManifests</Filter>
-    </Text>
-    <Text Include="..\..\..\stream_al\platform_imu.txt">
-      <Filter>PlatformsManifests</Filter>
-    </Text>
-    <Text Include="..\..\..\stream_tools\stream_tools_files_manifests_computer.txt">
-      <Filter>PlatformsManifests</Filter>
-    </Text>
     <Text Include="..\..\..\stream_nodes\arm\filter\swc_manifest_filter.txt">
       <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\arm\detector\swc_manifest_detector.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\arm_stream_filter_parameters_x.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\graph_1.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\graph_1_bin.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\graph_1_sub.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\TEMPLATE_GRAPH.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\files_manifests_computer.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\io_platform_analog_sensor_0.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\io_platform_command_in_0.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\io_platform_command_out_0.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\io_platform_gpio_out_0.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\io_platform_gpio_out_1.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\io_platform_imu_metadata_0.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\io_platform_imu_temperature_0.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\io_platform_imu_XYZ_0.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\io_platform_line_in_0.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\io_platform_line_out_0.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\io_platform_microphone_0.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\io_platform_stream_in_0.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\platform_manifest_computer.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\rfc8428.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\stream_tools_files_computer.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\graph_0.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_graph\graph_0_bin.txt">
+      <Filter>GraphSteps</Filter>
     </Text>
   </ItemGroup>
 </Project>

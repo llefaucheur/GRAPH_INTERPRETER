@@ -29,8 +29,11 @@
  extern "C" {
 #endif
 
-#include "stream_const.h"    /* #include <stdint.h> */
+
+#include "stream_const.h"
 #include "stream_types.h"
+#include "stream_extern.h"
+#include "platform_al.h"
 
 //#define L stream_instance->long_offset
 //#define G stream_instance->graph

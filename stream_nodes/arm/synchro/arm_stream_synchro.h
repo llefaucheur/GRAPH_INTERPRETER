@@ -30,14 +30,12 @@
 #endif
    
 
-#ifndef cARM_STREAM_MIXER_H
-#define cARM_STREAM_MIXER_H
+#ifndef cARM_STREAM_SYNCHRO_H
+#define cARM_STREAM_SYNCHRO_H
 
 
-#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
-
 
 
     /*

@@ -24,10 +24,42 @@
  * limitations under the License.
 * 
  */
+#ifdef __cplusplus
+ extern "C" {
+#endif
+   
+    
 #ifndef platform_sensor_H
 #define platform_sensor_H
 
 
+    /* physical units rfc8428 rfc8798 */
+    enum stream_unit_physical
+    {   
+        unused_unit=0,      /* int16_t format */            /* int32_t format */           
+        unit_linear,        /* PCM and default format */    /* PCM and default format */
+        unit_dBm0, 
+        unit_decibel,       /* Q11.4 :   1dB <> 0x0010      Q19.12 :   1dB <> 0x0000 1000  */
+        unit_percentage,    /* Q11.4 :   1 % <> 0x0010      Q19.12 :   1 % <> 0x0000 1000 */
+        unit_meter,         /* Q11.4 :  10 m <> 0x00A0      Q19.12 :  10 m <> 0x0000 A000 */
+
+        /* audio */
+        unit_SPL = 10,        
+        unit_dBA,           
+
+        /* motion */
+        unit_g = 20,        /* Q11.4 :   1g <> 0x0010       Q19.12 :   1g <> 0x0000 1000  */
+        unit_dps,           /* rotation */
+        unit_G,             /* magnetometer */
+
+        /* electrical */
+        unit_Vrms = 30,       
+        unit_Ohm,          
+
+        /* time */
+        unit_hour = 40,       
+    };
+    
 /*==================================================== DOMAINS  ===================================================================*/
 /* tuning of PLATFORM_AUDIO_IN */
     //const float audio_settings [] = { 
@@ -169,3 +201,7 @@ RAW
 
 
 #endif /* #ifndef platform_sensor_H */
+#ifdef __cplusplus
+}
+#endif
+ 

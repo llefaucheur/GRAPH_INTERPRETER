@@ -1,0 +1,61 @@
+; ------------------------------------------------------------------------------------------------------------
+; Graph interface abstraction to a motion sensor (data access with the AL functions set/start/stop)
+; ------------------------------------------------------------------------------------------------------------
+;   IO transducers manifests
+;   description consists in the "digital format" common to all the streams
+;     + specific calibration and mixed-signal settings specific to the "domain" of operation 
+;
+;   The list of domain is :
+;       data_in             generic 
+;       data_out            
+;       data_stream_in      generic stream/frame based 
+;       data_stream_out   
+;       audio_in            audio/voice
+;       audio_out         
+;       gpio_in             1 bit peripherals
+;       gpio_out          
+;       motion_in           accelerometer / gyroscope / magnetometer
+;       2d_in               image
+;       2d_out            
+;       user_interface_in   keyboard
+;       user_interface_out
+;       command_in          command from remote computers
+;       command_out       
+;       analog_sensor       sensors with polling mechanismes
+;       analog_transducer 
+;       rtc_in              clocks
+;       rtc_out           
+;       storage_out         
+; 
+
+                                                                      
+    accelero_metadata_0     name for the GUI                            
+    data_in                 generic data domain name :  metadata (shock detector)
+
+; ------------------------------------------------------------------------------------------------------------
+;       - Digital frame format, common to all transducers and arcs
+;       - Specific information and tuning of the domain
+;
+    1   set0_copy1 data, pointer setting or data copy       
+    1   commander=0 servant=1                               
+    0   buffer declared from the graph 0 or BSP 1           
+    0   in standard RAM=0, in HW IO RAM=1                   
+    1   processor affinity bit-field                        
+
+    0   rx0tx1  
+    6   raw format                                          
+    0   time-stamp                                          
+    1   frame length format (0:in milliseconds 1:in samples)
+    1   sampling rate format (0:Hz, 1:seconds, 2:days)
+    3   percent FS accuracy                                 
+
+    ;   Lists of options, starting with the default index 
+    0   0     ;int   [1bits] interleaving options list
+    0   1     ;int   [2bits] nb channels options list 
+    0   0     ;float [2bits] frame_size option in samples  (or millis) 
+    0   0     ;float [3bits] sampling rate options in Hz (asynchronous)
+  
+    ;-------------------
+    ; motion_in domain SPECIFIC (digital format) stream_interfaces_motion_specific
+    ;-------------------
+    ; motion_in SPECIFIC (mixed signal setting) stream_interfaces_motion_specific

@@ -37,9 +37,8 @@
    
 
 
-#include "platform_computer.h"
-#include "stream_const.h"      
-#include "stream_types.h"  
+#include "stream_const.h"
+#include "stream_types.h"
 #include "arm_stream_router.h"
 
 extern void router_processing (arm_stream_router_instance *instance, stream_xdmbuffer_t *in_out);
