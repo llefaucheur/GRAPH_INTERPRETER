@@ -5,12 +5,12 @@
     ARM             developer name
     arm_stream_filter  node name for the GUI and the graph compiler (node and arc src/dst)
     1 1 0 1   1 1 0 31  
-;                   nb input arcs, 
-;                   nb output arcs, 
+;                   nb input arcs 
+;                   nb output arcs (in + out = ARCSRDY_LW0_LSB first arcs, data availability checked before RUN )
 ;                   nb parameter-arcs arcs, (NN model..), nodes with parameter arc have "xdm11=0" to keep the read index on the parameter
-;                   arc index used for streaming (scheduler synchronization)
+;                   index of the arc used for the byte synchronization in MP
 ;
-;                   0: arc R/W managed in the SWC  1: all arcs are using the same frame size (see "xdm11")
+;                   0: arc R/W managed in the SWC  1: all arcs are using the same frame size (see "xdm11") 3:DTCM used (DTCM_LW1)
 ;                   0: no need the push the format of the arcs (see reset_component(S)) 1: arc format is used by the component
 ;                   delivery 0:source, 1:binary, 2: 2 binaries (fat binary)
 ;                   mask: dependency to EXTDSPML EXTMATH EXTAUDIO EXTIMAGE EXTSTDLIB
@@ -27,20 +27,20 @@
 ;
     2               memory bank allocation = instance + working area in TCM
  
-;   Memory Size Bytes = (A + B x nb_channels_arc(i) + C x samplingHz_arc(j) + 
+;   Memory Size Bytes = (A + DeltaA64 + B x nb_channels_arc(i) + C x samplingHz_arc(j) + 
 ;       D x frame_size_arc(k) + E x maxParameterSize)
 ;
 ;   INSTANCE MEM is the first one, even if the size is null
 ;
 ;   [12]:   A B C D E,  indexes i,j,k,  
 ;           alignment, static/working/retention,  any/normal/fast/critical,  relocatable
-    96 6 0 0 0   0 0 0   4 0 0 0
+    76 0 6 0 0 0   0 0 0   4 0 0 0
 
 ;   TCM MEM (for test)
 ;
 ;   [12]:   A B C D E,  indexes i,j,k,  
 ;           alignment, static/working/retention,  any/normal/fast/critical,  relocatable
-     4 6 0 0 0   0 0 0   4 1 3 0
+     4 0 6 0 0 0   0 0 0   4 1 3 0
 
 ;-------------------
 ; input_arc : "0"

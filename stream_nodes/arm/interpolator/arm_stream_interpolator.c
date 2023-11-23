@@ -81,7 +81,7 @@ extern void arm_stream_interpolator_process (arm_stream_interpolator_instance *i
  */
 void arm_stream_interpolator (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
-    *status = 1;    /* default return status, unless processing is not finished */
+    *status = SWC_TASK_COMPLETED;    /* default return status, unless processing is not finished */
 
     switch (RD(command,COMMAND_CMD))
     { 

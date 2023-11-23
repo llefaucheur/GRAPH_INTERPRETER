@@ -75,7 +75,7 @@ node arm_stream_amplifier;
  */
 void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
-    *status = 1;    /* default return status, unless processing is not finished */
+    *status = SWC_TASK_COMPLETED;    /* default return status, unless processing is not finished */
 
     switch (RD(command,COMMAND_CMD))
     { 
@@ -125,7 +125,7 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
             pt8bsrc = (uint8_t *) data;     
             pt8bdst = (uint8_t *) &(pinstance->parameters[0]); 
 
-            switch (RD(command,TAG_CMD))
+            switch (RD(command,SWC_TAG_CMD))
             {   default : break;
                 case TAG_CMD_RAMP :         pt8bdst += 2; n = 1; break;
                 case TAG_CMD_DESIRED_GAIN:  pt8bdst += 0; n = 2; break;

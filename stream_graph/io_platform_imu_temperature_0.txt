@@ -38,7 +38,7 @@
 ;       - Digital frame format, common to all transducers and arcs
 ;       - Specific information and tuning of the domain
 ;
-    1   set0_copy1 data, pointer setting or data copy       
+      
     1   commander=0 servant=1                               
     0   buffer declared from the graph 0 or BSP 1           
     0   in standard RAM=0, in HW IO RAM=1                   

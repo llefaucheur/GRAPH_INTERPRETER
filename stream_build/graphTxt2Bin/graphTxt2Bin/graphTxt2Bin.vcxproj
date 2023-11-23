@@ -22,12 +22,7 @@
     <ClInclude Include="..\..\..\stream_al\platform_al.h" />
     <ClInclude Include="..\..\..\stream_al\platform_computer.h" />
     <ClInclude Include="..\..\..\stream_al\platform_sensor.h" />
-    <ClInclude Include="..\..\..\stream_src\stream_arcs.h" />
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
-    <ClInclude Include="..\..\..\stream_src\stream_graph.h" />
-    <ClInclude Include="..\..\..\stream_src\stream_macro.h" />
-    <ClInclude Include="..\..\..\stream_src\stream_nodes.h" />
-    <ClInclude Include="..\..\..\stream_src\stream_platform.h" />
     <ClInclude Include="..\..\..\stream_src\stream_types.h" />
     <ClInclude Include="..\..\..\stream_tools\stream_tool_define.h" />
     <ClInclude Include="..\..\..\stream_tools\stream_tool_include.h" />
@@ -51,11 +46,9 @@
     <Text Include="..\..\..\stream_graph\graph_1.txt" />
     <Text Include="..\..\..\stream_graph\graph_1_bin.txt" />
     <Text Include="..\..\..\stream_graph\io_platform_analog_sensor_0.txt" />
-    <Text Include="..\..\..\stream_graph\io_platform_command_in_0.txt" />
-    <Text Include="..\..\..\stream_graph\io_platform_command_out_0.txt" />
     <Text Include="..\..\..\stream_graph\io_platform_gpio_out_0.txt" />
     <Text Include="..\..\..\stream_graph\io_platform_gpio_out_1.txt" />
-    <Text Include="..\..\..\stream_graph\io_platform_imu_metadata_0.txt" />
+    <Text Include="..\..\..\stream_graph\io_platform_node_trace_0.txt" />
     <Text Include="..\..\..\stream_graph\io_platform_imu_temperature_0.txt" />
     <Text Include="..\..\..\stream_graph\io_platform_imu_XYZ_0.txt" />
     <Text Include="..\..\..\stream_graph\io_platform_line_in_0.txt" />

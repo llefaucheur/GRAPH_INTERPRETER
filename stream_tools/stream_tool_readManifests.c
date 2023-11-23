@@ -270,7 +270,6 @@ void read_platform_io_stream_manifest(char* inputFile, struct stream_IO_interfac
     fields_extract(&pt_line, "c", cstring);
     decode_domain(&(pta->si.domain), cstring);
 
-    fields_extract(&pt_line, "i", &(pta->si.set0_copy1)); 
     fields_extract(&pt_line, "i", &(pta->si.commander0_servant1)); 
     fields_extract(&pt_line, "i", &(pta->si.graphalloc0_bsp1)); 
     fields_extract(&pt_line, "i", &(pta->si.sram0_hwdmaram1)); 
@@ -324,12 +323,14 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
     fields_extract(&pt_line, "c", node->developerName);     /* developer's name */
     fields_extract(&pt_line, "c", node->nodeName);          /*  node name for the GUI */
     fields_extract(&pt_line, "iiiiiiii", &(node->nbInputArc), &(node->nbOutputArc), &(node->nbParameArc), 
-        &(node->idxStreamingArcSync),  
+        &(node->idxStreamingArcSync), /* index of the arc for the byte synchronization in SMP */ 
         &(node->RWinSWC),           /* XDM11 read/write index is managed in SWC, for variable buffer consumption */
         &(node->formatUsed),        /* buffer format is used by the component */
         &(node->deliveryMode),      /* 0:source, 1:binary, 2: 2 binaries (fat binary)*/
         &(node->masklib));          /* dependency to Stream conpute libraries */
  
+    node->nbInputOutputArc = node->nbInputArc + node->nbOutputArc;
+
     fields_extract(&pt_line, "i", &(node->nbArch));
     for (iarch = 0; iarch < node->nbArch; iarch++)
     {   fields_extract(&pt_line, "ii", &(node->arch), &(node->fpu));  
@@ -343,8 +344,9 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
 
     for (ibank =0; ibank < node->nbMemorySegment; ibank++)
     {
-        fields_extract(&pt_line, "iffffiiiiiii", 
+        fields_extract(&pt_line, "iiffffiiiiiii", 
             &(node->memreq[ibank].size0),           /* 'A' */
+            &(node->memreq[ibank].DeltaSize64),    /* 'DA64' */
             &(node->memreq[ibank].sizeNchan),       /* 'B' */
             &(node->memreq[ibank].sizeFS),          /* 'C' */
             &(node->memreq[ibank].sizeFrame),       /* 'D' */
@@ -408,7 +410,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     char node_name[MAXNBCHAR_LINE];
     char IO_name[MAXNBCHAR_LINE];
     char paths[MAX_NB_PATH][NBCHAR_LINE];
-    int32_t nb_paths, ipath;
+    int32_t nb_paths, ipath, fw_io_idx;
 
     /*
         STEP 1 : read the file names : and the digital platform capabilities
@@ -445,12 +447,14 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     for (istream = 0; istream < nb_stream; istream++)
     {
         jump2next_valid_line(&pt_line);
-        sscanf (pt_line, "%d %s", &ipath, IO_name); /* read the number of node's manifest name */
+        sscanf (pt_line, "%d %s %d", &ipath, IO_name, &fw_io_idx); /* read the number of node's manifest name */
         strcpy(file_name, paths[ipath]);
         strcat(file_name, IO_name);
 
         read_input_file(file_name, inputFile);
         read_platform_io_stream_manifest(inputFile, &(platform->io_stream[istream]));
+
+        platform->io_stream[istream].fw_io_idx;
     }
 
     /* read the fw_io_idx mapping to platform capabilities @@@ */

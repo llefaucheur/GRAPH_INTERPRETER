@@ -82,8 +82,9 @@ int main(void)
     instance.application_callbacks = application_callbacks;
     instance.scheduler_control = PACK_STREAM_PARAM(
             STREAM_MAIN_INSTANCE,
+            STREAM_ANY_PRIORITY,
             STREAM_NB_INSTANCE,
-            STREAM_WARM_BOOT,
+            STREAM_COLD_BOOT,
             STREAM_SCHD_NO_SCRIPT, 
             STREAM_SCHD_RET_END_ALL_PARSED,
             STREAM_CURRENT_INSTANCE

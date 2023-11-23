@@ -120,12 +120,11 @@
 #define IO_PLATFORM_ANALOG_SENSOR_0  6       /* analog converter stream_al\io_platform_analog_sensor_0.txt */
 #define IO_PLATFORM_GPIO_OUT_0       7       /* PWM              stream_al\io_platform_gpio_out_0.txt    */
 #define IO_PLATFORM_GPIO_OUT_1       8       /* LED              stream_al\io_platform_gpio_out_1.txt    */
-#define IO_PLATFORM_COMMAND_IN_0     9       /* UART command     stream_al\io_platform_command_in_0.txt  */
-#define IO_PLATFORM_COMMAND_OUT_0   10       /* UART trace       stream_al\io_platform_command_out_0.txt */
-#define IO_PLATFORM_DATA_IN_0       11       /* shock detector   stream_al\io_platform_imu_metadata_0.txt */
-#define IO_PLATFORM_DATA_IN_1       12       /* temp. sensor     stream_al\io_platform_imu_temperature_0.txt */
+#define IO_PLATFORM_DATA_IN_0        9       /* shock detector   stream_al\io_platform_imu_metadata_0.txt */
+#define IO_PLATFORM_DATA_IN_1       10       /* temp. sensor     stream_al\io_platform_imu_temperature_0.txt */
 
 #define LAST_IO_FUNCTION_PLATFORM (IO_PLATFORM_DATA_IN_1+1) /* table of platform_io[fw_io_idx] */
+#define MAX_IO_FUNCTION_PLATFORM 32                         /* table of platform_io[fw_io_idx] MAX 32 IOs  later 255 */
 
 /*===========================================================================
  in platform_computer.c : 

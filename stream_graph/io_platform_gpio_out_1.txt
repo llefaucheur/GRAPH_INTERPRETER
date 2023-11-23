@@ -42,13 +42,13 @@
 ;
 ;   ARC0
 
-    1   set0_copy1 data, pointer setting or data copy       
+    
     1   commander=0 servant=1                               
     0   buffer declared from the graph 0 or BSP 1           
     0   in standard RAM=0, in HW IO RAM=1                   
     1   processor affinity bit-field                        
 
-    0   rx0tx1  
+    1   rx0tx1  
     6   raw format                                          
     0   time-stamp                                          
     1   frame length format (0:in milliseconds 1:in samples)

@@ -22,22 +22,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\stream_src\stream_arcs.h">
-      <Filter>Stream</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\stream_src\stream_const.h">
-      <Filter>Stream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_src\stream_graph.h">
-      <Filter>Stream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_src\stream_macro.h">
-      <Filter>Stream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_src\stream_nodes.h">
-      <Filter>Stream</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_src\stream_platform.h">
       <Filter>Stream</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\stream_src\stream_types.h">
@@ -116,19 +101,13 @@
     <Text Include="..\..\..\stream_graph\io_platform_analog_sensor_0.txt">
       <Filter>PlatformsManifests</Filter>
     </Text>
-    <Text Include="..\..\..\stream_graph\io_platform_command_in_0.txt">
-      <Filter>PlatformsManifests</Filter>
-    </Text>
-    <Text Include="..\..\..\stream_graph\io_platform_command_out_0.txt">
-      <Filter>PlatformsManifests</Filter>
-    </Text>
     <Text Include="..\..\..\stream_graph\io_platform_gpio_out_0.txt">
       <Filter>PlatformsManifests</Filter>
     </Text>
     <Text Include="..\..\..\stream_graph\io_platform_gpio_out_1.txt">
       <Filter>PlatformsManifests</Filter>
     </Text>
-    <Text Include="..\..\..\stream_graph\io_platform_imu_metadata_0.txt">
+    <Text Include="..\..\..\stream_graph\io_platform_node_trace_0.txt">
       <Filter>PlatformsManifests</Filter>
     </Text>
     <Text Include="..\..\..\stream_graph\io_platform_imu_temperature_0.txt">

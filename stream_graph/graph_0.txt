@@ -33,34 +33,57 @@ paths
 ;   the the data stream format used in the graph are grouped here :
 ;   { ID; FrameSize(22b); Raw; Nchan; FS(float); Timestp; Interleaving; specific(Word2); }
 format
-    2   two formats
+    3   two formats
 ;   I F   R N    FS T I S
     0 8  17 1 16000 0 0 3    
     1 12 17 1 16000 0 0 4    formatID1; frameSize; raw; nchan; FS(float); timestp; intlv; specific(Word2);
+    2 8  17 0     0 0 0 0    commands = 8 bytes
     _end_
 
 ;----------------------------------------------------------------------------------------
 ; list of HW IOs from "stream_tools_files_manifests_PLATFORMNAME.txt" + IO arc patched with this IO.
 ;   nb HW IO interfaces
 ;   - index
-;   - format index of this stream (for sub-graphs)
+;   - stream format 
 ;   - ID of the interface as given "files_manifests_computer" <=> FW_IO_IDX, 0="decided from the caller"
-;   - common setting (8MSB intlv/nchan/frame/FS = ARC0 producer format) + mixed-signal settings (24LSB)
+;   - common setting (8bits intlv/nchan/frame/FS = ARC0 producer format + mixed-signal settings 24bits)
+;   - buffer size allocation = "K" x frame size (from IO Format), "0" means no buffer allocation
+;   - VID of buffer : memory bank index from platform_manifest_computer.txt (special DMA, speed)
 ;
 ;   in comments : the incremented index of the interface used when building the graph (arc section below)
     
 top_graph_interface
-    2               2 interfaces 
-    0 0 1 0         index-0 for _graph_interface, format 0, FW_IDX=io_platform_stream_in_0, default settings
-    1 0 7 0         index-1, format 0, FW_IDX=io_platform_gpio_out_0, default settings
+    4               3 interfaces (max 255)
+    0  0  1 0  1 0       index-0   format 0 FWIDX=1 io_platform_stream_in_0 default settings, buffer= 1 frame   VID0
+    1  1  7 0  1 0       index-1,  format 1 FWIDX=7 io_platform_gpio_out_0  default settings, buffer= 1 frame   VID0
+    2  0  9 0  0 0       index-2,  format 0 FWIDX=9 debug trace             default settings, no buffer 
+    3  2  0 0  1 0       index-3,  format 2 FWIDX=0 control arc             default settings, buffer= 1 command VID0
     _end_
 
+
+;----------------------------------------------------------------------------------------
+; list of data arcs placed in Flash, data descriptors in RAM
+;   - index
+;data_graph_interface
+;    2               2 data arcs in Flash
+;    const_data_arc
+;        2  u8; 0 255                        no preset, TAG = "all parameters"
+;        1  u8;  2                           Two biquads
+;        1  u8;  0                           postShift
+;        5 h16; 5678 2E5B 71DD 2166 70B0     b0/b1/b2/a1/a2 
+;        5 h16; 5678 2E5B 71DD 2166 70B0     second biquad
+;        _end_
+;    const_data_arc
+;         _include    1   arm_stream_filter_parameters_x.txt      
+;        _end_
+;    _end_
+
+
 ;---------------
-;node
-;    arm_script 0       0= main script managing parameters, >0 = index of the script in the SCRIPT_LW0 table
-;
-;    2 6    2 1 0       number of registers, stack depth,  ARCs : input (stream, control) output (GPIO)  provision
-;                  
+node
+    arm_script 0       0= main script managing parameters, >0 = index of the script in the SCRIPT_LW0 table
+    2 6    1 0 0       number of registers, stack depth,     ARCs : input, output, provision
+                  
 ;;
 ;;   script with 2 input arcs, 1 TX arc
 ;;   algorithm : read 1st arc 0 (mono input arc), GPIO is connected to TX arc
@@ -134,8 +157,8 @@ top_graph_interface
 node
     arm_stream_filter 0         node subroutine name + instance ID
 ;
-    1 0  0 0 0                  preset if no parameter / local script index (0=none)
-;                               no assignment to proc / arch / verbose debug trace 
+    1 0  0 0 0 0                preset if no parameter / local script index (0=none)
+;                               no assignment to proc / arch / priority / verbose debug trace 
     0 4     when memory mapping is managed manually (top_header) list of VID 
 ;             virtual memory banks defined in "platform_manifest_computer.txt"
 ;             of each memory bank defined in swc_manifest_filter.txt
@@ -145,8 +168,8 @@ node
 
         1  u8;  2                           Two biquads
         1  u8;  0                           postShift
-        5 h16; 5678 2E5B 71DD 2166 70B0     b0/b1/b2/a1/a2 
-        5 h16; 5678 2E5B 71DD 2166 70B0     second biquad
+        5 h16; 1231 1D28 1231 63E8 D475     b0/b1/b2/-a1/-a2  ellip(4, 1, 40, 3600/8000, 'low') 
+        5 h16; 1231 0B34 1231 2470 9821     second biquad
         ;  _include    1   arm_stream_filter_parameters_x.txt      
         _end_
 
@@ -182,7 +205,7 @@ node
 ;
 node 
     arm_stream_detector         node name  + instance ID
-    2 0 0 0 0                   preset VAD + local script index (0=none)
+    2 0   0 0 0 0               preset VAD + local script index (0=none)
                           ;     no assignment to proc / arch / verbose debug trace
     0         when memory mapping is managed manually (top_header) list of VID 
 ;             virtual memory banks defined in "platform_manifest_computer.txt"
@@ -197,7 +220,7 @@ node
 ; ARCs  ProdFMT ConsFMT VID IOSizeMulfac OVF UND CMD REG FLUSH EXTD
 ;
 ;       Memory bank virtual index(0 or speed control); buffer size scaling 
-;       factor (float >= 1.0) to apply to the minimum possible size between the producer and the consumer
+;       factor (float) to apply to the minimum possible size between the producer and the consumer
 ;
 ;       Node/Stream name, instance source and its output port ID
 ;       Node/destination, its instance and input port ID       
@@ -205,23 +228,35 @@ node
 ;       optional filling pattern to read from a file (file name, nb of data to read); 
 ;
 arc
-    3                               3 arcs
+    4                               4 arcs
 
-    0 1 0 1.0 0 0 0 0 0 0           ProdFMT ConsFMT VID IOSizeMulfac OVF, UND, CMD, REG, FLUSH, EXTD
-    _graph_interface    0  0         0= IO "interface" from application processor, second parameter=0
+;ARC0
+    0 0  0 0 0 0 0 0 0 1.0          ProdFMT ConsFMT OVF, UND, DBGCMD, REG, FLUSH, EXTD  VID IOSizeMulfac 
+    _graph_interface    0  1         0= IO "interface" from application processor, second parameter=set0_copy1
     arm_stream_filter   0  0        [0]:filter instance       [0]:RX arc of the node
 ;    parameters
 ;       _include    2   TestPattern.txt filepathID and fileName (test-pattern, NN model, ...)
 ;       parameter_end    
 
-    0 0 0 1.0 0 0 0 0 0 0           ProdFMT ConsFMT VID IOSizeMulfac OVF, UND, CMD, REG, FLUSH, EXTD
+;ARC1
+    0 0  0 0 0 0 0 0  0 1.0         ProdFMT ConsFMT OVF, UND, DBGCMD, REG, FLUSH, EXTD  VID IOSizeMulfac 
     arm_stream_filter   0  1        [0]:instance of the node, [1]:index of the arc (TX)
     arm_stream_detector 0  0        [0]:instance of the node, [0]:index of the arc (RX)
 
-
-    0 0 0 1.0 0 0 0 0 0 0           ProdFMT ConsFMT MEM IOSizeMulfac OVF, UND, CMD, REG, FLUSH, EXTD
+;ARC2
+    0 1  0 0 0 0 0 0  0 1.0         ProdFMT ConsFMT OVF, UND, DBGCMD, REG, FLUSH, EXTD  VID IOSizeMulfac 
     arm_stream_detector 0  1   
-    _graph_interface    1  0        1=IO "interface" of PWM, [0]:RX arc of the "IO node"
+    _graph_interface    1  0        1=IO "interface" of PWM
+
+;ARC3
+    2 2  0 0 0 0 0 0  0 1.0         ProdFMT ConsFMT OVF, UND, DBGCMD, REG, FLUSH, EXTD  VID IOSizeMulfac 
+    _graph_interface    3  1        [3]= IO "interface" to application processor, second parameter=set0_copy1
+    arm_script          0  0        control arc 
+
+;ARC(j)
+;    2 2  0 0 0 0 0 0  0 1.0        permanent data in FLash
+;    _data_graph_flash   1  0       [1]= index of "data_graph_interface", second parameter unused
+;    arm_script          2  0       connected to a SWC
 
     _end_
 ;

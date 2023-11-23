@@ -34,7 +34,10 @@
  extern "C" {
 #endif
 
-
+////@@@@@@
+//#define _CRT_SECURE_NO_DEPRECATE 1
+//#include <stdio.h>
+//FILE *ptfdbg;
 
 #include "stream_const.h"
 #include "stream_types.h"
@@ -110,7 +113,7 @@ node arm_stream_dsp_filter
  */
 void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
-    *status = 1;    /* default return status, unless processing is not finished */
+    *status = SWC_TASK_COMPLETED;    /* default return status, unless processing is not finished */
 
     switch (RD(command,COMMAND_CMD))
     { 
@@ -147,7 +150,7 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
 
             pinstance->services = (stream_services_entry *)(uint64_t)data;
 
-
+//ptfdbg=fopen("..\\..\\..\\stream_test\\DBGIIR.raw","wb");
             break;
         }       
 
@@ -157,7 +160,9 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
                 data = (one or all)
         */ 
         case STREAM_SET_PARAMETER:  
-       {    uint8_t *pt8bsrc, *pt8bdst,*pt8b, i;
+        {    uint8_t *pt8bsrc, i, numStages;
+            uint16_t *pt16src, *pt16dst;
+            int8_t postShift;
             arm_filter_instance *pinstance = (arm_filter_instance *) instance;
 
             /* copy the parameters 
@@ -168,19 +173,32 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
                 5 h16; 5678 2E5B 71DD 2166 70B0     second biquad
                 parameter_end                
             */
-            pt8b = (uint8_t *) (pinstance->static_mem.state);
-            for (i = 0; i < sizeof(pinstance->static_mem.state); i++) { pt8b[i] = 0; }
-
             pt8bsrc = (uint8_t *) data;
-            pinstance->static_mem.biquad_casd_df1_inst_q15.numStages = (*pt8bsrc++);
-            pinstance->static_mem.biquad_casd_df1_inst_q15.postShift = (*pt8bsrc++);
-            pt8bdst = (uint8_t *)(&(pinstance->static_mem.coefs[0]));
-            for (i = 0; i < sizeof(q15_t) * 5 * pinstance->static_mem.biquad_casd_df1_inst_q15.numStages; i++)
-            {   *pt8bdst++ = *pt8bsrc++;
+            numStages = (*pt8bsrc++);
+            postShift = (*pt8bsrc++);
+
+            pt16src = (uint16_t *)pt8bsrc;
+            pt16dst = (uint16_t *)(&(pinstance->static_mem.coefs[0]));
+            for (i = 0; i < numStages; i++)
+            {   /* format:  {b10, 0, b11, b12, a11, a12, b20, 0, b21, b22, a21, a22, ...} */
+                *pt16dst++ = *pt16src++;    // b10
+                *pt16dst++ = 0;             // 0
+                *pt16dst++ = *pt16src++;    // b11    
+                *pt16dst++ = *pt16src++;    // b12
+                *pt16dst++ = *pt16src++;    // a11
+                *pt16dst++ = *pt16src++;    // a12
             }
 
-            /* optimized kernels */
+            arm_biquad_cascade_df1_init_q15(
+                &(pinstance->static_mem.biquad_casd_df1_inst_q15),
+                numStages,
+                (const q15_t *)&(pinstance->static_mem.coefs[0]),
+                (q15_t *)&(pinstance->static_mem.state),
+                postShift);
+
+           /* optimized kernels */
             pinstance->iir_service = PACK_SERVICE(0,0,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
+
             break;
         }
 
@@ -213,7 +231,6 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
                 (uint8_t*)(&(pinstance->static_mem.biquad_casd_df1_inst_q15)),
                 (uint32_t)nb_data
                 );
-          
             break;
         }
 

@@ -117,7 +117,7 @@
 #define FMT_INTERLEAVED 0           /* "arc_descriptor_interleaved" for example L/R audio or IMU stream..   */
                                     /* the pointer associated to the stream points to data (L/R/L/R/..)     */
 #define FMT_DEINTERLEAVED_1PTR 1    /* single pointer to the first channel, next channel base address is    */
-                                    /*  computed by adding the buffer size/nchan, also for ring buffers  */
+                                    /*  computed by adding the frame size or buffer size/nchan, also for ring buffers  */
 //
 ////enum frame_format_synchro {
 #define SYNCHRONOUS 0               /* tells the output buffer size is NOT changing */
@@ -161,12 +161,12 @@
 
 /*--------------- WORD 1 - sampling rate , nchan  -------------*/
 #define   SAMPINGNCHANM1_FMT1  U( 1)
-    #define  SAMPLING_FMT1_MSB U(24) /* 23 truncated IEEE-754 Seeeeeeemmmmmmmmmmmmmmm__XXXXXXX  */
-    #define  SAMPLING_FMT1_LSB U( 5) /*    FP23_E8_M15        FEDCBA9876543210FEDCBA9876543210  */
-    #define    UNUSED_FMT1_MSB U(31) /* 2   */
-    #define    UNUSED_FMT1_LSB U(27)
-    #define  TIMSTAMP_FMT1_MSB U(26) /* 2  time_stamp_format_type for time-stamped streams for each interleaved frame */
-    #define  TIMSTAMP_FMT1_LSB U(25) 
+    #define  SAMPLING_FMT1_MSB U(31) /* 23 truncated IEEE-754 Seeeeeeemmmmmmmmmmmmmmm__XXXXXXX  */
+    #define  SAMPLING_FMT1_LSB U( 9) /*    FP23_E8_M15        FEDCBA9876543210FEDCBA9876543210  */
+    #define    UNUSED_FMT1_MSB U( 8) /* 2   */
+    #define    UNUSED_FMT1_LSB U( 7)
+    #define  TIMSTAMP_FMT1_MSB U( 6) /* 2  time_stamp_format_type for time-stamped streams for each interleaved frame */
+    #define  TIMSTAMP_FMT1_LSB U( 5) 
     #define   NCHANM1_FMT1_MSB U( 4)
     #define   NCHANM1_FMT1_LSB U( 0) /* 5  nb channels-1 [1..32] */
 
@@ -235,8 +235,8 @@
 #define UNDERFLRD_ARCW2_LSB U(26) /* 2  overflow task id 0=nothing , underflow_error_service_id */
 #define  OVERFLRD_ARCW2_MSB U(25)
 #define  OVERFLRD_ARCW2_LSB U(24) /* 2  underflow task id 0=nothing, overflow_error_service_id */
-#define    EXTEND_ARCW2_MSB U(23) /*    Size/Read/Write are used with 256 bytes chunks => 1GBytes buffers for */
-#define    EXTEND_ARCW2_LSB U(23) /* 1    arcs used to read NN models, video players, etc */
+#define    EXTEND_ARCW2_MSB U(23) /*    Size/Read/Write(x64) are used with 16words chunks => extends to */
+#define    EXTEND_ARCW2_LSB U(23) /* 1    256MBytes buffers for arcs used to read NN models, video players, etc */
 #define   READY_W_ARCW2_MSB U(22) /*    "Buffer ready for refill" */
 #define   READY_W_ARCW2_LSB U(22) /* 1  (size-write)>size/2 (or /4) */
 #define      READ_ARCW2_MSB U(21) /*    data read index  Byte-acurate up to 4MBytes starting from base address */
@@ -328,7 +328,8 @@ offset_instance
 */
 
 /* max number of instances simultaneously reading the graph
-   used to synchronize the RESET sequence in platform_al() */
+   used to synchronize the RESET sequence in platform_al() 
+   smaller than 1<< NBINSTAN_SCTRL */
 #define MAX_NB_STREAM_INSTANCES 4 
 
 /* max number of nodes installed at compilation time */
@@ -363,12 +364,14 @@ offset_instance
 #define GRAPH_RAM_OFFSET_PTR(L,G) pack2linaddr_ptr(L,G[0])
 
 /* -------- GRAPH[1] number of FORMAT, size of SCRIPTS ---- */
-#define SCRIPTS_SIZE_GR1_MSB U(31) 
-#define SCRIPTS_SIZE_GR1_LSB U(10) /*  22 scripts size */
-#define       NB_IOS_GR1_MSB U( 9) 
-#define       NB_IOS_GR1_LSB U( 5) /*  5 Nb of I/O :  up to 32 IO streams */
-#define    NBFORMATS_GR1_MSB U( 4) 
-#define    NBFORMATS_GR1_LSB U( 0) /*  5 formats */
+#define  SCRIPTS_SIZE_GR1_MSB U(31) 
+#define  SCRIPTS_SIZE_GR1_LSB U(12) /* 20 scripts size */
+#define NB_IOS_MARGIN_GR1_MSB U(11) 
+#define NB_IOS_MARGIN_GR1_LSB U(10) /*  2 provision for 128 IOs */
+#define        NB_IOS_GR1_MSB U( 9) 
+#define        NB_IOS_GR1_LSB U( 5) /*  5 Nb of I/O :  up to 32 IO streams */
+#define     NBFORMATS_GR1_MSB U( 4) 
+#define     NBFORMATS_GR1_LSB U( 0) /*  5 formats */
 
 #define PACKFORMATIOSSCRIPT(LENscript,nIOs,nFMT) (((LENscript)<<SCRIPTS_SIZE_GR1_LSB) | ((nIOs)<<NB_IOS_GR1_LSB) | ((nFMT)<<NBFORMATS_GR1_LSB))
 #define GRAPH_LENSCRIPT(G) (((G[1])>>10) & 0x3FFFFF)
@@ -399,9 +402,9 @@ offset_instance
 
 
 
-/* -------- GRAPH[5,6] bit-field of the processors activated to process this graph ---
-    [5,6] UQ8 portion of memory consumed on each long_offset[MAX_NB_MEMORY_OFFSET] 
-    to let the application taking a piece of the preallocated RAM area 
+/* -------- GRAPH[5,6] UQ8(-1) (0xFF = 100%, 0x3F = 25%) portion of memory consumed on each 
+    long_offset[MAX_NB_MEMORY_OFFSET] to let the application taking 
+    a piece of the preallocated RAM area 
 */
 
 #define GRAPH_HEADER_NBWORDS 7    /* GRAPH[0 .. 6] */
@@ -412,34 +415,52 @@ offset_instance
       The graph hold a table of uint32_t "stream_format_io" [LAST_IO_FUNCTION_PLATFORM]
 */
 
-//enum input_output_command_id {  IOCOMMAND_IOFMT
-#define IO_COMMAND_SET_BUFFER    U(0)
-#define IO_COMMAND_DATA_MOVE     U(1)
+//enum input_output_command_id {  SET0COPY1_IOFMT
+#define STREAM_IOFMT_SIZE_W32 2   /* one word for settings controls 
+        + 1 for instance selection and mixed-signal settings placed in the BUFFER area */
 
+#define IO_COMMAND_SET_BUFFER   0u  /* arc buffer point directly to the IO buffer: ping-pong, big buffer */
+#define IO_COMMAND_DATA_MOVE    1u  /* the IO has its own buffer */
+//#define IO_COMMAND_UPDATE_PTR   2u  /* intermediate data is moved in the circular buffer, pointers need to be updated */
 
-#define STREAM_IOFMT_SIZE_W32 2   /* one word for settings controls + 1 for instance selection and mixed-signal settings */
+#define RX0_TO_GRAPH            0u
+#define TX1_FROM_GRAPH          1u
 
-#define RX0_TO_GRAPH 0u
-#define TX1_FROM_GRAPH 1u
+#define IO_IS_COMMANDER0         0u
+#define IO_IS_SERVANT1           1u
 
-//#define ___UNUSED_IOFMT_MSB U(31)  
-//#define ___UNUSED_IOFMT_LSB U(28)  /* 4  */
-//#define    DOMAIN_IOFMT_MSB U(27)  
-//#define    DOMAIN_IOFMT_LSB U(22)  /* 6  64 stream_io_domain  */
-#define IOCOMMAND_IOFMT_MSB U(21)  
-#define IOCOMMAND_IOFMT_LSB U(21)  /* 1  command_id 0_set_1_copy */
-#define   SERVANT_IOFMT_MSB U(20)  
-#define   SERVANT_IOFMT_LSB U(20)  /* 1  1=IO_IS_SERVANT */
-#define FW_IO_IDX_IOFMT_MSB U(19)  /*    fw_io_dx : stream_al/platform_computer.h <=> stream_tools/files_manifests_computer.txt */
-#define FW_IO_IDX_IOFMT_LSB U(12)  /* 8  platform_io [fw_io_idx] -> io_start(parameter) */
+#define ___UNUSED_IOFMT_MSB U(31)  
+#define ___UNUSED_IOFMT_LSB U(25)  /* 7 */
+#define SET0COPY1_IOFMT_MSB U(24)  
+#define SET0COPY1_IOFMT_LSB U(24)  /* 1  command_id IOCOMMAND */
+#define  SERVANT1_IOFMT_MSB U(23)  
+#define  SERVANT1_IOFMT_LSB U(23)  /* 1  1=IO_IS_SERVANT1 */
+#define  ARC0_LW1_IOFMT_MSB U(22)  
+#define  ARC0_LW1_IOFMT_LSB U(12)  /* 11 initialization : buffer allocation 0:none, >0:arc descriptor index */
 #define    RX0TX1_IOFMT_MSB U(11)  /*    direction of the stream */
 #define    RX0TX1_IOFMT_LSB U(11)  /* 1  0 : to the graph    1 : from the graph */
 #define   IOARCID_IOFMT_MSB U(10)  
 #define   IOARCID_IOFMT_LSB U( 0)  /* 11  Arc */
 
+//#define FW_IO_IDX_IOFMT_MSB U(19)  /*    fw_io_dx : stream_al/platform_computer.h <=> stream_tools/files_manifests_computer.txt */
+//#define FW_IO_IDX_IOFMT_LSB U(12)  /* 8  platform_io [fw_io_idx] -> io_start(parameter) */
 
+/* data depending of STREAM_IO_DOMAIN : mixed-signal setting, 
+    + bit-field giving the configuration of io_start(setting,*,n)) for variable numbers of frames r/w */
 #define SETTINGS_IOFMT2_MSB U(31)  
 #define SETTINGS_IOFMT2_LSB U( 0) /* 32  second word : common (8b MSB) and mixed-signal (24b LSB) settings */
+
+/* address of the buffer */
+#define BASEIDXOFFIOFMT3_MSB BASEIDXOFFARCW0_MSB
+#define   DATAOFF_IOFMT3_MSB   DATAOFF_ARCW0_MSB
+#define   DATAOFF_IOFMT3_LSB   DATAOFF_ARCW0_LSB
+#define   ________IOFMT3_MSB   ________ARCW0_MSB
+#define   ________IOFMT3_LSB   ________ARCW0_LSB
+#define   BASEIDX_IOFMT3_MSB   BASEIDX_ARCW0_MSB
+#define  BASESIGN_IOFMT3_MSB  BASESIGN_ARCW0_MSB
+#define  BASESIGN_IOFMT3_LSB  BASESIGN_ARCW0_LSB
+#define   BASEIDX_IOFMT3_LSB   BASEIDX_ARCW0_LSB
+#define BASEIDXOFFIOFMT3_LSB BASEIDXOFFARCW0_LSB
 
 /* 
    ================================= GRAPH FORMATS =======================================
@@ -455,22 +476,28 @@ offset_instance
 /* number of SWC calls in sequence */
 #define MAX_SWC_REPEAT 4u
 
+#define SWC_TASK_COMPLETED 0
+#define SWC_TASK_NOT_COMPLETED 1
 /* =========================================================================================== */ 
 
         /* word 0 - main Header */
 
-#define  SCRIPT_LW0_MSB U(31) /*   script parameter (SWC_IDX + Before/After + verbose trace control) */
-#define  SCRIPT_LW0_LSB U(23) /* 7 script ID to call before and after calling SWC */
-#define  PROCID_LW0_MSB U(22) /*   same as PROCID_PARCH (stream instance) */
-#define  PROCID_LW0_LSB U(20) /* 3 execution reserved to this processor index  */  
-#define  ARCHID_LW0_MSB U(19) /*   SWC_IDX=6 (filter) selection to different arch (see PLATFORM_NODE_ADDRESS) */
-#define  ARCHID_LW0_LSB U(17) /* 3 execution reserved to this processor architectures */
-#define  NBARCW_LW0_MSB U(16) 
-#define  NBARCW_LW0_LSB U(13) /* 4  total nb arcs */
-#define ARCSRDY_LW0_MSB U(12) 
-#define ARCSRDY_LW0_LSB U(10) /* 3  nb arcs used in streaming and checked by the scheduler */
-#define SWC_IDX_LW0_MSB U( 9) 
-#define SWC_IDX_LW0_LSB U( 0) /* 10 0=nothing, swc index of node_entry_points[] */
+#define PRIORITY_LW0_MSB U(31) /*   RTOS instances. 1:low-latency tasks, 2:heavy background tasks */
+#define PRIORITY_LW0_LSB U(30) /* 2 up to 4 instances per processors */
+#define   PROCID_LW0_MSB U(29) /*   same as PROCID_PARCH (stream instance) */
+#define   PROCID_LW0_LSB U(27) /* 3 execution reserved to this processor index  */  
+#define   ARCHID_LW0_MSB U(26) /*   SWC_IDX=6 (filter) selection to different arch (see PLATFORM_NODE_ADDRESS) */
+#define   ARCHID_LW0_LSB U(24) /* 3 execution reserved to this processor architectures */
+#define   SCRIPT_LW0_MSB U(23) /*   script parameter (SWC_IDX + Before/After + verbose trace control) */
+#define   SCRIPT_LW0_LSB U(17) /* 7 script ID to call before and after calling SWC */
+#define   NBARCW_LW0_MSB U(16) 
+#define   NBARCW_LW0_LSB U(14) /* 3  total nb arcs, streaming and metadata/control */
+#define  ARCLOCK_LW0_MSB U(13) 
+#define  ARCLOCK_LW0_LSB U(12) /* 2  index of the arc used to lock SWC */
+#define  ARCSRDY_LW0_MSB U(11) 
+#define  ARCSRDY_LW0_LSB U(10) /* 2  first arcs, data availability checked before RUN */
+#define  SWC_IDX_LW0_MSB U( 9) 
+#define  SWC_IDX_LW0_LSB U( 0) /* 10 0=nothing, swc index of node_entry_points[] */
 
 ///* 16 arcs per nodes, and per HW IO stream interface (streams and metadata)
 //        struct stream_IO_interfaces io_stream[MAX_GRAPH_NB_IO_STREAM]; */
@@ -483,15 +510,13 @@ offset_instance
             arc(tx) used for locking is ARC0_LW1
         */
 
-//#if (GRAPH_INTERPRETER_VERSION & 0xFF00) == 0x0100
-// #define MAX_NB_STREAM_PER_SWC 16
+// #define MAX_NB_STREAM_PER_SWC 8
 #define MAX_NB_STREAM_PER_SWC 4
-//#endif
 
 #define ARC_RX0TX1_MASK 0x800 /* MSB gives the direction of the arc */
 #define ARC_RX0TX1_CLEAR 0x7FF 
 
-#define  DTCM_LW1_MSB U(31) /* @@@@    for relocatable scratch DTCM usage with SMP, address is changing : */
+#define  DTCM_LW1_MSB U(31) /*     for relocatable scratch DTCM usage with SMP, address is changing : */
 #define  DTCM_LW1_LSB U(31) /*  1  arc_index_update() pushed the DTCM address after XDM buffers */
 #define XDM11_LW1_MSB U(30) 
 #define XDM11_LW1_LSB U(30) /*  1  the input and output frame size of all arcs are identical */
@@ -514,8 +539,10 @@ offset_instance
 
         /* word 2+n - memory banks */
 
-#define   ________LW2_MSB U(31) /*    */
-#define   ________LW2_LSB U(30) /*  2   5bits free for the other memory segments */
+#define PARAMETER_LW2_MSB U(31) /*      */
+#define PARAMETER_LW2_LSB U(31) /*  1  '1' parameter field to read */
+#define   ________LW2_MSB U(30) /*      */
+#define   ________LW2_LSB U(30) /*  1   */
 #define   NBALLOC_LW2_MSB U(29)
 #define   NBALLOC_LW2_LSB U(27) /*  3 number of memory segments to give at RESET */
 #define BASEIDXOFFLW2_MSB U(26) 
@@ -530,9 +557,9 @@ offset_instance
         /* word 3+n - parameters */
 
 /*      
-        BOOTPARAMS    : 
+        BOOTPARAMS (if PARAMETER_LW2=1)
 
-        TAG       : 8  for TAG_CMD (255='all parameters')
+        PARAM_TAG : 8  index to paramters (255='all parameters')
         unused    : 4  (extension of W32LENGTH?)
         PRESET    : 4  preset index (SWC delivery)
         W32LENGTH :16  nb of WORD32 to skip at run time, 0 means no parameter, max=256kB
@@ -558,14 +585,17 @@ offset_instance
 //#define MAX_TMP_PARAMETERS 30   /* temporary buffer (words32) of parameters to send to the Node */
 
 
-#define       TAG_LW3_MSB U(31) 
-#define       TAG_LW3_LSB U(24) /* 8  for TAG_CMD (255='all parameters')  */
-#define   _UNUSED_CMD_MSB U(23)       
-#define   _UNUSED_CMD_LSB U(20) /* 4  _______ */
+#define PARAM_TAG_LW3_MSB U(31) 
+#define PARAM_TAG_LW3_LSB U(24) /* 8  for PARAM_TAG_CMD (255='all parameters')  */
+#define   _UNUSED_LW3_MSB U(23)       
+#define   _UNUSED_LW3_LSB U(20) /* 4  _______ */
 #define    PRESET_LW3_MSB U(19)
 #define    PRESET_LW3_LSB U(16) /* 4  preset   16 precomputed configurations */
 #define W32LENGTH_LW3_MSB U(15) /*    if >4MB are needed then use an arc to a buffer */
 #define W32LENGTH_LW3_LSB U( 0) /* 16 skip this : number of uint32 to skip the boot parameters */
+
+/*  nbparam = FF means "full set of parameters loaded from binary format" */
+#define ALLPARAM_ ((1<<(1+ PARAM_TAG_LW3_MSB- PARAM_TAG_LW3_LSB))-1)  
 
 /* ================================= */
 
@@ -582,12 +612,10 @@ offset_instance
     SWC_COMMANDS 
 */
 
-#define ALLPARAM_ ((1<<(1+TAG_CMD_MSB-TAG_CMD_LSB))-1) /*  nbparam = FFFF means "full set of parameters loaded from binary format" */
-
 #define  _UNUSED2_CMD_MSB U(31)       
 #define  _UNUSED2_CMD_LSB U(24) /* 8 _______ */
-#define       TAG_CMD_MSB U(23)       
-#define       TAG_CMD_LSB U(16) /* 8 parameter, function selection / debug arc index */
+#define   SWC_TAG_CMD_MSB U(23)       
+#define   SWC_TAG_CMD_LSB U(16) /* 8 parameter, function selection / debug arc index */
 #define    PRESET_CMD_MSB U(15)       
 #define    PRESET_CMD_LSB U(12) /* 4  #16 presets */
 #define      NARC_CMD_MSB U(11)       
@@ -597,7 +625,7 @@ offset_instance
 #define   COMMAND_CMD_MSB U( 3)       
 #define   COMMAND_CMD_LSB U( 0) /* 4 command */
 
-#define PACK_COMMAND(TAG,PRESET,NARC,CMD) (((PRESET)<<12)|((NARC)<<8)|((TAG)<<16)|(CMD))
+#define PACK_COMMAND(SWCTAG,PRESET,NARC,CMD) (((PRESET)<<12)|((NARC)<<8)|((SWCTAG)<<16)|(CMD))
 
 /*=====================================================================================*/    
 /*
@@ -626,11 +654,7 @@ offset_instance
 #define STREAM_READ_PARAMETER 3u    
 #define STREAM_RUN 4u               /* func(STREAM_RUN, instance, *in_out) */
 #define STREAM_STOP 5u              /* func(STREAM_STOP, instance, 0)  swc calls free() if it used stdlib's malloc */
-#define STREAM_INTERPRET_COMMANDS 6u /* arm_stream (STREAM_INTERPRET_COMMANDS, byte stream, 0, 0)*/
-#define STREAM_REGISTER_CALLBACK 7u /* arm_stream (STREAM_REGISTER_CALLBACK, byte stream, 0, 0)*/
-//#define STREAM_DELETE_NODE 
-//#define STREAM_INSERT_NODE
-//};
+
 
 /*
     commands from the SWC to Stream
@@ -697,7 +721,10 @@ offset_instance
         #define STREAM_SERVICE_FLOW_ARC_FILLING 3
 
     //for scripts/Nodes: fast data moves
-        #define STREAM_SERVICE_FLOW_DMA 4 
+        #define STREAM_SERVICE_FLOW_DMA_SET 4       /* set src/dst/length */
+        #define STREAM_SERVICE_FLOW_DMA_START 5
+        #define STREAM_SERVICE_FLOW_DMA_STOP 6
+        #define STREAM_SERVICE_FLOW_DMA_CHECK 7
 
     /* 2/STREAM_SERVICE_CONVERSION ------------------------------------------------ */
         #define STREAM_SERVICE_CONVERSION_INT16_FP32 1
@@ -861,18 +888,18 @@ offset_instance
 #define RELOCATABLE U(1)
 
 /*---------------------------------------------------------------------------------------------------*/
-#define  UNUSED_SWCID_MSB U(31)
-#define  UNUSED_SWCID_LSB U(31) /* 1 */
-#define      ID_SWCID_MSB U(30)
-#define      ID_SWCID_LSB U(19) /* 12 SWC ID : developer can produce 4K SWC   */
-#define   IDVER_SWCID_MSB U(18)
-#define   IDVER_SWCID_LSB U(15) /* 4 version    */
-#define   MARCH_SWCID_MSB U(14)
-#define   MARCH_SWCID_LSB U(14) /* 1 multi architecture fat binary delivery, offsets in fatbin_offsets[]    */
-#define SUBARCH_SWCID_MSB U(13)
-#define SUBARCH_SWCID_LSB U( 8) /* 6 (stream_processor_sub_arch_fpu) mapped on 4b from platform_manifest */
-#define   UARCH_SWCID_MSB U( 7)
-#define   UARCH_SWCID_LSB U( 0) /* 8 (stream_processor_architectures) mapped on 6b from platform_manifest */
+//#define  UNUSED_SWCID_MSB U(31)
+//#define  UNUSED_SWCID_LSB U(31) /* 1 */
+//#define      ID_SWCID_MSB U(30)
+//#define      ID_SWCID_LSB U(19) /* 12 SWC ID : developer can produce 4K SWC   */
+//#define   IDVER_SWCID_MSB U(18)
+//#define   IDVER_SWCID_LSB U(15) /* 4 version    */
+//#define   MARCH_SWCID_MSB U(14)
+//#define   MARCH_SWCID_LSB U(14) /* 1 multi architecture fat binary delivery, offsets in fatbin_offsets[]    */
+//#define SUBARCH_SWCID_MSB U(13)
+//#define SUBARCH_SWCID_LSB U( 8) /* 6 (stream_processor_sub_arch_fpu) mapped on 4b from platform_manifest */
+//#define   UARCH_SWCID_MSB U( 7)
+//#define   UARCH_SWCID_LSB U( 0) /* 8 (stream_processor_architectures) mapped on 6b from platform_manifest */
 
 /*---------------------------------------------------------------------------------------------------*/
 /*
@@ -924,10 +951,6 @@ offset_instance
  * -----------------------------------------------------------------------
  */
 
-
-
-#include "stream_const.h"
-
 #define U(x) ((uint32_t)(x))
 #define U8(x) ((uint8_t)(x))
 
@@ -938,11 +961,11 @@ offset_instance
 #define PLATFORM_MP_BOOT_DONE      0x03   /* to confirm the graph was copied in RAM */
 #define PLATFORM_MP_RESET_WAIT     0x04   /* wait the graph is initialized */
 #define PLATFORM_MP_RESET_DONE     0x05   /* tell the reset sequence was executed for that Stream instance */
-#define PLATFORM_MP_SERVICE_LOCK   0x06   /* collission of access to the graph at boot time */
-#define PLATFORM_MP_SERVICE_UNLOCK 0x07   /* wait commander processor copies the graph */
+//#define PLATFORM_MP_SERVICE_LOCK   0x06   /* collission of access to the graph at boot time */
+//#define PLATFORM_MP_SERVICE_UNLOCK 0x07   /* wait commander processor copies the graph */
 #define PLATFORM_IO_SET_STREAM_ALL 0x08   /* launch all the graph interfaces */
 #define PLATFORM_IO_SET_STREAM     0x09   /* share &platform_io(), buffer address, *selection of setting EXTENSION/option, data format */
-#define PLATFORM_IO_DATA           0x0A   /* "data exchanges */ 
+#define PLATFORM_IO_DATA_START           0x0A   /* "data exchanges */ 
 #define PLATFORM_IO_STOP_STREAM    0x0B   /*  */
 #define PLATFORM_IO_ACK            0x0C   /* interface callback to arm_stream_io */
 #define PLATFORM_CLEAR_BACKUP_MEM  0x0D   /* cold start : clear backup memory */
@@ -952,6 +975,7 @@ offset_instance
 #define PLATFORM_OFFSETS           0x11   /* returns the pointer to the (long) platform offsets */
 #define PLATFORM_NODE_ADDRESS      0x12   /* returns the physical address of a node */
 #define PLATFORM_PROC_HW           0x13   /* who am i ? and which ISR is connected to NVIC (iomask) */
+#define PLATFORM_IO_STRUCT         0x14   /* share the struct platform_io_control table  */
 
 /*
 * system subroutines : 
@@ -974,9 +998,7 @@ offset_instance
 
 
 /* ----------------- PLATFORM_IO_MANIFEST ------------------------*/
-////enum io_buffer_allocation => duplicates with the information "IOCOMMAND_IOFMT" 
-#define IO_IS_COMMANDER               0u
-#define IO_IS_SERVANT                 1u
+
 
 /*
     STREAM SERVICES
@@ -1011,14 +1033,6 @@ offset_instance
 /*
  *  stream constants / Macros.
  */
-
-/* packed third parameter fw_idx | size for platform_al(PLATFORM_IO_ACK... =>  
-        arm_stream_io (fw_io_idx, platform_io_callback_parameter[fw_io_idx], ptr1, size);  */
-
-#define PACK_PARAM_AL3(a,b) ((a)<<24 | (b))
-#define UNPACK_PARAM_AL3_SIZE(c) ((c)&0x00FFFFFFL)
-#define UNPACK_PARAM_AL3_FWIDX(c) (((uint32_t)c)>>24)
-
  
 #define SHIFT_SIZE(base,shift) ((base) << ((shift) << 2));           
 

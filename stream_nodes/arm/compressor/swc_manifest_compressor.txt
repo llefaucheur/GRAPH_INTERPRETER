@@ -23,17 +23,18 @@
 ;
     2               memory bank allocation = instance + working area in TCM
  
-;   Memory Size Bytes = A + B x nb_channels_arc(i) + C x sampling_arc(j) + D x frame_size_arc(k) + E x maxParameterSize
+;   Memory Size Bytes = (A + DeltaA64 + B x nb_channels_arc(i) + C x samplingHz_arc(j) + 
+;       D x frame_size_arc(k) + E x maxParameterSize)
 ;
 ;   INSTANCE MEM is the first one, even if the size is null
 ;
-;   [8]:   A B C D E, indexes i,j,k,  alignment,   static/working/retention,  any/normal/fast/critical,  relocatable
-    38 6 0 0 1 0 0 0 4 0 0 0
+;   [8]:   A DA B C D E, indexes i,j,k,  alignment,   static/working/retention,  any/normal/fast/critical,  relocatable
+    38 0 6 0 0 1 0 0 0 4 0 0 0
 
 ;   TCM MEM
 ;
-;   [8]:   A B C D E, indexes i,j,k,  alignment,   static/working/retention,  any/normal/fast/critical,  relocatable
-    38 6 0 0 1 0 0 0 4 1 3 0
+;   [8]:   A DA B C D E, indexes i,j,k,  alignment,   static/working/retention,  any/normal/fast/critical,  relocatable
+    38 0 6 0 0 1 0 0 0 4 1 3 0
 
 
 

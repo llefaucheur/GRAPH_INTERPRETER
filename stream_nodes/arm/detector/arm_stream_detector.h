@@ -56,15 +56,23 @@ enum STREAM_DETECTOR_PRESETS
     STREAM_DETECTOR_PRESET_ACCEL_103Hz,
     STREAM_DETECTOR_PRESET_ECG_360Hz_NOT_IMPLEMENTED,
 };
+
+
 typedef struct          /* 8 Bytes  */
 {
-#define       EXPONENT_MSB 7     
-#define       EXPONENT_LSB 3
-#define     MULTIPLIER_MSB 2     
-#define     MULTIPLIER_LSB 0
+/* 
+    76543210
+    MMMEEEEE
+    #define MINIF(m,exp) ((uint8_t)((m)<<5 | (exp)))
+    #define MINIFLOAT2Q31(x) (((x) & 0xE0) << (23 - ((x) & 0x1F)))
+    #define     MULTIPLIER_MSB 7     
+    #define     MULTIPLIER_LSB 5
+    #define       EXPONENT_MSB 4     
+    #define       EXPONENT_LSB 0
+*/
     uint8_t log2counter;        /* sample counter= 2^(log2counter/8) x (2^(log2counter&7))/8  [0 .. ~2^32]
                                     maintains the "detected" flag at least for this number of samples */
-    uint8_t log2decfMAX;        /* decimation = a power of 2 (-1) */
+    uint8_t log2decfMASK;        /* decimation = a power of 2 (-1) */
     uint8_t high_pass_shifter;  /* for z1 */
     uint8_t low_pass_shifter;   /* for z6 */
     uint8_t floor_peak_shifter; /* for z7 */
@@ -73,10 +81,9 @@ typedef struct          /* 8 Bytes  */
     uint8_t THR;                /* detection threshold z8/z7 */
 } detector_parameters;
 
-// TODO @@@@ Liam Revise byte counts and address memory leak causing struct variables to be overwritten
-typedef struct /* total = TBD Bytes*/
+typedef struct 
 {
-    detector_parameters config; /* 9 bytes */
+    detector_parameters config; /* 8 bytes */
     int32_t z1;    /* memory of the high-pass filter (recursive part) */
     int32_t z2;    /* memory of the high-pass filter (direct part) */
     int32_t z3;    /* output of the high-pass filter */
@@ -91,13 +98,17 @@ typedef struct /* total = TBD Bytes*/
 } arm_detector_instance;
 
 #define F2Q31(f) (long)(0x7FFFFFFFL*(f))
-#define ConvertSamp(f, s) (f<<s)
+#define ConvertSamp(f, s) ((f)<<(s))
 #define DIVBIN(s,n) (s>>n)
 
 
 // Time constants for VAD algorithm
 #define MINIF(m,exp) ((uint8_t)((m)<<5 | (exp)))
-#define MINIFLOAT2Q31(x) (((x) & 0xE0) << (23 - ((x) & 0x1F)))
+#define MINIFLOAT2Q31(x) ((((x) & 0xE0)>>5) << ((x) & 0x1F))
+#define MULTIPLIER_MSB 7     
+#define MULTIPLIER_LSB 5
+#define   EXPONENT_MSB 4     
+#define   EXPONENT_LSB 0
 
 #define VADRISE MINIFLOAT2Q31(instance->config.vad_rise)
 #define VADFALL MINIFLOAT2Q31(instance->config.vad_fall)
@@ -132,8 +143,8 @@ typedef struct /* total = TBD Bytes*/
 // if we do need separate values for each
 #define SFloorPeak instance->config.floor_peak_shifter  // S2 in tinyvad.
 
-// Value of decremented counter is 2^log2decfMAX -1 to allow mask to be used to detect rollover
-#define decfMASK ((1 << (instance->config.log2decfMAX)) -1)
+// Value of decremented counter is 2^log2decfMASK -1 to allow mask to be used to detect rollover
+#define decfMASK ((1 << (instance->config.log2decfMASK)) -1)
 
 extern void arm_stream_detector_process (arm_detector_instance *instance, 
                      int16_t *in, int32_t inputLength, 

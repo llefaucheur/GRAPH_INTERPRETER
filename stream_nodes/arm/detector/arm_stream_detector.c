@@ -33,7 +33,6 @@
 
 #define _CRT_SECURE_NO_DEPRECATE 1
 #include <stdio.h>  /* for sprintf */
-#include <string.h>  /* for memset */
 
 
 #include "stream_const.h"
@@ -75,14 +74,22 @@ arm_stream_detector
 
 #define NB_PRESET 5
 const detector_parameters detector_preset [NB_PRESET] = 
-{   /* log2counter, log2decfMAX, 
+{   /* 
+        #define MINIF(m,exp) ((uint8_t)((m)<<5 | (exp)))
+        #define MINIFLOAT2Q31(x) ((((x) & 0xE0)>>5) << ((x) & 0x1F))
+        #define MULTIPLIER_MSB 7     
+        #define MULTIPLIER_LSB 5
+        #define   EXPONENT_MSB 4     
+        #define   EXPONENT_LSB 0
+
+        log2counter, log2decfMASK, 
         high_pass_shifter, low_pass_shifter, low_pass_z7_z8,  
         vad_rise, vad_fall, THR */
-    {12, 8,   3, 6, 12,  MINIF(3,12), MINIF(1,7), 3}, /* #1 no HPF, fast for button debouncing */
-    {12, 8,   3, 6, 12,  MINIF(3,5),  MINIF(25,0),3}, /* #2 VAD with HPF pre-filtering, tuned for Fs <20kHz */
-    {12, 8,   4, 5,  5,  MINIF(3,12), MINIF(1,7), 3}, /* #3 VAD with HPF pre-filtering, tuned for Fs >20kHz */
-    {12, 8,   3, 6, 12,  MINIF(3,12), MINIF(1,7), 3}, /* #4 IMU detector : HPF, slow time constants */
-    {12, 8,   3, 6, 12,  MINIF(3,12), MINIF(1,7), 3}, /* #5 IMU detector : HPF, fast time constants */
+    {MINIF(1,12), 8,   3, 6, 12,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #1 no HPF, fast for button debouncing */
+    {MINIF(1,12), 8,   3, 6, 12,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #2 VAD with HPF pre-filtering, tuned for Fs <20kHz */
+    {MINIF(1,12), 8,   4, 7, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #3 VAD with HPF pre-filtering, tuned for Fs >20kHz */
+    {MINIF(1,12), 8,   3, 6, 12,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #4 IMU detector : HPF, slow time constants */
+    {MINIF(1,12), 8,   3, 6, 12,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #5 IMU detector : HPF, fast time constants */
 };
 
 char dbg[100];
@@ -98,7 +105,7 @@ long x;
  */
 void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
-    *status = 1;    /* default return status, unless processing is not finished */
+    *status = SWC_TASK_COMPLETED;    /* default return status, unless processing is not finished */
     switch (RD(command,COMMAND_CMD))
     { 
         /* func(command = (STREAM_RESET, PRESET, TAG, NB ARCS IN/OUT)
@@ -124,10 +131,10 @@ void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmb
             }
             pinstance->config = detector_preset[preset];    /* preset data move */
 
-            pinstance->z1 = F2Q31(0.001);
-            pinstance->z6 = F2Q31(0.001);
+            pinstance->z1 = F2Q31(0.00001);
+            pinstance->z6 = F2Q31(0.00001);
             pinstance->z7 = F2Q31(0.001);
-            pinstance->z8 = F2Q31(0.001);
+            pinstance->z8 = F2Q31(0.00001);
             
             break;
         }  
@@ -139,19 +146,17 @@ void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmb
         */ 
         case STREAM_SET_PARAMETER:
         {   arm_detector_instance *pinstance = (arm_detector_instance *) instance;
-            pinstance->config = detector_preset[RD(command,TAG_CMD)];
+            pinstance->config = detector_preset[RD(command,SWC_TAG_CMD)];
 
-            if (RD(command,TAG_CMD) == 0xFF) 
-            {   if (RD(command, TAG_CMD) == 0xFF)  /* copy all the parameter */
-                {   uint8_t *pt8bsrc, *pt8bdst, i, n;
+            if (RD(command,SWC_TAG_CMD) == ALLPARAM_) 
+            {   uint8_t *pt8bsrc, *pt8bdst, i, n;
 
-                    n = sizeof(detector_parameters);
-                    pt8bsrc = (uint8_t *) data;     
-                    pt8bdst = (uint8_t *) &(pinstance->config);
-                    for (i = 0; i < n; i++)
-                    {   pt8bdst[i] = pt8bsrc[i];
-                    }
-                } 
+                n = sizeof(detector_parameters);
+                pt8bsrc = (uint8_t *) data;     
+                pt8bdst = (uint8_t *) &(pinstance->config);
+                for (i = 0; i < n; i++)
+                {   pt8bdst[i] = pt8bsrc[i];
+                }
             }
             break;
         }
@@ -181,6 +186,8 @@ void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmb
             bufferout_free        = pt_pt->size;
 
             nb_data = stream_xdmbuffer_size / sizeof(SAMP_IN);
+            { int i; for (i=0; i< (int)nb_data; i++) outBuf[i]=0; }
+
             arm_stream_detector_process (pinstance, inBuf, (int32_t)nb_data, outBuf);
 
             /* the SWC is producing an amount of data different from the consumed one (see xdm11 in the manifest) */
@@ -192,12 +199,13 @@ void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmb
             //--------------------DEBUG---------------------
             //sprintf (dbg, "Z2%5d Z7%3d Z8%4d VAD%2d", (pinstance->z2)>>12, (pinstance->z7)>>12, (pinstance->z8)>>12, outBuf[0]);
             //arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_SERVICE_INTERNAL_DEBUG_TRACE), dbg, (uint8_t *)strlen(dbg), 0);            
-/*            x = (inBuf[0])<<12;  memcpy(&(dbg[0]), &x, 4);
-            x = (pinstance->z2)<<2;  memcpy(&(dbg[4]), &x, 4);
-            x = (pinstance->z3)<<2;  memcpy(&(dbg[8]), &x, 4);
+
+/*            x = (inBuf[0])<<12;         memcpy(&(dbg[0]), &x, 4);
+            x = (pinstance->z2)<<2;     memcpy(&(dbg[4]), &x, 4);
+            x = (pinstance->z3)<<2;     memcpy(&(dbg[8]), &x, 4);
             x = (pinstance->accvad)<<2; memcpy(&(dbg[12]),&x, 4);
-            x = (outBuf[0])<<15;   memcpy(&(dbg[16]),&x, 4);
-            arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_SERVICE_INTERNAL_DEBUG_TRACE), dbg, (uint8_t *)20, 0);     */       
+            x = (outBuf[0])<<15;        memcpy(&(dbg[16]),&x, 4);
+            arm_stream_services(PACK_SERVICE_S(STREAM_SERVICE_INTERNAL_DEBUG_TRACE, STREAM_SERVICE_INTERNAL), dbg, 0, 0, 20);   */ 
             
             break;
         }

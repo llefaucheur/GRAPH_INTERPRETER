@@ -185,7 +185,7 @@ struct stream_interfaces_av_codec_specific
 struct node_memory_bank
 {
     /* Memory Size = A + B x nb_channels_arc(i) + C x sampling_arc(j) + D x frame_size_arc(k) */
-    uint64_t size0;
+    uint64_t size0, DeltaSize64;
     float sizeNchan, sizeFS, sizeFrame, sizeParameter;
     uint32_t iarcChannelI, iarcSamplingJ, iarcFrameK;
     uint32_t alignmentBytes;      /* enum buffer_alignment_type in NUMBER OF BYTES */
@@ -234,17 +234,18 @@ struct specific_io
 {
     // specific to IOstream 
     char domainName[MAXCHAR_NAME];      /* arc name used in the GUI */
-    uint32_t domain;                     /* decoded domain_name among stream_io_domain [64] */
+    uint32_t domain;                    /* decoded domain_name among stream_io_domain [64] */
 
-    uint32_t set0_copy1;                 /* data move through pointer setting of data copy */
-    uint32_t commander0_servant1;        /* selection for polling protocol */
-    uint32_t graphalloc0_bsp1;           /* buffer declared from the graph 0 or BSP 1 */
-    uint32_t sram0_hwdmaram1;            /* buffer in standard RAM=0, in HW IO RAM=1 */
-    uint32_t processorBitFieldAffinity;  /* indexes of the processor in charge of this stream */
+    uint32_t set0_copy1;                /* data move through pointer setting of data copy */
+    uint32_t commander0_servant1;       /* selection for polling protocol */
+    uint32_t graphalloc0_bsp1;          /* buffer declared from the graph 0 or BSP 1 */
+    uint32_t sram0_hwdmaram1;           /* buffer in standard RAM=0, in HW IO RAM=1 */
+    uint32_t processorBitFieldAffinity; /* indexes of the processor in charge of this stream */
 
-    uint32_t platform_al_fw_io_idx;      /* associated function (platform dependent) */
-    float setupTime;                /* [ms] to avoid this information to being only in the BSP */
-    uint32_t settings;              /* pack format of digital + MSIC options */
+    uint32_t platform_al_fw_io_idx;     /* associated function (platform dependent) */
+    uint8_t ioarc_flag;
+    float setupTime;                    /* [ms] to avoid this information to being only in the BSP */
+    uint32_t settings;                  /* pack format of digital + MSIC options */
 };
 
 
@@ -260,9 +261,19 @@ typedef struct formatStruct formatStruct_t;
 */
 struct io_arcstruct
 {
+    uint32_t top_graph_index; 
+
     uint32_t format_idx;
-    struct specific_io si;
+
+    int fw_io_idx;
+
+    int arcIDstream;
+    int arcIDbuffer;
+    float sizeFactor;
+    uint32_t memVID;
+
     struct common_io_swc sc;
+    struct specific_io si;
 };
 
 
@@ -274,8 +285,11 @@ struct arcStruct
     /* 
     *   data filed during the graph compilation
     */
-    uint32_t ioarc;                      /* arc index used in the graph description */
+    //uint32_t ioarc;                      /* arc index used in the graph description */
+    //uint32_t ioarc_buffer;
     uint32_t arcID;                      /* arc index used in the graph description */
+    float sizeFactor;
+    uint32_t memVID;
 
     // specific to SWC
     uint32_t inPlaceProcessing;          /* SWCONLY flag buffer overlay with another arcID, 0=none*/
@@ -294,10 +308,6 @@ struct arcStruct
 
     /* arc descriptor */
     uint32_t ARCW0, ARCW1, ARCW2, ARCW3;
-    //uint64_t arcdesc_baseidx, arcdesc_dataoff, arcdesc_producerFormat;
-    //uint64_t arcdesc_bufferSize, arcdesc_debugReg, arcdesc_MPFLush, arcdesc_consumerFormat;
-    //uint64_t arcdesc_read, arcdesc_readyW, arcdesc_extend, arcdesc_overflowDebug, arcdesc_UnderflowDebug, arcdesc_computeCommand;
-    //uint64_t arcdesc_write, arcdesc_readyR, arcdesc_producerBlocked, arcdesc_collisionByte;
 };
 
 /*----------------------------------------------------------------------------------------------------*/

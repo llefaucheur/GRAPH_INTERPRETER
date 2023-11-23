@@ -34,19 +34,21 @@
 
 extern p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS];
 
-/* three entry points */
+/* entry point from the application  */
 extern void arm_stream (uint32_t command,  arm_stream_instance_t *inst, uint32_t *data);
-extern void arm_stream_io (uint32_t fw_io_idx, 
-        arm_stream_instance_t *stream_instance,
-        uint8_t *data, uint32_t length);
+
+/* entry point from the device drivers */
+extern void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t size);
+
+/* entry point from the computing nodes */
 extern void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n);
 
-extern void stream_scan_graph (arm_stream_instance_t *stream_instance, int8_t reset_option);
 
 /* ---- REFERENCES --------------------------------------------*/
 
-extern void platform_specific_processor_arch_iomask(uint8_t *procID, uint8_t *archID, uint32_t *ioMask);
-
+extern void arm_stream_io (uint8_t fw_io_idx, arm_stream_instance_t *stream_instance, uint8_t *data, uint32_t length);
+extern void stream_scan_graph (arm_stream_instance_t *stream_instance, int8_t reset_option);
+extern void platform_specific_processor_arch_iomask(struct HW_params **params);
 extern void script_processing (uint32_t *instance);
 extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3);
 extern uint32_t lin2pack (arm_stream_instance_t *stream_instance, uint8_t *buffer);

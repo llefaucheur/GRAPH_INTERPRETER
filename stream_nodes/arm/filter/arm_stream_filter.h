@@ -40,10 +40,11 @@
 
 
 typedef int16_t q15_t;
-#define MAX_NB_BIQUAD_Q15 4
+#define MAX_NB_BIQUAD_Q15 2
 
 /* ----------------------------- */
 /*
+    format:  {b10, 0, b11, b12, a11, a12, b20, 0, b21, b22, a21, a22, ...}
     y[n] = 2^postShift (b0 * x[n] + b1 * x[n-1] + b2 * x[n-2]) + a1 * y[n-1] + a2 * y[n-2]
     a1 and a2 have the opposite sign given by Matlab
 */
@@ -51,14 +52,14 @@ typedef int16_t q15_t;
 typedef struct
 {
     int8_t numStages;        
-    q15_t  coefs[MAX_NB_BIQUAD_Q15*5];        
+    q15_t  coefs[MAX_NB_BIQUAD_Q15*6];        
     int8_t postShift;        
 } arm_biquad_casd_df1_q15_preset;
 
 
 typedef struct
 {
-    q15_t coefs[MAX_NB_BIQUAD_Q15*5];
+    q15_t coefs[MAX_NB_BIQUAD_Q15*6];
     q15_t state[MAX_NB_BIQUAD_Q15*4];    
     arm_biquad_casd_df1_inst_q15 biquad_casd_df1_inst_q15;
 

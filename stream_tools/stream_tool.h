@@ -44,10 +44,10 @@ struct stream_node_manifest
     char developerName[MAXCHAR_NAME];   /* developer's name */
     char nodeName[MAXCHAR_NAME];        /* node name used in the GUI */
     uint32_t instance_idx;                   /* inversion version of theis node */
-    uint32_t nbInputArc, nbOutputArc, nbParameArc, idxStreamingArcSync;
+    uint32_t nbInputArc, nbOutputArc, nbParameArc, idxStreamingArcSync, nbInputOutputArc;
     uint32_t nbArch, arch[MAXNBARCH];        /* stream_processor_architectures (max 256) */
     uint32_t fpu[MAXNBARCH];                 /* stream_processor_sub_arch_fpu */
-    uint32_t swc_assigned_arch, swc_assigned_proc, swc_verbose;
+    uint32_t swc_assigned_arch, swc_assigned_proc, swc_verbose, swc_assigned_priority;
     uint32_t RWinSWC;                        /* XDM11 read/write index is managed in SWC, for variable buffer consumption */
     uint32_t formatUsed;                     /* buffer format is used by the component */
     uint32_t masklib;                        /* mask of up to 16 family of processing extensions "SERVICE_COMMAND_GROUP" */
@@ -90,9 +90,7 @@ struct stream_IO_interfaces
     struct arcStruct arc_flow;
 
     uint32_t format_idx;
-
-    /* desired platform domains mapping to platform capabilities (fw_io_idx) */
-    int domains_to_fw_io_idx[IO_PLATFORM_MAX_NB_DOMAINS];
+    uint32_t fw_io_idx;                     /* mapping of this IO to the SW platform */
 
                                             /* format section specific to each domain */
     union
@@ -142,6 +140,9 @@ struct stream_platform_manifest
     struct stream_IO_interfaces io_stream[MAX_GRAPH_NB_IO_STREAM];
 
     struct stream_node_manifest all_nodes[MAX_NB_NODES];    // SWC_IDX + memreq
+
+    /* desired platform domains mapping to platform capabilities (fw_io_idx) */
+    int domains_to_fw_io_idx[IO_PLATFORM_MAX_NB_DOMAINS];
 };
 
 typedef struct stream_platform_manifest stream_platform_manifest_t;
@@ -163,12 +164,12 @@ struct stream_graph_linkedlist
                                                     /* format section common to all stream interfaces (digital format) */
     struct arcStruct arc[MAX_NB_NODES];             /* rx0tx1, domain, digital format and FS accuracy */
     uint32_t nb_arcs;                               /*  consolidated formats per arc, inter-nodes and at boundaries */
-    uint32_t nb_ioarcs;
-                                           
+ 
+    struct io_arcstruct arcIO[MAX_NB_IO];
+    uint32_t nbio_interfaces, nbio_interfaces_with_arcBuffer;
+    
     struct formatStruct arcFormat[MAX_NB_FORMAT];   /* merged formats */
     uint32_t nb_formats;
-
-    struct io_arcstruct arcIO[MAX_NB_IO];
 
     /* script byte-codes */
     uint32_t nb_byte_code;

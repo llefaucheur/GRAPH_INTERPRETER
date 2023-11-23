@@ -50,6 +50,26 @@ int stream_bitsize_of_raw(uint8_t raw)
     }
 }
 
+/**
+  @brief            LCM / GCD of two integers
+  @param[in/out]    none
+  @return           int
+
+  @par             
+  @remark
+ */
+
+// Recursive function to return gcd of a and b 
+uint32_t gcd(uint32_t a, uint32_t b) 
+{ 
+    if (b == 0) 
+        return a; 
+    return gcd(b, a % b); 
+} 
+  
+// Function to return LCM of two numbers 
+uint32_t lcm(uint32_t a, uint32_t b) { return (a / gcd(a, b)) * b; } 
+
 
 /**
   @brief            read the file to a table of char

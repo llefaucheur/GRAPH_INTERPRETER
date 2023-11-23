@@ -32,7 +32,10 @@
  extern "C" {
 #endif
 
+
 #include <stdint.h>
+
+
 #include "platform_al.h"
 
 
@@ -43,10 +46,20 @@
 */
 #ifdef PLATFORM_ARCH_32BIT
 #define intPtr_t uint32_t 
+#define sintPtr_t int32_t 
 #else
 #define intPtr_t uint64_t 
+#define sintPtr_t int64_t 
 #endif
 
+
+struct HW_params
+{
+    uint8_t procID;
+    uint8_t archID;
+    uint8_t *ioctrl;
+    uint32_t iomask;
+};
 
 struct stream_xdmbuffer
 {   
@@ -194,7 +207,6 @@ struct platform_io_control
 {   io_function_control *io_set;
     io_function_control *io_start;
     io_function_control *io_stop;
-    const int32_t *stream_setting;
 };
 typedef struct platform_io_control platform_io_control_t;
 
@@ -207,12 +219,12 @@ enum
     arc_buffer_size,
     arc_IO_move_to_arc,
     arc_IO_moved_from_arc,
-    arc_IO_moved_from_arc_update,
-    arc_set_base_address_to_arc,
-    arc_set_base_address_from_arc,
+    //arc_IO_moved_from_arc_update,
+    //arc_set_base_address_to_arc,
+    //arc_set_base_address_from_arc,
     arc_data_realignment_to_base,
-    consumer_frame_size,
-    producer_frame_size
+    //consumer_frame_size,
+    //producer_frame_size
 };
 
 
@@ -245,7 +257,7 @@ enum stream_raw_data
     STREAM_Q7,                     /*   Sxxxxxxx  */
     STREAM_CHAR,                   /*   xxxxxxxx  */
     STREAM_FP8_E4M3,               /*   Seeeemmm  NV tiny-float [0.02 .. 448] */
-    STREAM_FP8_E5M2,               /*   Seeeeemm  IEEE-754 [0.0001 .. 57344] for NN training */
+    STREAM_FP8_E5M2,               /*   Seeeeemm  IEEE-754 [0.0001 .. 57344] */
                                      
     /* 2 bytes per data */            
     STREAM_S16,                    /*   Sxxxxxxx.xxxxxxxx  */
@@ -333,6 +345,7 @@ typedef struct
     uint32_t *all_arcs;
     uint32_t *linked_list;   
     uint32_t *main_script;   
+    struct platform_io_control *platform_io;
 
     p_stream_script_callback* application_callbacks;
 
@@ -340,57 +353,64 @@ typedef struct
     uint32_t *linked_list_ptr;      // current position of the linked-list read pointer
 
     uint32_t *swc_header;           // current swc
-    uint32_t xdm11_frame_size;      // same frame size between input and output arcs "1 to 1 XDM frame size"
     stream_handle_t swc_instance_addr;
     uint16_t arcID[MAX_NB_STREAM_PER_SWC];
     uint8_t *pt8b_collision_arc;
     uint32_t pack_command;          // preset, narc, tag, instanceID, command
 
-    uint32_t *stack_services;       // memory reserved for stream_services.c
-    uint32_t stack_services_size;
+    //uint32_t *stack_services;       // memory reserved for stream_services.c
+    //uint32_t stack_services_size;
 
     uint8_t swc_memory_banks_offset;// offset in words
     uint8_t swc_parameters_offset;
 
     uint8_t nb_stream_instances;    // stream instances pointers (in words) = &(all_arcs[ -nb_stream_instances])
 
+/* */
 #define STREAM_COLD_BOOT 0u
-#define STREAM_WARM_BOOT 1u
+#define STREAM_WARM_BOOT 1u         /* Reset + restore memory banks from retention */
+
+#define STREAM_ANY_PRIORITY 0u      /* PRIORITY_SCTRL */
+#define STREAM_LOWLATENCYTASKS 1u
+#define STREAM_MIDLATENCYTASKS 2u
+#define STREAM_BACKGROUNDTASKS 3u
+
 #define STREAM_MAIN_INSTANCE 1
 
+
 #define   UNUSED_SCTRL_MSB U(31)   
-#define   UNUSED_SCTRL_LSB U(26)  /* 6 */ 
-#define L_IN_RAM_SCTRL_MSB U(25)  
-#define L_IN_RAM_SCTRL_LSB U(25)  /* 1 */
-#define MAININST_SCTRL_MSB U(24)   
-#define MAININST_SCTRL_LSB U(24)  /* 1 main instance to set the graph at boot time */
-#define NODE_EXECUTION_MSB U(23)   
-#define NODE_EXECUTION_LSB U(22)  /* 1 */
-#define ENDLLIST_SCTRL_MSB U(21)   
-#define ENDLLIST_SCTRL_LSB U(21)  /* 1 endLinkedList detected */
-#define STILDATA_SCTRL_MSB U(20)   
-#define STILDATA_SCTRL_LSB U(20)  /* 1 still some_components_have_data*/
-#define NBINSTAN_SCTRL_MSB U(19)   
-#define NBINSTAN_SCTRL_LSB U(14)  /* 6 */
+#define   UNUSED_SCTRL_LSB U(25)  /* 7 */ 
+#define PRIORITY_SCTRL_MSB U(24)   
+#define PRIORITY_SCTRL_LSB U(23)  /* 2 */ 
+#define MAININST_SCTRL_MSB U(22)   
+#define MAININST_SCTRL_LSB U(22)  /* 1 main instance to set the graph at boot time */
+#define NODEEXEC_SCTRL_MSB U(21)   
+#define NODEEXEC_SCTRL_LSB U(20)  /* 2 */
+#define ENDLLIST_SCTRL_MSB U(19)   
+#define ENDLLIST_SCTRL_LSB U(19)  /* 1 endLinkedList detected */
+#define STILDATA_SCTRL_MSB U(18)   
+#define STILDATA_SCTRL_LSB U(18)  /* 1 still some_components_have_data*/
+#define NBINSTAN_SCTRL_MSB U(17)   
+#define NBINSTAN_SCTRL_LSB U(14)  /* 4 used at boot time to reset the synchronization flags */
 #define     BOOT_SCTRL_MSB U(13)   
-#define     BOOT_SCTRL_LSB U(13)  /* 1 cold0/warm1 boot */
+#define     BOOT_SCTRL_LSB U(13)  /* 1 cold0/warm1 boot : Reset + restore memory banks from retention */
 #define   SCRIPT_SCTRL_MSB U(12)   
 #define   SCRIPT_SCTRL_LSB U( 7)  /* 6 script call options bit-field (before/after SWC/loop/full) */
 #define   RETURN_SCTRL_MSB U( 6)
 #define   RETURN_SCTRL_LSB U( 4)  /* 3 return options (each SWC, each parse, once starving */
 #define INSTANCE_SCTRL_MSB U( 3)
 #define INSTANCE_SCTRL_LSB U( 0)  /* 4 instance index */
-#define PACK_STREAM_PARAM(M,N,B,S,R,I) (    \
+#define PACK_STREAM_PARAM(M,P,N,B,S,R,I) (  \
             ((M)<<MAININST_SCTRL_LSB) |     \
+            ((P)<<PRIORITY_SCTRL_LSB) |     \
             ((N)<<NBINSTAN_SCTRL_LSB) |     \
-            ((B)<<BOOT_SCTRL_LSB) |         \
-            ((S)<<SCRIPT_SCTRL_LSB) |       \
-            ((R)<<RETURN_SCTRL_LSB) |       \
+            ((B)<<    BOOT_SCTRL_LSB) |     \
+            ((S)<<  SCRIPT_SCTRL_LSB) |     \
+            ((R)<<  RETURN_SCTRL_LSB) |     \
              (I))
     uint32_t scheduler_control;     // PACK_STREAM_PARAM(..);
 
-
-    /* word 0 , identification "whoami", next SWC to run*/
+    /* identification "whoami", next SWC to run*/
     #define    INST_ID_PARCH_MSB U(31)
     #define     WHOAMI_PARCH_MSB U(31)
     #define   INSTANCE_PARCH_MSB U(31)  /* avoid locking an arc by the same processor, but different RTOS instances*/
@@ -409,6 +429,19 @@ typedef struct
 
     uint32_t whoami_ports;          /* _PARCH_ fields */
 
+    /* list of bytes holding the status of the on-going data moves (MP) */
+    #define MAX_GRAPH_NB_IO_STREAM 32
+    #define ONGOING_IOCTRL_MSB U( 0)  
+    #define ONGOING_IOCRTL_LSB U( 0)   /* on-going request on IO */
+
+    uint8_t *ioctrl;                    /* byte array of request fields */
+
+    /* word 2 IO streams to scan , max = 32  = 1 << (NB_IOS_GR1_MSB - NB_IOS_GR1_LSB + 1) */
+    #define MAX_GRAPH_NB_IO_STREAM 32
+    #define BOUNDARY_IOMASK_MSB U(31)  
+    #define BOUNDARY_IOMASK_LSB U( 0)   /* 32 boundary ports in STREAM_FORMAT_IO to scan */ 
+
+    uint32_t iomask;                    /* _IOMASK_ fields */
 
     /* word 1 trace arc */
     #define   __________PARINST_MSB U(31)
@@ -419,20 +452,6 @@ typedef struct
     #define   TRACE_ARC_PARINST_LSB U( 0) /* 11 (ARC0_LW1 / NB_ARCS_GR3 2K arcs) index of the arc used for debug trace / instance */
 
     uint32_t parameters;                /* _PARINST_ fields */
-
-
-    /* word 2 IO streams to scan , max = 32  = 1 << (NB_IOS_GR1_MSB - NB_IOS_GR1_LSB + 1) */
-    #define MAX_GRAPH_NB_IO_STREAM 32
-    #define BOUNDARY_IOMASK_MSB U(31)  
-    #define BOUNDARY_IOMASK_LSB U( 0)   /* 32 boundary ports in STREAM_FORMAT_IO to scan */ 
-
-    uint32_t iomask;                    /* _IOMASK_ fields */
-
-    /* word 3 on-going request on IO */
-    #define REQMADE_IO_MSB U(31)  
-    #define REQMADE_IO_LSB U( 0)        /* 32 boundary ports data transfer on-going */  
-
-    uint32_t ioreq;                     /* _IOREQ_ fields */
 
 } arm_stream_instance_t;
 
@@ -448,22 +467,21 @@ typedef struct
 
 
 
-struct platform_proc_identification
-{    /* who am I ? */
-    uint16_t architecture;
-    uint16_t arch_id;
-    uint16_t proc_id;
-};
+//struct platform_proc_identification
+//{    /* who am I ? */
+//    uint16_t architecture;
+//    uint16_t arch_id;
+//    uint16_t proc_id;
+//};
 
 
-struct platform_control_stream
-{   //uint32_t *graph;        
-    arm_stream_instance_t *instance;
-    uint32_t domain_settings;
-    uint8_t fw_io_idx;
-    stream_xdmbuffer_t buffer;    // [{uint8_t *; int}]
-};
-
+//struct platform_control_stream
+//{   //uint32_t *graph;        
+//    arm_stream_instance_t *instance;
+//    uint32_t domain_settings;
+//    uint8_t fw_io_idx;
+//    stream_xdmbuffer_t buffer;    // [{uint8_t *; int}]
+//};
 
 
 #ifdef __cplusplus

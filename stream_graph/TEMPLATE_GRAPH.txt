@@ -269,9 +269,10 @@ node
         1  u8;  2                           Two biquads
         1  i8;  2                           Two biquads
         1  i8;  0                           postShift
-        5 h16; 5678 2E5B 71DD 2166 70B0     b0/b1/b2/a1/a2 
-        5 h16; 5678 2E5B 71DD 2166 70B0     second biquad
-        ;  _include    1   arm_stream_filter_parameters_x.txt      
+        5 h16; 1231 1D28 1231 63E8 D475     b0/b1/b2/-a1/-a2  ellip(4, 1, 40, 3600/8000, 'low') 
+        5 h16; 1231 0B34 1231 2470 9821     second biquad
+
+        ; or  _include    1   arm_stream_filter_parameters_x.txt      
     _end_
 
     node_data_mapping       optional section 
@@ -409,7 +410,7 @@ _end_
 ;   u16 #2 linear amplitude, format UQ16 0dB .. -96dB
 ;   u16 #3 amplitude offset, format Q15 [-1 .. +1]
 ;   f32 #4 wave frequency [Hz] [0.1uHz .. 250kHz];
-;   u16 #5 starting phase, format Q15 [-pi .. +pi]/pi
+;   s16 #5 starting phase, format S15 [-pi .. +pi]/pi
 ;   u8  #6 modulation type, 0:amplitude, 1:frequency (reserved 2:FSK, ..)
 ;   u8  #7 modulation, 0:none 1=from arc bit stream, 2=from arc q15 words
 ;   u16 #8 modulation index (a) and offset (b), in q15 as fraction of frequency or amplitude
@@ -425,7 +426,7 @@ node
         1  u8;  1       sinewave
         2 h16;  FFFF 0  full-scale, no offset
         1 f32;  1200    1200Hz
-        1 u16;  0       initial phase
+        1 s16;  0       initial phase
         2  u8;  1 1     frequency modulation from bit-stream
         2 h16;  8000 0  full amplitude modulation with sign inversion of the bit-stream
         1 f32;  300     300Hz modulation => (900Hz .. 1500Hz modulation)
@@ -436,8 +437,8 @@ _end_
 ;----------------------------------------------------------------------------------------
 ;12. arm_stream_demodulator
 ;----------------------------------------------------------------------------------------
-;    Operation : decode a bit-stream from analog data. Use-case: IR decoder, UART on 
-;       SPI/I2S audio, frequency detector.
+;    Operation : decode a bit-stream from analog data. Use-case: IR decoder, CAN/UART on 
+;       SPI/I2S audio, frequency estimator.
 ;    Parameters : clock and parity setting or let the algorithm discover the frame setting after 
 ;        some time. https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter
 ;
@@ -498,7 +499,7 @@ node
 _end_
 ;
 ;----------------------------------------------------------------------------------------
-;15.	arm_stream_share
+;15.	arm_stream_share  (TBD)
 ;----------------------------------------------------------------------------------------
 ;
 ;    Operation : share the input arc to several output arcs, to let several nodes have
@@ -511,15 +512,28 @@ _end_
 node 
     arm_stream_synchro
     0 0 0        instance, preset, tag
-
     parameters <optional label for scripts>
-        2  i8; 0 255        preset=0    load all parameters
-
-        3; i16;  15 3 4     input arc #15 is shared to #3 and #4
-    _end
+        2  i8; 0 255        preset=NONE    255=load all parameters
+        2  i8; 4 4          nb input/output arcs
+    _end_
 
 _end_
 
+
+;
+;----------------------------------------------------------------------------------------
+;(N+1)	arm_stream_multistream_synchro
+;----------------------------------------------------------------------------------------
+;
+;    Operation : arranges multiple input streams are delivered at the same time.
+;    Use-case: multi-channel audio stream, each channel is processed with independent
+;     signal processing feature. The problem is to avoid (on MP devices) one channel to
+;     delivered to the final mixer ahead and desynchroinized from the others
+;   
+;    Parameters : 
+
+    arm_stream_multistream_synchro 
+    0 1 0        instance, preset frequency estimator, tag
 
 
 

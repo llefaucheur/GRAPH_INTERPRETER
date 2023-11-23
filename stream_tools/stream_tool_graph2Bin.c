@@ -106,8 +106,11 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     uint32_t SC1, SC2, LK1, LK2;
     static fpos_t pos_NWords, pos_end;
     static uint32_t nFMT, LENscript, LinkedList, LinkedList0, NbInstance, nIOs, NBarc, SizeDebug, dbgScript;
-    uint32_t i, j, i1, i2;
-    struct arcStruct *arc;
+    uint32_t i, j, i1, i2, fw_io_idx;
+    char tmpstring[200];
+    //union {uint8_t indexes_fw_io_idx_u8[256]; 
+    //       uint32_t indexes_fw_io_idx_u32[32]; } UIO;
+    struct io_arcstruct *arcIO;
 
     addrBytes = 0;
     ptf_graph_dbg = ptf_graph_bin;
@@ -125,6 +128,10 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         DEBUG REGISTERS and vectors from ARC content analysis 
         BUFFERS memory banks (internal/external/LLRAM) used for FIFO buffers 
     */
+    fprintf(ptf_graph_dbg, "//----------------------------------\n"); 
+    fprintf(ptf_graph_dbg, "//  AUTOMATICALLY GENERATED CODES\n"); 
+    fprintf(ptf_graph_dbg, "//  DO NOT MODIFY IT !\n"); 
+    fprintf(ptf_graph_dbg, "//----------------------------------\n"); 
 
     fgetpos (ptf_graph_bin, &pos_NWords);
     fprintf(ptf_graph_bin, "0x%08X, // number of Bytes\n", 0); // [-1] size of the graph in Words 
@@ -133,44 +140,71 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     PRINTF(0, "1"); // [1] number of FORMAT, size of SCRIPTS
     PRINTF(0, "2"); // [2] size of LINKEDLIST
     PRINTF(0, "3"); // [3] number of ARCS, number of DEBUG registers
-    PRINTF(0, "4"); // [4] list of processors (procID for the scheduler in platform_manifest) processing the graph
+    PRINTF(1, "4"); // [4] list of processors (procID for the scheduler in platform_manifest) processing the graph
     PRINTF(0, "5"); // [5,6] UQ8 portion of memory consumed on each long_offset[MAX_NB_MEMORY_OFFSET] 
     PRINTF(0, "6"); //
 
     /*
-        STREAM IO   
+        STREAM IO   start from 1, fw_io_idx=0 is reserved for script controls
     */
-    for (i = 0; i < graph->nb_arcs; i++)
+    //nUIO8 = 4*((platform->nb_hwio_stream +3)/4);      /* indexes to FW IO IDX */
+    //for (fw_io_idx = 1; fw_io_idx <= platform->nb_hwio_stream ; fw_io_idx++) 
+    //{   
+    //}
+
+
+    for (fw_io_idx = 1; fw_io_idx <= platform->nb_hwio_stream ; fw_io_idx++) 
     {   
-        arc = &(graph->arc[i]);
+        FMT0 = FMT1 = 0xFFFFFFFFL;
+        arcIO = &(graph->arcIO[fw_io_idx]);
+        sprintf(tmpstring, "");
 
-        /* search the arcs at the boundary (fw_idx != 0) */
-        if (arc->si.platform_al_fw_io_idx != 0) //arc->)
-        {  
-            FMT0 = 0;
-            ST(FMT0,   IOARCID_IOFMT, arc->ioarc);
-            ST(FMT0,    RX0TX1_IOFMT, arc->sc.rx0tx1);
-            ST(FMT0, FW_IO_IDX_IOFMT, arc->si.platform_al_fw_io_idx);
-            ST(FMT0,   SERVANT_IOFMT, arc->si.commander0_servant1);
-            ST(FMT0, IOCOMMAND_IOFMT, arc->si.set0_copy1);
-            
-            FMT1 = arc->si.settings;
-
-            PRINTF(FMT0, "IO FMT0");
-            PRINTF(FMT1, "   FMT1");
+        if (arcIO->top_graph_index != 0xFFFF)
+        {
+            ST(FMT0,   IOARCID_IOFMT, arcIO->arcIDstream);
+            ST(FMT0,    RX0TX1_IOFMT, arcIO->sc.rx0tx1);
+            ST(FMT0,  SERVANT1_IOFMT, arcIO->si.commander0_servant1);
+            ST(FMT0, SET0COPY1_IOFMT, arcIO->si.set0_copy1);
+            ST(FMT0,  ARC0_LW1_IOFMT, arcIO->arcIDbuffer);
+            FMT1 = arcIO->si.settings;
+            if (arcIO->arcIDbuffer < 0xFFFF) 
+            {   sprintf(tmpstring, "FWIOIDX_%d BUFF ARC %d", fw_io_idx, arcIO->arcIDbuffer); 
+            }
+            else
+            {   sprintf(tmpstring, "FWIOIDX_%d", fw_io_idx); 
+            }
         }
+
+        PRINTF(FMT0, tmpstring);
+        PRINTF(FMT1, "-");
     }
 
     /*
         FORMAT used by the arcs (3 words each) 
     */
     for (i = 0; i < graph->nb_formats; i++)
-    {
-        FMT0 = graph->arcFormat->FMT0;
-        FMT1 = graph->arcFormat->FMT1;
-        FMT2 = graph->arcFormat->FMT2;
+    {   union 
+        {   uint32_t u32;
+            float f32;
+        } U;
+        float f;
+        struct formatStruct *format;
+        
+        format = &(graph->arcFormat[i]);
 
-        PRINTF(FMT0, "format0");
+        FMT0 = format->FMT0;
+        FMT1 = format->FMT1;
+        FMT2 = format->FMT2;
+
+        U.u32 = FMT1;
+        f = U.f32;
+        
+        sprintf(tmpstring, "FMT%d frame %d NCHAN %d FS %f", i,
+            RD(FMT0,  FRAMESIZE_FMT0),
+            RD(FMT1,  NCHANM1_FMT1) +1,
+            f);
+
+        PRINTF(FMT0, tmpstring);
         PRINTF(FMT1, "");
         PRINTF(FMT2, "");
 
@@ -200,7 +234,8 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         n = &(graph->all_nodes[i]);
 
         /* word 1 - main Header */
-        PRINTF(n->headerPACK, graph->all_nodes[i].nodeName);
+        strcpy(tmpstring, "-------"); strcat(tmpstring, graph->all_nodes[i].nodeName);
+        PRINTF(n->headerPACK, tmpstring);
 
         /* word 2 - arcs */
         for (iarc = 0; iarc < n->nbInputArc + n->nbOutputArc; iarc+=2)
@@ -226,27 +261,31 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         {
             FMT0 = 0;
             if (imem == 0) ST(FMT0, NBALLOC_LW2,  n->nbMemorySegment);  // instance pointer has the number of memory banks on MSBs
+            if (n->defaultParameterSizeW32 > 1) ST(FMT0, PARAMETER_LW2, 1);
             ST(FMT0, BASEIDXOFFLW2, n->memreq[imem].graph_basePACK);    // address 
-            PRINTF(FMT0, "mem(i)");
+            sprintf(tmpstring, "mem(%d)", imem); 
+            PRINTF(FMT0, tmpstring);
         }
 
         /* word 4 - parameters */
         for (j = 0; j < n->defaultParameterSizeW32; j++)
-        {   
-            PRINTF(n->PackedParameters[j], "parameters ");
+        {   sprintf(tmpstring, "params(%d)", j); 
+            PRINTF(n->PackedParameters[j], tmpstring);
         }
     }
 
     /* LAST WORD */
-    PRINTF(GRAPH_LAST_WORD, "end of the linkedlist of nodes ");
+    PRINTF(GRAPH_LAST_WORD, "^^^^^^^^ FLASH ^^^^^^^^  vvvvvvvvv RAM vvvvvvvvv");
     LK2 = addrBytes;
 
     /*
         ARC descriptors (4 words each)
     */
     for (i = 0; i < graph->nb_arcs; i++)
-    {
-        PRINTF(graph->arc[i].ARCW0, "DESC0 ");
+    {   sprintf(tmpstring, "arc desc(%d) Prod%d Cons%d", i,
+            RD(graph->arc[i].ARCW0, PRODUCFMT_ARCW0),
+            RD(graph->arc[i].ARCW1, CONSUMFMT_ARCW1)) ; 
+        PRINTF(graph->arc[i].ARCW0, tmpstring);
         PRINTF(graph->arc[i].ARCW1, "");
         PRINTF(graph->arc[i].ARCW2, "");
         PRINTF(graph->arc[i].ARCW3, "");
@@ -270,7 +309,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     PRINTF(FMT0, "0");      // [0] 27b RAM address of part/all the graph going in RAM, 
 
     FMT0 = 0; ST(FMT0, NBFORMATS_GR1, graph->nb_formats);
-    ST(FMT0, NB_IOS_GR1, graph->nb_ioarcs);
+    ST(FMT0, NB_IOS_GR1, platform->nb_hwio_stream);
     ST(FMT0, SCRIPTS_SIZE_GR1, (SC2-SC1)/4);
     PRINTF(FMT0, "1");      // [1] number of FORMAT, size of SCRIPTS
 
@@ -281,7 +320,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     ST(FMT0, SCRIPT_SCTRL_GR3, graph->script_sctrl);
     PRINTF(FMT0, "3");      // [3] number of ARCS, number of DEBUG registers
 
-    FMT0 = platform->procid_allowed_gr4;
+    FMT0 = 1; //platform->procid_allowed_gr4;
     PRINTF(FMT0, "4");      // [4] list of processors (procID for the scheduler in platform_manifest) processing the graph
 
     FMT0 = 0x000000FF;      // all the memory of the bank 0 is used, banks 1,2,3 are not used

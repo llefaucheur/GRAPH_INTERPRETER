@@ -1,40 +1,6 @@
 ;
-; ------------------------------------------------------------------------------------------------------------
-;   transducers manifests
-;   description consists in the "digital format" common to all the streams
-;     and specific calibration and mixed-signal settings specific to the "domain" of 
-;     operation (second field after rx/tx direction of the stream)
-;
-;   The list of domain is :
-;       data_in             generic 
-;       data_out            
-;       data_stream_in      generic stream/frame based 
-;       data_stream_out   
-;       audio_in            audio/voice
-;       audio_out         
-;       gpio_in             1 bit peripherals
-;       gpio_out          
-;       motion_in           accelerometer / gyroscope / magnetometer
-;       2d_in               image
-;       2d_out            
-;       user_interface_in   keyboard
-;       user_interface_out
-;       command_in          command from remote computers
-;       command_out       
-;       analog_sensor    sensors with polling mechanismes
-;       analog_transducer 
-;       rtc_in              clocks
-;       rtc_out           
-;       storage_out         
-; 
-; ------------------------------------------------------------------------------------------------------------
-; IMU motion sensor (accelerometer + gyroscope)
-; ------------------------------------------------------------------------------------------------------------
-;
     io_platform_line_in_0   name for the GUI                            
     audio_in                domain name 
-                      
-
 ; ------------------------------------------------------------------------------------------------------------
 ;   Loop on the IO arcs of this component
 ;
@@ -43,7 +9,7 @@
 ;
 ;   ARC0
 
-    1   set0_copy1 data, pointer setting or data copy       
+  
     1   commander=0 servant=1                               
     0   buffer declared from the graph 0 or BSP 1           
     0   in standard RAM=0, in HW IO RAM=1                   
@@ -61,3 +27,24 @@
     0   1                   ;f [2bits] nb channels options list 
     2   1 2 4               ;f [2bits] frame_size option in samples  (or millis) 
     1   16000 44100 48000   ;f [3bits] sampling rate options in Hz
+
+;/*  tuning of AUDIO_RENDER_STREAM_SETTING 
+;    const uint8_t platform_audio_out_bit_fields[] = { 3,4,2,3,4,2,1,2,1,2,1,2,1 };
+;*/
+;const int32_t audio_render_settings [] = { 
+;    /* nb options nbbits */
+;    /*  8  3  nchan */         3,   1, 2, 8,
+;    /* 16  4  FS */            2,   16000, 48000, 
+;    /*  4  2  framesize [ms] */2,   10, 16, 
+;    /*  8  3  mVrms max */     2,   100, 700,
+;    /* 16  4  PGA gain */      0,
+;    /*  4  2  bass gain dB */  4,   0, -3, 3, 6,
+;    /*  2  1  bass frequency */2,   80, 200,       
+;    /*  4  2  mid gain */      4,   0, -3, 3, 6,
+;    /*  2  1  mid frequency */ 2,   500, 2000,       
+;    /*  4  2  high gain */     4,   0, -3, 3, 6,
+;    /*  2  1  high frequency */2,   4000, 8000,       
+;    /*  2  1  agc gain */      0,
+;    /*     6 bits remains */ 
+;    };
+ 

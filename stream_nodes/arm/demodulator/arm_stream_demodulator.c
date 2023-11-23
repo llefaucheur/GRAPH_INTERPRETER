@@ -78,7 +78,7 @@
  */
 void arm_stream_demodulator (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
-    *status = 1;    /* default return status, unless processing is not finished */
+    *status = SWC_TASK_COMPLETED;    /* default return status, unless processing is not finished */
 
     switch (RD(command,COMMAND_CMD))
     { 
@@ -93,7 +93,7 @@ void arm_stream_demodulator (int32_t command, stream_handle_t instance, stream_x
         {   stream_services_entry *stream_entry = (stream_services_entry *)(uint64_t)data;
             intPtr_t *memresults = (intPtr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
-            uint16_t tag = RD(command, TAG_CMD);        /* extra parameters */
+            uint16_t tag = RD(command, SWC_TAG_CMD);        /* extra parameters */
 
             arm_stream_demodulator_instance *pinstance = (arm_stream_demodulator_instance *) *memresults;
             memresults++;

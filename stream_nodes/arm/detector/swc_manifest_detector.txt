@@ -4,13 +4,13 @@
 ;
     ARM             developer name
     arm_stream_detector node name for the GUI and the graph compiler (node and arc src/dst)
-    1 1 0 1   0 1 0 31  
-;                   nb input arcs, 
-;                   nb output arcs, 
+    1 1 0 1   1 1 0 31  
+;                   nb input arcs 
+;                   nb output arcs (in + out = ARCSRDY_LW0_LSB first arcs, data availability checked before RUN )
 ;                   nb parameter-arcs arcs, (NN model..), nodes with parameter arc have "xdm11=0" to keep the read index on the parameter
-;                   arc index used for streaming (scheduler synchronization)
+;                   index of the arc used for the byte synchronization in MP
 ;
-;                   0: arc R/W managed in the SWC  1: all arcs are using the same frame size (see "xdm11")
+;                   0: arc R/W managed in the SWC  1: all arcs are using the same frame size (see "xdm11") 3:DTCM used (DTCM_LW1)
 ;                   0: no need the push the format of the arcs (see reset_component(S)) 1: arc format is used by the component
 ;                   delivery 0:source, 1:binary, 2: 2 binaries (fat binary)
 ;                   mask: dependency to EXTDSPML EXTMATH EXTAUDIO EXTIMAGE EXTSTDLIB
@@ -27,14 +27,13 @@
 ;
     1               memory bank allocation = instance 
 
-; @@@@ update size with 32 + delta increase using 64bits arch
 ;
 ;   Memory Size Bytes = A(32b) + Delta(64b) + B x nb_channels_arc(i) + C x samplingHz_arc(j) + D x frame_size_arc(k) + E x maxParameterSize
 ;
 ;   INSTANCE MEM is the first one, even if the size is null
 ;
 ;   [12]:   A D64 B C D E, indexes i,j,k,  alignment, static/working/retention,  any/normal/fast/critical,  relocatable
-    36 0 0 0 0  0 0 0  4 0 0 0
+    54 0 0 0 0 0  0 0 0  4 0 0 0
 
 
 ;-------------------
@@ -49,7 +48,6 @@
     1   frame length format (0:in milliseconds 1:in samples)
     0   sampling rate format (0:Hz, 1:seconds, 2:days)    
     3   percent FS accuracy                                 
-;    0   set-up time [ms]                                   
 
     ;   Lists of options, starting with the default index 
     0   0                   ;i interleaving options list

@@ -119,21 +119,13 @@
 
 
 /* tuning of PLATFORM_GPIO_IN / OUT */
-    //const int32_t gpio_out_settings [] = {    
+    //const int32_tgpio_out_0_settings [] = {    
     /* nb options nbbits */
     //State : High-Z, low, high, duration, frequency
     //type : PWM, motor control, GPIO
     //PWM duty, duration, frequency (buzzer)
     //Servo motor control -120 .. +120 deg
     //keep the servo position
-
-
-/* PLATFORM_COMMAND_IN */
-    // FIFO(s) of commands from the application    
-
-/* PLATFORM_COMMAND_OUT */
-    // execusion trace/debug, FIFO(s) of command result to the application
-
 
 /* tuning of PLATFORM_RTC_IN / OUT */
     /* a FIFO is filled from RTC on periodic basis : */

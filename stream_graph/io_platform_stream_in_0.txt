@@ -42,7 +42,7 @@
 ;
 ;   ARC0
 
-    1   set0_copy1 data, pointer setting or data copy       
+    
     1   commander=0 servant=1                               
     0   buffer declared from the graph 0 or BSP 1           
     0   in standard RAM=0, in HW IO RAM=1                   
@@ -58,6 +58,6 @@
     ;   Lists of options, starting with the default index 
     0   0                   ;f [1bits] interleaving options list
     0   1                   ;f [2bits] nb channels options list 
-    2   1 2 4               ;f [2bits] frame_size option in samples  (or millis) 
+    2   4 5 6               ;f [2bits] frame_size option in samples default=4samples = 8Bytes/frame
     1   101 202 404         ;f [3bits] sampling rate options in Hz
   

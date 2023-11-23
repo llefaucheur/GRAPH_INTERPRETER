@@ -136,7 +136,7 @@ const uint32_t share_parameter_presets [NB_PRESET][NB_W32_PARAMETERS] =
  */
 void arm_stream_share (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
-    *status = 1;    /* default return status, unless processing is not finished */
+    *status = SWC_TASK_COMPLETED;    /* default return status, unless processing is not finished */
 
     switch (RD(command,COMMAND_CMD))
     { 
@@ -194,7 +194,7 @@ void arm_stream_share (int32_t command, stream_handle_t instance, stream_xdmbuff
             pt8bsrc = (uint8_t *) data;     
             pt8bdst = (uint8_t *)&(pinstance->parameters[0]); 
 
-            switch (RD(command,TAG_CMD))
+            switch (RD(command,SWC_TAG_CMD))
             {   default : break;
                 case TAG_CMD_SLOPE:         pt8bdst += 3; n = 1; break;
                 case TAG_CMD_OUTPUT_GAIN:   pt8bdst += 0; n = 2; break;

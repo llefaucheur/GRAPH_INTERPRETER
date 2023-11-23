@@ -36,7 +36,7 @@
 #include "stream_types.h"
 
 
-#define PRINTF 0
+#define PRINTF 0 // debug
 
 #include "arm_stream_detector.h"
 
@@ -71,25 +71,13 @@ void arm_stream_detector_process (arm_detector_instance *instance,
     int32_t isamp = 0;
     int32_t input_data;
 
-    //static long dbgZ4, dbgC;
-    //static long counter = 0;
-
     while (isamp < inputLength) 
     {
-        // Algorithm sensitive to scaling and filter initialisation, adjust scaling up here samp*(2^shift)
-        // Clean voice: 8 to 12
-        // Noisy voice   9
-        // Acceleromter  9
-        int shift = 9;
-        input_data = ConvertSamp(in[isamp], shift);
+        input_data = ConvertSamp(in[isamp], 15 - (int)(instance->config.high_pass_shifter));
 
-
-        // Note: Adding two Q numbers may give a result in Q+1 making these steps prone to overflow
-        Z2 = Z1  - DIVBIN(Z1 , SHPF) + input_data;
+        Z2 = Z1 - DIVBIN(Z1 , SHPF) + input_data;
         Z3 = Z2 - Z1;
         Z1 = Z2;
-
-        //dbgZ4 = Z3;
         Z3 = (Z3 < 0) ? (-Z3) : Z3;
 
         Z6 = DIVBIN(Z3, SLPF) + (Z6 - DIVBIN(Z6, SLPF));
@@ -103,14 +91,14 @@ void arm_stream_detector_process (arm_detector_instance *instance,
             DECF = decfMASK;
         }
 
-        if (Z8 > Z7 * THR)
+        if (Z8 > Z7 * (MINIFLOAT2Q31(THR)))
         {   ACCVAD = MIN(CLAMP_MAX, ACCVAD + VADRISE);
         }
         else
         {   ACCVAD = MAX(CLAMP_MIN, ACCVAD - VADFALL);
         }
 
-        if (ACCVAD > F2Q31(0.3))
+        if (ACCVAD > F2Q31(0.1))
         {   FLAG = MIN(CLAMP_MAX, FLAG + VADFALL);
         }
         else
@@ -121,51 +109,22 @@ void arm_stream_detector_process (arm_detector_instance *instance,
         if (DOWNCOUNTER > 0)
         {   DOWNCOUNTER --;
         }
-        else
-        {   PREVIOUSVAD = 0;
-        }
 
         /* signal detected => maintain the decision for some time */
         if (FLAG > F2Q31(0.5))
-        {   if (PREVIOUSVAD == 0)
-            {   uint64_t tmp64;
-                tmp64 = (uint64_t)1 << (uint64_t)(RD(RELOADCOUNTER, EXPONENT));
-                tmp64 = (uint64_t)tmp64 * RD(RELOADCOUNTER, MULTIPLIER);
-                DOWNCOUNTER = (uint32_t) (tmp64 >> (MULTIPLIER_MSB+1));
-                PREVIOUSVAD = 1;
-            }
+        {   DOWNCOUNTER = MINIFLOAT2Q31(RELOADCOUNTER);
         }
 
-        pResult[isamp] = (DOWNCOUNTER > 0);
+        pResult[isamp] = (DOWNCOUNTER > 0) ? 0x7FFF : 0;
 
 #if PRINTF        
-        {   
-            // static long counter;
-            counter++;
-            if (pResult[isamp] != PREVIOUSVAD) 
-            {   
-                printf("VAD toggled to %d at %i \n", pResult[isamp], counter);
-                PREVIOUSVAD = (int8_t) (pResult[isamp]);
-            }
-        }
-
-        {
-            #include <stdio.h>
+        {   #include <stdio.h>
             extern FILE *ptf_trace;
-            long x; 
-            if (dbgC++ == 73000)
-                dbgC = dbgC;
-            x = Z6<<2;                  fwrite(&x, 1, 4, ptf_trace);
-            x = Z7<<2;                  fwrite(&x, 1, 4, ptf_trace);
-            x = input_data;             fwrite(&x, 1, 4, ptf_trace);
-            x = dbgZ4;                  fwrite(&x, 1, 4, ptf_trace);
-
-            // x = Z8<<4;                  fwrite(&x, 1, 4, ptf_trace);
-            x = ACCVAD;                 fwrite(&x, 1, 4, ptf_trace);
-            x = FLAG;                   fwrite(&x, 1, 4, ptf_trace);
-            x = Z8<<4;                  fwrite(&x, 1, 4, ptf_trace);
-            x = in[isamp];   fwrite(&x, 1, 4, ptf_trace);
-            x = (pResult[isamp])<<30;   fwrite(&x, 1, 4, ptf_trace);
+            long x, SD=15-10; 
+            x = input_data<<SD;          fwrite(&x, 1, 4, ptf_trace);    //1
+            x = ACCVAD;                  fwrite(&x, 1, 4, ptf_trace);    //2
+            x = FLAG;                    fwrite(&x, 1, 4, ptf_trace);    //3
+            x = 0; if (DOWNCOUNTER > 0) x=0x7fffffff; fwrite(&x, 1, 4, ptf_trace);   //4
         }
 #endif     
         isamp++;

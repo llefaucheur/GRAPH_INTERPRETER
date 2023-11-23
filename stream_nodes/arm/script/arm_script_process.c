@@ -46,7 +46,8 @@
   @param[in]     pinst      instance of the component
   @param[in]     reset      tells to set the conditional flag before the call
   @return        status     finalized processing
-                 reference SWEET16 https://archive.org/details/BYTE_Vol_02-11_1977-11_Sweet_16
+                 reference SWEET16 
+                 https://archive.org/details/BYTE_Vol_02-11_1977-11_Sweet_16
 
   @par  
     Script format : 
@@ -55,7 +56,7 @@
 
         Scripts receive parameters:
             - Flag "comparison OK" set during the RESET sequence
-            - R0, PT0 
+            - R0, R4
 
     Registers 
         Instance static = 
@@ -64,79 +65,78 @@
                 R1 used for arithmetics operations
                 R2 used as loop counter
                 R3 general purpose and pointer post-increments
-                R4/PT0, R5/PT1, R6/PT2, R7/PT3 pointers addressed by "pp" fields
-
-                R8 for general purpose and pointer DTYPE control
-                R9..R15 for general purpose 
-                "PT(i)" are portable pointer (27bits see BASEIDXOFFARCW0)
+                R4 .. R7 for general purpose and pointers addressed by "pp" fields
+                R8 general purpose and pointers type control (DTYPE)
+                R9..R15 general purpose 
 
             DTYPE 4bits: 
-                0,1,2,3: FP8_E4M3/FP16/FP32/FP64, 
-                4,5,6,7: INT8/INT16/INT32/INT64, 
-                8,9,10: STREAM_TIME16/32/64, 
-                11: 8-bits characters (terminated with /0), 
-                12: boolean result from comparison
-                13: pointer to an object of R8's type
-                14: time-stamped (MSB) data (LSB) of R8's type
-                15: void
+                0,1: FP32/FP64, 
+                2,3,4,5: INT8/INT16/INT32/INT64, 
+                6,7,8: STREAM_TIME16/32/64, data of S0 type
+                9: 8-bits characters (terminated with /0), 
+                10: boolean result from comparison
+                11: 27bits offset format pointer to an object of S0 type
+                12: hardware address pointer to an object of S0 type
+                13: type defined by the stack (POPP/PSHP)
+                14,15 : unused
 
         Instance memory area = 
-                rising address :       <----------->>>>--------->
-                registers              0 1 2 .. Nreg
-                stack                                xxxxxxxxxxxx
-                reset position of SP                             ^
-
-             The "const" or "param" area is following the component header in the graph
+             rising address :       <----------->>>>--------->
+             registers              0 1 2 .. Nreg
+             stack                                xxxxxxxxxxxx
+             reset position of SP                             ^
 
              The stack lines and registers are tagged with DTYPE
                 stack and registers are preserved between calls 
-                    the conditional flag is set at reset to allow specific initialization
-                the stack pointer is initialized at each call
+                the conditional flag is set at reset to allow specific initialization
+                R0 is a parameter for function calls and reset (use-case setting)
                 type conversions are managed by the interpreter
                     during calls, arithmetics operations..
-                a CALx pushes the flag, address and SP position, a RET pop it
-             Flag "comparison OK" for conditional call/jump
+                a CALS/CALL pushes the flags, address and SP position, and OPRC-RET pops it
+             Flag "comparison OK" is used for conditional call/jump
                 the flag is set during STREAM_RESET and reset during STREAM_RUN
-                this is a 32bit word, LSB is used for conditional branches
+             Flag "jump to label" selects the offset/label jump for the field "llll"
+                the flag is reset with "llll" interpreted as a label for JUMP/JMPC
+                LABL 0 toggles it to the interpretation of relative jumps to +/- 8 bytes
 
     Instructions 
         format 8its : IIIIXXXX
         15 labels for conditional/local jump + relative jump
         15 labels for subroutines
 
-        0000 dddd  PSHL  following constant of type DTYPE (4bits) pushed on stack 
-        0001 rrrr  PSHR  push register[0..15] on stack (*--SP)
-        0010 iipp  PSHP  push *pointer[0..3] DTYPE(R8) + increments[0,+,-,R3]) on stack (*--SP)
+        0000 dddd  PSHC  push the next bytes as a constant of type DTYPE on stack 
+        0001 rrrr  PSHR  push register[0..15] to S0 : on stack (*--SP)
+        0010 iipp  PSHP  push *(R4..R7) to S0, increments[0,+,-,R3], forced DTYPE(R8)
         0011 rrrr  POPR  pop stack (*SP++) to register[0..15] 
-        0100 iipp  POPP  pop stack (*SP++) to *pointer[0..3] DTYPE(R8) + increments[0,+,-,R3]
-        0101 llll  JUMP  unconditional jump to local-labels (1..15), label#0 means jump to [PC + POP S0]
-        0110 llll  JMPC  conditional jump to local-labels (1..15), label#0 means jump to [PC + POP S0]
-        0111 iiii  CALS  system call and application callbacks, results on stack and registers
+        0100 iipp  POPP  pop S0 to *(R4..R7), increments[0,+,-,R3], forced DTYPE(R8)
+        0101 llll  JUMP  unconditional jump to labels/offset, label#0 means jump to [PC + POP S0]
+        0110 llll  JMPC  conditional jump to label/offset, label#0 means jump to [PC + POP S0]
+        0111 iiii  CALS  system call and application callbacks
         1000 ssss  CALL  call label (1..7 local, 8..15 global(0-7), #0 reserved) callee saves registers not the flag
         1001 cccc  OPRC  operations for control
         1010 aaaa  OPRA  operations for arithmetics
-        1011 llll  LABL  local-label (1..15) (label#0 reserved)
+        1011 llll  LABL  local-label (1..15), #0 toggles the "jump to label" flag
         1100 ....
         1101 ....
         1110 ....
         1111 ....  
 
         OPRC  16 control operations:
-        0 RET   return from call, restore SP,flag (not R9..R15?)
-        1 RETS  keep S0 and S1 on the stack, restore and return
+        0 RETS  subroutine return, restore SP,flag(not R9..R15?)
+        1 RETK  keep S0 and S1 on the stack, restore and return
         2 EQUS  does S0 == S1               NES   does S0 != S1
         3 EQUR  does S0 == R0               NER   does S0 != R0
         4 GTES  does S0 >= S1               LTS   does S0 <  S1
         5 GTER  does S0 >= R0               LTR   does S0 <  R0
         6 LTES  does S0 <= S1               GTS   does S0 >  S1
         7 LTER  does S0 <= R0               GTR   does S0 >  R0
-        8 INVF  invert the comparison to have ^^^^^^^^^^^^^^^^^
+        8 INVF  NOP or invert the next comparison to have ^^^^^
         9 MAXS  S0 = max (S0, S1)
         A MAXR  S0 = max (S0, R0)
         B MINS  S0 = min (S0, S1)
         C MINR  S0 = min (S0, R0)
         D PSHT  push test result on stack for OPRA logical operations (DTYPE = boolean)
-        E ----
+        E RSTS  S0 is a bit-field of data to reset (stack, SP, registers, flags)
         F ----
 
         OPRA  16 arithmetics/logical operations:
@@ -148,14 +148,16 @@
         5 ADDR  S0 = S0 + R1                OPRA  ORR : logical  OR for booleans
         6 SUBR  S0 = S0 - R1                OPRA XORR : logical XOR for booleans 
         7 MULR  S0 = S0 x R1                OPRA ANDR : logical AND for booleans
-        8 DIVR  S0 = S0 / R1 , (ASHR)       OPRA NORR : logical NOR for booleans
-        9 MODR  S0 = S0 mod R1              OPRA SHRR : S0 = S0 >> R1  logical shift
-        A BANZ  R2 is decremented + flag set for R2 != 0 ?
+        8 DIVR  S0 = S0 / R1                OPRA NORR : logical NOR for booleans
+        9 MODR  S0 = S0 mod R1              OPRA ASHR : S0 = S0 << R1 arithmetic shift
+        A BANZ  R2 is decremented, conditional flag set with (R2 != 0)?
         B SWPS  swap S0 <-> S1
         C SWPR  swap R0 <-> R1
-        D EXTA  8bits extension, user defined 
-        E CNVS  S1 translated to the format of S0 and poped to S0
-        F ----  -
+        D CNVS  S1 translated to the format of S0 and poped to S0
+        E ----  -
+        F EXTA  8bits extension code
+
+
 
     Default "CALS" callback (stream_script_callback) [MAX_NB_APP_CALLBACKS]
         #8  sleep/deep-sleep activation
@@ -225,11 +227,11 @@ void arm_script_interpreter (uint32_t *instance, uint8_t flag_reset)
 #endif
     
 #if 0
-;PSHL
-        LITS INT8   12
-        LITS INT32  h55AA
-        LITS CHAR   "test"
-        LITS FP64   3.14159265359
+;PSHC
+        PSHC INT8   12
+        PSHC INT32  h55AA
+        PSHC CHAR   "test"
+        PSHC FP64   3.14159265359
 ;
 ;
 ;PSHR
@@ -238,9 +240,9 @@ void arm_script_interpreter (uint32_t *instance, uint8_t flag_reset)
 ;
 ;
 ;PSHP
-        PSHP P0
-        PSHP P1+
-        PSHP P2-
+        PSHP R4
+        PSHP R5+
+        PSHP R6(R3)
 ;
 ;
 ;POPR
@@ -249,9 +251,9 @@ void arm_script_interpreter (uint32_t *instance, uint8_t flag_reset)
 ;
 ;
 ;POPP
-        POPP P1
-        POPP P2+
-        POPP P3-
+        POPP R4
+        POPP R5+
+        POPP R6(R3)
 ;
 ;
 ;JMPL

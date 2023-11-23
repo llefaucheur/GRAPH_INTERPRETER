@@ -73,10 +73,10 @@ int32_t stream_bitsize_of_raw(uint8_t raw)
        
   @remark
  */
-void arm_stream_services_internal(arm_stream_instance_t *stream_instance, uint32_t command, uint8_t* ptr1, uint8_t* ptr2)
+void arm_stream_services_internal(int32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t n)
 {
 
-    switch (RD(command, TAG_CMD))
+    switch (RD(command, SWC_TAG_CMD))
     {
     case STREAM_SERVICE_INTERNAL_NODE_REGISTER: /* called during STREAM_NODE_DECLARATION to register the SWC callback */
     {
@@ -95,22 +95,22 @@ void arm_stream_services_internal(arm_stream_instance_t *stream_instance, uint32
      */
     case STREAM_SERVICE_INTERNAL_DEBUG_TRACE:
     {
-        uint8_t arcid;
-        uint32_t* arc;
-        uint32_t free_area;
-        uint32_t debugBufferLength = RD(command, TAG_CMD);
+        //uint8_t arcid;
+        //uint32_t* arc;
+        //uint32_t free_area;
+        uint32_t debugBufferLength = RD(command, SWC_TAG_CMD);
 
-        /* extraction of the arc index used for the traces of this Stream instance */
-        arcid = RD(stream_instance->parameters, TRACE_ARC_PARINST);
-        arc = &(stream_instance->all_arcs[arcid * SIZEOF_ARCDESC_W32]);
-        free_area = RD(arc[1], BUFF_SIZE_ARCW1) - RD(arc[3], WRITE_ARCW3);
-        if (free_area < debugBufferLength)
-        {
-            platform_al(PLATFORM_ERROR, 0, 0, 0); /* overflow issue */
-            debugBufferLength = free_area;
-        }
+        ///* extraction of the arc index used for the traces of this Stream instance */
+        //arcid = RD(stream_instance->parameters, TRACE_ARC_PARINST);
+        //arc = &(stream_instance->all_arcs[arcid * SIZEOF_ARCDESC_W32]);
+        //free_area = RD(arc[1], BUFF_SIZE_ARCW1) - RD(arc[3], WRITE_ARCW3);
+        //if (free_area < debugBufferLength)
+        //{
+        //    platform_al(PLATFORM_ERROR, 0, 0, 0); /* overflow issue */
+        //    debugBufferLength = free_area;
+        //}
 
-        arc_data_operations((arm_stream_instance_t*)&stream_instance, arc, arc_IO_move_to_arc, ptr1, debugBufferLength);
+        //arc_data_operations((arm_stream_instance_t*)&stream_instance, arc, arc_IO_move_to_arc, ptr1, debugBufferLength);
         break;
     }
 
@@ -166,7 +166,7 @@ void arm_stream_services_flow (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, u
 void arm_stream_services_conversion (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint32_t n) 
 {
 
-    switch (RD(command, TAG_CMD))
+    switch (RD(command, SWC_TAG_CMD))
     {
     case STREAM_SERVICE_CONVERSION_INT16_FP32: 
     {
@@ -303,7 +303,7 @@ void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2
         } 
         else
         {   /* arm_stream_services(*ID, PACK_COMMAND(TAG,PRESET,NARC,INST,STREAM_SERVICE_INTERNAL_XXXXX), pta, ptb); */
-            arm_stream_services_internal(0, service_command, ptr1, ptr2);
+            arm_stream_services_internal(RD(service_command, FUNCTION_SSRV), ptr1, ptr2, n);
         }
     case STREAM_SERVICE_FLOW:
         arm_stream_services_flow (service_command, ptr1, ptr2, 0);

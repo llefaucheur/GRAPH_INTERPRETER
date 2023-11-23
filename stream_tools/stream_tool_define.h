@@ -45,7 +45,6 @@
 #define INCLUDE "include"
 #define _INTERFACE_NODE "_graph_interface"
 #define _INTERFACE_NODE_ID 0
-#define NOT_IO_ARC 0xFFFF
 #define SECTION_END "_end_"
 
 #define MAX_NB_NODES 100

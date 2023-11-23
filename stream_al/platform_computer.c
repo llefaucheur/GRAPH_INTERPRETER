@@ -52,14 +52,15 @@
 #define PLATFORM_AUDIO_OUT_MVRMS    3
 extern const uint8_t platform_audio_out_bit_fields[];
 
+extern void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t size);
 
-extern uint8_t audio_render_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size);
-extern uint8_t audio_render_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size);
-extern uint8_t audio_render_set_stream(uint32_t *setting, uint8_t *data, uint32_t siz);
+extern uint8_t gpio_out_0_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size);
+extern uint8_t gpio_out_0_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size);
+extern uint8_t gpio_out_0_set_stream(uint32_t *setting, uint8_t *data, uint32_t siz);
            
-extern uint8_t audio_ap_rx_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size);
-extern uint8_t audio_ap_rx_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size);
-extern uint8_t audio_ap_rx_set_stream(uint32_t *setting, uint8_t *data, uint32_t siz);
+extern uint8_t stream_in_0_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size);
+extern uint8_t stream_in_0_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size);
+extern uint8_t stream_in_0_set_stream(uint32_t *setting, uint8_t *data, uint32_t siz);
            
 extern uint8_t trace_set (uint32_t *setting, uint8_t *data, uint32_t size);
 extern uint8_t trace_start(uint32_t *setting, uint8_t *data, uint32_t size);
@@ -110,6 +111,8 @@ static uint32_t PMEM[SIZE_MBANK_PMEM];
 extern const uint32_t graph_input[];
 
 intPtr_t long_offset[MAX_NB_MEMORY_OFFSET];
+
+uint8_t platform_iocontrol[LAST_IO_FUNCTION_PLATFORM];
 
 
 /**
@@ -165,18 +168,20 @@ void platform_specific_long_offset(intPtr_t long_offset[])
   @remark       
  */
 
-void platform_specific_processor_arch_iomask(uint8_t *procID, uint8_t *archID, uint32_t *ioMask)
+void platform_specific_processor_arch_iomask(struct HW_params **params)
 {
-    *procID = 1; 
-    *archID = 0; 
+    (*params)->procID = 1; 
+    (*params)->archID= 0; 
 
-    /* this mask is aligned with files_manifests_computer.txt , max 32 IOs => iomask */
-    *ioMask = 0x01F; /* 5 ISR/Streams can trigger data moves, all are visible from this processor */ 
+    /* list of bytes holding the status of the on-going data moves (MP) */
+    (*params)->ioctrl= &(platform_iocontrol[0]);
+
+    /* 10 IOs */
+    (*params)->iomask= 0x3FF; 
 };
 
 
 #if MULTIPROCESSING != 0
-
 
 /**
   @brief        Memory banks initialization
@@ -209,157 +214,88 @@ uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
 
 #endif
 
-
-extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3);
-
-/*
- * ----------- data access --------------------------------------------------------------
- */
-
-//
-//extern uint32_t * platform_io_callback_parameter [LAST_IO_FUNCTION_PLATFORM];
-//
-
-
-/*
- * --- IO HW and board Manifest -------------------------------------------------------
-
-   Declaration of commander/servant stream control 
-
-   Declaration of scaling factor to reach the RFC8428 (sensiml) unit
-    used during the graph creation for the insertion of gain compensation
-*/
-
-/*
- * --- Digital HW Manifest ------------------------------------------------------------
-
-   Declaration of the minimum guaranteed amount of memory pre-allocated per
-    types (idx_memory_base_offset)
-
-   Additional information on MBANK_DMEM when there are several physical memory 
-    banks and several processors : to let the nodes dedicated to one processor 
-    have their processing area isolated to the ones of the other processor.
-    => manual manual memory mapping optimization step 
-    GUI => YML file => TXT graph generation, verbose editable =>
-    optional manual optimization process, mapping to HW platform specific =>
-    last step  binary file (hashed) graph generation.
-*/
-
-
-/* --------------------------------------------------------------------------------------- 
- * --- IO HW and board interfaces --------------------------------------------------------
- */
-/*  tuning of AUDIO_RENDER_STREAM_SETTING 
-    const uint8_t platform_audio_out_bit_fields[] = { 3,4,2,3,4,2,1,2,1,2,1,2,1 };
-*/
-const int32_t audio_render_settings [] = { 
-    /* nb options nbbits */
-    /*  8  3  nchan */         3,   1, 2, 8,
-    /* 16  4  FS */            2,   16000, 48000, 
-    /*  4  2  framesize [ms] */2,   10, 16, 
-    /*  8  3  mVrms max */     2,   100, 700,
-    /* 16  4  PGA gain */      0,
-    /*  4  2  bass gain dB */  4,   0, -3, 3, 6,
-    /*  2  1  bass frequency */2,   80, 200,       
-    /*  4  2  mid gain */      4,   0, -3, 3, 6,
-    /*  2  1  mid frequency */ 2,   500, 2000,       
-    /*  4  2  high gain */     4,   0, -3, 3, 6,
-    /*  2  1  high frequency */2,   4000, 8000,       
-    /*  2  1  agc gain */      0,
-    /*     6 bits remains */ 
-    };
- 
-
-
 /* --------------------------------------------------------------------------------------- 
     replicated fw_io_dx : platform_computer.h <=> manifest_computer.txt 
 
-    #define PLATFORM_STREAM_IN_0      1       interface to the application processor see stream_al\platform_stream_in_0 
-    #define PLATFORM_IMU_0            2       3D motion sensor see stream_al\platform_imu 
-    #define PLATFORM_MICROPHONE_0     3       audio in mono see stream_al\platform_microphone_0.txt  
-    #define PLATFORM_LINE_IN_0        4       audio in stereo  stream_al\platform_line_in_0.txt     
-    #define PLATFORM_LINE_OUT_0       5       audio out stereo stream_al\platform_line_out_0.txt    
-    #define PLATFORM_ANALOG_SENSOR_0  6       analog converter stream_al\platform_analog_sensor_0.txt 
-    #define PLATFORM_GPIO_OUT_0       7       PWM              stream_al\platform_gpio_out_0.txt    
-    #define PLATFORM_GPIO_OUT_1       8       LED              stream_al\platform_gpio_out_1.txt    
-    #define PLATFORM_COMMAND_IN_0     9       UART command     stream_al\platform_command_in_0.txt  
-    #define PLATFORM_COMMAND_OUT_0   10       UART trace       stream_al\platform_command_out_0.txt 
+    #define IO_PLATFORM_STREAM_IN_0      1  interface to the application processor see stream_al\io_platform_stream_in_0 
+    #define IO_PLATFORM_IMU_0            2  3D motion sensor see stream_al\io_platform_imu_0 
+    #define IO_PLATFORM_MICROPHONE_0     3  audio in mono see stream_al\io_platform_microphone_0.txt  
+    #define IO_PLATFORM_LINE_IN_0        4  audio in stereo  stream_al\io_platform_line_in_0.txt     
+    #define IO_PLATFORM_LINE_OUT_0       5  audio out stereo stream_al\io_platform_line_out_0.txt    
+    #define IO_PLATFORM_ANALOG_SENSOR_0  6  analog converter stream_al\io_platform_analog_sensor_0.txt 
+    #define IO_PLATFORM_GPIO_OUT_0       7  PWM              stream_al\io_platform_gpio_out_0.txt    
+    #define IO_PLATFORM_GPIO_OUT_1       8  LED              stream_al\io_platform_gpio_out_1.txt    
+    #define IO_PLATFORM_COMMAND_IN_0     9  UART command     stream_al\io_platform_command_in_0.txt  
+    #define IO_PLATFORM_COMMAND_OUT_0   10  UART trace       stream_al\io_platform_command_out_0.txt 
 
     functions corresponding to the platform capabilities, indexed with fw_io_idx :
  */
 struct platform_io_control platform_io [LAST_IO_FUNCTION_PLATFORM] = 
 {
-    { /* INDEX 0 IS NOT USED */ .io_set = 0, .io_start = 0, .io_stop = 0, .stream_setting = 0, 
+    { /* INDEX 0 IS NOT USED */ 
+    .io_set = 0, 
+    .io_start = 0, 
+    .io_stop = 0, 
     },
 
     {   /* stream_al\platform_stream_in_0.txt      1 interface to the application processor */
-    .io_set = audio_ap_rx_set_stream,
-    .io_start = audio_ap_rx_start_data_move,
-    .io_stop = audio_ap_rx_stop_stream,
-    .stream_setting = 0, 
+    .io_set = stream_in_0_set_stream,
+    .io_start = stream_in_0_start_data_move,
+    .io_stop = stream_in_0_stop_stream,
     },
 
     {   /* stream_al\platform_imu_0.txt            2 3D motion sensor */
     .io_set = 0,
     .io_start = 0,
     .io_stop = 0,
-    .stream_setting = 0, 
     },
 
     {   /* stream_al\platform_microphone_0.txt     3 audio in mono    */
     .io_set = 0,
     .io_start = 0,
     .io_stop = 0,
-    .stream_setting = 0, 
     },
 
     {   /* stream_al\platform_line_in_0.txt        4 audio in stereo  */
     .io_set = 0,
     .io_start = 0,
     .io_stop = 0,
-    .stream_setting = 0, 
     },
 
     {   /* stream_al\platform_line_out_0.txt       5 audio out stereo */
     .io_set = 0,
     .io_start = 0,
     .io_stop = 0,
-    .stream_setting = 0, 
     },
 
     {   /* stream_al\platform_analog_sensor_0.txt  6 ADC              */
     .io_set = 0,
     .io_start = 0,
     .io_stop = 0,
-    .stream_setting = 0, 
     },
 
     {   /* stream_al\platform_gpio_out_0.txt       7 PWM              */
-    .io_set = audio_render_set_stream,
-    .io_start = audio_render_start_data_move,
-    .io_stop = audio_render_stop_stream,
-    .stream_setting = audio_render_settings,
+    .io_set = gpio_out_0_set_stream,
+    .io_start = gpio_out_0_start_data_move,
+    .io_stop = gpio_out_0_stop_stream,
     },
 
     {   /* stream_al\platform_gpio_out_1.txt       8 LED              */
     .io_set = 0,
     .io_start = 0,
     .io_stop = 0,
-    .stream_setting = 0, 
     },
 
-    {   /* stream_al\platform_command_in_0.txt     9 UART command     */
-    .io_set = 0,
-    .io_start = 0,
-    .io_stop = 0,
-    .stream_setting = 0, 
-    },
-
-    {   /* stream_al\platform_command_out_0.txt   10 UART trace       */
+    {   /* stream_al\platform_command_out_0.txt    9  shock detector  */
     .io_set = trace_set,
     .io_start = trace_start,
     .io_stop = trace_stop,
-    .stream_setting = 0,
+    },
+
+    {   /* stream_al\platform_command_out_1.txt   10  temp. sensor   */
+    .io_set = 0,
+    .io_start = 0,
+    .io_stop = 0,
     },
 };
 
@@ -368,58 +304,10 @@ struct platform_io_control platform_io [LAST_IO_FUNCTION_PLATFORM] =
     global variables of this platform 
 */
 
-FILE *ptf_in_audio_ap_rx_data;
-FILE *ptf_in_audio_render_data;
+FILE *ptf_in_stream_in_0_data;
+FILE *ptf_in_gpio_out_data;
 FILE *ptf_trace;
 uint32_t frame_size_audio_render;
-
-
-
-
-/**
-  @brief         Callbacks used after a data transfer is done
-  @param[in]     data       pointer to the data being exchanged
-  @param[in]     size       size in bytes of the exchanged
-  @return        none
-
-  @par           Audio rendering buffer transfer callback
-  @remark
- */
-
-void audio_render_transfer_done (uint8_t *data, uint32_t size) 
-{   platform_al(PLATFORM_IO_ACK, data, 0, PACK_PARAM_AL3(IO_PLATFORM_AUDIO_OUT, size));
-}
-
-
-/**
-  @brief         Callbacks used after a data transfer is done
-  @param[in]     data       pointer to the data being exchanged
-  @param[in]     size       size in bytes of the exchanged
-  @return        none
-
-  @par           Audio reception buffer transfer callback
-  @remark
- */
-
-void audio_ap_rx_transfer_done (uint8_t *data, uint32_t size) 
-{   platform_al(PLATFORM_IO_ACK, data, 0, PACK_PARAM_AL3(IO_PLATFORM_DATA_IN, size));
-}
-
-
-/**
-  @brief         Callbacks used after a data transfer is done
-  @param[in]     data       pointer to the data being exchanged
-  @param[in]     size       size in bytes of the exchanged
-  @return        none
-
-  @par           Debug trace end of transfer callback
-  @remark
- */
-
-void trace_ap_rx_transfer_done (uint8_t *data, uint32_t size) 
-{   platform_al(PLATFORM_IO_ACK, data, 0, PACK_PARAM_AL3(IO_PLATFORM_COMMAND_OUT, size));
-}
-
 
 
 /**
@@ -439,7 +327,7 @@ uint8_t trace_start (uint32_t *setting, uint8_t *data, uint32_t size)
     //fprintf(ptf_trace, "%s\n", data);
     fwrite(data, 1, size, ptf_trace);
     fflush(ptf_trace);
-    trace_ap_rx_transfer_done ((uint8_t *)data, size);
+    platform_io_ack(IO_PLATFORM_COMMAND_OUT, data,size);
     return 1u; 
 }
 /* --------------------------------------------------------------------------------------- */
@@ -450,9 +338,9 @@ uint8_t trace_stop (uint32_t *setting, uint8_t *data, uint32_t size)
 /* --------------------------------------------------------------------------------------- */
 uint8_t trace_set (uint32_t *setting, uint8_t *data, uint32_t size) 
 { 
-//#define FILE_TRACE "..\\trace.txt"
+//#define FILE_TRACE "..\\..\\..\\stream_test\\trace.txt"
 //    if (NULL == (ptf_trace = fopen(FILE_TRACE, "wt")))
-#define FILE_TRACE "..\\trace.raw"
+#define FILE_TRACE "..\\..\\..\\stream_test\\trace.raw"
     if (NULL == (ptf_trace = fopen(FILE_TRACE, "wb")))
     {   exit (-1);
     }
@@ -474,51 +362,126 @@ uint8_t trace_set (uint32_t *setting, uint8_t *data, uint32_t size)
 
   @remark       
  */
-/* --------------------------------------------------------------------------------------- */
-uint8_t audio_ap_rx_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) 
+
+static int16_t *rx_buffer;
+/* --------------------------------------------------------------------------------------- 
+    data = final destination in the ARC
+    size = free space for copy
+
+    FORMAT 0
+    I F   R N    FS T I S
+    0 8  17 1 16000 0 0 3    
+
+    "io_platform_stream_in_0.txt" :
+
+    1   commander=0 servant=1                               
+    0   buffer declared from the graph 0 or BSP 1           
+    0   in standard RAM=0, in HW IO RAM=1                   
+    1   processor affinity bit-field                        
+
+    0   rx0tx1  
+    6   raw format                                          
+    0   time-stamp                                          
+    1   frame length format (0:in milliseconds 1:in samples)
+    1   sampling rate format (0:Hz, 1:seconds, 2:days)
+    3   percent FS accuracy                                 
+
+    ;   Lists of options, starting with the default index 
+    0   0                   ;f [1bits] interleaving options list
+    0   1                   ;f [2bits] nb channels options list 
+    2   4 5 6               ;f [2bits] frame_size option in samples default=4samples = 8Bytes/frame
+    1   101 202 404         ;f [3bits] sampling rate options in Hz
+*/
+
+uint8_t stream_in_0_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) 
 {   int32_t j, tmp;
-    uint32_t i;
-    int16_t *data16;
+    uint32_t i, cumulated_data = 0;
+    int16_t *data16 = rx_buffer;
 
-    data16 = (int16_t *)data;
-    for (j = i = 0; i < (size/2); i++) 
-    {   j = fscanf(ptf_in_audio_ap_rx_data, "%d,", &tmp); 
-        data16[i] = (int16_t)tmp; 
-    }
-    if (j > 0) tmp = size; else tmp = 0;
+ /* "io_platform_stream_in_0.txt" frame_size option in samples + FORMAT-0 in the example graph */ 
+#define FORMAT_PRODUCER_FRAME_SIZE 8
+    size  = (FORMAT_PRODUCER_FRAME_SIZE/2);
 
-    //tmp = fread(data, 1, size, ptf_in_audio_ap_rx_data);
+    //for (j = i = 0; i < size; i++) 
+    //{   j = fscanf(ptf_in_stream_in_0_data, "%d,", &tmp); 
+    //    data16[i] = (int16_t)tmp; 
+    //    cumulated_data += sizeof(int16_t);
+    //}
+    //if (j > 0) tmp = size; else tmp = 0;
+    tmp = fread(data16, 2, size, ptf_in_stream_in_0_data);
+    cumulated_data = 2 * size;
+
     if (size != tmp)
-    {   audio_ap_rx_transfer_done ((uint8_t *)data, 0);
-        fclose (ptf_in_audio_ap_rx_data);
+    {   platform_io_ack (IO_PLATFORM_DATA_IN, data, 0);
+        fclose (ptf_in_stream_in_0_data);
         exit(-1);
     }
     else
-    {   audio_ap_rx_transfer_done ((uint8_t *)data, size);
+    {   platform_io_ack (IO_PLATFORM_DATA_IN, (uint8_t *)data16, cumulated_data);
     }
     return 1u; 
 }
-
 /* --------------------------------------------------------------------------------------- */
-uint8_t audio_ap_rx_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size) 
-{   fclose (ptf_in_audio_ap_rx_data);
+uint8_t stream_in_0_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size) 
+{   fclose (ptf_in_stream_in_0_data);
     return 1u;
 }
-
 /* --------------------------------------------------------------------------------------- */
-uint8_t audio_ap_rx_set_stream (uint32_t *setting, uint8_t *data, uint32_t size) 
+uint8_t stream_in_0_set_stream (uint32_t *setting, uint8_t *data, uint32_t size) 
 { 
 
-#define FILE_IN "..\\..\\..\\stream_test\\TestPattern.txt"
+    //@@@ DECODE SETTINGS => frame size, sampling, ..
 
-    if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rt")))
-//    if (NULL == (ptf_in_audio_ap_rx_data = fopen(FILE_IN, "rb")))
+#define FILE_IN1 "..\\..\\..\\stream_test\\TestPattern.txt"
+#define FILE_IN2 "..\\..\\..\\stream_test\\VAD_TEST.raw"
+//    if (NULL == (ptf_in_stream_in_0_data = fopen(FILE_IN1, "rt")))
+    if (NULL == (ptf_in_stream_in_0_data = fopen(FILE_IN2, "rb")))
     {   exit (-1);
     }
+
+    rx_buffer = (int16_t *)data;
     return 1u;
 }
 
 
+/* 
+    See platform_sensor.h for the bit-field meaning per domain
+*/
+const uint8_t platform_audio_out_bit_fields[] = { 3,4,2,3,4,2,1,2,1,2,1,2,1 };
+
+static int16_t *tx_buffer;
+/**
+  @brief        Extract setting fields
+  @param[in]    *bit_field list of the bit-fields used for this IO domain
+  @param[in]    settings   the specific setting of this IO interface
+  @param[in]    line       the setting to have access to
+  @param[in]    index      the selected index 
+  @return       int32      the extracted field
+
+  @par          Each IO interface is associated to a "domain" of operation. Each domain
+                is set with default values at reset, or a list of proposed options. 
+
+  @remark       
+ */
+int32_t extract_sensor_field (const uint8_t *platform_bit_fields, 
+                              const int32_t *settings,
+                              uint8_t setting_line,
+                              uint8_t index)
+{
+    uint8_t i, j, i_field, nb_fields;
+
+    i_field = 0;
+
+    for (i = 0; i < setting_line; i++)
+    {   nb_fields = settings[i_field];
+        for (j = 0; j < nb_fields; j++)
+        {
+            /* TBC */
+        }
+        i_field = i_field + nb_fields;
+    }
+    return 3;
+}
 
 /**
   @brief        IO functions "set" "start" "stop" for data stream to the emulated audio interface
@@ -531,38 +494,101 @@ uint8_t audio_ap_rx_set_stream (uint32_t *setting, uint8_t *data, uint32_t size)
                 When the stream is commander the "start" function is called by the device 
                     driver in the DMA interrupt
                 Otherwise the "start" function is called from the AL
-                    platform_al(PLATFORM_IO_DATA, XDM buffer, 0u, 0u);  translated to :
+                    platform_al(PLATFORM_IO_DATA_START, XDM buffer, 0u, 0u);  translated to :
                         io_start(settings, buffer->address, buffer->size);
   @remark       
  */
-/* --------------------------------------------------------------------------------------- */
-uint8_t audio_render_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) 
-{   
-    audio_render_transfer_done ((uint8_t *)data, size);
-    
-    fwrite(data, 1, size, ptf_in_audio_render_data);
-    fflush(ptf_in_audio_render_data);
+/* --------------------------------------------------------------------------------------- 
 
+    FORMAT 1
+    I F   R N    FS T I S
+    1 12 17 1 16000 0 0 4    formatID1; frameSize; raw; nchan; FS(float); timestp; intlv; specific(Word2);
+
+    io_platform_line_out_0  name for the GUI                            
+    audio_out               domain name 
+    1   commander=0 servant=1                               
+    0   buffer declared from the graph 0 or BSP 1           
+    0   in standard RAM=0, in HW IO RAM=1                   
+    1   processor affinity bit-field                        
+
+    1   rx0tx1  
+    6   raw format                                          
+    0   time-stamp                                          
+    1   frame length format (0:in milliseconds 1:in samples)
+    1   sampling rate format (0:Hz, 1:seconds, 2:days)
+    3   percent FS accuracy                                 
+
+    ;   Lists of options, starting with the default index 
+    0   0                   ;f [1bits] interleaving options list
+    0   1                   ;f [2bits] nb channels options list 
+    2   4 5 6               ;f [2bits] frame_size option in samples  (or millis) 
+    1   16000 44100 48000   ;f [3bits] sampling rate options in Hz
+
+    #define IO_PLATFORM_STREAM_IN_0      1        interface to the application processor see stream_al\io_platform_stream_in_0 
+    #define IO_PLATFORM_IMU_0            2        3D motion sensor see stream_al\io_platform_imu_0 
+    #define IO_PLATFORM_MICROPHONE_0     3        audio in mono see stream_al\io_platform_microphone_0.txt  
+    #define IO_PLATFORM_LINE_IN_0        4        audio in stereo  stream_al\io_platform_line_in_0.txt     
+    #define IO_PLATFORM_LINE_OUT_0       5        audio out stereo stream_al\io_platform_line_out_0.txt    
+    #define IO_PLATFORM_ANALOG_SENSOR_0  6        analog converter stream_al\io_platform_analog_sensor_0.txt 
+    #define IO_PLATFORM_GPIO_OUT_0       7        PWM              stream_al\io_platform_gpio_out_0.txt    
+    #define IO_PLATFORM_GPIO_OUT_1       8        LED              stream_al\io_platform_gpio_out_1.txt    
+    #define IO_PLATFORM_DATA_IN_0        9        shock detector   stream_al\io_platform_imu_metadata_0.txt 
+    #define IO_PLATFORM_DATA_IN_1       10        temp. sensor     stream_al\io_platform_imu_temperature_0.txt 
+
+*/
+uint8_t gpio_out_0_start_data_move (uint32_t *setting, uint8_t *data, uint32_t size) 
+{   
+ /* "io_platform_stream_in_0.txt" frame_size option in samples + FORMAT-0 in the example graph */ 
+#define FORMAT_CONSUMER_FRAME_SIZE 12
+    size  = (FORMAT_CONSUMER_FRAME_SIZE/2);
+
+    fwrite(tx_buffer, 2, size, ptf_in_gpio_out_data);
+    fflush(ptf_in_gpio_out_data);
+
+    platform_io_ack (IO_PLATFORM_GPIO_OUT_0, (uint8_t *)tx_buffer, FORMAT_CONSUMER_FRAME_SIZE);
     return 1u; 
 }
-
 /* --------------------------------------------------------------------------------------- */
-uint8_t audio_render_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size) 
-{   fclose (ptf_in_audio_render_data);
+uint8_t gpio_out_0_stop_stream(uint32_t *setting, uint8_t *data, uint32_t size) 
+{   fclose (ptf_in_gpio_out_data);
     return 1u;
 }
-
 /* --------------------------------------------------------------------------------------- */
-uint8_t audio_render_set_stream (uint32_t *setting, uint8_t *data, uint32_t size)
+uint8_t gpio_out_0_set_stream (uint32_t *setting, uint8_t *data, uint32_t size)
 {   uint8_t index_frame_size = 0;
+
+    //@@@ DECODE SETTINGS => frame size, sampling, ..
+
+    const uint8_t platform_audio_out_bit_fields[] = { 3,4,2,3,4,2,1,2,1,2,1,2,1 };
+    /* device driver data */
+    //const int32_t gpio_out_0_settings [] = { 
+    //    /* nb options nbbits */
+    //    /*  8  3  nchan */         3,   1, 2, 8,
+    //    /* 16  4  FS */            2,   16000, 48000, 
+    //    /*  4  2  framesize [ms] */2,   10, 16, 
+    //    /*  8  3  mVrms max */     2,   100, 700,
+    //    /* 16  4  PGA gain */      0,
+    //    /*  4  2  bass gain dB */  4,   0, -3, 3, 6,
+    //    /*  2  1  bass frequency */2,   80, 200,       
+    //    /*  4  2  mid gain */      4,   0, -3, 3, 6,
+    //    /*  2  1  mid frequency */ 2,   500, 2000,       
+    //    /*  4  2  high gain */     4,   0, -3, 3, 6,
+    //    /*  2  1  high frequency */2,   4000, 8000,       
+    //    /*  2  1  agc gain */      0,
+    //    /*     6 bits remains */ 
+    //    };
+
 #define FILE_OUT "..\\..\\..\\stream_test\\audio_out.raw"
-    if (NULL == (ptf_in_audio_render_data = fopen(FILE_OUT, "wb")))
+    if (NULL == (ptf_in_gpio_out_data = fopen(FILE_OUT, "wb")))
     {   exit (-1);
     }
 
+    tx_buffer = (int16_t *)data; /* not used */
+    memset(tx_buffer, 0, FORMAT_CONSUMER_FRAME_SIZE);
+
     /* simulate IO commander port with a fixed frame size */
-    frame_size_audio_render = extract_sensor_field 
-        (platform_audio_out_bit_fields, audio_render_settings, PLATFORM_AUDIO_OUT_FRAMESIZE, index_frame_size);
+    //frame_size_audio_render = extract_sensor_field 
+    //    (platform_audio_out_bit_fields, 0 /*gpio_out_0_settings */, PLATFORM_AUDIO_OUT_FRAMESIZE, index_frame_size);
 
     return 1u;
 }
