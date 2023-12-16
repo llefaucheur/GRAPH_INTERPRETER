@@ -31,11 +31,13 @@
     
 
 #include "stream_const.h"      /* graph list */
-#include "platform_al.h"
+#include "../stream_al/platform_al.h"
 #include "stream_types.h"
 #include "stream_extern.h"
 
 #include <string.h>             /* for memcpy */
+
+SECTION_START
 
 static long DEBUG_CNT;
 
@@ -45,15 +47,14 @@ static void reset_component (arm_stream_instance_t *S);
 static uint8_t lock_this_component (arm_stream_instance_t *S);
 static void set_new_parameters (arm_stream_instance_t *S);
 static void run_node (arm_stream_instance_t *S);
-static uint8_t arcs_are_ready(arm_stream_instance_t *S, uint8_t nb_arc);
 static uint8_t arc_ready_for_write(arm_stream_instance_t *S, uint32_t *arc, uint32_t *frame_size);
 static uint8_t arc_ready_for_read(arm_stream_instance_t *S, uint32_t *arc, uint32_t *frame_size);
 static intPtr_t arc_extract_info_int (arm_stream_instance_t *S, uint32_t *arc, uint8_t tag);
+static void load_next_node(arm_stream_instance_t *S);
 
 #define script_option (RD(S->scheduler_control, SCRIPT_SCTRL))
 #define return_option (RD(S->scheduler_control, RETURN_SCTRL))
-#define LO S->long_offset
-#define GR S->graph
+
 
 /*----------------------------------------------------------------------------
    execute a swc
@@ -116,13 +117,13 @@ static void stream_calls_swc (arm_stream_instance_t *S,
  */
 
 /*----------------------------------------------------------*/
-static intPtr_t pack2linaddr_int(intPtr_t *long_offset, uint32_t x)
+intPtr_t pack2linaddr_int(intPtr_t *long_offset, uint32_t x)
 {
     intPtr_t dbg1, dbg2, dbg3;
      dbg1 = *((long_offset)+RD(x,DATAOFF_ARCW0));
      dbg2 =  BASEINWORD32 * RD((x),BASEIDX_ARCW0);
 
-     if (RD(x,BASESIGN_ARCW0))  // to test @@@
+     if (RD(x,BAS_SIGN_ARCW0))  // to test @@@
         dbg3 = dbg1 + ~(dbg2) +1; // dbg1-dbg2 with unsigned
       else
         dbg3 = dbg1 + dbg2;
@@ -130,9 +131,9 @@ static intPtr_t pack2linaddr_int(intPtr_t *long_offset, uint32_t x)
     return dbg3; // PACK2LINADDR(long_offset,x);
 }
 
-static uint8_t * pack2linaddr_ptr(intPtr_t *long_offset, uint32_t data)
+void * pack2linaddr_ptr(intPtr_t *long_offset, uint32_t data)
 {
-    return (uint8_t *) (pack2linaddr_int(long_offset, data));
+    return (void *) (pack2linaddr_int(long_offset, data));
 }
 
 
@@ -532,7 +533,7 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
     }
 
 
-    for (iarc = 0; iarc < RD(*(S->swc_header), NBARCW_LW0); iarc++)
+    for (iarc = 0; iarc < RD((S->swc_header)[0], NBARCW_LW0); iarc++)
     {   
         arcID = (S->arcID[iarc]);
         arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
@@ -835,7 +836,7 @@ static uint32_t check_hwsw_compatibility(arm_stream_instance_t *S)
 
 void stream_scan_graph (arm_stream_instance_t *S, int8_t command) 
 {
-    //if (script_option & STREAM_SCHD_SCRIPT_START) { script_processing (S->main_script);}
+    //if (script_option & STREAM_SCHD_SCRIPT_START) { script_processing (S->script_offsets);}
 
     /* continue from the last position, index in W32 */
     S->linked_list_ptr = &((S->linked_list)[RD(S->whoami_ports, SWC_W32OFF_PARCH)]);
@@ -917,10 +918,11 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command)
 
             /* check input arc has enough data and output arc is free */
             if (command == STREAM_RUN) 
-            {   run_node (S);
+            {   load_next_node(S);
+                run_node (S);
             }
     
-            /* now SWC can be unlocked */
+            /* .. if (0 == lock_this_component (S)) => now SWC can be unlocked */
             WR_BYTE_MP_(S->pt8b_collision_arc, 0u);   
 
             if (return_option == STREAM_SCHD_RET_END_EACH_SWC)
@@ -934,13 +936,13 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command)
         {   CLEAR_BIT(S->scheduler_control, STILDATA_SCTRL_LSB); 
             break;
         }
-        if (script_option & STREAM_SCHD_SCRIPT_END_PARSING) {script_processing (S->main_script); }
+        //if (script_option & STREAM_SCHD_SCRIPT_END_PARSING) {script_processing (S->script_offsets); }
 
     } while ((return_option == STREAM_SCHD_RET_END_SWC_NODATA) && 
                 (0u != TEST_BIT(S->scheduler_control, STILDATA_SCTRL_LSB)));
 
 
-    if (script_option & STREAM_SCHD_SCRIPT_END) {script_processing (S->main_script);}
+    //if (script_option & STREAM_SCHD_SCRIPT_END) {script_processing (S->script_offsets);}
 }
 
 
@@ -993,12 +995,15 @@ static void read_header (arm_stream_instance_t *S)
     platform_al(PLATFORM_NODE_ADDRESS, (uint8_t *)&(S->address_swc), 0, idx_swc);   
 
     /* read the arc indexes */
-    for (iarc = 0; iarc < MIN(narc, MAX_NB_STREAM_PER_SWC); iarc+=2)
+    for (iarc = 0; iarc < MIN(narc +1, MAX_NB_STREAM_PER_SWC); iarc+=2)
     {   uint32_t arcs;
         arcs = (S->swc_header)[1+iarc/2];
         S->arcID[iarc]   = RD(arcs, ARC0_LW1);
         S->arcID[iarc+1] = RD(arcs, ARC1_LW1);
     }    
+
+    /* SWC arcs indexes = [0..narc-1], arcs of the associated script = narc (optionaly narc+1) */
+    S->script_arctx = (uint8_t) (S->arcID[narc]);
 
     /* byte pointer for locking the node, can be the arc 0/1/2/3 ARCLOCK_LW0 has 2bits */
     x = RD(S->swc_header[0], ARCLOCK_LW0);
@@ -1122,6 +1127,28 @@ static void reset_component (arm_stream_instance_t *S)
         (stream_handle_t) memreq_physical, 
         (stream_xdmbuffer_t *) arm_stream_services, 
         &check);
+
+    /* reset the associated script, if any */
+    if (RD(S->swc_header, SCRIPT_LW0) != 0)
+    {   uint16_t scriptid = RD(S->swc_header, SCRIPT_LW0);
+        uint32_t command;
+    //@@@@@        
+
+
+        ST(command, COMMAND_CMD, STREAM_RESET);
+        ST(command, NREG_SCRIPT, 2);
+        ST(command, STACK_SIZE_SCRIPT, 2);
+        //arcid = S->arcID[iarc];
+        //arm_script (
+        //    (stream_handle_t) pack2linaddr_int(S->long_offset, S->all_arcs[ARC[script]), 
+        //    0, 
+        //    0);
+/*
+    command  = reset/run + nbreg + stack size
+    instance = pointer to the static area (the base address of the arc)
+    data     = byte codes
+*/
+    }
 }
 
 
@@ -1167,6 +1194,27 @@ static void set_new_parameters (arm_stream_instance_t *S)
     }
 }
 
+/**
+  @brief         DMA programming to load in RAM the next Node
+  @param[in]     instance   pointer to the static area of the current Stream instance
+
+  @return        none
+
+  @par           Node may need code moved in RAM or or critical-fast sections reloaded
+
+  @remark
+ */
+
+void load_next_node(arm_stream_instance_t *S)
+{
+    /* 
+        check PROG_PP_SCTRL / DATA_PP_SCTRL for reload 
+        launch DMA reload :  platform_al(PLATFORM_DMA_MOVE,src,dst,n); 
+        check DMA reload :  platform_al(PLATFORM_DMA_MOVE_DONE,src,dst,n); 
+        toggle the PP bits
+    */
+}
+
 
 /**
   @brief         Execution of a Node
@@ -1181,22 +1229,22 @@ static void set_new_parameters (arm_stream_instance_t *S)
   @remark
  */
 
-
 static void run_node (arm_stream_instance_t *S)
 {
     stream_xdmbuffer_t xdm_data[MAX_NB_STREAM_PER_SWC];
     uint32_t check;
    
-    /* push all the ARCs on the stack and check arcs buffer are ready */
+    //if (script_option & STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC) {script_processing (S->script_offsets); }
+    //script_processing (RD(S->swc_header[0], SCRIPT_LW0));
+ 
+ /* push all the ARCs on the stack and check arcs buffer are ready */
     if (0 == arc_index_update(S, xdm_data, 0))
     {   return; /* buffers are not ready */
     }
 
     /* flag : still one component is processing data in the graph */
     SET_BIT(S->scheduler_control, STILDATA_SCTRL_LSB);
-    
-    if (script_option & STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC) {script_processing (S->main_script); }
-    
+   
     ST(S->pack_command, COMMAND_CMD, STREAM_RUN);
 
     // @@ TODO : repeat the SWC execution 'MAX_SWC_REPEAT' times 
@@ -1208,21 +1256,22 @@ static void run_node (arm_stream_instance_t *S)
         stream_calls_swc (S,
             S->swc_instance_addr, xdm_data,  &check);
     
-        //if (SWC_TASK_NOT_COMPLETED == check)
+        //if (TASKS_NOT_COMPLETED == check)
         //{   check_graph_boundaries(S); 
         //}
     } 
-    while (check == SWC_TASK_NOT_COMPLETED);
-    
-    
-    if (script_option & STREAM_SCHD_SCRIPT_AFTER_EACH_SWC) {script_processing (S->main_script);}
+    while (check == TASKS_NOT_COMPLETED);
     
     /*  output FIFO write pointer is incremented AND a check is made for data 
         re-alignment to base adresses (to avoid address looping)
         The SWC don't wait and let the consumer manage the alignement 
     */
     arc_index_update(S, xdm_data, 1); 
+    
+    //if (script_option & STREAM_SCHD_SCRIPT_AFTER_EACH_SWC) {script_processing (S->script_offsets);}
 }
+
+SECTION_STOP 
 
 #ifdef __cplusplus
 }

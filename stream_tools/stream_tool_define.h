@@ -38,13 +38,13 @@
 #define IO_INTERFACE "top_graph_interface"
 #define FORMAT "format"
 #define PARAMETER_START "parameters"
+#define PARAMETER_RAM_START "parameters_arc"
 #define NODE "node"
 #define ARM_SCRIPT "arm_script"
 #define SCRIPT "SCRIPT"
 #define ARC "arc"
 #define INCLUDE "include"
-#define _INTERFACE_NODE "_graph_interface"
-#define _INTERFACE_NODE_ID 0
+//#define _INTERFACE_NODE_ID 0
 #define SECTION_END "_end_"
 
 #define MAX_NB_NODES 100

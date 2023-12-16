@@ -29,26 +29,12 @@
  extern "C" {
 #endif
 
-
 #include "stream_const.h"
 #include "stream_types.h"
 #include "stream_extern.h"
-#include "platform_al.h"
+#include "../stream_al/platform_al.h"
+SECTION_START
 
-/*----------------------------------------------------------*/
-static uint8_t * pack2linaddr_u8ptr(intPtr_t *long_offset, uint32_t x)
-{
-    intPtr_t dbg1, dbg2, dbg3;
-     dbg1 = *((long_offset)+RD(x,DATAOFF_ARCW0));
-     dbg2 =  BASEINWORD32 * RD((x),BASEIDX_ARCW0);
-
-     if (RD(x,BASESIGN_ARCW0))  // to test @@@
-        dbg3 = dbg1 + ~(dbg2) +1; // dbg1-dbg2 with unsigned
-      else
-        dbg3 = dbg1 + dbg2;
-
-    return (uint8_t *)dbg3; 
-}
 
 /**
   @brief         data transfer acknowledge
@@ -97,7 +83,7 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
     arc = &(arc[SIZEOF_ARCDESC_W32 * RD(*pio, IOARCID_IOFMT)]);
 
     base = RD(arc[0], BASEIDXOFFARCW0);
-    long_base = pack2linaddr_u8ptr(S->long_offset, base);
+    long_base = (uint8_t *)pack2linaddr_ptr(S->long_offset, base);
     fifosize = RD(arc[1], BUFF_SIZE_ARCW1);
     read = RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
@@ -130,7 +116,7 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
             /* only one node can read the write-index at a time : no collision is possible */
             src = data;
             dst = &(long_base[write]);
-            MEMCPY (dst, src, data_size);
+            MEMCPY (dst, src, data_size)
             write = write + data_size;
             ST(arc[3], WRITE_ARCW3, write);     /* update the write index */
 
@@ -140,7 +126,7 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
                 consumer_frame_size = RD(S->all_formats[i], FRAMESIZE_FMT0);
 
                 if (write - read >= consumer_frame_size)
-                {   CLEAR_BIT(ioctrl[fw_io_idx], ONGOING_IOCRTL_LSB);
+                {   ioctrl[fw_io_idx] = 0;
                 }
             }
 
@@ -156,11 +142,11 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
         } 
         else /* IO_COMMAND_SET_BUFFER */
         {
-            /*arc_set_base_address_to_arc */
+            /* arc_set_base_address_to_arc */
             ST(arc[2], READ_ARCW2, 0);
             ST(arc[0], BASEIDXOFFARCW0, lin2pack(S, data));
             ST(arc[3], WRITE_ARCW3, data_size);
-            CLEAR_BIT(ioctrl[fw_io_idx], ONGOING_IOCRTL_LSB);
+            ioctrl[fw_io_idx] = 0;
         }
     }
     else 
@@ -184,7 +170,7 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
             /* only one node can read the write-index at a time : no collision is possible */
             src = &(long_base[read]);
             dst = data;
-            MEMCPY (dst, src, data_size);
+            MEMCPY (dst, src, data_size)
             read = read + data_size;
             ST(arc[2], READ_ARCW2, read);   /* update the read index */
 
@@ -192,7 +178,7 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
             if (0u != TEST_BIT (arc[3], ALIGNBLCK_ARCW3_LSB))
             {   src = &(long_base[read]);
                 dst =  long_base;
-                MEMCPY (dst, src, write-read);
+                MEMCPY (dst, src, write-read)
 
                 /* update the indexes Read=0, Write=dataLength */
                 ST(arc[2], READ_ARCW2, 0);
@@ -205,7 +191,7 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
                 i = RD(arc[1],CONSUMFMT_ARCW1) * STREAM_FORMAT_SIZE_W32;
                 consumer_frame_size = RD(S->all_formats[i], FRAMESIZE_FMT0);
                 if (write - read < consumer_frame_size)
-                {   CLEAR_BIT(ioctrl[fw_io_idx], ONGOING_IOCRTL_LSB);
+                {   ioctrl[fw_io_idx] = 0;
                 }
             }
         } 
@@ -215,12 +201,13 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
             ST(arc[0], BASEIDXOFFARCW0, lin2pack(S, data));
             ST(arc[2], READ_ARCW2, 0);
             ST(arc[3], WRITE_ARCW3, 0);
-            CLEAR_BIT(ioctrl[fw_io_idx], ONGOING_IOCRTL_LSB);
+            ioctrl[fw_io_idx] = 0;
         }
     }
     DATA_MEMORY_BARRIER;
 }
 
+SECTION_STOP
 #ifdef __cplusplus
 }
 #endif

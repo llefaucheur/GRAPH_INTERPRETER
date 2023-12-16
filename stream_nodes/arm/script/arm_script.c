@@ -40,55 +40,34 @@
 #include "stream_types.h" 
 #include "arm_script.h"
 
-extern void arm_script_interpreter (uint32_t *instance, uint8_t reset);
-
-void script_processing (uint32_t *instance)
-{
-}
-
-
 /*
-    scripts can have 
+    command  = reset/run + nbreg + stack size
+    instance = pointer to the static area (the base address of the arc)
+    data     = byte codes
 */
-
-
-void arm_script (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void arm_script (int32_t command, stream_handle_t registers, stream_xdmbuffer_t *byte_code, uint32_t *unused)
 {
-    *status = SWC_TASK_COMPLETED;    /* default return status, unless processing is not finished */
+    uint32_t *stack, *parameter;
+    stack = (uint32_t*)registers;
+    stack = &(stack[RD(command, NREG_SCRIPT)]);
+    parameter = &(stack[RD(command, STACK_SIZE_SCRIPT)]);
 
     switch (RD(command,COMMAND_CMD))
     { 
-        /* func(STREAM_RESET, "instance" = memory pointer of instance, "data" not used */
+        /* jump flag set to 0, comparison flag set to 1, stack pointer set to 1 */
         case STREAM_RESET: 
         {   
-            intPtr_t *memresults = (intPtr_t *)instance;
-            uint32_t *pinstance = (uint32_t *) (memresults[0]);
-            pinstance = (uint32_t *)(memresults[1]);
-            break;
-
-            /* no reset until we know where is the code (STREAM_SET_PARAMETER) */
+            stack[0] = (1 + RD(command, NREG_SCRIPT)) + (1 << COMP_SCT_LSB);
             break;
         }    
 
-        /* the byte-codes are in the parameter section */ 
-        case STREAM_SET_PARAMETER:  
-        {   
-            uint32_t *pinstance = (uint32_t *)instance;
-            pinstance = (uint32_t *)data;
-
-            /* reset the script (conditional flag is set) */
-            arm_script_interpreter(pinstance, 1);
-            break;
-        }
-
-        /* byte-code execution */         
+        /* byte-code execution, reset the stack pointer */         
         case STREAM_RUN:   
-        {
-            uint32_t *pinstance = (uint32_t *)instance;
-            arm_script_interpreter(pinstance, 0);
+        {   
+            ST(stack[0], SP_SCT, 1 + RD(command, NREG_SCRIPT));
+            arm_script_interpreter ((uint8_t *)byte_code, (script_register_t *)registers, stack, parameter);
             break;
         }
-
         default: break;
     }
 }

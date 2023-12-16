@@ -34,13 +34,43 @@
 #define cARM_SCRIPT_H
 
 
-#include "platform_computer.h"
 #include "stream_const.h"      
 #include "stream_types.h"  
 
+/*
+    content of stack[0]
+*/
+typedef struct
+{   uint8_t regtype;    
+    union
+    {   char c;         char   v_c[8];
+        int8_t  i8;     int8_t v_i8[8];
+        int16_t i16;   int16_t v_i16[4];
+        int32_t i32;   int32_t v_i32[2];
+        int64_t i64;   
+        float f32;       float v_f32[2];
+        double f64;
+    } regdata;
+} script_register_t;
+
+
+/*
+    content of stack[0]
+*/
+#define  JUMP_SCT_MSB  9
+#define  JUMP_SCT_LSB  9    /*  1  jump to label flag */
+#define  COMP_SCT_MSB  8
+#define  COMP_SCT_LSB  8    /*  1  test/comparison flag */
+#define    SP_SCT_MSB  7
+#define    SP_SCT_LSB  0    /*  8  stack pointer < 128 */
 
 
 
+extern void arm_script_interpreter (
+    uint8_t *byte_code, 
+    script_register_t *registers, 
+    uint32_t *stack, 
+    uint32_t *parameter);
 
 #endif
 

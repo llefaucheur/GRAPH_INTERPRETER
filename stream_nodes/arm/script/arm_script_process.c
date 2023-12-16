@@ -56,18 +56,17 @@
 
         Scripts receive parameters:
             - Flag "comparison OK" set during the RESET sequence
-            - R0, R4
 
     Registers 
         Instance static = 
-            Bank of 8+8 registers ( 8bytes each, loop counters, thresholds) + hidden DTYPE
-                R0 used for data comparison with the stack(top) = "S0"
-                R1 used for arithmetics operations
-                R2 used as loop counter
-                R3 general purpose and pointer post-increments
-                R4 .. R7 for general purpose and pointers addressed by "pp" fields
-                R8 general purpose and pointers type control (DTYPE)
-                R9..R15 general purpose 
+            16 registers 8bytes + 1byte DTYPE (144bytes)
+                R0 used for data comparison with the stack(top) = "S0" = (*SP)
+                R1 used for arithmetics operations, general purpose and pointers
+                R2,R3 general purpose and pointers addressed by "pp" field
+                R4 general purpose and loop counter
+                R5 general purpose and pointer post-increments ("ii" field)
+                R6 general purpose and type control (DTYPE)
+                R7,R15 for general purpose 
 
             DTYPE 4bits: 
                 0,1: FP32/FP64, 
@@ -95,8 +94,8 @@
                 a CALS/CALL pushes the flags, address and SP position, and OPRC-RET pops it
              Flag "comparison OK" is used for conditional call/jump
                 the flag is set during STREAM_RESET and reset during STREAM_RUN
-             Flag "jump to label" selects the offset/label jump for the field "llll"
-                the flag is reset with "llll" interpreted as a label for JUMP/JMPC
+             Flag "jump to label" selects the offset/label jump for the field "llll" 
+                Reset : "llll" interpreted as a label for JUMP/JMPC-llll
                 LABL 0 toggles it to the interpretation of relative jumps to +/- 8 bytes
 
     Instructions 
@@ -106,58 +105,73 @@
 
         0000 dddd  PSHC  push the next bytes as a constant of type DTYPE on stack 
         0001 rrrr  PSHR  push register[0..15] to S0 : on stack (*--SP)
-        0010 iipp  PSHP  push *(R4..R7) to S0, increments[0,+,-,R3], forced DTYPE(R8)
-        0011 rrrr  POPR  pop stack (*SP++) to register[0..15] 
-        0100 iipp  POPP  pop S0 to *(R4..R7), increments[0,+,-,R3], forced DTYPE(R8)
+        0010 rrrr  POPR  pop stack (*SP++) to register[0..15] 
+        0011 iipp  PSHP  push *(R0..R3) to S0, increments[0,+,-,R5], forced DTYPE(R6)
+        0100 iipp  POPP  pop S0 to *(R0..R3), increments[0,+,-,R5], forced DTYPE(R6)
         0101 llll  JUMP  unconditional jump to labels/offset, label#0 means jump to [PC + POP S0]
         0110 llll  JMPC  conditional jump to label/offset, label#0 means jump to [PC + POP S0]
-        0111 iiii  CALS  system call and application callbacks
+        0111 iiii  CALS  system call (0..7) and application callbacks (8..15)
         1000 ssss  CALL  call label (1..7 local, 8..15 global(0-7), #0 reserved) callee saves registers not the flag
-        1001 cccc  OPRC  operations for control
-        1010 aaaa  OPRA  operations for arithmetics
+        1001 cccc  OPCT  operations for control
+        1010 aaaa  OPAR  operations for arithmetics
         1011 llll  LABL  local-label (1..15), #0 toggles the "jump to label" flag
-        1100 ....
+        1100 cccc  COMP  comparisons
         1101 ....
         1110 ....
         1111 ....  
 
-        OPRC  16 control operations:
-        0 RETS  subroutine return, restore SP,flag(not R9..R15?)
-        1 RETK  keep S0 and S1 on the stack, restore and return
-        2 EQUS  does S0 == S1               NES   does S0 != S1
-        3 EQUR  does S0 == R0               NER   does S0 != R0
-        4 GTES  does S0 >= S1               LTS   does S0 <  S1
-        5 GTER  does S0 >= R0               LTR   does S0 <  R0
-        6 LTES  does S0 <= S1               GTS   does S0 >  S1
-        7 LTER  does S0 <= R0               GTR   does S0 >  R0
-        8 INVF  NOP or invert the next comparison to have ^^^^^
-        9 MAXS  S0 = max (S0, S1)
-        A MAXR  S0 = max (S0, R0)
-        B MINS  S0 = min (S0, S1)
-        C MINR  S0 = min (S0, R0)
-        D PSHT  push test result on stack for OPRA logical operations (DTYPE = boolean)
-        E RSTS  S0 is a bit-field of data to reset (stack, SP, registers, flags)
-        F ----
-
-        OPRA  16 arithmetics/logical operations:
-        0 ADDS  S0 = S0 + S1                OPRA  ORS : logical  OR for booleans 
-        1 SUBS  S0 = S0 - S1                OPRA XORS : logical XOR for booleans
-        2 MULS  S0 = S0 x S1                OPRA ANDS : logical AND for booleans
-        3 DIVS  S0 = S0 / S1                OPRA NORS : logical NOR for booleans
-        4 MODS  S0 = S0 mod S1              OPRA NOTS : S0 = not(S0) 
-        5 ADDR  S0 = S0 + R1                OPRA  ORR : logical  OR for booleans
-        6 SUBR  S0 = S0 - R1                OPRA XORR : logical XOR for booleans 
-        7 MULR  S0 = S0 x R1                OPRA ANDR : logical AND for booleans
-        8 DIVR  S0 = S0 / R1                OPRA NORR : logical NOR for booleans
-        9 MODR  S0 = S0 mod R1              OPRA ASHR : S0 = S0 << R1 arithmetic shift
-        A BANZ  R2 is decremented, conditional flag set with (R2 != 0)?
+        OPCT  16 control operations:
+        0 RETS  subroutine return, restore SP, flags
+        1 RETP  keep S0 and S1 on the stack as parameters, restore and return
+        2 INVF  NOP 
+        3 MAXS  S0 = max (S0, S1)
+        4 MAXR  S0 = max (S0, R0)
+        5 MINS  S0 = min (S0, S1)
+        6 MINR  S0 = min (S0, R0)
+        7 PSHT  push test result on stack for OPRA logical operations (DTYPE = boolean)
+        8 RSTS  S0 is a bit-field of data to reset (stack, SP, registers, flags)
+        9 BANZ  R4 is decremented, conditional flag set with (R4 != 0)?
+        A CNVS  S1 translated to the format of S0 and poped to S0
         B SWPS  swap S0 <-> S1
-        C SWPR  swap R0 <-> R1
-        D CNVS  S1 translated to the format of S0 and poped to S0
+        C SP01  swap R0 <-> R1
+        D SP15  swap R1 <-> R5
+        E ----
+        F EXTC  8bits extension code
+
+        OPAR  16 arithmetics/logical operations:
+        0 ADDS  S0 = S0 + S1                     ORS : logical  OR for booleans 
+        1 SUBS  S0 = S0 - S1                    XORS : logical XOR for booleans
+        2 MULS  S0 = S0 x S1                    ANDS : logical AND for booleans
+        3 DIVS  S0 = S0 / S1                    NORS : logical NOR for booleans
+        4 MODS  S0 = S0 mod S1                  NOTS : S0 = not(S0) 
+        5 ASHS  S0 = S0 << S1 arithm-shift
+        6 ADDR  S0 = S0 + R1                     ORR : logical  OR for booleans 
+        7 SUBR  S0 = S0 - R1                    XORR : logical XOR for booleans
+        8 MULR  S0 = S0 x R1                    ANDR : logical AND for booleans
+        9 DIVR  S0 = S0 / R1                    NORR : logical NOR for booleans
+        A MODR  S0 = S0 mod R1                  NOTR : R0 = not(R0)
+        B ASHR  S0 = S0 << R1 arithm-shift
+        C BOOL  force next operation on integers to operate as booleans
+        D ----  -
         E ----  -
-        F EXTA  8bits extension code
+        F ----  -
 
-
+        COMP  16 comparison operations:
+        2 EQUS  does S0 == S1
+        3 EQUR  does S0 == R0
+        4 NEQS  does S0 != S1
+        5 NEQR  does S0 != R0
+        6 LTES  does S0 <= S1
+        7 LTER  does S0 <= R0
+        8 LTS   does S0 <  S1
+        9 LTR   does S0 <  R0
+        A GTES  does S0 >= S1
+        B GTER  does S0 >= R0
+        C GTS   does S0 >  S1
+        D GTR   does S0 >  R0
+        E ----
+        F ----
+        
 
     Default "CALS" callback (stream_script_callback) [MAX_NB_APP_CALLBACKS]
         #8  sleep/deep-sleep activation
@@ -215,123 +229,8 @@
 
  */
 
-void arm_script_interpreter (uint32_t *instance, uint8_t flag_reset)
+void arm_script_interpreter (uint8_t *byte_code, script_register_t *registers, uint32_t *stack, uint32_t *parameter)
 {
     /* byte-code interpreter*/ 
 
 }
-
-
-#ifdef __cplusplus
-}
-#endif
-    
-#if 0
-;PSHC
-        PSHC INT8   12
-        PSHC INT32  h55AA
-        PSHC CHAR   "test"
-        PSHC FP64   3.14159265359
-;
-;
-;PSHR
-        PSHR R0
-        PSHR R15
-;
-;
-;PSHP
-        PSHP R4
-        PSHP R5+
-        PSHP R6(R3)
-;
-;
-;POPR
-        POPR R1
-        POPR R14
-;
-;
-;POPP
-        POPP R4
-        POPP R5+
-        POPP R6(R3)
-;
-;
-;JMPL
-        JMPL 1
-        JMPL 15
-;
-;
-;JMPC
-        JMPC 2
-        JMPC 14
-;
-;
-;CALP
-        CALP 0 P1
-        CALP 3 P2
-;
-;
-;CALS
-        CALS 0
-        CALS 15
-;
-;
-;OPRC
-        OPRC RET 
-        OPRC RETS
-        OPRC EQUS
-        OPRC EQUR
-        OPRC GTES
-        OPRC GTER
-        OPRC LTES
-        OPRC LTER
-        OPRC GTS 
-        OPRC GTR 
-        OPRC LTS 
-        OPRC LTR 
-        OPRC EDSB
-;
-;
-;OPRA
-        OPRA ADDS
-        OPRA SUBS
-        OPRA MULS
-        OPRA DIVS
-        OPRA MODS
-        OPRA ADDR
-        OPRA SUBR
-        OPRA MULR
-        OPRA DIVR
-        OPRA MODR
-        OPRA BANZ
-        OPRA SWPS
-        OPRA SWPR
-;
-;
-;CALL
-        CALL 0
-        CALL 15
-;
-;
-;CALC
-        CALC 1
-        CALC 14
-;
-;
-;LABL
-        LABL 0
-        LABL 15
-
-;
-;
-;LABS
-        LABL 0
-        LABL 15
-;
-;
-        CALL 1              ; call 1
-        LABS 1              ; subroutine 1
-        LITS INT32  h55AA   ; push on stack
-        RETS                ; return stack
-        OPRC EDSB           ; interpreter tag "end of subroutine"
-#endif

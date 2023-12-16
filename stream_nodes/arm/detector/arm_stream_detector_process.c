@@ -30,8 +30,6 @@
 #endif
    
 
-
-
 #include "stream_const.h"
 #include "stream_types.h"
 
@@ -70,20 +68,25 @@ void arm_stream_detector_process (arm_detector_instance *instance,
 {
     int32_t isamp = 0;
     int32_t input_data;
+    int32_t DBGZ3;
 
     while (isamp < inputLength) 
     {
         input_data = ConvertSamp(in[isamp], 15 - (int)(instance->config.high_pass_shifter));
 
+        /* high-pass prefilter */
         Z2 = Z1 - DIVBIN(Z1 , SHPF) + input_data;
         Z3 = Z2 - Z1;
         Z1 = Z2;
+        DBGZ3 = Z3;
         Z3 = (Z3 < 0) ? (-Z3) : Z3;
 
+        /* z6: raw energy estimation, z7: floor level, z8: envelope */
         Z6 = DIVBIN(Z3, SLPF) + (Z6 - DIVBIN(Z6, SLPF));
         Z8 = DIVBIN(Z6, SFloorPeak) + (Z8 - DIVBIN(Z8, SFloorPeak));
         Z8 = MAX(Z6, Z8);
 
+        /* floor noise update after decimation */
         DECF = decfMASK & (DECF -1);
         if (DECF == 0)
         {   Z7 = DIVBIN(Z6, SFloorPeak) + (Z7 - DIVBIN(Z7, SFloorPeak));
@@ -91,26 +94,26 @@ void arm_stream_detector_process (arm_detector_instance *instance,
             DECF = decfMASK;
         }
 
+        /* if SNR>THR then increment a first counter */
         if (Z8 > Z7 * (MINIFLOAT2Q31(THR)))
         {   ACCVAD = MIN(CLAMP_MAX, ACCVAD + VADRISE);
-        }
+        }   /* slow rise, fast fall */
         else
         {   ACCVAD = MAX(CLAMP_MIN, ACCVAD - VADFALL);
         }
 
+        /* if the VAD is confirmed then use a second counter */
         if (ACCVAD > F2Q31(0.1))
         {   FLAG = MIN(CLAMP_MAX, FLAG + VADFALL);
-        }
+        }   /* fast rise, slow fall */
         else
-        {
-            FLAG = MAX(CLAMP_MIN, FLAG - VADRISE);
-        }
-
-        if (DOWNCOUNTER > 0)
-        {   DOWNCOUNTER --;
+        {   FLAG = MAX(CLAMP_MIN, FLAG - VADRISE);
         }
 
         /* signal detected => maintain the decision for some time */
+        if (DOWNCOUNTER > 0)
+        {   DOWNCOUNTER --;
+        }
         if (FLAG > F2Q31(0.5))
         {   DOWNCOUNTER = MINIFLOAT2Q31(RELOADCOUNTER);
         }
@@ -118,10 +121,12 @@ void arm_stream_detector_process (arm_detector_instance *instance,
         pResult[isamp] = (DOWNCOUNTER > 0) ? 0x7FFF : 0;
 
 #if PRINTF        
-        {   #include <stdio.h>
+        {   
             extern FILE *ptf_trace;
             long x, SD=15-10; 
             x = input_data<<SD;          fwrite(&x, 1, 4, ptf_trace);    //1
+            x = DBGZ3<<SD;          fwrite(&x, 1, 4, ptf_trace);    //1
+            x = Z8<<SD;          fwrite(&x, 1, 4, ptf_trace);    //1
             x = ACCVAD;                  fwrite(&x, 1, 4, ptf_trace);    //2
             x = FLAG;                    fwrite(&x, 1, 4, ptf_trace);    //3
             x = 0; if (DOWNCOUNTER > 0) x=0x7fffffff; fwrite(&x, 1, 4, ptf_trace);   //4

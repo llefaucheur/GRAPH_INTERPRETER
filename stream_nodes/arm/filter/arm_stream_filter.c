@@ -34,11 +34,6 @@
  extern "C" {
 #endif
 
-////@@@@@@
-//#define _CRT_SECURE_NO_DEPRECATE 1
-//#include <stdio.h>
-//FILE *ptfdbg;
-
 #include "stream_const.h"
 #include "stream_types.h"
 #include "dsp\filtering_functions.h"
@@ -113,7 +108,7 @@ node arm_stream_dsp_filter
  */
 void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
-    *status = SWC_TASK_COMPLETED;    /* default return status, unless processing is not finished */
+    *status = TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
     switch (RD(command,COMMAND_CMD))
     { 
@@ -149,8 +144,6 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
             for (i = 0; i < n; i++) { pt8b[i] = 0; }
 
             pinstance->services = (stream_services_entry *)(uint64_t)data;
-
-//ptfdbg=fopen("..\\..\\..\\stream_test\\DBGIIR.raw","wb");
             break;
         }       
 
@@ -197,7 +190,7 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
                 postShift);
 
            /* optimized kernels */
-            pinstance->iir_service = PACK_SERVICE(0,0,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
+            pinstance->iir_service = PACK_SERVICE(0,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
 
             break;
         }
@@ -239,67 +232,4 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
 }
 #ifdef __cplusplus
 }
-#endif
-    
-#if 0
-        case STREAM_RESET: 
-        {   stream_entrance *stream_entry = (stream_entrance *)(uint64_t)data;
-            intPtr_t *memresults = (intPtr_t *)instance;
-            uint8_t *pt8b, i, n;
-            arm_filter_instance *pinstance = (arm_filter_instance *) (memresults[0]);
-
-            pinstance->frameSize = RD(memresults[2], FRAMESIZE_FMT0);
-            ST(pinstance->format, NUMSTAGE_FLT,  RD(command, PRESET_CMD));
-            ST(pinstance->format, RAWDATA_FLT,   RD(memresults[2], RAW_FMT0));
-            ST(pinstance->format, NBCHAN_FLT,  1+RD(memresults[3], NCHANM1_FMT1));
-            ST(pinstance->format, INTERLEAV_FLT, RD(memresults[2], INTERLEAV_FMT0));
-            ST(pinstance->format, TIMESTAMP_FLT, RD(memresults[3], TIMSTAMP_FMT1));
-
-            /* TCM area (when possible), first field of the instance for MP */
-            pinstance->TCM_working = (intPtr_t *)(memresults[1]);
-
-            /* here reset */
-            pt8b = (uint8_t *) &(pinstance->U.biq_q15);
-            n = sizeof(arm_filter_biquad_q15);
-            for (i = 0; i < n; i++)
-            {   pt8b[i] = 0;
-            }
-//arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_SERVICE_INTERNAL_DEBUG_TRACE), "FLTR", 0, (uint8_t *)4);
-
-            break;
-        }    
-
-        /* func(command = bitfield (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
-                    TAG of a parameter to set, 0xFF means "set all the parameters" in a raw
-                *instance, 
-                data = (one or all)
-        */ 
-        case STREAM_SET_PARAMETER:  
-       {    uint8_t *pt8bsrc, *pt8bdst, i, n;
-            arm_filter_instance *pinstance = (arm_filter_instance *) instance;
-
-            /* copy the parameters */
-            pt8bsrc = (uint8_t *) data;
-            pinstance->numstages = (uint32_t)(*pt8bsrc);
-            pt8bsrc = pt8bsrc+4;
-
-            /* arm_stream_filter can manage Q15 and float */
-            if (RD(pinstance->format, RAWDATA_FLT) == STREAM_FP32)
-            {   pt8bdst = (uint8_t *) &(pinstance->U.biq_float);
-                n = sizeof(arm_filter_biquad_float);
-            }
-            else
-            {   pt8bdst = (uint8_t *) &(pinstance->U.biq_q15);
-                n = sizeof(arm_filter_biquad_q15);
-            }
-
-
-            if (RD(command, TAG_CMD) == ALLPARAM_)
-            {   for (i = 0; i < n; i++)
-                {   pt8bdst[i] = pt8bsrc[i];
-                }
-            }
-//arm_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_SERVICE_INTERNAL_DEBUG_TRACE), "FLTS", 0, (uint8_t *)4);
-            break;
-        }
 #endif

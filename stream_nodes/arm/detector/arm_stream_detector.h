@@ -103,6 +103,9 @@ typedef struct
 
 
 // Time constants for VAD algorithm
+// MiniFloat 76543210
+//           MMMEEEEE x= MMM(0..7) << EEEEE(0..31) =[0..15e9] +/-1
+// just for information: OFP8_E4M3 SEEEEMMM x= (sign).(1 + M/8).(2<<(E-7)) =[-8..+8] +/-1e-6
 #define MINIF(m,exp) ((uint8_t)((m)<<5 | (exp)))
 #define MINIFLOAT2Q31(x) ((((x) & 0xE0)>>5) << ((x) & 0x1F))
 #define MULTIPLIER_MSB 7     

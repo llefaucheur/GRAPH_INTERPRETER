@@ -4,16 +4,10 @@
     <ClCompile Include="..\..\..\stream_al\platform_al.c">
       <Filter>stream_al</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_al\platform_computer.c">
-      <Filter>stream_al</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\stream_demo\main.c">
-      <Filter>stream_demo</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\stream_src\stream_io.c">
       <Filter>stream_src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_src\stream_main.c">
+    <ClCompile Include="..\..\..\stream_src\stream_graph_interpreter.c">
       <Filter>stream_src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_src\stream_scheduler.c">
@@ -106,9 +100,6 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator_process.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\stream_nodes.c">
-      <Filter>stream_nodes</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\arm_biquad_cascade_df1_f32.c">
       <Filter>library-cmsis-dsp</Filter>
     </ClCompile>
@@ -127,12 +118,24 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\decompressor\arm_dec_imadpcm.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\stream_al\platform_computer\platform_computer.c">
+      <Filter>stream_al_computer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\stream_nodes.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_al\platform_computer\main_computer.c">
+      <Filter>stream_al_computer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\detector2D\arm_stream_detector2D.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\detector2D\arm_stream_detector2D_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\stream_al\platform_al.h">
-      <Filter>stream_al</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_al\platform_computer.h">
       <Filter>stream_al</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\stream_al\platform_sensor.h">
@@ -192,6 +195,12 @@
     <ClInclude Include="..\..\..\stream_src\stream_extern.h">
       <Filter>stream_src</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_script.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_al\platform_computer\platform_computer.h">
+      <Filter>stream_al_computer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="stream_al">
@@ -203,14 +212,14 @@
     <Filter Include="stream_nodes">
       <UniqueIdentifier>{65e5e215-d3e5-4b55-abec-9954791019db}</UniqueIdentifier>
     </Filter>
-    <Filter Include="stream_demo">
-      <UniqueIdentifier>{2d4fe9c4-311b-4bb4-9d69-da408a0f0f1a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="graph_tool">
       <UniqueIdentifier>{217e6d7d-a6d0-4ddf-9437-030ed005e741}</UniqueIdentifier>
     </Filter>
     <Filter Include="library-cmsis-dsp">
       <UniqueIdentifier>{e83c8890-8848-4c55-8e76-2d73828584ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="stream_al_computer">
+      <UniqueIdentifier>{97748a8a-4da7-4066-af7e-27a8abb8d503}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -253,8 +262,11 @@
     <Text Include="..\..\..\stream_graph\graph_0_bin.txt">
       <Filter>graph_tool</Filter>
     </Text>
+    <Text Include="..\..\..\stream_graph\TEMPLATE_GRAPH.txt">
+      <Filter>stream_nodes</Filter>
+    </Text>
     <Text Include="..\..\..\stream_graph\stream_tools_files_computer.txt">
-      <Filter>stream_al</Filter>
+      <Filter>graph_tool</Filter>
     </Text>
   </ItemGroup>
 </Project>

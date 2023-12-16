@@ -15,15 +15,17 @@
 ;                   delivery 0:source, 1:binary, 2: 2 binaries (fat binary)
 ;                   mask: dependency to EXTDSPML EXTMATH EXTAUDIO EXTIMAGE EXTSTDLIB
 ;
+    0       0:default 1:simple syntax
+
 ; list of (architectures+FPU option) the SWC is compatible with
     1               number of architecture options below
     0 2             0: arch (0=source code), 2: FPU option (enum stream_processor_sub_arch_fpu)
-;   0 2             other options (for fat binary files)
+;    0 0             other options (for fat binary files) and dynamic loading/relocatable code
 
     0 1             code version, version of the scheduler it is compatible with
 
 ;----------------------------------------------------------------------------------------
-; Loop on memory banks
+; Loop on memory banks (max=4)
 ;
     2               memory bank allocation = instance + working area in TCM
  

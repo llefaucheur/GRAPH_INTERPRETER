@@ -32,8 +32,9 @@
 #include "stream_const.h" 
 #include "stream_types.h"
 #include "stream_extern.h"
-#include "dsp\filtering_functions.h"
+#include "dsp/filtering_functions.h"
 
+SECTION_START
 
 /* ------------------------------------------------------------------------------------------------------------
   @brief        Size of raw data
@@ -73,7 +74,7 @@ int32_t stream_bitsize_of_raw(uint8_t raw)
        
   @remark
  */
-void arm_stream_services_internal(int32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t n)
+static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t n)
 {
 
     switch (RD(command, SWC_TAG_CMD))
@@ -98,7 +99,7 @@ void arm_stream_services_internal(int32_t command, uint8_t *ptr1, uint8_t *ptr2,
         //uint8_t arcid;
         //uint32_t* arc;
         //uint32_t free_area;
-        uint32_t debugBufferLength = RD(command, SWC_TAG_CMD);
+        //uint32_t debugBufferLength = RD(command, SWC_TAG_CMD);
 
         ///* extraction of the arc index used for the traces of this Stream instance */
         //arcid = RD(stream_instance->parameters, TRACE_ARC_PARINST);
@@ -140,7 +141,7 @@ void arm_stream_services_internal(int32_t command, uint8_t *ptr1, uint8_t *ptr2,
   @par          
   @remark
  */
-void arm_stream_services_flow (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint32_t n) 
+static void arm_stream_services_flow (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint32_t n) 
 {
     // SECTIONS OF ARC APIs
     /*
@@ -163,7 +164,7 @@ void arm_stream_services_flow (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, u
   @par
   @remark
  */
-void arm_stream_services_conversion (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint32_t n) 
+static void arm_stream_services_conversion (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint32_t n) 
 {
 
     switch (RD(command, SWC_TAG_CMD))
@@ -305,6 +306,7 @@ void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2
         {   /* arm_stream_services(*ID, PACK_COMMAND(TAG,PRESET,NARC,INST,STREAM_SERVICE_INTERNAL_XXXXX), pta, ptb); */
             arm_stream_services_internal(RD(service_command, FUNCTION_SSRV), ptr1, ptr2, n);
         }
+        break;
     case STREAM_SERVICE_FLOW:
         arm_stream_services_flow (service_command, ptr1, ptr2, 0);
         break;
@@ -388,7 +390,7 @@ void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2
 
 
         /*----------------------------------------------------------------------------
-           arm_stream interface is used for "special" services       
+           arm_graph_interpreter interface is used for "special" services       
            examples : 
            - access to compute libraries, data converters and compression
            - access to time, stdlib, stdio for SWC delivered in binary
@@ -416,6 +418,7 @@ void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2
             break;
     }
 }
+SECTION_STOP
 #ifdef __cplusplus
 }
 #endif

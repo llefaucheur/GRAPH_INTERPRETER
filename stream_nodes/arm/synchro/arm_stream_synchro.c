@@ -126,7 +126,7 @@
  */
 void arm_stream_synchro (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
-    *status = SWC_TASK_COMPLETED;    /* default return status, unless processing is not finished */
+    *status = TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
     switch (RD(command,COMMAND_CMD))
     { 
@@ -197,12 +197,12 @@ void arm_stream_synchro (int32_t command, stream_handle_t instance, stream_xdmbu
             else
             {   /*  report an error on parameter input 
                 typedef void (stream_services_entry) (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n); */
-                pinstance->services(
+/*                pinstance->services(
                     PACK_SERVICE(0, RD(command,INST_CMD_SSRV), STREAM_SERVICE_INTERNAL_DEBUG_TRACE, STREAM_SERVICE_INTERNAL), 
                     "MIX4 PARAM ERROR\n", 
                     0, 
                     0, 
-                    17);    
+                    17);  */  
             }
             break;
         }

@@ -21,8 +21,10 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\stream_al\platform_al.h" />
     <ClInclude Include="..\..\..\stream_al\platform_computer.h" />
+    <ClInclude Include="..\..\..\stream_al\platform_computer\platform_computer.h" />
     <ClInclude Include="..\..\..\stream_al\platform_sensor.h" />
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
+    <ClInclude Include="..\..\..\stream_src\stream_extern.h" />
     <ClInclude Include="..\..\..\stream_src\stream_types.h" />
     <ClInclude Include="..\..\..\stream_tools\stream_tool_define.h" />
     <ClInclude Include="..\..\..\stream_tools\stream_tool_include.h" />
@@ -35,29 +37,27 @@
     <ClCompile Include="..\..\..\stream_tools\stream_tool_graph2Bin.c" />
     <ClCompile Include="..\..\..\stream_tools\stream_tool_library.c" />
     <ClCompile Include="..\..\..\stream_tools\stream_tool_readManifests.c" />
-    <ClCompile Include="..\..\..\stream_tools\stream_tool_script_assembler.c" />
     <ClCompile Include="..\..\..\stream_tools\stream_tool_read_graph.c" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="..\..\..\stream_al\platform_computer\files_manifests_computer.txt" />
+    <Text Include="..\..\..\stream_al\platform_computer\io_platform_analog_sensor_0.txt" />
+    <Text Include="..\..\..\stream_al\platform_computer\io_platform_gpio_out_0.txt" />
+    <Text Include="..\..\..\stream_al\platform_computer\io_platform_gpio_out_1.txt" />
+    <Text Include="..\..\..\stream_al\platform_computer\io_platform_imu_temperature_0.txt" />
+    <Text Include="..\..\..\stream_al\platform_computer\io_platform_imu_XYZ_0.txt" />
+    <Text Include="..\..\..\stream_al\platform_computer\io_platform_line_in_0.txt" />
+    <Text Include="..\..\..\stream_al\platform_computer\io_platform_line_out_0.txt" />
+    <Text Include="..\..\..\stream_al\platform_computer\io_platform_microphone_0.txt" />
+    <Text Include="..\..\..\stream_al\platform_computer\io_platform_node_trace_0.txt" />
+    <Text Include="..\..\..\stream_al\platform_computer\io_platform_stream_in_0.txt" />
+    <Text Include="..\..\..\stream_al\platform_computer\platform_manifest_computer.txt" />
+    <Text Include="..\..\..\stream_al\platform_computer\sine_noise_offset.txt" />
     <Text Include="..\..\..\stream_graph\arm_stream_filter_parameters_x.txt" />
-    <Text Include="..\..\..\stream_graph\files_manifests_computer.txt" />
     <Text Include="..\..\..\stream_graph\graph_0.txt" />
     <Text Include="..\..\..\stream_graph\graph_0_bin.txt" />
     <Text Include="..\..\..\stream_graph\graph_1.txt" />
-    <Text Include="..\..\..\stream_graph\graph_1_bin.txt" />
-    <Text Include="..\..\..\stream_graph\io_platform_analog_sensor_0.txt" />
-    <Text Include="..\..\..\stream_graph\io_platform_gpio_out_0.txt" />
-    <Text Include="..\..\..\stream_graph\io_platform_gpio_out_1.txt" />
-    <Text Include="..\..\..\stream_graph\io_platform_node_trace_0.txt" />
-    <Text Include="..\..\..\stream_graph\io_platform_imu_temperature_0.txt" />
-    <Text Include="..\..\..\stream_graph\io_platform_imu_XYZ_0.txt" />
-    <Text Include="..\..\..\stream_graph\io_platform_line_in_0.txt" />
-    <Text Include="..\..\..\stream_graph\io_platform_line_out_0.txt" />
-    <Text Include="..\..\..\stream_graph\io_platform_microphone_0.txt" />
-    <Text Include="..\..\..\stream_graph\io_platform_stream_in_0.txt" />
-    <Text Include="..\..\..\stream_graph\platform_manifest_computer.txt" />
     <Text Include="..\..\..\stream_graph\rfc8428.txt" />
-    <Text Include="..\..\..\stream_graph\stream_tools_files_computer.txt" />
     <Text Include="..\..\..\stream_graph\graph_1_sub.txt" />
     <Text Include="..\..\..\stream_graph\TEMPLATE_GRAPH.txt" />
     <Text Include="..\..\..\stream_nodes\arm\detector\swc_manifest_detector.txt" />

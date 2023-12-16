@@ -78,7 +78,7 @@ arm_stream_rescaler;
  */
 void arm_stream_rescaler (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
-    *status = SWC_TASK_COMPLETED;    /* default return status, unless processing is not finished */
+    *status = TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
     switch (RD(command,COMMAND_CMD))
     { 

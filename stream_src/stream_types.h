@@ -36,7 +36,8 @@
 #include <stdint.h>
 
 
-#include "platform_al.h"
+#include "stream_const.h"
+#include "../stream_al/platform_al.h"
 
 
 /* 
@@ -55,10 +56,11 @@
 
 struct HW_params
 {
+    uint32_t iomask;
+    uint8_t *ioctrl;
     uint8_t procID;
     uint8_t archID;
-    uint8_t *ioctrl;
-    uint32_t iomask;
+    PADDING_BYTES(2);
 };
 
 struct stream_xdmbuffer
@@ -166,9 +168,9 @@ typedef uint32_t stream_time16;
     each stream domain instance is controled by 3 functions and presets
     domain have common bitfields for settings (see example platform_audio_out_bit_fields[]).
 */
-#define IO_PLATFORM_DATA_IN                 1
-#define IO_PLATFORM_DATA_OUT                2
-#define IO_PLATFORM_DATA_STREAM_IN          3
+#define IO_PLATFORM_DATA_IN                 1   /* generic (a)synchronous sensor */
+#define IO_PLATFORM_DATA_OUT                2   /*    electrical, chemical, color, .. remote data */
+#define IO_PLATFORM_DATA_STREAM_IN          3   /* generic flow sensor */
 #define IO_PLATFORM_DATA_STREAM_OUT         4
 #define IO_PLATFORM_AUDIO_IN                5
 #define IO_PLATFORM_AUDIO_OUT               6
@@ -177,11 +179,11 @@ typedef uint32_t stream_time16;
 #define IO_PLATFORM_MOTION_IN               9
 #define IO_PLATFORM_2D_IN                  10
 #define IO_PLATFORM_2D_OUT                 11  
-#define IO_PLATFORM_USER_INTERFACE_IN      12  /* slider, rotary button */
+#define IO_PLATFORM_USER_INTERFACE_IN      12   /* button, slider, rotary button */
 #define IO_PLATFORM_USER_INTERFACE_OUT     13 
-#define IO_PLATFORM_COMMAND_IN             14  /* UART/I2C serial interface */
+#define IO_PLATFORM_COMMAND_IN             14   /* UART/I2C serial interface */
 #define IO_PLATFORM_COMMAND_OUT            15
-#define IO_PLATFORM_ANALOG_SENSOR          16 
+#define IO_PLATFORM_ANALOG_SENSOR          16   /* with aging control */
 #define IO_PLATFORM_ANALOG_TRANSDUCER      17 
 #define IO_PLATFORM_RTC_IN                 18 
 #define IO_PLATFORM_RTC_OUT                19
@@ -305,10 +307,10 @@ enum stream_raw_data
     STREAM_RGB24,                  /*   BBGGRR 24bpp (msb)8B */
     STREAM_RGBA32,                 /*   BBGGRRAA 32bpp (msb)8B */
     STREAM_RGBA8888,               /*   AABBRRGG OpenGL/PNG format R=lsb A=MSB ("ABGR32" little endian) */
-    STREAM_BW1B,                   /*   Y, 1bpp, 0 is black, 1 is white, ordered from the msb to the lsb.  */
-    STREAM_BW1BINV,                /*   Y, 1bpp, 0 is white, 1 is black */
-    STREAM_GREY8B,                 /*   Grey 8b */
-    STREAM_GREY8BINV,              /*53 Grey 8b inverted 0 is white */
+    STREAM_BW1B,                   /*   Y, 1bpp, 0 is black, 1 is white */
+    STREAM_GREY2B,                 /*   Y, 2bpp, 0 is black, 3 is white, ordered from lsb to msb  */
+    STREAM_GREY4B,                 /*   Y, 4bpp, 0 is black, 15 is white, ordered from lsb to msb */
+    STREAM_GREY8B,                 /*53 Grey 8b, 0 is black, 255 is white */
     
     LAST_RAW_TYPE  = 64         /* coded on 6bits RAW_FMT0_LSB */
 };
@@ -344,7 +346,7 @@ typedef struct
     uint32_t *all_formats;   
     uint32_t *all_arcs;
     uint32_t *linked_list;   
-    uint32_t *main_script;   
+    uint32_t *script_offsets;   
     struct platform_io_control *platform_io;
 
     p_stream_script_callback* application_callbacks;
@@ -365,6 +367,7 @@ typedef struct
     uint8_t swc_parameters_offset;
 
     uint8_t nb_stream_instances;    // stream instances pointers (in words) = &(all_arcs[ -nb_stream_instances])
+    uint8_t script_arctx;           // arc buffer for the static area of the script
 
 /* */
 #define STREAM_COLD_BOOT 0u
@@ -379,13 +382,17 @@ typedef struct
 
 
 #define   UNUSED_SCTRL_MSB U(31)   
-#define   UNUSED_SCTRL_LSB U(25)  /* 7 */ 
-#define PRIORITY_SCTRL_MSB U(24)   
-#define PRIORITY_SCTRL_LSB U(23)  /* 2 */ 
-#define MAININST_SCTRL_MSB U(22)   
-#define MAININST_SCTRL_LSB U(22)  /* 1 main instance to set the graph at boot time */
-#define NODEEXEC_SCTRL_MSB U(21)   
-#define NODEEXEC_SCTRL_LSB U(20)  /* 2 */
+#define   UNUSED_SCTRL_LSB U(26)  /* 6 */ 
+#define  DATA_PP_SCTRL_MSB U(25)   
+#define  DATA_PP_SCTRL_LSB U(25)  /* 1 data/TCM ping-pong, reload index */ 
+#define  PROG_PP_SCTRL_MSB U(24)   
+#define  PROG_PP_SCTRL_LSB U(24)  /* 1 program ping-pong, reload index */ 
+#define PRIORITY_SCTRL_MSB U(23)   
+#define PRIORITY_SCTRL_LSB U(22)  /* 2 */ 
+#define MAININST_SCTRL_MSB U(21)   
+#define MAININST_SCTRL_LSB U(21)  /* 1 main instance to set the graph at boot time */
+#define NODEEXEC_SCTRL_MSB U(20)   
+#define NODEEXEC_SCTRL_LSB U(20)  /* 1 */
 #define ENDLLIST_SCTRL_MSB U(19)   
 #define ENDLLIST_SCTRL_LSB U(19)  /* 1 endLinkedList detected */
 #define STILDATA_SCTRL_MSB U(18)   

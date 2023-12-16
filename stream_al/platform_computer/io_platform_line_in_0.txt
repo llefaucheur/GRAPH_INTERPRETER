@@ -1,0 +1,50 @@
+;
+    io_platform_line_in_0   name for the GUI                            
+    audio_in                domain name 
+; ------------------------------------------------------------------------------------------------------------
+;   Loop on the IO arcs of this component
+;
+;       - Digital frame format, common to all transducers and arcs
+;       - Specific information and tuning of the domain
+;
+;   ARC0
+
+  
+    1   commander=0 servant=1                               
+    0   buffer declared from the BSP 0 or Graph x (multiplication factor of the Frame size)           
+    0   in standard RAM=0, in HW IO RAM=1                   
+    1   processor affinity bit-field                        
+
+    0   rx0tx1  
+    6   raw format                                          
+    0   time-stamp                                          
+    1   frame length format (0:in milliseconds 1:in samples)
+    1   sampling rate format (0:Hz, 1:seconds, 2:days)
+    3   percent FS accuracy                                 
+
+    ;   Lists of options, starting with the default index 
+    0   0                   ;f [1bits] interleaving options list
+    0   1                   ;f [2bits] nb channels options list 
+    2   1 2 4               ;f [2bits] frame_size option in samples  (or millis) 
+    1   16000 44100 48000   ;f [3bits] sampling rate options in Hz
+
+;/*  tuning of AUDIO_RENDER_STREAM_SETTING 
+;    const uint8_t platform_audio_out_bit_fields[] = { 3,4,2,3,4,2,1,2,1,2,1,2,1 };
+;*/
+;const int32_t audio_render_settings [] = { 
+;    /* nb options nbbits */
+;    /*  8  3  nchan */         3,   1, 2, 8,
+;    /* 16  4  FS */            2,   16000, 48000, 
+;    /*  4  2  framesize [ms] */2,   10, 16, 
+;    /*  8  3  mVrms max */     2,   100, 700,
+;    /* 16  4  PGA gain */      0,
+;    /*  4  2  bass gain dB */  4,   0, -3, 3, 6,
+;    /*  2  1  bass frequency */2,   80, 200,       
+;    /*  4  2  mid gain */      4,   0, -3, 3, 6,
+;    /*  2  1  mid frequency */ 2,   500, 2000,       
+;    /*  4  2  high gain */     4,   0, -3, 3, 6,
+;    /*  2  1  high frequency */2,   4000, 8000,       
+;    /*  2  1  agc gain */      0,
+;    /*     6 bits remains */ 
+;    };
+ 

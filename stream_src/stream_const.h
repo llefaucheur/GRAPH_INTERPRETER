@@ -86,118 +86,6 @@
 #define DECIMATE_FRAME 2
 //};
 
-/*============================================================================================================*/
-/* 
-    Format 23+4_offsets for buffer BASE ADDRESS
-    Frame SIZE and ring indexes are using 22bits linear (0..4MB)
-
-*/
-
-/* for MISRA-2012 compliance to Rule 10.4 */
-#define U(x) ((uint32_t)(x)) 
-#define U8(x) ((uint8_t)(x)) 
-//#define S(x) ((int32_t)(x)) 
-#define S8(x) ((int8_t)(x)) 
-
-//------------------------------------------------------------------------------------------------------
-
-//enum time_stamp_format_type {
-#define NO_TS 0
-#define ABS_TS_64 1                  /* long time reference */
-#define REL_TS_32 2                  /* time difference from previous frame packet in stream_time_seconds format */
-#define COUNTER_TS 3                 /* counter of data frames */
-
-
-//enum hashing_type {
-#define NO_HASHING 0                 /* cipher protocol under definition */
-#define HASHING_ON 1                 /* the stream is ciphered (HMAC-SHA256 / stream_encipher XTEA)*/
-
-
-//enum frame_format_type {
-#define FMT_INTERLEAVED 0           /* "arc_descriptor_interleaved" for example L/R audio or IMU stream..   */
-                                    /* the pointer associated to the stream points to data (L/R/L/R/..)     */
-#define FMT_DEINTERLEAVED_1PTR 1    /* single pointer to the first channel, next channel base address is    */
-                                    /*  computed by adding the frame size or buffer size/nchan, also for ring buffers  */
-//
-////enum frame_format_synchro {
-#define SYNCHRONOUS 0               /* tells the output buffer size is NOT changing */
-#define ASYNCHRONOUS 1              /* tells the output frame length is variable, input value "Size" tells the maximum value  
-//                                       data format : optional time-stamp (stream_time_stamp_format_type)
-//                                                    domain [2bits] and sub-domain [6bits rfc8428]
-//                                                    payload : [nb samples] [samples]  */
-////enum direction_rxtx {
-#define IODIRECTION_RX 0              /* RX from the Graph pont of view */
-#define IODIRECTION_TX 1
-
-/*===================================   FORMATS   =================================================*/
-#define STREAM_FORMAT_SIZE_W32 3            // digital, common part of the format 
-
-/*
-*   stream_data_stream_data_format (size multiple of 3 x uint32_t)
-*       word 0 : common to all domains : frame size, raw format, interleaving
-*       word 1 : common to all domains : time-stamp, sampling rate, nchan         
-*       word 2 : specific to domains : hashing, direction, channel mapping 
-*/
-
-/*--------------- WORD 0 - producer frame size, raw format, interleaving --------------- */
-#define SIZSFTRAW_FMT0   0
-    //#define MULTIFRME_FMT0_MSB 31 /* 1  allow the scheduler to push multiframes  */
-    //#define MULTIFRME_FMT0_LSB 31
-    #define       RAW_FMT0_MSB 30
-    #define       RAW_FMT0_LSB 25 /* 6  stream_raw_data 6bits (0..63)  */
-    #define INTERLEAV_FMT0_MSB 24       
-    #define INTERLEAV_FMT0_LSB 24 /* 1  interleaving : frame_format_type */
-    #define FRAME_EXT_FMT0_MSB 23 
-    #define FRAME_EXT_FMT0_LSB 22 /* 2  _____*/
-                                  /*    frame size in bytes for one deinterleaved channel Byte-acurate up to 4MBytes */
-    #define FRAMESIZE_FMT0_MSB 21 /*    raw interleaved buffer size is framesize x nb channel, max = 4MB x nchan */
-    #define FRAMESIZE_FMT0_LSB  0 /* 22 in swc manifests it gives the minimum input size (grain) before activating the swc
-                                        A "frame" is the combination of several channels sampled at the same time 
-                                        A value =0 means the size is any or defined by the IO AL.
-                                        For sensors delivering burst of data not isochronous, it gives the maximum 
-                                        framesize; same comment for the sampling rate. */
-
-    #define PACKSTREAMFORMAT0(RAW,INTERL,FRAMESIZE) ((U(RAW)<<26)|(U(INTERL)<<24)|U(FRAMESIZE))
-
-/*--------------- WORD 1 - sampling rate , nchan  -------------*/
-#define   SAMPINGNCHANM1_FMT1  U( 1)
-    #define  SAMPLING_FMT1_MSB U(31) /* 23 truncated IEEE-754 Seeeeeeemmmmmmmmmmmmmmm__XXXXXXX  */
-    #define  SAMPLING_FMT1_LSB U( 9) /*    FP23_E8_M15        FEDCBA9876543210FEDCBA9876543210  */
-    #define    UNUSED_FMT1_MSB U( 8) /* 2   */
-    #define    UNUSED_FMT1_LSB U( 7)
-    #define  TIMSTAMP_FMT1_MSB U( 6) /* 2  time_stamp_format_type for time-stamped streams for each interleaved frame */
-    #define  TIMSTAMP_FMT1_LSB U( 5) 
-    #define   NCHANM1_FMT1_MSB U( 4)
-    #define   NCHANM1_FMT1_LSB U( 0) /* 5  nb channels-1 [1..32] */
-
-
-    #define PACKSTREAMFORMAT1(TIMESTAMP,SAMPLING, NCHANM1) ((U(TIMESTAMP)<<26)|(U(SAMPLING)<<5)|U(NCHANM1))
-    #define FMT_FS_MAX_EXPONENT 15
-    #define FMT_FS_MAX_MANTISSA 65535
-    #define FMT_FS_EXPSHIFT 16
-    #define HIGH_FMTQ2FS(E,M) ((M*16)/pow(2,(2*E)))
-    #define LOW_FMTQ2FS(E,M)  ((M*16)/pow(2,((3*E)-7)))
-
-/*--------------- WORD 2 -  direction, channel mapping (depends on the "stream_io_domain")------*/
-#define AUDIO_MAPPING_FMT2 U( 2)
-    #define AUDIO_MAPPING_FMT2_MSB U(31) /* 32 mapping of channels example of 7.1 format (8 channels): */
-    #define AUDIO_MAPPING_FMT2_LSB U( 0) /*     FrontLeft, FrontRight, FrontCenter, LowFrequency, BackLeft, BackRight, SideLeft, SideRight ..*/
-
-#define IMU_FMT2 U( 2)
-    #define IMU_MAPPING_FMT2_MSB U(31) 
-    #define IMU_MAPPING_FMT2_LSB U( 0) 
-
-#define     PICTURE_FMT2 U( 2)
-    #define  UNUSED_2D_FMT2_MSB U(31) /* 12b   */
-    #define  UNUSED_2D_FMT2_LSB U(20)
-    #define  BORDER_2D_FMT2_MSB U(19) /* 2 pixel border 0,1,2,3   */
-    #define  BORDER_2D_FMT2_LSB U(18)
-    #define   RATIO_2D_FMT2_MSB U(17) /* 4 ratio to height : 1:1 4:3 16:9 16:10 5:4  */
-    #define   RATIO_2D_FMT2_LSB U(14)
-    #define   WIDTH_2D_FMT2_MSB U(13) /* 14 number of pixel width */
-    #define   WIDTH_2D_FMT2_LSB U( 0) 
-
-
 
 /*==========================================  ARCS  ===================================================*/
 
@@ -212,11 +100,11 @@
 #define   DATAOFF_ARCW0_LSB U(24) /* 3 32/64bits offset index see idx_memory_base_offset */
 #define   ________ARCW0_MSB U(23) /*   We don't know yet if the base will be extended with a 2bits shifter */
 #define   ________ARCW0_LSB U(22) /* 2  or if the list of offsets must be increased */
-#define   BASEIDX_ARCW0_MSB U(21) /*        */
-#define  BASESIGN_ARCW0_MSB U(21) /*   buffer address 21 + sign + offset = 25 bits (+2bits margin) */
-#define  BASESIGN_ARCW0_LSB U(21) /*   sign of the address with respect to the offset */
+#define   BASEIDX_ARCW0_MSB U(21) /*   0x2000.0000 = 500MB     */
+#define  BAS_SIGN_ARCW0_MSB U(21) /*   buffer address 21 + sign + offset = 25 bits (+2bits margin) */
+#define  BAS_SIGN_ARCW0_LSB U(21) /*   sign of the address with respect to the offset */
 #define   BASEIDX_ARCW0_LSB U( 0) /*22 base address 22bits linear address range in WORD32 */
-#define BASEIDXOFFARCW0_LSB U( 0) /*   Signed ase can address +/- 8MBytes around the offset */
+#define BASEIDXOFFARCW0_LSB U( 0) /*   Signed base can address +/- 8MBytes around the offset +/- 0x7F.FFFF */
                                 
 #define BUFSIZDBG_ARCW1    U( 1)
 #define CONSUMFMT_ARCW1_MSB U(31) 
@@ -289,6 +177,12 @@
         Indexes 1..7 are used for shared subroutines.
         Indexes 8..127 are assigned to nodes in the header field SCRIPT_LW0
             indexes are provided in the graph 
+        the 4MSB bits of the arc index are used to tell to reset/clean the RAM
+        Parameters can be inserted at the end of the byte code of each script
+            or inserted in the arc buffer in RAM
+        One TX arc used to lock the scripts. 
+            Descriptor's Base is used for the static area (register+stack)
+            Descriptor's Read indexes the constants/parameters
 
     -----------------SHARED FLASH/RAM (FOR NEWPARAM_LW2)----------    
       
@@ -306,7 +200,7 @@ offset_descriptor
     ARC descriptors (4 words each)
        Word0: base offsetm data format, need for flush after write
        Word1: size, debug result registers
-       Word2: read index, ready for read, THR size/4, flow error and debug tasks index
+       Word2: read index, ready for read, flow error and debug tasks index
        Word3: write index, ready for write, need realignment flag, locking byte
 
 offset_buffer   
@@ -338,28 +232,30 @@ offset_instance
 /* max number of application callbacks used from SWC and scripts */
 #define MAX_NB_APP_CALLBACKS 4
 
+/* the first word of the graph holds the number of words32 */
+#define GRAPH_SIZE_SKIP_WORD0 1
+
 /* -------- GRAPH[0] 27b RAM address, HW-shared MEM & RAM copy config---- 
                                    3 options :
         IO 2 words                 RAM  Flash  Flash
         FORMAT 3 words             RAM  Flash  Flash
         SCRIPTS                    RAM  Flash  Flash
         LINKED-LIST                RAM  RAM    Flash  RAM allows SWC to be desactivated
-        STREAM INSTANCE 3 words    RAM  RAM    RAM
         ARC descriptors 4 words    RAM  RAM    RAM
         Debug registers, Buffers   RAM  RAM    RAM
 */
 #define COPY_CONF_GRAPH0_COPY_ALL_IN_RAM 0
 #define COPY_CONF_GRAPH0_FROM_LINKEDLIST 1
-#define COPY_CONF_GRAPH0_FROM_STREAM_INST 2
+#define COPY_CONF_GRAPH0_FROM_ARC_DESCS 2
 #define COPY_CONF_GRAPH0_ALREADY_IN_RAM 3
 
 #define PACKSHARERAMSPLIT(share,RAMsplit) ((share<<3) + RAMsplit)   // bits 27..30 (PRODUCFMT_ARCW0_LSB 27
 #define ___UNUSED_GRAPH0_MSB U(31) 
 #define ___UNUSED_GRAPH0_LSB U(30) // 2
 #define SHAREDRAM_GRAPH0_MSB U(29) 
-#define SHAREDRAM_GRAPH0_LSB U(29) // 1
-#define  RAMSPLIT_GRAPH0_MSB U(28) //   COPY_CONF_GRAPH0_COPY_ALL_IN_RAM / _FROM_LINKEDLIST / _FROM_ARCDESC / _ALREADY_IN_RAM
-#define  RAMSPLIT_GRAPH0_LSB U(27) // 2
+#define SHAREDRAM_GRAPH0_LSB U(29) // 1 to set MPU_RASR[18] = 1 
+#define  RAMSPLIT_GRAPH0_MSB U(28) //   
+#define  RAMSPLIT_GRAPH0_LSB U(27) // 2 COPY_CONF_GRAPH0_COPY_ALL_IN_RAM / _FROM_LINKEDLIST / _FROM_ARCDESC / _ALREADY_IN_RAM
 #define GRAPH_RAM_OFFSET(L,G)     pack2linaddr_int(L,G[0])
 #define GRAPH_RAM_OFFSET_PTR(L,G) pack2linaddr_ptr(L,G[0])
 
@@ -373,14 +269,14 @@ offset_instance
 #define     NBFORMATS_GR1_MSB U( 4) 
 #define     NBFORMATS_GR1_LSB U( 0) /*  5 formats */
 
-#define PACKFORMATIOSSCRIPT(LENscript,nIOs,nFMT) (((LENscript)<<SCRIPTS_SIZE_GR1_LSB) | ((nIOs)<<NB_IOS_GR1_LSB) | ((nFMT)<<NBFORMATS_GR1_LSB))
-#define GRAPH_LENSCRIPT(G) (((G[1])>>10) & 0x3FFFFF)
-#define GRAPH_NB_IOS(G)    (((G[1])>> 5) & 0x1F)
-#define GRAPH_NBFORMAT(G)  (((G[1])>> 0) & 0x1F)
+//#define PACKFORMATIOSSCRIPT(LENscript,nIOs,nFMT) (((LENscript)<<SCRIPTS_SIZE_GR1_LSB) | ((nIOs)<<NB_IOS_GR1_LSB) | ((nFMT)<<NBFORMATS_GR1_LSB))
+//#define GRAPH_LENSCRIPT(G) (((G[1])>>10) & 0x3FFFFF)
+//#define GRAPH_NB_IOS(G)    (((G[1])>> 5) & 0x1F)
+//#define GRAPH_NBFORMAT(G)  (((G[1])>> 0) & 0x1F)
 
 /* -------- GRAPH[2] size of LINKEDLIST, number of STREAM_INSTANCES ---- */
 #define LINKEDLIST_SIZE_GR2_MSB U(26) 
-#define LINKEDLIST_SIZE_GR2_LSB U( 0) /* 26 size of the linkedList with the parameters */
+#define LINKEDLIST_SIZE_GR2_LSB U( 0) /* 27 size of the linkedList with the parameters */
 
 
 #define PACKLINKEDLNBINSTANCE(LinkedList,NbInstance) (((LinkedList)<<LINKEDLIST_SIZE_GR2_LSB) | (NbInstance))
@@ -415,13 +311,10 @@ offset_instance
       The graph hold a table of uint32_t "stream_format_io" [LAST_IO_FUNCTION_PLATFORM]
 */
 
-//enum input_output_command_id {  SET0COPY1_IOFMT
-#define STREAM_IOFMT_SIZE_W32 2   /* one word for settings controls 
-        + 1 for instance selection and mixed-signal settings placed in the BUFFER area */
+#define STREAM_IOFMT_SIZE_W32 2   /* one word for controls + for mixed-signal settings */
 
 #define IO_COMMAND_SET_BUFFER   0u  /* arc buffer point directly to the IO buffer: ping-pong, big buffer */
 #define IO_COMMAND_DATA_MOVE    1u  /* the IO has its own buffer */
-//#define IO_COMMAND_UPDATE_PTR   2u  /* intermediate data is moved in the circular buffer, pointers need to be updated */
 
 #define RX0_TO_GRAPH            0u
 #define TX1_FROM_GRAPH          1u
@@ -430,13 +323,13 @@ offset_instance
 #define IO_IS_SERVANT1           1u
 
 #define ___UNUSED_IOFMT_MSB U(31)  
-#define ___UNUSED_IOFMT_LSB U(25)  /* 7 */
-#define SET0COPY1_IOFMT_MSB U(24)  
-#define SET0COPY1_IOFMT_LSB U(24)  /* 1  command_id IOCOMMAND */
-#define  SERVANT1_IOFMT_MSB U(23)  
-#define  SERVANT1_IOFMT_LSB U(23)  /* 1  1=IO_IS_SERVANT1 */
-#define  ARC0_LW1_IOFMT_MSB U(22)  
-#define  ARC0_LW1_IOFMT_LSB U(12)  /* 11 initialization : buffer allocation 0:none, >0:arc descriptor index */
+#define ___UNUSED_IOFMT_LSB U(15)  /* 17 */
+#define SHAREBUFF_IOFMT_MSB U(14)   
+#define SHAREBUFF_IOFMT_LSB U(14)  /* 1  share the arc buffer to the BSP */
+#define SET0COPY1_IOFMT_MSB U(13)  
+#define SET0COPY1_IOFMT_LSB U(13)  /* 1  command_id IO_COMMAND_SET_BUFFER / IO_COMMAND_DATA_MOVE */
+#define  SERVANT1_IOFMT_MSB U(12)  
+#define  SERVANT1_IOFMT_LSB U(12)  /* 1  1=IO_IS_SERVANT1 */
 #define    RX0TX1_IOFMT_MSB U(11)  /*    direction of the stream */
 #define    RX0TX1_IOFMT_LSB U(11)  /* 1  0 : to the graph    1 : from the graph */
 #define   IOARCID_IOFMT_MSB U(10)  
@@ -450,22 +343,130 @@ offset_instance
 #define SETTINGS_IOFMT2_MSB U(31)  
 #define SETTINGS_IOFMT2_LSB U( 0) /* 32  second word : common (8b MSB) and mixed-signal (24b LSB) settings */
 
-/* address of the buffer */
-#define BASEIDXOFFIOFMT3_MSB BASEIDXOFFARCW0_MSB
-#define   DATAOFF_IOFMT3_MSB   DATAOFF_ARCW0_MSB
-#define   DATAOFF_IOFMT3_LSB   DATAOFF_ARCW0_LSB
-#define   ________IOFMT3_MSB   ________ARCW0_MSB
-#define   ________IOFMT3_LSB   ________ARCW0_LSB
-#define   BASEIDX_IOFMT3_MSB   BASEIDX_ARCW0_MSB
-#define  BASESIGN_IOFMT3_MSB  BASESIGN_ARCW0_MSB
-#define  BASESIGN_IOFMT3_LSB  BASESIGN_ARCW0_LSB
-#define   BASEIDX_IOFMT3_LSB   BASEIDX_ARCW0_LSB
-#define BASEIDXOFFIOFMT3_LSB BASEIDXOFFARCW0_LSB
+///* address of the buffer */
+//#define BASEIDXOFFIOFMT3_MSB BASEIDXOFFARCW0_MSB
+//#define   DATAOFF_IOFMT3_MSB   DATAOFF_ARCW0_MSB
+//#define   DATAOFF_IOFMT3_LSB   DATAOFF_ARCW0_LSB
+//#define   ________IOFMT3_MSB   ________ARCW0_MSB
+//#define   ________IOFMT3_LSB   ________ARCW0_LSB
+//#define   BASEIDX_IOFMT3_MSB   BASEIDX_ARCW0_MSB
+//#define  BASESIGN_IOFMT3_MSB  BAS_SIGN_ARCW0_MSB
+//#define  BASESIGN_IOFMT3_LSB  BAS_SIGN_ARCW0_LSB
+//#define   BASEIDX_IOFMT3_LSB   BASEIDX_ARCW0_LSB
+//#define BASEIDXOFFIOFMT3_LSB BASEIDXOFFARCW0_LSB
 
 /* 
-   ================================= GRAPH FORMATS =======================================
-*/ 
-        // #define STREAM_FORMAT_SIZE_W32 3   (see stream_arcs.h)
+   ================================= GRAPH DATA & STREAM FORMATS =======================================
+    
+    Format 23+4_offsets for buffer BASE ADDRESS
+    Frame SIZE and ring indexes are using 22bits linear (0..4MB)
+*/
+    /*===================================   FORMATS   */
+#define STREAM_FORMAT_SIZE_W32 3            // digital, common part of the format 
+/*
+*   stream_data_stream_data_format (size multiple of 3 x uint32_t)
+*       word 0 : common to all domains : frame size, raw format, interleaving
+*       word 1 : common to all domains : time-stamp, sampling rate, nchan         
+*       word 2 : specific to domains : hashing, channel mapping 
+*/
+
+/* for MISRA-2012 compliance to Rule 10.4 */
+#define U(x) ((uint32_t)(x)) 
+#define U8(x) ((uint8_t)(x)) 
+//#define S(x) ((int32_t)(x)) 
+#define S8(x) ((int8_t)(x)) 
+
+//enum time_stamp_format_type {
+#define NO_TS 0
+#define ABS_TS_64 1                  /* long time reference */
+#define REL_TS_32 2                  /* time difference from previous frame packet in stream_time_seconds format */
+#define COUNTER_TS 3                 /* counter of data frames */
+
+//enum hashing_type {
+#define NO_HASHING 0                 /* cipher protocol under definition */
+#define HASHING_ON 1                 /* the stream is ciphered (HMAC-SHA256 / stream_encipher XTEA)*/
+
+//enum frame_format_type {
+#define FMT_INTERLEAVED 0           /* "arc_descriptor_interleaved" for example L/R audio or IMU stream..   */
+                                    /* the pointer associated to the stream points to data (L/R/L/R/..)     */
+#define FMT_DEINTERLEAVED_1PTR 1    /* single pointer to the first channel, next channel base address is    */
+                                    /*  computed by adding the frame size or buffer size/nchan, also for ring buffers  */
+////enum frame_format_synchro {
+#define SYNCHRONOUS 0               /* tells the output buffer size is NOT changing */
+#define ASYNCHRONOUS 1              /* tells the output frame length is variable, input value "Size" tells the maximum value  
+//                                       data format : optional time-stamp (stream_time_stamp_format_type)
+//                                                    domain [2bits] and sub-domain [6bits rfc8428]
+//                                                    payload : [nb samples] [samples]  */
+////enum direction_rxtx {
+#define IODIRECTION_RX 0              /* RX from the Graph pont of view */
+#define IODIRECTION_TX 1
+
+/*--------------- WORD 0 - producer frame size, raw format, interleaving --------------- */
+#define SIZSFTRAW_FMT0   0
+    //#define MULTIFRME_FMT0_MSB 31 /* 1  allow the scheduler to push multiframes  */
+    //#define MULTIFRME_FMT0_LSB 31
+    #define       RAW_FMT0_MSB 30
+    #define       RAW_FMT0_LSB 25 /* 6  stream_raw_data 6bits (0..63)  */
+    #define INTERLEAV_FMT0_MSB 24       
+    #define INTERLEAV_FMT0_LSB 24 /* 1  interleaving : frame_format_type */
+    #define FRAME_EXT_FMT0_MSB 23 
+    #define FRAME_EXT_FMT0_LSB 22 /* 2  _____*/
+                                  /*    frame size in bytes for one deinterleaved channel Byte-acurate up to 4MBytes */
+    #define FRAMESIZE_FMT0_MSB 21 /*    raw interleaved buffer size is framesize x nb channel, max = 4MB x nchan */
+    #define FRAMESIZE_FMT0_LSB  0 /* 22 in swc manifests it gives the minimum input size (grain) before activating the swc
+                                        A "frame" is the combination of several channels sampled at the same time 
+                                        A value =0 means the size is any or defined by the IO AL.
+                                        For sensors delivering burst of data not isochronous, it gives the maximum 
+                                        framesize; same comment for the sampling rate. */
+
+    #define PACKSTREAMFORMAT0(RAW,INTERL,FRAMESIZE) ((U(RAW)<<26)|(U(INTERL)<<24)|U(FRAMESIZE))
+
+/*--------------- WORD 1 - sampling rate , nchan  -------------*/
+#define   SAMPINGNCHANM1_FMT1  U( 1)
+    #define  SAMPLING_FMT1_MSB U(31) /* 23 truncated IEEE-754 Seeeeeeemmmmmmmmmmmmmmm__XXXXXXX  */
+    #define  SAMPLING_FMT1_LSB U( 9) /*    FP23_E8_M15        FEDCBA9876543210FEDCBA9876543210  */
+    #define    UNUSED_FMT1_MSB U( 8) /* 2   */
+    #define    UNUSED_FMT1_LSB U( 7)
+    #define  TIMSTAMP_FMT1_MSB U( 6) /* 2  time_stamp_format_type for time-stamped streams for each interleaved frame */
+    #define  TIMSTAMP_FMT1_LSB U( 5) 
+    #define   NCHANM1_FMT1_MSB U( 4)
+    #define   NCHANM1_FMT1_LSB U( 0) /* 5  nb channels-1 [1..32] */
+
+
+    #define PACKSTREAMFORMAT1(TIMESTAMP,SAMPLING, NCHANM1) ((U(TIMESTAMP)<<26)|(U(SAMPLING)<<5)|U(NCHANM1))
+    #define FMT_FS_MAX_EXPONENT 15
+    #define FMT_FS_MAX_MANTISSA 65535
+    #define FMT_FS_EXPSHIFT 16
+    #define HIGH_FMTQ2FS(E,M) ((M*16)/pow(2,(2*E)))
+    #define LOW_FMTQ2FS(E,M)  ((M*16)/pow(2,((3*E)-7)))
+
+/*--------------- WORD 2 -  direction, channel mapping (depends on the "stream_io_domain")------*/
+#define AUDIO_MAPPING_FMT2 U( 2)
+    #define AUDIO_MAPPING_FMT2_MSB U(31) /* 32 mapping of channels example of 7.1 format (8 channels): */
+    #define AUDIO_MAPPING_FMT2_LSB U( 0) /*     FrontLeft, FrontRight, FrontCenter, LowFrequency, BackLeft, BackRight, SideLeft, SideRight ..*/
+
+#define IMU_FMT2 U( 2)
+    #define IMU_MAPPING_FMT2_MSB U(31) 
+    #define IMU_MAPPING_FMT2_LSB U( 0) 
+
+#define     SENSOR_FMT2 U( 2)
+    #define  UNUSED_2DS_FMT2_MSB U(31) /* 12b   */
+    #define  UNUSED_2DS_FMT2_LSB U(20)
+    #define  BORDER_2DS_FMT2_MSB U(19) /* 2 pixel border 0,1,2,3   */
+    #define  BORDER_2DS_FMT2_LSB U(18)
+    #define   RATIO_2DS_FMT2_MSB U(17) /* 4 ratio to height : 1:1 4:3 16:9 16:10 5:4  */
+    #define   RATIO_2DS_FMT2_LSB U(14)
+    #define   WIDTH_2DS_FMT2_MSB U(13) /* 14 number of pixel width */
+    #define   WIDTH_2DS_FMT2_LSB U( 0) 
+
+
+#define     DISPLAY_FMT2 U( 2)
+    #define  UNUSED_2DD_FMT2_MSB U(31) /* 8b backlight control  */
+    #define  UNUSED_2DD_FMT2_LSB U(24)
+    #define  HEIGHT_2DD_FMT2_MSB U(23) /* 12 pixel height */
+    #define  HEIGHT_2DD_FMT2_LSB U(12)
+    #define   WIDTH_2DD_FMT2_MSB U(11) /* 12 pixel width */
+    #define   WIDTH_2DD_FMT2_LSB U( 0) 
 
 
 /* 
@@ -476,8 +477,8 @@ offset_instance
 /* number of SWC calls in sequence */
 #define MAX_SWC_REPEAT 4u
 
-#define SWC_TASK_COMPLETED 0
-#define SWC_TASK_NOT_COMPLETED 1
+#define TASKS_COMPLETED 0
+#define TASKS_NOT_COMPLETED 1
 /* =========================================================================================== */ 
 
         /* word 0 - main Header */
@@ -544,7 +545,7 @@ offset_instance
 #define   ________LW2_MSB U(30) /*      */
 #define   ________LW2_LSB U(30) /*  1   */
 #define   NBALLOC_LW2_MSB U(29)
-#define   NBALLOC_LW2_LSB U(27) /*  3 number of memory segments to give at RESET */
+#define   NBALLOC_LW2_LSB U(27) /*  3 number of memory segments to give at RESET [0..4] */
 #define BASEIDXOFFLW2_MSB U(26) 
 #define   DATAOFF_LW2_MSB U(26)
 #define   DATAOFF_LW2_LSB DATAOFF_ARCW0_LSB /*  3 bits 64bits offset index see idx_memory_base_offset */
@@ -552,7 +553,7 @@ offset_instance
 #define   BASEIDX_LW2_LSB U( 0)             /* 21 base address in WORD32 + 1 sign bit*/
 #define BASEIDXOFFLW2_LSB U( 0) /*    27 bits */
 
-#define MAXNBMEMSEGMENTS ((1<<(NBALLOC_LW2_MSB - NBALLOC_LW2_LSB + 1)) - 1)
+#define MAXNBMEMSEGMENTS (1<<(NBALLOC_LW2_MSB - NBALLOC_LW2_LSB + 1))   // 4 memory segments per nanoApp 
 
         /* word 3+n - parameters */
 
@@ -627,6 +628,22 @@ offset_instance
 
 #define PACK_COMMAND(SWCTAG,PRESET,NARC,CMD) (((PRESET)<<12)|((NARC)<<8)|((SWCTAG)<<16)|(CMD))
 
+/*============================== SCRIPTS ============================================*/                          
+
+#define SCRIPT_REGISTER_SIZEBYTE 9
+#define OFFSET_INDSCRIPT 2              // the first 2 bytes of script_indirect[] give the number of scripts
+
+#define STACK_SIZE_SCRIPT_MSB U(23)       
+#define STACK_SIZE_SCRIPT_LSB U(16) /* 8 stack size */
+#define    UNUSED1_SCRIPT_MSB U(15)       
+#define    UNUSED1_SCRIPT_LSB U(12) /* 4  */
+#define       NREG_SCRIPT_MSB U(11)       
+#define       NREG_SCRIPT_LSB U( 8) /* 4 number of regiters */
+#define    UNUSED2_SCRIPT_MSB U( 7)       
+#define    UNUSED2_SCRIPT_LSB U( 4) /* 4  */
+#define    COMMAND_SCRIPT_MSB U( 3)       
+#define    COMMAND_SCRIPT_LSB U( 0) /* 4 command */
+
 /*=====================================================================================*/    
 /*
     "stream_service_command"  from the nodes, to "arm_stream_services"
@@ -634,17 +651,16 @@ offset_instance
 
 #define   OPTION_SSRV_MSB U(31)       
 #define   OPTION_SSRV_LSB U(14) /* 18   compute accuracy, in-place processing, frame size .. */
-#define INST_CMD_SSRV_MSB U(13)       
-#define INST_CMD_SSRV_LSB U(10) /* 4    stream instance index RD(S->scheduler_control, INSTANCE_SCTRL) */
+//#define INST_CMD_SSRV_MSB U(13)       
+//#define INST_CMD_SSRV_LSB U(10) /* 4    stream instance index RD(S->scheduler_control, INSTANCE_SCTRL) */
 #define FUNCTION_SSRV_MSB U( 9)       
 #define FUNCTION_SSRV_LSB U( 4) /* 6    64 functions/group  */
 #define    GROUP_SSRV_MSB U( 3)       
 #define    GROUP_SSRV_LSB U( 0) /* 4    16 groups */
 
 /* clears the MALLOC_SSRV field */
-#define PACK_SERVICE(OPTION,INST,FUNC,GROUP) (((OPTION)<<OPTION_SSRV_LSB)|((INST)<<INST_CMD_SSRV_LSB)|((FUNC)<<FUNCTION_SSRV_LSB)|(GROUP)<<GROUP_SSRV_LSB)
-#define PACK_SERVICE_S(FUNC,GROUP) (((FUNC)<<FUNCTION_SSRV_LSB)|(GROUP)<<GROUP_SSRV_LSB)
-
+//#define PACK_SERVICE(OPTION,INST,FUNC,GROUP) (((OPTION)<<OPTION_SSRV_LSB)|((INST)<<INST_CMD_SSRV_LSB)|((FUNC)<<FUNCTION_SSRV_LSB)|(GROUP)<<GROUP_SSRV_LSB)
+#define PACK_SERVICE(OPTION,FUNC,GROUP) (((OPTION)<<OPTION_SSRV_LSB)|((FUNC)<<FUNCTION_SSRV_LSB)|(GROUP)<<GROUP_SSRV_LSB)
 
 
 //enum stream_command (8bits LSB)
@@ -844,7 +860,7 @@ offset_instance
 //enum mem_mapping_type {
 #define MEM_TYPE_STATIC          0    /* (LSB) memory content is preserved (default ) */
 #define MEM_TYPE_WORKING         1    /* scratch memory content is not preserved between two calls */
-#define MEM_TYPE_PSEUDO_WORKING  2    /* static only during the uncompleted execution state of the SWC, see “NODE_RUN” */
+#define MEM_TYPE_PSEUDO_WORKING  2    /* static only during the uncompleted execution state of the SWC, see NODE_RUN */
 #define MEM_TYPE_PERIODIC_BACKUP 3    /* static parameters to reload for warm boot after a crash, holding for example 
            long-term estimators. This memory area is cleared at cold NODE_RESET and 
            refreshed for warm NODE_RESET. The SWC should not reset it (there is 
@@ -965,7 +981,7 @@ offset_instance
 //#define PLATFORM_MP_SERVICE_UNLOCK 0x07   /* wait commander processor copies the graph */
 #define PLATFORM_IO_SET_STREAM_ALL 0x08   /* launch all the graph interfaces */
 #define PLATFORM_IO_SET_STREAM     0x09   /* share &platform_io(), buffer address, *selection of setting EXTENSION/option, data format */
-#define PLATFORM_IO_DATA_START           0x0A   /* "data exchanges */ 
+#define PLATFORM_IO_DATA_START     0x0A   /* "data exchanges */ 
 #define PLATFORM_IO_STOP_STREAM    0x0B   /*  */
 #define PLATFORM_IO_ACK            0x0C   /* interface callback to arm_stream_io */
 #define PLATFORM_CLEAR_BACKUP_MEM  0x0D   /* cold start : clear backup memory */
@@ -976,6 +992,22 @@ offset_instance
 #define PLATFORM_NODE_ADDRESS      0x12   /* returns the physical address of a node */
 #define PLATFORM_PROC_HW           0x13   /* who am i ? and which ISR is connected to NVIC (iomask) */
 #define PLATFORM_IO_STRUCT         0x14   /* share the struct platform_io_control table  */
+#define PLATFORM_DMA_MOVE          0x15   /* data move */
+#define PLATFORM_DMA_MOVE_DONE     0x16   /* end of memory */
+
+/* @@@@@@@@@@  group platform_al service the same way : and open parameter options 
+#define   OPTION_SSRV_MSB 
+#define   OPTION_SSRV_LSB 
+#define INST_CMD_SSRV_MSB 
+#define INST_CMD_SSRV_LSB 
+#define FUNCTION_SSRV_MSB 
+#define FUNCTION_SSRV_LSB 
+#define    GROUP_SSRV_MSB 
+#define    GROUP_SSRV_LSB 
+#define PACK_SERVICE(OPTION,INST,FUNC,GROUP) (((OPTION)<<OPTION_SSRV_LSB)|((INST)<<INST_CMD_SSRV_LSB)|((FUNC)<<FUNCTION_SSRV_LSB)|(GROUP)<<GROUP_SSRV_LSB)
+#define PACK_SERVICE_S(FUNC,GROUP) (((FUNC)<<FUNCTION_SSRV_LSB)|(GROUP)<<GROUP_SSRV_LSB)
+*/
+
 
 /*
 * system subroutines : 
@@ -984,7 +1016,7 @@ offset_instance
 * - Get Peripheral data : RSSI, MAC/IP address
 * - Low-level : I2C string of commands, GPIO, physical address to perpherals
 */
-#define PLATFORM_DEEPSLEEP_ENABLED 0x20   /* deep-sleep activation is possible when returning from arm_stream(STREAM_RUN..) */
+#define PLATFORM_DEEPSLEEP_ENABLED 0x20   /* deep-sleep activation is possible when returning from arm_graph_interpreter(STREAM_RUN..) */
 #define PLATFORM_TIME_SET          0x21
 #define PLATFORM_RTC_SET           0x22
 #define PLATFORM_TIME_READ         0x23
@@ -1034,6 +1066,24 @@ offset_instance
  *  stream constants / Macros.
  */
  
+// We define a preprocessor macro that will allow us to add padding
+// to a data structure in a way that helps communicate our intent.
+//struct alignas(4) Pixel {
+//    char R, G, B;
+//    PADDING_BYTES(1);
+//};
+#define CONCATENATE_(a, b) a##b
+#define CONCATENATE(a, b) CONCATENATE_(a, b)
+#define PADDING_BYTES(N) char CONCATENATE(PADDING_MACRO__, __COUNTER__)[N]
+
+#if defined ( _MSC_VER )
+#define SECTION_START 
+#define SECTION_STOP 
+#else
+#define SECTION_START __attribute__((section(".graph_interpreter_section")))
+#define SECTION_STOP 
+#endif
+
 #define SHIFT_SIZE(base,shift) ((base) << ((shift) << 2));           
 
 
@@ -1062,10 +1112,10 @@ offset_instance
 
 #define LOG2BASEINWORD32 2 
 #define BASEINWORD32 (1<<LOG2BASEINWORD32)
-#define PACK2LINADDR(o,x) (o[RD(x,DATAOFF_ARCW0)] + \
-        (RD(x,BASESIGN_ARCW0))? \
-            (1 + ~(((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32)):\
-            ( ((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32))
+//#define PACK2LINADDR(o,x) (o[RD(x,DATAOFF_ARCW0)] + \
+//        (RD(x,BAS_SIGN_ARCW0))? \
+//            (1 + ~(((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32)):\
+//            ( ((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32))
 
 #define SET_BIT(arg, bit)   ((arg) |= (U(1) << U(bit)))
 #define CLEAR_BIT(arg, bit) ((arg) = U(arg) & U(~(U(1) << U(bit))))

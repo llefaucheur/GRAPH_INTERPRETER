@@ -112,6 +112,7 @@ struct processing_architecture
     uint64_t architecture;
     uint64_t libraries_b;   /* bit-field of embedded libraries in the flash of the device */
 
+    uint32_t nb_threads;    /* RTOS threads (0..3) have decreasing priority (see PRIORITY_LW0) */
     uint32_t nb_long_offset;
     uint32_t nbMemoryBank_detailed;
     processor_memory_bank_t membank[MAX_PROC_MEMBANK];
@@ -160,7 +161,8 @@ typedef struct dbgtrace dbgtrace_t;
 * ---------------------------------------------------------------------- */
 struct stream_graph_linkedlist
 {   
-    /*  consolidated formats per arc, inter-nodes and at boundaries */
+    uint32_t PackedFormat;                          /* RAMSPLIT_GRAPH0 = COPY_CONF_GRAPH0_COPY_ALL_IN_RAM /FROM_LINKEDLIST /FROM_STREAM_INST ..*/
+                                                    /*  consolidated formats per arc, inter-nodes and at boundaries */
                                                     /* format section common to all stream interfaces (digital format) */
     struct arcStruct arc[MAX_NB_NODES];             /* rx0tx1, domain, digital format and FS accuracy */
     uint32_t nb_arcs;                               /*  consolidated formats per arc, inter-nodes and at boundaries */
@@ -173,10 +175,19 @@ struct stream_graph_linkedlist
 
     /* script byte-codes */
     uint32_t nb_byte_code;
-    uint32_t nb_scripts;
-    uint32_t script_indirect[1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
-    #define AVG_SCRIPT_LEN 100
-    char script_bytecode[AVG_SCRIPT_LEN * (1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1))];
+    uint32_t nb_scripts, nb_scriptsARC, atleastOneScriptShared; 
+    uint32_t scriptRAMshared  [1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
+    uint32_t script_offset    [1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
+    uint32_t script_stackLengthW32[1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
+    uint32_t script_indirect  [1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
+    uint32_t script_nregs     [1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
+    uint32_t script_stackdepthW32[1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
+    uint32_t script_param_length[1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
+    uint32_t max_nregs, max_stack;
+    #define AVG_SCRIPT_LEN 100          // list of byte-codes
+    char script_bytecode      [(1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)) * AVG_SCRIPT_LEN];
+    #define AVG_SCRIPT_PARAM_LEN 1000   // parameters set by scripts
+    char script_embedded_param[1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)][(1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)) * AVG_SCRIPT_LEN];
 
     uint32_t script_sctrl;
 

@@ -34,7 +34,7 @@
 /*------------------------*/
 #include <stdint.h>
 
-#include "platform_computer.h"
+#include "platform_computer/platform_computer.h"
 
 //#include "platform_arduino_nano33.h"
 /*------------------------*/
@@ -80,7 +80,7 @@ enum stream_processor_sub_arch_fpu    /* bit-fields, coded on 6b max => 64 optio
 
 /*======================================================================================*/
 
-extern void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3);
+extern void platform_al(uint32_t command, void *ptr1, void *ptr2, uint32_t data3);
  
 extern int32_t extract_sensor_field (const uint8_t *platform_bit_fields, 
                               const int32_t *settings,
@@ -90,5 +90,6 @@ extern int32_t extract_sensor_field (const uint8_t *platform_bit_fields,
 #endif /* #ifndef platform_al_H */
 #ifdef __cplusplus
 }
+
+                              
 #endif
- 

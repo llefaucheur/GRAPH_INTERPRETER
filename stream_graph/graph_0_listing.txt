@@ -7,15 +7,13 @@ ARC2  @=    0    0
 
 ARC3  @=    0    0 
 
-IO ARC4  @=    0    0 
+SCRIPT ARC4  @=    0    0 
 
-IO ARC5  @=    0    0 
-
-IO ARC6  @=    0    0 
+SCRIPT ARC5  @=    0    0 
 
 arm_stream_filter ----------------------------------------- 
-membank  0  @= 388  184 size   76  S 
-membank  1  @= 388  184 size    4  W 
+memory bank(0) address= 444  1BC size   76  Static 
+memory bank(1) address= 444  1BC size    4  Working 
 
 arm_stream_detector ----------------------------------------- 
-membank  0  @= 464  1D0 size   56  S 
+memory bank(0) address= 520  208 size   56  Static 

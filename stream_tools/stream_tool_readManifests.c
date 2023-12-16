@@ -211,11 +211,12 @@ void read_platform_digital_manifest(char* inputFile, struct stream_platform_mani
 
     for (iproc = 0; iproc < platform->nb_processors; iproc++)
     {        
-        fields_extract(&pt_line, "iiii", 
+        fields_extract(&pt_line, "iiiii", 
             &(platform->processor[iproc].processorID),
+            &(platform->processor[iproc].IamTheMainProcessor),
             &(platform->processor[iproc].nb_long_offset),
-            &(platform->processor[iproc].nbMemoryBank_detailed),
-            &(platform->processor[iproc].IamTheMainProcessor)
+            &(platform->processor[iproc].nb_threads),
+            &(platform->processor[iproc].nbMemoryBank_detailed)
          );    
 
         fields_extract(&pt_line, "i", &(platform->processor[iproc].libraries_b));
@@ -271,7 +272,7 @@ void read_platform_io_stream_manifest(char* inputFile, struct stream_IO_interfac
     decode_domain(&(pta->si.domain), cstring);
 
     fields_extract(&pt_line, "i", &(pta->si.commander0_servant1)); 
-    fields_extract(&pt_line, "i", &(pta->si.graphalloc0_bsp1)); 
+    fields_extract(&pt_line, "i", &(pta->si.graphalloc_X_bsp_0)); 
     fields_extract(&pt_line, "i", &(pta->si.sram0_hwdmaram1)); 
     fields_extract(&pt_line, "i", &(pta->si.processorBitFieldAffinity)); 
 
@@ -313,7 +314,7 @@ void read_platform_io_stream_manifest(char* inputFile, struct stream_IO_interfac
 void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
 {
     char *pt_line;
-    uint32_t iarch, iarc, ibank, NARCS, iscripts = 0;
+    uint32_t iarch, iarc, ibank, NARCS, iscripts = 0, simple_syntax /* @@@@ */;
     struct arcStruct *pta;
 
     pt_line = inputFile;
@@ -330,6 +331,8 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         &(node->masklib));          /* dependency to Stream conpute libraries */
  
     node->nbInputOutputArc = node->nbInputArc + node->nbOutputArc;
+
+    fields_extract(&pt_line, "i", &simple_syntax);  // 0:default 1:simplified
 
     fields_extract(&pt_line, "i", &(node->nbArch));
     for (iarch = 0; iarch < node->nbArch; iarch++)
@@ -471,6 +474,8 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     {   fprintf(stderr, "too much nodes !"); exit(-4);
     }
 
+#define _INTERFACE_NODE "_graph_interface"
+#define _INTERFACE_NODE_ID 0
     strcpy(platform->all_nodes[_INTERFACE_NODE_ID].nodeName, _INTERFACE_NODE);      /* node[0] = IO interface */
     platform->nb_nodes = nb_nodes;
     for (inode = 1; inode < nb_nodes+1; inode++)

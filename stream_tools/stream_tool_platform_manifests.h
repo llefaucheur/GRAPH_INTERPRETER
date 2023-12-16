@@ -238,7 +238,7 @@ struct specific_io
 
     uint32_t set0_copy1;                /* data move through pointer setting of data copy */
     uint32_t commander0_servant1;       /* selection for polling protocol */
-    uint32_t graphalloc0_bsp1;          /* buffer declared from the graph 0 or BSP 1 */
+    uint32_t graphalloc_X_bsp_0;          /* buffer declared from the BSP 0 or Graph x (multiplication factor of the Frame size) */
     uint32_t sram0_hwdmaram1;           /* buffer in standard RAM=0, in HW IO RAM=1 */
     uint32_t processorBitFieldAffinity; /* indexes of the processor in charge of this stream */
 
@@ -268,8 +268,6 @@ struct io_arcstruct
     int fw_io_idx;
 
     int arcIDstream;
-    int arcIDbuffer;
-    float sizeFactor;
     uint32_t memVID;
 
     struct common_io_swc sc;

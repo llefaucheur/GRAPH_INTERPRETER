@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        xxx.c
+ * Title:        platform_sensor.h
  * Description:  
  *
  * $Date:        15 February 2023
@@ -28,6 +28,8 @@
  extern "C" {
 #endif
    
+    /* description of the IO-interface data specific to each physical domain */
+    
     
 #ifndef platform_sensor_H
 #define platform_sensor_H

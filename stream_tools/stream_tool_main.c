@@ -28,7 +28,7 @@
 
 #include "stream_tool_include.h"
 
-#define GRAPH_ALL_MANIFESTS "../../../stream_graph/files_manifests_computer.txt"
+#define GRAPH_ALL_MANIFESTS "../../../stream_al/platform_computer/files_manifests_computer.txt"
 #define GRAPH_TXT           "../../../stream_graph/graph_0.txt"     /* almost-binary graph with soft addresses hand optimized mapping and multi-processor mapping */
 #define GRAPH_LST           "../../../stream_graph/graph_0_listing.txt"     /* almost-binary graph with soft addresses hand optimized mapping and multi-processor mapping */
 #define GRAPH_BIN           "../../../stream_graph/graph_0_bin.txt"   /* final binary graph file */

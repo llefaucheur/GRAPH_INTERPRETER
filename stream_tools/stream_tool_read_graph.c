@@ -115,6 +115,31 @@ char domain_name[IO_PLATFORM_MAX_NB_DOMAINS][CHARLENDOMAINS] =
 
 
 /*
+    Read and pack the script until finding "_end_"
+
+    script_byte_codes
+    ....
+    _end_               end of byte codes  
+*/
+void stream_tool_read_script(char **pt_line, char *script_bytecode, uint32_t *nbBytesCodes)
+{
+    uint8_t raw_type;
+    uint32_t nb_raw, nbytes, nbits;
+
+    *nbBytesCodes = 0;
+
+    while (1)
+    {
+        read_binary_param(pt_line, script_bytecode, &raw_type, &nb_raw);
+        if (nb_raw == 0)
+            break;
+        nbits = stream_bitsize_of_raw(raw_type);
+        nbytes = (nbits * nb_raw)/8;
+        script_bytecode = &(script_bytecode[nbytes]);
+        *nbBytesCodes += nbytes;
+    }
+}
+/*
     Read and pack the parameters until finding "parameter_end"
         2  u8;  0 255                       new preset + tag (all)
         1 u16;  22                          byte length of the parameters from next line
@@ -192,6 +217,9 @@ void compute_memreq(struct stream_node_manifest *node, struct formatStruct *all_
         {   
             workingmem += size;
             // m->graph_basePACK will be computed after all the static areas (swc+arcs) are allocated 
+
+            //sprintf(DBG,"%s scratch memory bank(%d) address=0x%X",node->nodeName,(int)imem,(int)mem);  
+            //DBGG((uint32_t)working address/4, DBG);
         }
         else
         {
@@ -207,7 +235,8 @@ void compute_memreq(struct stream_node_manifest *node, struct formatStruct *all_
             mem = mem + aligninc;
             mem = mem & alignmask;
 
-            sprintf(DBG,"%s MEM%d =0x%X",node->nodeName,(int)imem,(int)mem);  DBGG((uint32_t)mem, DBG);
+            sprintf(DBG,"%s static memory bank(%d) address=0x%X",node->nodeName,(int)imem,(int)mem);  
+            DBGG((uint32_t)mem/4, DBG);
 
             m->graph_basePACK = (uint32_t)mem >> 2; /* memory in W32 */
 
@@ -215,7 +244,7 @@ void compute_memreq(struct stream_node_manifest *node, struct formatStruct *all_
             (*mbank_1_Byte) =  (*mbank_1_Byte) + size;
         }
 
-        fprintf (ptf_listing,"membank %2d  @=%4d %4X size %4d  %c \n", imem, (int)mem, (int)mem, (int)size, (m->usage == MEM_TYPE_WORKING)? 'W' : 'S');
+        fprintf (ptf_listing,"memory bank(%d) address=%4d %4X size %4d  %s \n", imem, (int)mem, (int)mem, (int)size, (m->usage == MEM_TYPE_WORKING)? "Working" : "Static");
     }
 
     if (node->sum_of_working_simplemap < workingmem)
@@ -277,7 +306,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 {
     char *pt_line;
     char paths[MAX_NB_PATH][NBCHAR_LINE];
-    uint32_t format, scriptctrl, procs, nbio_interfaces;
+    uint32_t scriptctrl, procs, nbio_interfaces, simple_syntax /* @@@@ */;
     uint32_t iscripts = 0, first_arc = 1;
     uint64_t cumulStaticW32, cumulStaticByte, offset_buffer, offset_instance, offset_descriptor;
 
@@ -290,8 +319,8 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
     {
         /* -------------------------- HEADER -------------------------------------- */
         if (0 == strncmp (pt_line, HEADER, strlen(HEADER)))
-        {   fields_extract(&pt_line, "III", 
-                &format, &scriptctrl, &procs);
+        {   fields_extract(&pt_line, "IIII", 
+                &(graph->PackedFormat), &scriptctrl, &procs, &simple_syntax);
         }
 
         /* -------------------------- PATHS --------------------------------------- */
@@ -345,7 +374,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
             for (i = 0 ; i < nbio_interfaces; i++)
             {   
-                fields_extract(&pt_line, "IIIIfI", &idx, &iformat, &fw_io_idx, &settings, &Kframes_buffer_size, &memVID_buffer);    
+                fields_extract(&pt_line, "IIIII", &idx, &iformat, &fw_io_idx, &settings, &memVID_buffer);    
 
                 if (idx != i)
                 {   printf ("\n\n IO index incorrect \n\n");
@@ -360,8 +389,6 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
                 arcIO->si.settings= settings;
 
                 arcIO->arcIDstream = 0xFFFF;
-                arcIO->arcIDbuffer = 0xFFFF;
-                arcIO->sizeFactor = Kframes_buffer_size;
                 arcIO->memVID = memVID_buffer;
 
                 /* copy data from platform_io */
@@ -373,7 +400,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
                 //@@@@@  change nbchannel_option interleaving_option 
                 //@@@@@  update the format and create a WARNING in case of mismatch => need format converter
 
-                if (Kframes_buffer_size > 0)
+                if (arcIO->si.graphalloc_X_bsp_0 > 0)
                 {   graph->nbio_interfaces_with_arcBuffer++;
                 }
 
@@ -455,13 +482,13 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
 
             node = &(graph->all_nodes[graph->nb_nodes]); 
-            graph->nb_nodes++;
             platform_node = 0;
-            fields_extract(&pt_line, "ci", node_name, &(node->instance_idx));  
+            fields_extract(&pt_line, "ci", node_name, &tmp);  
             node_name[MAXINPUT-1] = '\0';
 
             if (0 != strcmp(node_name, "arm_script"))
             {
+                node->instance_idx = tmp;
                 for (inode = 1; inode < platform->nb_nodes+1; inode++)
                 {   platform_node = &(platform->all_nodes[inode]);
                     if (0 == strncmp(node_name, platform_node->nodeName,strlen(platform_node->nodeName)))
@@ -492,11 +519,14 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
                 ST(node->headerPACK, SCRIPT_LW0, node->local_script_index);
             
                 switch (node->nbMemorySegment)
-                {   //@@@ nb of segment >4
-                case 4: fields_extract(&pt_line, "IIII", &(node->memreq[0].VID), &(node->memreq[1].VID), &(node->memreq[2].VID), &(node->memreq[0].VID)); break;
-                case 3: fields_extract(&pt_line, "III",  &(node->memreq[0].VID), &(node->memreq[1].VID), &(node->memreq[2].VID)); break;
-                case 2: fields_extract(&pt_line, "II",   &(node->memreq[0].VID), &(node->memreq[1].VID)); break;
-                case 1: fields_extract(&pt_line, "I",    &(node->memreq[0].VID)); break;
+                {   
+                //@@@ first memory segment is used for program to reload/swap
+                int Pseg;
+                //@@@ nb of segment >4
+                case 4: fields_extract(&pt_line, "IIIII", &Pseg, &(node->memreq[0].VID), &(node->memreq[1].VID), &(node->memreq[2].VID), &(node->memreq[0].VID)); break;
+                case 3: fields_extract(&pt_line, "IIII",  &Pseg, &(node->memreq[0].VID), &(node->memreq[1].VID), &(node->memreq[2].VID)); break;
+                case 2: fields_extract(&pt_line, "III",   &Pseg, &(node->memreq[0].VID), &(node->memreq[1].VID)); break;
+                case 1: fields_extract(&pt_line, "II",    &Pseg, &(node->memreq[0].VID)); break;
                 default: case 0: break;
                 }
 
@@ -522,31 +552,80 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
                 cumulStaticW32 += (tmp+1)/2;               /* SWC arcs */
                 cumulStaticW32 += node->nbMemorySegment;   /* one word per memory bank */
                 cumulStaticW32 += node->defaultParameterSizeW32; /* parameters */
+
+                graph->nb_nodes++;
             }
             else
             {
-                int nreg, stackdepth, ninArcs, noutArcs, tmp, nbByteCodes=0, icode;
-                FILE *ptf_graph_script_bytecode;
-                char filename[120];
+                uint32_t nreg, stackdepth, nbByteCodes=0, nbBytesCodes, sharedRAM;
+                //FILE *ptf_graph_script_bytecode;
+                //char filename[120];
 
-                fields_extract(&pt_line, "iiiii", &nreg, &stackdepth, &ninArcs, &noutArcs, &tmp);  
+                iscripts = tmp;     // @@@ warning this index must fit with the SWC declaration &(node->local_script_index)
+                fields_extract(&pt_line, "iii", &nreg, &stackdepth, &sharedRAM);  
 
-                sprintf (filename, "SCRIPT_%d.txt", iscripts); 
-                ptf_graph_script_bytecode = fopen(filename, "wt");
+                //sprintf (filename, "SCRIPT_%d.txt", iscripts); 
+                //ptf_graph_script_bytecode = fopen(filename, "wt");
 
-                icode =  graph->script_indirect[iscripts];
-                arm_stream_script_assembler (pt_line, ptf_graph_script_bytecode, &(graph->script_bytecode[icode]), &nbByteCodes);
+                graph->script_indirect[iscripts+OFFSET_INDSCRIPT] = graph->nb_byte_code;    // BYTECODE offset in script_bytecode[]
+                graph->script_nregs[iscripts] = nreg;
+                graph->script_stackdepthW32[iscripts] = stackdepth;
+                if (sharedRAM)  // @@@@
+                {   graph->max_nregs = MAX(graph->max_nregs, nreg); 
+                    graph->max_stack = MAX(graph->max_stack, stackdepth); 
+                    graph->scriptRAMshared[iscripts] = 1;
+                    graph->atleastOneScriptShared = 1;
+                } 
+                else
+                {   graph->nb_scriptsARC ++;
+                }
 
-                iscripts++;
-                graph->script_indirect[iscripts] = graph->script_indirect[iscripts-1] + nbByteCodes;
 
-                graph->nb_nodes--; // to be completed with a script code 
+                /* reserve 2 bytes for the TX arc ID and the optional const-parameters arc ID */
+                graph->script_bytecode[graph->nb_byte_code] = 0x55;    graph->nb_byte_code ++;
+                graph->script_bytecode[graph->nb_byte_code] = 0x55;    graph->nb_byte_code ++;
+                stream_tool_read_script(&pt_line, &(graph->script_bytecode[graph->nb_byte_code]), &nbBytesCodes);
+
+                graph->nb_byte_code += nbBytesCodes;
+                graph->nb_scripts ++;
+
+                cumulStaticW32 += (3+nbBytesCodes)>>2;
+
+                // check extra parameters need to be inserted in the static data arc (indexed with "Read")
+                //      parameters         arc with parameters 
+                //          2  u8; 0 255                        no preset, TAG = "all parameters"
+                //          1  u8;  2                           Two biquads
+                //          1  u8;  0                           postShift
+                //          5 h16; 1231 1D28 1231 63E8 D475     b0/b1/b2/-a1/-a2  ellip(4, 1, 40, 3600/8000, 'low') 
+                //          5 h16; 1231 0B34 1231 2470 9821     second biquad
+                //          ;  _include    1   arm_stream_filter_parameters_x.txt      
+                //          _end_
+
+                /* parameters in RAM */
+                jump2next_valid_line(&pt_line);
+                if (0 == strncmp (pt_line, PARAMETER_RAM_START, strlen(PARAMETER_RAM_START)))
+                {   stream_tool_read_script(&pt_line, 
+                        &(graph->script_embedded_param[iscripts][0]), 
+                        &(graph->script_param_length[iscripts]) );
+                }
+
+                /* parameters in FLASH W32 aligned */
+                if (0 == strncmp (pt_line, PARAMETER_START, strlen(PARAMETER_START)))
+                {   uint32_t tmp;
+                    graph->nb_byte_code = ((graph->nb_byte_code +3)>>2)<<2; // align parameters on W32 address
+                
+                    stream_tool_read_script(&pt_line, 
+                        &(graph->script_bytecode[graph->nb_byte_code]), 
+                        &tmp );
+                    graph->nb_byte_code += tmp;
+                }
+
             }
         }
 
         /* -------------------------------------------------------------------- */
         //arc
-        //    0 0 0 0 1.0 0 0 0 0 0 0         arcID ProdFMT ConsFMT MEM IO-Size-Mulfac  OVF, UND, CMD, REG, FLUSH, EXTD
+        //    0 0  0 0 0 0 0 0   0 0       ProdFMT ConsFMT   OVF, UND, DBGCMD, REG, FLUSH, EXTD     VID IOSizeMulfac 
         //    _graph_interface    0  0        0= IO "interface" from application processor, second parameter is unused
         //    arm_stream_filter   0  0        [0]:filter instance       [0]:RX arc of the node
         //;    parameters
@@ -562,13 +641,20 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             struct stream_node_manifest *node, *platform_node;
             char nodeNameSrc[120], nodeNameDst[120], *node_name;
             struct formatStruct *format;
-            uint32_t tmp, arcBufferSize, arcBufferBase;
+            uint32_t tmp, arcBufferSizeByte, arcBufferBaseW32;
             struct arcStruct *arc;
             struct io_arcstruct *arcIO;
+            uint32_t fw_io_idx;
+
+
+            /* NO OTHER SCRIPT AFTER ARC DECLARATION */
+            cumulStaticW32 += (graph->nb_scripts +1 +OFFSET_INDSCRIPT)>>1; // graph->script_indirect[..]
+            cumulStaticW32 += (graph->atleastOneScriptShared + graph->nb_scriptsARC) 
+                * SIZEOF_ARCDESC_W32; // TX arc used to lock the script, declare the static memory and constants
 
             fields_extract(&pt_line, "I", &(graph->nb_arcs));
 
-            cumulStaticW32 ++; /* for the extra word at the end of the node : 'GRAPH_LAST_WORD'*/
+            //cumulStaticW32 ++; /* for the extra word at the end of the node : 'GRAPH_LAST_WORD'*/
             offset_descriptor = cumulStaticW32;
             cumulStaticW32 += ((graph->nbio_interfaces_with_arcBuffer + graph->nb_arcs) * SIZEOF_ARCDESC_W32);
             offset_buffer = cumulStaticW32;
@@ -589,7 +675,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             //minFrameSize=0;
              
             if (0 == strncmp(nodeNameSrc, "_graph_interface",NBCHAR_LINE))
-            {   uint32_t fw_io_idx;
+            {   
                 top_graph_idx = instSrc;
                 set0_copy1 = iarcSrc;
                 for (fw_io_idx=0; fw_io_idx<platform->nb_hwio_stream; fw_io_idx++)
@@ -601,7 +687,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
                 arcIO->si.set0_copy1 = set0_copy1;
             }
             else
-            {
+            {   fw_io_idx = 0;  /* this is not an IO arc */
                 /* search SRC node , assign the arcID*/
                 node_name = nodeNameSrc;
                 node_inst = instSrc;
@@ -626,7 +712,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
             /* ------------------------------------------------------- */
 
-            if (0 == strncmp(nodeNameDst, "_graph_interface",NBCHAR_LINE))
+            if (0 == strncmp(nodeNameDst, "_graph_interface", NBCHAR_LINE))
             {   uint32_t fw_io_idx;
                 top_graph_idx = instDst;
                 set0_copy1 = iarcSrc;
@@ -657,7 +743,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
                             node->arc[iarcDst].arcID = arcID;  // save the arc src index to the node structure 
                             break;
                         }
-                    }
+                    } 
                 }             
             }
 
@@ -686,11 +772,18 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
 
             minFrameSize = (int)(0.5 + (IOSizeMulfac * minFrameSize));      /* buffer size rescaling, Byte accurate */
-            arcBufferSize = minFrameSize;               /* in Bytes */           
-            arcBufferBase = (int)cumulStaticW32;        /* in W32   */
+            /* check it is larger than what the IO-Interface needs */
+
+            arcIO = &(graph->arcIO[fw_io_idx]);
+            if (minFrameSize < arcIO->si.graphalloc_X_bsp_0 * minFrameSize)   /* @@@ to check with a test graphTxt */
+            {   minFrameSize = arcIO->si.graphalloc_X_bsp_0 * minFrameSize;
+            }
+
+            arcBufferSizeByte = minFrameSize;               /* in Bytes */           
+            arcBufferBaseW32 = (int)cumulStaticW32;        /* in W32   */
 
             cumulStaticByte = cumulStaticW32 * 4;
-            cumulStaticByte += arcBufferSize;
+            cumulStaticByte += arcBufferSizeByte;
             cumulStaticW32 = ((cumulStaticByte + 3)>>2);            /* next buffer is W32-aligned */
           
 
@@ -699,9 +792,9 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
             ST(arc->ARCW0, PRODUCFMT_ARCW0, ProdFMT);
             ST(arc->ARCW0,   DATAOFF_ARCW0, 0);
-            ST(arc->ARCW0,   BASEIDX_ARCW0, arcBufferBase);      
-            sprintf(DBG,"BUFFARC%d base=0x%X  size=0x%X",arcID, arcBufferBase, arcBufferSize);  
-            DBGG(arcBufferBase*4, DBG); // check on Byte address
+            ST(arc->ARCW0,   BASEIDX_ARCW0, arcBufferBaseW32);      
+            sprintf(DBG,"Data stream ARC%d base address=0x%X  size=0x%X",arcID, arcBufferBaseW32, arcBufferSizeByte);  
+            DBGG(arcBufferBaseW32, DBG); // check on Byte address
 
             ST(arc->ARCW1, CONSUMFMT_ARCW1, ConsFMT);
             ST(arc->ARCW1,   MPFLUSH_ARCW1, FLUSH);
@@ -727,51 +820,121 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
     //////////////////
 
-    /* arc used for the stream_format_io buffer declarations */            
-    {   int fw_io_idx;
-        struct formatStruct *format;
-        uint32_t arcBufferSize, arcBufferBase, FrameSize;
+    ///* arc used for the stream_format_io buffer declarations */            
+    //{   int fw_io_idx;
+    //    struct formatStruct *format;
+    //    uint32_t arcBufferSizeByte, arcBufferBaseW32, FrameSize;
+    //    struct arcStruct *arc;
+    //    struct io_arcstruct *arcIO;
+
+    //    for (fw_io_idx = 0 ; fw_io_idx < MAX_GRAPH_NB_IO_STREAM; fw_io_idx++)
+    //    {    
+    //        arcIO = &(graph->arcIO[fw_io_idx]);
+
+    //        if (0 == arcIO->sizeFactor)
+    //        {   continue;
+    //        }
+    //        
+    //        arcIO->arcIDbuffer = graph->nb_arcs;    /* arcID of the buffer */
+
+    //        // IO_VID_buffer[fw_io_idx] (in the future)
+    //        format = &(graph->arcFormat[arcIO->format_idx]);
+    //        FrameSize = RD(format->FMT0, FRAMESIZE_FMT0);
+    //        FrameSize = (uint32_t)(0.5 + (FrameSize * arcIO->sizeFactor));
+
+    //        arc = &(graph->arc[arcIO->arcIDbuffer]);    /* dummy arc, only the base/size are interesting */
+    //        arc->ARCW0 = 0;
+    //        arc->ARCW1 = 0;
+    //        arc->ARCW2 = 0;
+    //        arc->ARCW3 = 0;
+    //        arcBufferSizeByte = FrameSize;                 
+    //        arcBufferSizeByte = FrameSize;                
+    //        arcBufferBaseW32 = (int)cumulStaticW32;
+    //    
+    //        cumulStaticByte = cumulStaticW32 * 4;
+    //        cumulStaticByte += arcBufferSizeByte;
+    //        cumulStaticW32 = ((cumulStaticByte + 3)>>2);            /* next buffer is W32-aligned */
+
+    //        ST(arc->ARCW0, PRODUCFMT_ARCW0, 0);
+    //        ST(arc->ARCW0,   DATAOFF_ARCW0, 0);
+    //        ST(arc->ARCW0,   BASEIDX_ARCW0, arcBufferBaseW32);      
+    //        sprintf(DBG,"IO-Interface ARC %d base address=0x%X  size=0x%X",graph->nb_arcs, arcBufferBaseW32, arcBufferSizeByte);  
+    //        DBGG(arcBufferBaseW32, DBG); // check on Byte address
+    //        ST(arc->ARCW1, BUFF_SIZE_ARCW1, FrameSize);
+
+    //        fprintf (ptf_listing,"\nIO ARC%d  @= %4d %4X \n", (int)graph->nb_arcs, (int)(graph->mbank_1_Byte), (int)(graph->mbank_1_Byte));
+    //        graph->nb_arcs ++;   // dummy arcs
+    //    }
+    //}   /* arcs of IO buffers */
+
+
+
+    //////////////////
+    /* arc used for SCRIPTS */            
+    {   uint32_t iscripts, iByteCode, first_script_sharedRAM, sharedArc;
+        uint32_t arcBufferSizeByte, arcBufferBaseW32, RegAndStackW32, stackdepthW32;
         struct arcStruct *arc;
-        struct io_arcstruct *arcIO;
 
-        for (fw_io_idx = 0 ; fw_io_idx < MAX_GRAPH_NB_IO_STREAM; fw_io_idx++)
+        first_script_sharedRAM = 1;
+        graph->script_indirect[0] = (uint8_t)(0xFF & graph->nb_scripts); //LSB
+        graph->script_indirect[OFFSET_INDSCRIPT-1] = (uint8_t)((graph->nb_scripts)>>8); //MSB
+
+        for (iscripts = 0 ; iscripts < graph->nb_scripts; iscripts++)
         {    
-            arcIO = &(graph->arcIO[fw_io_idx]);
-
-            if (0 == arcIO->sizeFactor)
-            {   continue;
-            }
-            
-            arcIO->arcIDbuffer = graph->nb_arcs;    /* arcID of the buffer */
-
-            // IO_VID_buffer[fw_io_idx] (in the future)
-            format = &(graph->arcFormat[arcIO->format_idx]);
-            FrameSize = RD(format->FMT0, FRAMESIZE_FMT0);
-            FrameSize = (uint32_t)(0.5 + (FrameSize * arcIO->sizeFactor));
-
-            arc = &(graph->arc[arcIO->arcIDbuffer]);    /* dummy arc, only the base/size are interesting */
+            arc = &(graph->arc[graph->nb_arcs]); 
             arc->ARCW0 = 0;
             arc->ARCW1 = 0;
             arc->ARCW2 = 0;
             arc->ARCW3 = 0;
-            arcBufferSize = FrameSize;                 
-            arcBufferBase = (int)cumulStaticW32;
-        
-            cumulStaticByte = cumulStaticW32 * 4;
-            cumulStaticByte += arcBufferSize;
-            cumulStaticW32 = ((cumulStaticByte + 3)>>2);            /* next buffer is W32-aligned */
 
-            ST(arc->ARCW0, PRODUCFMT_ARCW0, 0);
-            ST(arc->ARCW0,   DATAOFF_ARCW0, 0);
-            ST(arc->ARCW0,   BASEIDX_ARCW0, arcBufferBase);      
-            sprintf(DBG,"IO BUFFARC%d base=0x%X  size=0x%X",graph->nb_arcs, arcBufferBase, arcBufferSize);  
-            DBGG(arcBufferBase*4, DBG); // check on Byte address
-            ST(arc->ARCW1, BUFF_SIZE_ARCW1, FrameSize);
+            if (0 == graph->scriptRAMshared[iscripts] || first_script_sharedRAM)
+            {   if (first_script_sharedRAM && (0 != graph->scriptRAMshared[iscripts]))
+                {   first_script_sharedRAM = 0;
+                    sharedArc = graph->nb_arcs;
+                }
 
-            fprintf (ptf_listing,"\nIO ARC%d  @= %4d %4X \n", (int)graph->nb_arcs, (int)(graph->mbank_1_Byte), (int)(graph->mbank_1_Byte));
-            graph->nb_arcs ++;   // dummy arcs
+                RegAndStackW32 = graph->script_nregs[iscripts];
+                stackdepthW32 = graph->script_stackdepthW32[iscripts];
+                arcBufferSizeByte = RegAndStackW32 * SCRIPT_REGISTER_SIZEBYTE; /* SCRIPT_REGISTER_SIZEBYTE = 9 */
+                arcBufferSizeByte+= stackdepthW32 * SCRIPT_REGISTER_SIZEBYTE; /* stack element on 9 bytes too */
+                arcBufferSizeByte = ((arcBufferSizeByte +3)>>2)<<2;
+                graph->script_stackLengthW32[iscripts] = arcBufferSizeByte>>2;
+
+                // constants
+                arcBufferSizeByte += graph->script_param_length[iscripts];
+                arcBufferBaseW32 = (int)cumulStaticW32;
+
+                iByteCode = graph->script_indirect[iscripts+OFFSET_INDSCRIPT];
+                graph->script_bytecode[iByteCode]   = (uint8_t)(0xFF & graph->nb_arcs); // LSB
+                graph->script_bytecode[iByteCode+1] = (uint8_t)((graph->nb_arcs) >>8);  // MSB
+                cumulStaticByte = cumulStaticW32 * 4;
+                cumulStaticByte += arcBufferSizeByte;
+                cumulStaticW32 = ((cumulStaticByte + 3)>>2);            /* next buffer is W32-aligned */
+
+                ST(arc->ARCW0, PRODUCFMT_ARCW0, 0);
+                ST(arc->ARCW0,   DATAOFF_ARCW0, 0);
+                ST(arc->ARCW0,   BASEIDX_ARCW0, arcBufferBaseW32);      
+                sprintf(DBG,"Script stack and registers in ARC%d base address=0x%X  size=0x%X",graph->nb_arcs, arcBufferBaseW32, arcBufferSizeByte);  
+                DBGG(arcBufferBaseW32, DBG); // check on Byte address
+                ST(arc->ARCW1, BUFF_SIZE_ARCW1, arcBufferSizeByte);
+
+
+                //@@@@ add nregs, stacklen, auto-reset/clean on 4bits MSB
+
+                fprintf (ptf_listing,"\nSCRIPT ARC%d  @= %4d %4X \n", (int)graph->nb_arcs, (int)(graph->mbank_1_Byte), (int)(graph->mbank_1_Byte));
+
+                graph->script_offset[iscripts] = arcBufferBaseW32;
+                graph->nb_arcs ++;   // script arcs
+            }
+
+            /* second sharedRAM script : reuse the RAM of the first shared script */
+            else
+            {   iByteCode = graph->script_indirect[iscripts+OFFSET_INDSCRIPT];
+                graph->script_bytecode[iByteCode]   = (uint8_t)(0xFF & sharedArc); // LSB
+                graph->script_bytecode[iByteCode+1] = (uint8_t)((sharedArc) >>8);  // MSB
+            }
         }
-    }   /* arcs of IO buffers */
+    }   /* arcs of SCRIPTS */
 
 
     {             
@@ -817,6 +980,27 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             {   graph->max_of_sum_of_working_simplemap = node->sum_of_working_simplemap;
             }
         }
+
+        //////////////////
+        /* arc used for SCRIPTS */            
+        {   uint32_t iscripts, iByteCode, ibin;
+            for (iscripts = 0 ; iscripts < graph->nb_scripts; iscripts++)
+            {    
+                if (0 < graph->script_param_length[iscripts])
+                {   ibin = graph->script_offset[iscripts];
+                    ibin += graph->script_stackLengthW32[iscripts];
+                    for (iByteCode = 0; iByteCode < graph->script_param_length[iscripts]; iByteCode+=4)
+                    {   uint32_t W32, tmp; uint8_t *pt8;
+                        pt8 = &(graph->script_embedded_param[iscripts][iByteCode]);
+                        W32 = *pt8++;   tmp = *pt8++;
+                        W32 |= tmp<<8;  tmp = *pt8++;
+                        W32 |= tmp<<16; tmp = *pt8++;
+                        W32 |= tmp<<24; 
+                        graph->binary_graph[ibin++] = W32;
+                    }
+                }
+            }
+        }   /* arcs of SCRIPTS */
 
 
         /* PIO LOOP aAND ALLOC BUFFER @@@@@ + COPY FMT3 */

@@ -25,17 +25,18 @@
 * 
  */
 
+
 #include <stdint.h>
-#include "platform_computer.h"
-#include "stream_const.h"      
+#include "platform_computer/platform_computer.h"
+#include "../stream_src/stream_const.h"      
 
 #include "stream_types.h"  
 #include "stream_extern.h"
 
-
+SECTION_START
  /*  
-    data in RAM : a single Stream instance is in charge of one io
-    the only extra SRAM area needed to interface with Stream is the address of the graph
+    data in RAM : a single Graph interpreter  instance is in charge of one io
+    the only extra SRAM area needed to interface with Graph interpreter is the address of the graph
 
  */
 arm_stream_instance_t * platform_io_callback_parameter [LAST_IO_FUNCTION_PLATFORM];
@@ -55,14 +56,10 @@ arm_stream_instance_t * platform_io_callback_parameter [LAST_IO_FUNCTION_PLATFOR
   @remark
  */
 
-void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3)
+void platform_al(uint32_t command, void *ptr1, void *ptr2, uint32_t data3)
 {   
-    static uint32_t *graph;
-
-    static uint8_t stream_boot_lock;        
     static uint8_t stream_initialization_done;
     static uint8_t stream_mp_synchro[MAX_NB_STREAM_INSTANCES];
-    static uint32_t platform_time;
 
     switch (command)            /*  */
     {
@@ -161,10 +158,11 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3)
 
     /* platform_al (PLATFORM_ERROR, uint_8_t type, uint_8_t data,0); */
     case PLATFORM_ERROR:  
-    {   uint8_t *type;
-        uint8_t *error;
-        type=ptr1;
-        error=ptr2;
+    {   //uint8_t *type;
+        //uint8_t *error;
+        //type=ptr1;
+        //error=ptr2;
+        *(uint8_t *)ptr2=0;
         break;
     }
 
@@ -182,12 +180,12 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3)
         break;
     }
 
-    //Default callback(stream_script_callback)
-    //    - sleep / deep - sleep activation
-    //    - system regsters access : who am I ?
-    //    -timer control(default implementation with SYSTICK)
 
+    /* platform_al (PLATFORM_DEEPSLEEP_ENABLED, 0, 0, (stream_time32)sleep_interval); */
     case PLATFORM_DEEPSLEEP_ENABLED:
+        break;
+
+    //    -timer control(default implementation with SYSTICK)
     case PLATFORM_TIME_SET:
         /* @@@ set timer (SW timer) */
     case PLATFORM_RTC_SET:
@@ -207,3 +205,4 @@ void platform_al(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t data3)
     }
 }
 
+SECTION_STOP

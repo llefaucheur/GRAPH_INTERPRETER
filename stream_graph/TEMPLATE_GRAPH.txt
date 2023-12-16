@@ -1,16 +1,3 @@
-;                                                                         
-; ------+     +----------+      +----------+    +-------------+    +------
-;  ADC  +---->+  FILTER  +----->+ DETECTOR +--->+SCRIPT(GPIO) +--->| GPIO 
-; ------+     +----------+      +----------+    +-------------+    +------
-;
-;----------------------------------------------------------------------------------------
-; list of desired IOs
-;----------------------------------------------------------------------------------------
-;
-2 input/output streams;
-platform_data_in;   stream name
-platform_gpio_out;
-;
 ;----------------------------------------------------------------------------------------
 ; List of nodes
 ;----------------------------------------------------------------------------------------
@@ -36,52 +23,30 @@ platform_gpio_out;
 ;1. arm_script
 ;----------------------------------------------------------------------------------------
 ; scripts are special nodes, 
-; the declaration is followed by the codes and finishing with ENDSCRIPT
-; "preset" is the number of bytes of static memory to use for static 
-;   size (registers, stack size), and declared as output buffer. The descriptor of
-;   which is used to lock the execution of the script.
-;   ARC numbering is individual to each script
-; "parameter" field is unused
+; the declaration is followed by the byte codes
+; the number of bytes of memory to use for static (registers, stack size) is declared
+;   as an output arc, the descriptor of which is used to lock the execution of the script.
 ;
+node
+    arm_script 1       1 index of the script : for FILTER(0) control
+    8 6                 number of registers, stack depth
+    
+;   R0 = 0:reset 1:pre-processing 2:post-processing
+;   Algorithm : 
+;       if R0=2 (post-processing)
+;           NOP
+;       end
 ;
-node 
-    arm_script
-                        instanceID=index in the SCRIPT_LW0 table, number of registers, stack depth, 
-    0 2 6    2 1        + ARCs :  input (stream, control) output (GPIO)
-;
-;   script with 2 input arcs, 1 TX arc
-;   algorithm : read 1st arc 0 (mono input arc), GPIO is connected to TX arc
-;       set the GPIO value to 0 or 1 depending if arc data is above a threshold
-;       set new parameters to node "amplitude"
-;
-    SCRIPT          
+    1  h8; 02   PSHC INT8   
+    1  h8; 02               S0=2 > R0?
+    1  h8; AD   GTR
+    1  h8; 61   JMPC #1     2 > R0 : exit
+    1  h8; 92   NOP
+    1  h8; B1   LABL #1
+    1  h8; 90   OPRC RETS      
+    _end_               end of byte codes
+_end_
 
-    PSHL INT8  12       ; detection threshold=12
-    POPR 0              ; load R0 for this comparison
-    PSHL INT8   ARC0    ; first arc to read
-    CALS READ_ARC       ; read arc(stack(-1), implicit subchannel 0) to stack
-    OPRC GTR            ; result=stack(-1) > R0 (threshold) ?
-    PSHL INT8   ARC2    ; arc 2 (TX)
-    JMPC 0              ; yes: jump to 0 (set gpio=1)
-    PSHL INT8   0       ; no:  set gpio=0
-    JMPL 1              ; set gpio and return
-    LABL 0             ;  label 0
-    PSHL INT8   1       ; no:  set gpio=1
-    LABL 1             ;  label 1
-    CALS WRITE_ARC      ; syscall: write data(stack(-1)) to arc[stack(-2)]
-;
-    PSHL INT8   arm_stream_amplitude ; this is in the symbol table (node_entry_point_table[])
-    PSHL INT8   0       ; instance
-    PSHL PTR    amplitude_set
-    CALS SETPARAM       ; syscall: setparam(amplitude, instance0, new_param=amplitude_set)
-;
-    PSHL INT8   arm_stream_amplitude ; this is in the symbol table (node_entry_point_table[])
-    PSHL INT8   0       ; instance
-    PSHL INT8   2       ; parameter TAG_CMD
-    PSHL FP32   3.14    ; parameter data
-    CALS SETPARAM       ; syscall: setparam(amplitude, instance0, new_param=amplitude_set)
-;
-    OPRC RET            ; return to scheduler
 ;    
     parameters amplitude_set
         2  u8; 0 1                        preset, TAG = 1  load only the gain
@@ -394,7 +359,7 @@ node
 _end_
 ;
 ;----------------------------------------------------------------------------------------
-;11.	arm_signal_modulator
+;11.	arm_stream_modulator
 ;----------------------------------------------------------------------------------------
 ;    Operation : sine, noise, square, saw tooth with amplitude or frequency modulation
 ;    use-case : ring modulator, sweep generation with a cascade of a ramp generator and
@@ -404,12 +369,12 @@ _end_
 ;    u8 #1 wave type : 1=sine 2=square 3=white noise 4=pink noise 
 ;                  5=sawtooth 6=triangle 7=pulse
 ;                  8=prerecorded pattern playback from arc 
-;                  9=sigma-delta from bit-stream 10=from samples (PWM output)
+;                  9=sigma-delta 10=PWM 11=ramp 12=step
 ;
 ;   parameter format for wave generation: 
 ;   u16 #2 linear amplitude, format UQ16 0dB .. -96dB
 ;   u16 #3 amplitude offset, format Q15 [-1 .. +1]
-;   f32 #4 wave frequency [Hz] [0.1uHz .. 250kHz];
+;   f32 #4 wave frequency [Hz] [0.1uHz .. 250kHz], 0Hz translates to DC level.
 ;   s16 #5 starting phase, format S15 [-pi .. +pi]/pi
 ;   u8  #6 modulation type, 0:amplitude, 1:frequency (reserved 2:FSK, ..)
 ;   u8  #7 modulation, 0:none 1=from arc bit stream, 2=from arc q15 words
@@ -418,7 +383,7 @@ _end_
 ;   f32 #9 modulation frequency [Hz] separating two data bits/samples from the arc
 ;
 node 
-    arm_signal_modulator 
+    arm_stream_modulator 
     0 0 0        instance, preset, tag
 
     parameters <optional label for scripts>
@@ -522,6 +487,48 @@ _end_
 
 ;
 ;----------------------------------------------------------------------------------------
+;16.	arm_stream_detector2D   MOTION DETECTOR
+;----------------------------------------------------------------------------------------
+;
+
+;   TBD
+
+
+;   Operation : provides a boolean output stream from the detection of a rising 
+;   edge above a tunable signal to noise ratio. 
+;   A tunable delay allows to maintain the boolean value for a minimum amount of time 
+;   Use-case example 1: debouncing analog input and LED / user-interface.
+;   Use-case example 2: IMU and voice activity detection (VAD)
+;   Parameters : time-constant to gate the output, sensitivity of the use-case
+;
+;   presets control
+;   #1 : no HPF pre-filtering, fast and high sensitivity detection (button debouncing)
+;   #2 : VAD with HPF pre-filtering, time constants tuned for ~10kHz
+;   #3 : VAD with HPF pre-filtering, time constants tuned for ~44.1kHz
+;   #4 : IMU detector : HPF, slow time constants
+;   #5 : IMU detector : HPF, fast time constants
+;
+;   preset parameter : 8bit sensitivity
+;
+;   Metadata information can be extracted with the command "TAG_CMD" from parameter-read:
+;   0 read the floor noise level
+;   1 read the current signal peak
+;   2 read the signal to noise ratio
+;
+node 
+    arm_stream_detector2D
+    0 0 0        instance, preset, tag
+;
+    parameters <optional label for scripts>
+        2  i8; 0 255        preset=0    load all parameters
+
+        8; i8; 1;2;3;4;5;6;7;8; the 8 bytes of "struct detector_parameters"
+    _end_    
+
+_end_
+;
+;
+;----------------------------------------------------------------------------------------
 ;(N+1)	arm_stream_multistream_synchro
 ;----------------------------------------------------------------------------------------
 ;
@@ -532,40 +539,8 @@ _end_
 ;   
 ;    Parameters : 
 
-    arm_stream_multistream_synchro 
-    0 1 0        instance, preset frequency estimator, tag
+;    arm_stream_multistream_synchro 
+;    0 1 0        instance, preset frequency estimator, tag
 
 
 
-;
-;
-;---------------
-; ARCs  arc ID; Memory bank virtual index; buffer size, unit of the size Bytes/samples/time[ms]
-;
-;       Node/Stream name, instance source and its output port ID
-;       Node/destination, its instance and input port ID       
-;
-;       optional filling pattern to read from a file (file name, nb of data to read); 
-;
-arcs
-
-  4   arcs
-     ;ID  MEM   IO Size  samples        
-      0     0   10  1   
-        _graph_interface    0  1    [0]:interface from the application processor [0]:single arc 
-        arm_stream_filter   0  0    
-        _include    2   TestPattern.txt 
-
-      1     0   10  1   
-        arm_stream_filter   0  1    [0]:instance of the node, [1]:index of the arc (TX)
-        arm_stream_detector 0  0    [0]:instance of the node, [0]:index of the arc (RX)
-
-      2     0   10  1   
-        arm_stream_detector 0  1   
-        arm_script          0  0   
-
-      3     0   10  1   
-        arm_script          0  2    [0]:SCRIPT_LW0 index of the script, [2]:3rd arc (TX)
-        _graph_interface    1  0    [1]:IO index of PWM,    [0]:
-
-_end_

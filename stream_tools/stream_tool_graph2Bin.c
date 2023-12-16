@@ -30,6 +30,7 @@
 #endif
     
 #include "stream_tool_include.h"
+#include <time.h>
 
 
 /*  
@@ -57,7 +58,7 @@ void PRINTF(uint32_t d, char *c)
     char cplus[MAXNBCHAR_LINE];
     char line[MAXNBCHAR_LINE];
 
-    if (addrBytes>= 0xAC && addrBytes <0xAE)
+    if (addrBytes/4 >= 0x74 && addrBytes <0x80)
     {   i = 0;
     }
 
@@ -65,7 +66,7 @@ void PRINTF(uint32_t d, char *c)
 
     for (i = 0; i < G->idbg; i++)
     {
-        if (addrBytes == G->dbg[i].address)
+        if (addrBytes/4 == G->dbg[i].address)
         {   strcat(cplus, G->dbg[i].toprint);
         }
     }
@@ -103,11 +104,13 @@ static uint32_t memory_banks[MAX_MEMORY_BANK_DBG], nb_memory_banks;
 void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph, FILE *ptf_graph_bin)
 {
     uint32_t FMT0, FMT1, FMT2;
-    uint32_t SC1, SC2, LK1, LK2;
+    static uint32_t SC1, SC2, LK1, LK2;
     static fpos_t pos_NWords, pos_end;
     static uint32_t nFMT, LENscript, LinkedList, LinkedList0, NbInstance, nIOs, NBarc, SizeDebug, dbgScript;
     uint32_t i, j, i1, i2, fw_io_idx;
     char tmpstring[200];
+    time_t rawtime;
+    struct tm * timeinfo;
     //union {uint8_t indexes_fw_io_idx_u8[256]; 
     //       uint32_t indexes_fw_io_idx_u32[32]; } UIO;
     struct io_arcstruct *arcIO;
@@ -128,21 +131,48 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         DEBUG REGISTERS and vectors from ARC content analysis 
         BUFFERS memory banks (internal/external/LLRAM) used for FIFO buffers 
     */
-    fprintf(ptf_graph_dbg, "//----------------------------------\n"); 
+    fprintf(ptf_graph_dbg, "//--------------------------------------\n"); 
+    time ( &rawtime );
+    timeinfo = localtime ( &rawtime );
+    fprintf(ptf_graph_dbg, "//  date/time: %s", asctime (timeinfo)); 
     fprintf(ptf_graph_dbg, "//  AUTOMATICALLY GENERATED CODES\n"); 
     fprintf(ptf_graph_dbg, "//  DO NOT MODIFY IT !\n"); 
-    fprintf(ptf_graph_dbg, "//----------------------------------\n"); 
+    fprintf(ptf_graph_dbg, "//--------------------------------------\n"); 
 
     fgetpos (ptf_graph_bin, &pos_NWords);
-    fprintf(ptf_graph_bin, "0x%08X, // number of Bytes\n", 0); // [-1] size of the graph in Words 
+    // @@@@ code badly duplicated at the end of this file 
+        fprintf(ptf_graph_bin, "0x%08X, // number of words\n", addrBytes/4); // [-1] size of the graph in Words 
+        FMT0 = 0;
+        addrBytes = 0;
+        sprintf(tmpstring, "0 destination of the graph in RAM"); 
+        PRINTF(FMT0, tmpstring);      // [0] 27b RAM address of part/all the graph going in RAM, 
 
-    PRINTF(0, "0"); // [0] 27b RAM address of part/all the graph going in RAM, 
-    PRINTF(0, "1"); // [1] number of FORMAT, size of SCRIPTS
-    PRINTF(0, "2"); // [2] size of LINKEDLIST
-    PRINTF(0, "3"); // [3] number of ARCS, number of DEBUG registers
-    PRINTF(1, "4"); // [4] list of processors (procID for the scheduler in platform_manifest) processing the graph
-    PRINTF(0, "5"); // [5,6] UQ8 portion of memory consumed on each long_offset[MAX_NB_MEMORY_OFFSET] 
-    PRINTF(0, "6"); //
+        FMT0 = 0; ST(FMT0, NBFORMATS_GR1, graph->nb_formats);
+        ST(FMT0, NB_IOS_GR1, platform->nb_hwio_stream);
+        ST(FMT0, SCRIPTS_SIZE_GR1, (SC2-SC1)/4);
+        sprintf(tmpstring, "1 number of IO-Interfaces, size of the script section"); 
+        PRINTF(FMT0, tmpstring);     // [1] number of FORMAT, size of SCRIPTS
+
+        FMT0 = 0; ST(FMT0, LINKEDLIST_SIZE_GR2, (LK2-LK1)/4);
+        sprintf(tmpstring, "2 size of the linked-list of nanoApp + parameters"); 
+        PRINTF(FMT0, tmpstring);   // [2] size of LINKEDLIST
+
+        FMT0 = 0; ST(FMT0, NB_ARCS_GR3, graph->nb_arcs);
+        ST(FMT0, SCRIPT_SCTRL_GR3, graph->script_sctrl);
+        sprintf(tmpstring, "3 number of arcs and debug/trace registers"); 
+        PRINTF(FMT0, tmpstring);   // [3] number of ARCS, number of DEBUG registers
+
+        FMT0 = 1; //platform->procid_allowed_gr4;
+        sprintf(tmpstring, "4 list of processors allowed to execute the graph"); 
+        PRINTF(FMT0, tmpstring); // [4] list of processors (procID for the scheduler in platform_manifest) processing the graph
+
+        FMT0 = 0x000000FF;      // all the memory of the bank 0 is used, banks 1,2,3 are not used
+        sprintf(tmpstring, "5 percentage of 8 memory banks consumed by the graph"); 
+        PRINTF(FMT0, tmpstring); //[5,6] UQ8 portion of memory consumed on each long_offset[MAX_NB_MEMORY_OFFSET] 
+
+        FMT0 = 0x00000000;      // banks 4,5,6,7 are not used
+        PRINTF(FMT0, "6 '''''");      //
+
 
     /*
         STREAM IO   start from 1, fw_io_idx=0 is reserved for script controls
@@ -155,6 +185,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
     for (fw_io_idx = 1; fw_io_idx <= platform->nb_hwio_stream ; fw_io_idx++) 
     {   
+        uint8_t arcBuffer_shared_with_IO;
         FMT0 = FMT1 = 0xFFFFFFFFL;
         arcIO = &(graph->arcIO[fw_io_idx]);
         sprintf(tmpstring, "");
@@ -165,14 +196,10 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             ST(FMT0,    RX0TX1_IOFMT, arcIO->sc.rx0tx1);
             ST(FMT0,  SERVANT1_IOFMT, arcIO->si.commander0_servant1);
             ST(FMT0, SET0COPY1_IOFMT, arcIO->si.set0_copy1);
-            ST(FMT0,  ARC0_LW1_IOFMT, arcIO->arcIDbuffer);
+            arcBuffer_shared_with_IO = (0 != arcIO->si.graphalloc_X_bsp_0)? 1: 0;
+            ST(FMT0, SHAREBUFF_IOFMT, arcBuffer_shared_with_IO);
             FMT1 = arcIO->si.settings;
-            if (arcIO->arcIDbuffer < 0xFFFF) 
-            {   sprintf(tmpstring, "FWIOIDX_%d BUFF ARC %d", fw_io_idx, arcIO->arcIDbuffer); 
-            }
-            else
-            {   sprintf(tmpstring, "FWIOIDX_%d", fw_io_idx); 
-            }
+            sprintf(tmpstring, "IO-Interface_%d", fw_io_idx); 
         }
 
         PRINTF(FMT0, tmpstring);
@@ -199,7 +226,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         U.u32 = FMT1;
         f = U.f32;
         
-        sprintf(tmpstring, "FMT%d frame %d NCHAN %d FS %f", i,
+        sprintf(tmpstring, "Data and frame format %d   frame size %d   nb chan %d   sampling %6.2f", i,
             RD(FMT0,  FRAMESIZE_FMT0),
             RD(FMT1,  NCHANM1_FMT1) +1,
             f);
@@ -214,11 +241,30 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         SCRIPTS in Flash 
     */
     SC1 = addrBytes;
-    for (i = 0; i < graph->nb_scripts; i++)
-    {   PRINTF(graph->script_indirect[i], "script index");
+    i1 = graph->nb_scripts;
+    i1 = (1+i1)>>1;             // table of W16 round to W32
+    for (j = i = 0; i < i1; i++)
+    {   FMT0 = graph->script_indirect[j]; 
+        FMT1 = ((long)(graph->script_indirect[j+1]))<<16; 
+        FMT0 |= FMT1;
+        j = j+2;
+        if (i == 0) PRINTF(FMT0, "nb of scripts, indexes");
+        else PRINTF(FMT0, "script index");
     }
-    for (i = 0; i < graph->nb_byte_code; i++)
-    {   PRINTF(graph->script_bytecode[i], "script byte code");
+
+    i1 = graph->nb_byte_code;
+    i1 = (3+i1)>>2;             // round to W32
+    for (j = i = 0; i < i1; i++)
+    {   uint8_t *pt8 = &(graph->script_bytecode[j]);
+        FMT0 = pt8[0]; 
+        FMT1 = ((long)(pt8[1]))<<8; 
+        FMT0 |= FMT1; 
+        FMT1 = ((long)(pt8[2]))<<16;
+        FMT0 |= FMT1; 
+        FMT1 = ((long)(pt8[3]))<<24;
+        FMT0 |= FMT1; 
+        j = j+4;
+        PRINTF(FMT0, "byte codes");
     }
     SC2 = addrBytes;
         
@@ -234,7 +280,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         n = &(graph->all_nodes[i]);
 
         /* word 1 - main Header */
-        strcpy(tmpstring, "-------"); strcat(tmpstring, graph->all_nodes[i].nodeName);
+        strcpy(tmpstring, "-------------------- nanoApp : "); strcat(tmpstring, graph->all_nodes[i].nodeName);
         PRINTF(n->headerPACK, tmpstring);
 
         /* word 2 - arcs */
@@ -253,7 +299,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             ST(FMT0, ARC0D_LW1, (arc[iarc  ].sc.rx0tx1 >0));    /* set the rx0tx1 arc direction bit */
             ST(FMT0, ARC1D_LW1, (arc[iarc+1].sc.rx0tx1 >0));    
 
-            PRINTF(FMT0, "arc01");
+            PRINTF(FMT0, "Indexes of ARC 0 and 1 of the nanoApp");
         }
 
         /* word 3 - memory banks */
@@ -263,13 +309,15 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             if (imem == 0) ST(FMT0, NBALLOC_LW2,  n->nbMemorySegment);  // instance pointer has the number of memory banks on MSBs
             if (n->defaultParameterSizeW32 > 1) ST(FMT0, PARAMETER_LW2, 1);
             ST(FMT0, BASEIDXOFFLW2, n->memreq[imem].graph_basePACK);    // address 
-            sprintf(tmpstring, "mem(%d)", imem); 
+            sprintf(tmpstring, "Reserved memory bank(%d)", imem); 
             PRINTF(FMT0, tmpstring);
         }
 
         /* word 4 - parameters */
         for (j = 0; j < n->defaultParameterSizeW32; j++)
-        {   sprintf(tmpstring, "params(%d)", j); 
+        {   
+            if (j==0) sprintf(tmpstring, "(%d) boot parameters", j); 
+            else sprintf(tmpstring, "(%d)", j); 
             PRINTF(n->PackedParameters[j], tmpstring);
         }
     }
@@ -282,9 +330,26 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         ARC descriptors (4 words each)
     */
     for (i = 0; i < graph->nb_arcs; i++)
-    {   sprintf(tmpstring, "arc desc(%d) Prod%d Cons%d", i,
-            RD(graph->arc[i].ARCW0, PRODUCFMT_ARCW0),
-            RD(graph->arc[i].ARCW1, CONSUMFMT_ARCW1)) ; 
+    {   
+        sprintf(tmpstring, "Circular buffer ARC descriptor(%d) ", i); 
+        i2 = 0;
+        for (j = 0; j < G->idbg; j++)
+        {   i1 = RD(graph->arc[i].ARCW0, BASEIDX_ARCW0);
+            if (i1 == G->dbg[j].address)
+            {   strcat(tmpstring, G->dbg[j].toprint);
+                if (0 == strncmp(G->dbg[j].toprint,"SC",2)) 
+                    i2 = 1;
+                if (0 == strncmp(G->dbg[j].toprint,"IO",2)) 
+                    i2 = 1;
+            }
+        }
+
+        if (i2==0) 
+        {   sprintf(tmpstring, "Circular buffer ARC descriptor(%d) Producer %d Consumer %d", i,
+                RD(graph->arc[i].ARCW0, PRODUCFMT_ARCW0),
+                RD(graph->arc[i].ARCW1, CONSUMFMT_ARCW1)); 
+        }
+
         PRINTF(graph->arc[i].ARCW0, tmpstring);
         PRINTF(graph->arc[i].ARCW1, "");
         PRINTF(graph->arc[i].ARCW2, "");
@@ -303,30 +368,38 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
     fsetpos (ptf_graph_bin, &pos_NWords);   
 
-    fprintf(ptf_graph_bin, "0x%08X, // number of Bytes\n", addrBytes/4); // [-1] size of the graph in Words 
-    FMT0 = 0;
+    fprintf(ptf_graph_bin, "0x%08X, // number of words\n", addrBytes/4); // [-1] size of the graph in Words 
     addrBytes = 0;
-    PRINTF(FMT0, "0");      // [0] 27b RAM address of part/all the graph going in RAM, 
+    FMT0 = 0;
+    ST(FMT0, RAMSPLIT_GRAPH0, graph->PackedFormat);
+    sprintf(tmpstring, "0 destination of the graph in RAM"); 
+    PRINTF(FMT0, tmpstring);      // [0] 27b RAM address of part/all the graph going in RAM, 
 
     FMT0 = 0; ST(FMT0, NBFORMATS_GR1, graph->nb_formats);
     ST(FMT0, NB_IOS_GR1, platform->nb_hwio_stream);
     ST(FMT0, SCRIPTS_SIZE_GR1, (SC2-SC1)/4);
-    PRINTF(FMT0, "1");      // [1] number of FORMAT, size of SCRIPTS
+    sprintf(tmpstring, "1 number of IO-Interfaces, size of the script section"); 
+    PRINTF(FMT0, tmpstring);     // [1] number of FORMAT, size of SCRIPTS
 
     FMT0 = 0; ST(FMT0, LINKEDLIST_SIZE_GR2, (LK2-LK1)/4);
-    PRINTF(FMT0, "2");      // [2] size of LINKEDLIST
+    sprintf(tmpstring, "2 size of the linked-list of nanoApp + parameters"); 
+    PRINTF(FMT0, tmpstring);   // [2] size of LINKEDLIST
 
     FMT0 = 0; ST(FMT0, NB_ARCS_GR3, graph->nb_arcs);
     ST(FMT0, SCRIPT_SCTRL_GR3, graph->script_sctrl);
-    PRINTF(FMT0, "3");      // [3] number of ARCS, number of DEBUG registers
+    sprintf(tmpstring, "3 number of arcs and debug/trace registers"); 
+    PRINTF(FMT0, tmpstring);   // [3] number of ARCS, number of DEBUG registers
 
     FMT0 = 1; //platform->procid_allowed_gr4;
-    PRINTF(FMT0, "4");      // [4] list of processors (procID for the scheduler in platform_manifest) processing the graph
+    sprintf(tmpstring, "4 list of processors allowed to execute the graph"); 
+    PRINTF(FMT0, tmpstring); // [4] list of processors (procID for the scheduler in platform_manifest) processing the graph
 
     FMT0 = 0x000000FF;      // all the memory of the bank 0 is used, banks 1,2,3 are not used
-    PRINTF(FMT0, "5");      // [5,6] UQ8 portion of memory consumed on each long_offset[MAX_NB_MEMORY_OFFSET] 
+    sprintf(tmpstring, "5 percentage of 8 memory banks consumed by the graph"); 
+    PRINTF(FMT0, tmpstring); //[5,6] UQ8 portion of memory consumed on each long_offset[MAX_NB_MEMORY_OFFSET] 
+
     FMT0 = 0x00000000;      // banks 4,5,6,7 are not used
-    PRINTF(FMT0, "6");      //
+    PRINTF(FMT0, "6 '''''");      //
 
     fsetpos (ptf_graph_bin, &pos_end);  
 }

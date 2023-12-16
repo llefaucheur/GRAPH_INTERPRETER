@@ -162,10 +162,12 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
     ptstart++; 
     while (*ptstart == ' ') ptstart++;  // find the first non-white space character
 
-    if (0 == strncmp(stype, "u8", LL) || 0 == strncmp(stype, "i8", LL))
+    if (0 == strcmp(stype, "u8") || 0 == strcmp(stype, "i8") || 0 == strcmp(stype, "h8"))
     {   ptu8 = (uint8_t*)X; *raw_type = STREAM_U8; 
         for (ifield = 0; ifield < nfield; ifield++)
-        {   c = sscanf(ptstart, "%lld", &i);  *ptu8++ = (uint8_t)i;  
+        {   if (0 == strcmp(stype, "h8")) c = sscanf(ptstart, "%llx", &i);
+            else                          c = sscanf(ptstart, "%lld", &i);  
+            *ptu8++ = (uint8_t)i;  
             ptstart = strchr(ptstart, ' '); while (*ptstart == ' ') ptstart++;
         }
     }

@@ -284,9 +284,9 @@ extern "C"
    */
   typedef struct
   {
-          int8_t numStages;        /**< number of 2nd order stages in the filter.  Overall order is 2*numStages. */
           q15_t *pState;           /**< Points to the array of state coefficients.  The array is of length 4*numStages. */
     const q15_t *pCoeffs;          /**< Points to the array of coefficients.  The array is of length 5*numStages. */
+          int8_t numStages;        /**< number of 2nd order stages in the filter.  Overall order is 2*numStages. */
           int8_t postShift;        /**< Additional shift, in bits, applied to each output sample. */
   } arm_biquad_casd_df1_inst_q15;
 
