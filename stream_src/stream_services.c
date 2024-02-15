@@ -36,6 +36,18 @@
 
 SECTION_START
 
+/* 
+    services
+    - FFT : parameters tell if tweedle factors need to be moved in TCM
+    - IIR : if the number of samples to filter is small, then take the hypothesis the caller
+            made the good choices for the memory mapping of memory and coefficients
+            else check the address are in TCM, apply a swap to a Stream scratch are execute
+            the filtering from TCM, restore / swap
+    - Matrices / dotProduct : strategy to define
+
+*/
+
+
 /* ------------------------------------------------------------------------------------------------------------
   @brief        Size of raw data
   @param[in]    raw type
@@ -63,6 +75,44 @@ int32_t stream_bitsize_of_raw(uint8_t raw)
     }
 }
 
+
+/* ------------------------------------------------------------------------------------------------------------
+  @brief        ITOAB integer to ASCII with Base (binary, octal, decimal, hexadecimal)
+  @param[in]    integer
+  @param[out]   string of char
+  @return       strlen      
+
+  @remark       usage : char string[10]; string[itaob(string,1234,C_BASE10)]='/0';
+ */
+
+uint8_t itoab(char *s, int32_t n, int base)
+{
+    uint8_t sign, nc, i, j, c;
+
+     if ((sign = n) < 0)  /* save the sign */
+     {    n = -n;
+     }
+    
+     nc = 0;    /* generate digits in reverse order */
+     do {       
+         s[nc++] = "0123456789ABCDEF"[n % base];
+     } while ((n /= base) > 0);     
+
+     if (sign < 0)
+     {  s[nc++] = '-';
+     }
+
+     /* reverse the charracters order */
+     for (i = 0, j = nc-1; i < j; i++, j--) {
+         c = s[i];
+         s[i] = s[j];
+         s[j] = c;
+     }
+     return nc; /* s[nc] = '\0'; to do out of the subroutine*/
+}    
+
+
+
 /**
   @brief        Internal services entry point 
   @param[in]    instance   pointers to the Stream instance and graph data
@@ -74,10 +124,10 @@ int32_t stream_bitsize_of_raw(uint8_t raw)
        
   @remark
  */
-static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint32_t n)
+static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t* ptr3, uint32_t n)
 {
 
-    switch (RD(command, SWC_TAG_CMD))
+    switch (command)
     {
     case STREAM_SERVICE_INTERNAL_NODE_REGISTER: /* called during STREAM_NODE_DECLARATION to register the SWC callback */
     {
@@ -110,7 +160,7 @@ static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_
         //    platform_al(PLATFORM_ERROR, 0, 0, 0); /* overflow issue */
         //    debugBufferLength = free_area;
         //}
-
+        *ptr1 = *ptr1; //for debug
         //arc_data_operations((arm_stream_instance_t*)&stream_instance, arc, arc_IO_move_to_arc, ptr1, debugBufferLength);
         break;
     }
@@ -141,7 +191,7 @@ static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_
   @par          
   @remark
  */
-static void arm_stream_services_flow (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint32_t n) 
+static void arm_stream_services_flow (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
     // SECTIONS OF ARC APIs
     /*
@@ -164,10 +214,10 @@ static void arm_stream_services_flow (uint32_t command, uint8_t* ptr1, uint8_t* 
   @par
   @remark
  */
-static void arm_stream_services_conversion (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint32_t n) 
+static void arm_stream_services_conversion (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
 
-    switch (RD(command, SWC_TAG_CMD))
+    switch (command)
     {
     case STREAM_SERVICE_CONVERSION_INT16_FP32: 
     {
@@ -189,10 +239,27 @@ static void arm_stream_services_conversion (uint32_t command, uint8_t* ptr1, uin
   @par
   @remark
  */
-void arm_stream_services_stdlib (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint32_t n) 
+void arm_stream_services_stdlib (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
 #if STREAM_SERVICE_EXTSTDLIB
+	switch (RD(command, FUNCTION_SSRV))
+    {
+    case STREAM_FREE:
+    case STREAM_MALLOC: /* (STREAM_MALLOC + OPTION_SSRV(align, static/w/retention, speed), **ptr1, 0, 0, n) */
 
+    case STREAM_RAND:   /* (STREAM_RAND + OPTION_SSRV(seed), *ptr1, 0, 0, n) */
+    case STREAM_SRAND:
+    case STREAM_ATOF:
+    case STREAM_ATOI:
+
+    case STREAM_MEMSET:
+    case STREAM_STRCHR:
+    case STREAM_STRLEN:
+    case STREAM_STRNCAT:
+    case STREAM_STRNCMP:
+    case STREAM_STRNCPY:
+    case STREAM_STRSTR:
+    case STREAM_STRTOK:
 #endif
 }
 
@@ -208,7 +275,7 @@ void arm_stream_services_stdlib (uint32_t command, uint8_t* ptr1, uint8_t* ptr2,
   @par
   @remark
  */
-void arm_stream_services_math (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint32_t n) 
+void arm_stream_services_math (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
     /* 
         Permanent APIs whatever "STREAM_SERVICE_EXTMATH" are 
@@ -234,7 +301,7 @@ void arm_stream_services_math (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, u
   @par
   @remark
  */
-void arm_stream_services_mm_audio (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint32_t n) 
+void arm_stream_services_mm_audio (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
 #if STREAM_SERVICE_EXTAUDIO
 
@@ -254,7 +321,7 @@ void arm_stream_services_mm_audio (uint32_t command, uint8_t* ptr1, uint8_t* ptr
   @par
   @remark
  */
-void arm_stream_services_mm_image (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint32_t n) 
+void arm_stream_services_mm_image (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
 #if STREAM_SERVICE_EXTIMAGE
 
@@ -288,36 +355,42 @@ void arm_stream_services_mm_image (uint32_t command, uint8_t* ptr1, uint8_t* ptr
   @remark
  */
 
-void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n)
+void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n)
 {   
     //arm_stream_instance_t *pinst;
 
     /* max 16 groups of commands */
-	switch (RD(service_command, GROUP_SSRV))
+	switch (RD(command, GROUP_SSRV))
     {
     //enum stream_service_group
     case STREAM_SERVICE_INTERNAL:
         
-        if ((RD(service_command, GROUP_SSRV)) == STREAM_SERVICE_INTERNAL_RESET)
-        {   /* arm_stream_services(*ID, STREAM_SERVICE_INTERNAL_RESET, stream_instance, 0, 0); */
+        if ((RD(command, GROUP_SSRV)) == STREAM_SERVICE_INTERNAL_RESET)
+        {   // arm_stream_services(*ID, STREAM_SERVICE_INTERNAL_RESET, stream_instance, 0, 0); 
+            //#define   OPTION_SSRV_MSB U(31)       
+            //#define   OPTION_SSRV_LSB U(14) /* 18   compute accuracy, in-place processing, frame size .. */
+            //#define FUNCTION_SSRV_MSB U( 9)       
+            //#define FUNCTION_SSRV_LSB U( 4) /* 6    64 functions/group  */
+            //#define    GROUP_SSRV_MSB U( 3)       
+            //#define    GROUP_SSRV_LSB U( 0) /* 4    16 groups */
             //stream_instance = *(arm_stream_instance_t*)ptr1;
         } 
         else
         {   /* arm_stream_services(*ID, PACK_COMMAND(TAG,PRESET,NARC,INST,STREAM_SERVICE_INTERNAL_XXXXX), pta, ptb); */
-            arm_stream_services_internal(RD(service_command, FUNCTION_SSRV), ptr1, ptr2, n);
+            arm_stream_services_internal(RD(command, FUNCTION_SSRV), ptr1, ptr2, ptr3, n);
         }
         break;
     case STREAM_SERVICE_FLOW:
-        arm_stream_services_flow (service_command, ptr1, ptr2, 0);
+        arm_stream_services_flow (command, ptr1, ptr2, ptr3, n);
         break;
     case STREAM_SERVICE_CONVERSION:
-        arm_stream_services_conversion(service_command, ptr1, ptr2, 0);
+        arm_stream_services_conversion(command, ptr1, ptr2, ptr3, n);
         break;
     case STREAM_SERVICE_STDLIB:
-        arm_stream_services_stdlib(service_command, ptr1, ptr2, 0);
+        arm_stream_services_stdlib(command, ptr1, ptr2, ptr3, n);
         break;
     case STREAM_SERVICE_MATH:
-        arm_stream_services_math(service_command, ptr1, ptr2, 0);
+        arm_stream_services_math(command, ptr1, ptr2, ptr3, n);
         break;
 
     case STREAM_SERVICE_DSP_ML:
@@ -328,7 +401,7 @@ void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2
                 - Matrix operations
             */
 
-            switch (RD(service_command, FUNCTION_SSRV))
+            switch (RD(command, FUNCTION_SSRV))
             {
             /* ------------------------- */
             case STREAM_SERVICE_CASCADE_DF1_Q15:          /* IIR filters */
@@ -347,7 +420,7 @@ void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2
                 break;
             /* ------------------------- */
             case 0:              
-                // #if STREAM_SERVICE_LOW_MEMORY        /* RADIX2 with tables recomputed */
+                // STREAM_SERVICE_LOW_MEMORY_rFFT      /* inplace RFFT with sin/cos recomputed in each loop */
                 // 
                 // STREAM_SERVICE_INIT_rFFT_Q15        /* RFFT + windowing, module, dB */
                 // STREAM_SERVICE_rFFT_Q15
@@ -382,10 +455,10 @@ void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2
             }
         break;
     case STREAM_SERVICE_MM_AUDIO:
-        arm_stream_services_mm_audio(service_command, ptr1, ptr2, 0);
+        arm_stream_services_mm_audio(command, ptr1, ptr2, ptr3, n);
         break;
     case STREAM_SERVICE_MM_IMAGE:
-        arm_stream_services_mm_image(service_command, ptr1, ptr2, 0);
+        arm_stream_services_mm_image(command, ptr1, ptr2, ptr3, n);
         break;
 
 

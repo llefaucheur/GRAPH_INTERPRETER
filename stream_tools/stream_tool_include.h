@@ -43,24 +43,22 @@
 #include <math.h>
 #include <stdarg.h>  /* for void fields_extract(char **pt_line, char *types,  ...) */
 
-#include "stream_const.h"
-#include "stream_types.h"
+#include "../stream_src/stream_const.h"
+#include "../stream_src/stream_types.h"
 #include "stream_tool_define.h"
-#include "stream_tool_platform_manifests.h"
 #include "stream_tool.h"
 
 
-extern uint32_t INTTOFPE4M6 (uint32_t x);
 extern void     jump2next_line (char** line);
 extern uint32_t quantized_FS (float FS);
 extern int      jump2next_valid_line (char** line);
 extern void     read_binary_param(char** pt_line, void* X, uint8_t* raw_type, uint32_t* nb_option);
 extern void     read_common_data_options(char** pt_line, struct options* pt);
 extern void     read_input_file(char* file_name, char* inputFile);
-extern void     fields_extract(char **pt_line, char *types,  ...);
+extern int      fields_extract(char **pt_line, char *types,  ...);
 extern void     fields_list(char **pt_line, struct options *opt);
 extern int      stream_bitsize_of_raw(uint8_t raw);
-extern void arm_stream_script_assembler (char *script, FILE *ptf_graph_script_bytecode, char *script_bytecode, uint32_t *nbByteCodes);
+extern int      search_word(char line[], char word[]);
 
 #endif /* #ifndef cSTREAM_TOOL_INCLUDE_H */
 

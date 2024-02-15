@@ -1,0 +1,7 @@
+﻿  stream_tool_graph2Bin.c
+  stream_tool_library.c
+  stream_tool_main.c
+  stream_tool_readManifests.c
+  stream_tool_read_graph.c
+  Generating Code...
+  graphTxt2Bin.vcxproj -> C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\graphTxt2Bin\x64\Debug\graphTxt2Bin.exe

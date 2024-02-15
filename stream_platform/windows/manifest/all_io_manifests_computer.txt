@@ -1,0 +1,68 @@
+; ------------------------------------------------------------------------------------------------------------
+; list of paths for the included files
+
+    3                                               three file paths
+    ../../stream_tools/                              "" path index 0 is local
+    ../../stream_tools/windows/manifest              "" path index 1
+    ../../stream_nodes/                              "" path index 2
+
+; ------------------------------------------------------------------------------------------------------------
+; PLATFORM DIGITAL, MIXED-SIGNAL AND IO MANIFESTS - max 32 IOs => iomask
+
+    1   platform_manifest_computer.txt      path index + file name
+
+    9   number of IO streams available      aligned with struct platform_io_control platform_io []
+                                           ;and stream_al/platform_computer.h 
+
+    ;   file path index + io manifests file name + index used in the graph    
+    ;   index 0="decided from the caller"               
+
+    ;Path      Manifest                    fw_io_idx
+
+    1   io_platform_data_in_0.txt           0   application processor
+    1   io_platform_analog_sensor_0.txt     1   ADC 
+    1   io_platform_motion_in_0.txt         2   accelero=gyro
+    1   io_platform_audio_in_0.txt          3   microphone
+    1   io_platform_2d_in_0.txt             4   camera
+    1   io_platform_line_out_0.txt          5   audio out stereo
+    1   io_platform_gpio_out_0.txt          6   GPIO/LED
+    1   io_platform_gpio_out_1.txt          7   GPIO/PWM
+    1   io_platform_data_out_0.txt          8   application processor
+    
+
+; ------------------------------------------------------------------------------------------------------------
+; SOFTWARE COMPONENTS MANIFESTS 
+
+    2  nodes     path index + file name, in the same order of p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS]
+
+    ;  p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
+    ;                                               /*  0 node disabled */
+    2         Basic/arm/script/swc_manifest_script.txt        /*  1 arm_script,             byte-code interpreter */
+    2         Basic/arm/router/swc_manifest_router.txt        /*  2 arm_stream_router,      copy input arcs and subchannel and output arcs and subchannels   */     
+    2      Basic/arm/converter/swc_manifest_converter.txt     /*  3 arm_stream_converter,   raw data format converter */
+    2      Basic/arm/amplifier/swc_manifest_amplifier.txt     /*  4 arm_stream_amplifier,   amplifier mute and un-mute with ramp and delay control */
+    2          Basic/arm/mixer/swc_manifest_mixer.txt         /*  5 arm_stream_mixer,       multichannel mixer with mute/unmute and ramp control */
+    2         Audio/arm/filter/swc_manifest_filter.txt        /*  6 arm_stream_filter,      cascade of DF1 filters */
+    2       Audio/arm/detector/swc_manifest_detector.txt      /*  7 arm_stream_detector,    estimates peaks/floor of the input and triggers a flag on high SNR */
+    2       Basic/arm/rescaler/swc_manifest_rescaler.txt      /*  8 arm_stream_rescaler,    raw data values remapping using "interp1" */
+    2     Audio/arm/compressor/swc_manifest_compressor.txt    /*  9 arm_stream_compressor,  raw data compression */
+    2   Audio/arm/decompressor/swc_manifest_decompressor.txt  /* 10 arm_stream_decompressor,raw data decompression */
+    2      Basic/arm/modulator/swc_manifest_modulator.txt     /* 11 arm_stream_modulator,   signal generator with modulation */
+    2    Basic/arm/demodulator/swc_manifest_demodulator.txt   /* 12 arm_stream_demodulator, signal demodulator, frequency estimator */
+    2   Basic/arm/interpolator/swc_manifest_interpolator.txt  /* 13 arm_stream_interpolator,asynchronous sample-rate converter */
+    2            Basic/arm/qos/swc_manifest_qos.txt           /* 14 arm_stream_qos,         raw data interpolator with synchronization with one HQoS stream */
+    2         Basic/arm/shared/swc_manifest_shared.txt        /* 15 arm_stream_shared,      let a buffer be used by several nodes */
+    2     image/arm/detector2D/swc_manifest_detector2D.txt    /* 16 arm_stream_detector2D,   */
+    2       image/arm/filter2D/swc_manifest_filter2D.txt      /* 17 arm_stream_filter2D,        */
+    2 image/arm/interpolator2D/swc_manifest_interpolator2D.txt/* 18 arm_stream_interpolator2D, change image format and resize */
+    2        Basic/arm/synchro/swc_manifest_synchro.txt       /* 19 arm_stream_synchro      multi-stream synchro  */
+
+; ------------------------------------------------------------------------------------------------------------
+
+;
+;   extra memory consumption of services 
+;
+;   FFT-q15(N)  :  N * 2.5 (twiddle) , Buffer under node control
+;   FFT-f32(N)  :  N * 5 (twiddle) , Buffer under node control
+;   IIR-q15 (order, block) : order * 6 (coef) , order * 6 (state)
+;   IIR-f32 (order, block) : order * 12 (coef) , order * 12 (state)

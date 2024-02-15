@@ -35,10 +35,10 @@
 extern p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS];
 
 /* entry point from the application  */
-extern void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *inst, uint32_t *data);
+extern void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint8_t *data, uint32_t size);
 
 /* entry point from the device drivers */
-extern void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t size);
+extern void arm_graph_interpreter_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t size);
 
 /* entry point from the computing nodes */
 extern void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n);
@@ -52,7 +52,7 @@ extern void platform_specific_processor_arch_iomask(struct HW_params **params);
 extern void platform_al(uint32_t command, void *ptr1, void *ptr2, uint32_t data3);
 extern void arc_data_operations (arm_stream_instance_t *stream_instance, uint32_t *arc, uint8_t tag, uint8_t *buffer, uint32_t size);
 extern uint32_t lin2pack (arm_stream_instance_t *S, uint8_t *buffer);
-extern void * pack2linaddr_ptr(intPtr_t *long_offset, uint32_t x);
+extern void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t x);
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,66 @@
+; ------------------------------------------------------------------------------------------------------------
+; Processor and memory configuration + default memory mapping 
+; ------------------------------------------------------------------------------------------------------------
+;
+  
+;   number of architectures (1..7)
+;   number of processors (0..7)
+
+    1 1
+
+;----------------------------------------------------------------------------------------
+; Loop on processor architectures
+;
+    ;----------------------------------------------------------------------------------------
+    ;   Loop on processors
+    ;
+        ;------------------------------------------------------------
+        1 1 3 1 9       processor ID, boolean "I am the main processor" allowed to boot the graphs
+        ;               number of offsets below 
+        ;               number of RTOS threads
+        ;               number of below MemBanks = default + 
+        ;               1 flat + 2 static + 2 working(internal/external)+ 1 backup memory + 1 Flash + 1 for program swap
+
+        ;               computation firmware extensions, on top of the basic one, embedded in Stream services
+        ;               EXT_SERVICE_MATH 1, EXT_SERVICE_DSPML 2, EXT_SERVICE_AUDIO 3, EXT_SERVICE_IMAGE 4, EXT_SERVICE_STDLIB 5
+
+        31              bit-field of existing libraries
+
+        ; offsets:
+        ;    data below must be aligned with "platform_specific_long_offset(intPtr_t long_offset[])" in stream_al/platform_XXXXX.c
+        ;    given for information and debug listing
+        0   h20000000   offset ID, (HEX) physical address just for information/debug
+        1   h28000000       the effective data is provided by platform_specific_long_offset(intPtr_t long_offset[])
+        2   h08000000   Internal Flash       
+
+        ; memory banks:
+        ;   - base offset ID reference above
+        ;   - virtual ID used in the graph for manual mapping 
+        ;
+        ;   [5] 0=any/1=normal/2=fast/3=critical-Fast, static0/working1/retention2, shared0/private1, forHW1, Data0/Prog1 
+        ;
+        ;   - minimum size guaranteed
+        ;   - minimum offset from the base offset ID, (equal to [previous size + previous offset] means continuous banks)
+
+        ;   ID VID  S W P H D  Size(INT) offset from offsetID 
+            0   0   1 0 0 0 0    95526 10       VID0=default flat memory bank, can overlap the others
+            0   1   0 0 0 0 0    65526 10       SRAM0 static, hand tuned memory banks
+            0   2   0 0 0 0 0    30000 65536    SRAM1 static
+            0   3   0 1 0 0 0    15000 95536    SRAM1 working at application level
+            0   4   0 1 0 0 0   256000 262144   DDR working at application level
+            0   5   1 0 1 0 0     1024 262144   DTCM scratch or fast area for swap (DATA_PP_SCTRL)
+            1  10   0 0 0 0 0     1024 524288   Retention memory
+            2  20   0 0 0 0 0   200000 10       Data in Flash
+            0   8   1 1 1 0 1    16384 263168   ITCM scratch or fast area for swap (PROG_PP_SCTRL)
+
+        ;------------------------------------------------------------
+        ;2 1 2 0         second processor, number of offsets, MemBanks 
+        ;0   20000000    offset ID, physical address 
+        ;
+        ;;   ID VID  S W P H D
+        ;;   0   1   1 0 0 0 0   256000 0        default memory bank
+        ;;   0   1   1 0 0 0 0   256000 0        SRAM0 static, hand tuned memory banks
+
+
+;;;; next arch, etc..
+

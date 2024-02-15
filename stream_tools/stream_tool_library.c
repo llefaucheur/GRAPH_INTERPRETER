@@ -144,7 +144,7 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
 
     jump2next_valid_line(pt_line);
 
-    if (0 == strncmp(*pt_line, SECTION_END, strlen(SECTION_END)))
+    if (search_word(*pt_line, SECTION_END) < 0)
     {   *nbfields = 0;
         return;
     }
@@ -233,20 +233,6 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
     /* skip the end of line comments */
     *pt_line = ptstart;
 }
-/* ---------------------------------------------------------------------- */
-//uint32_t INTTOFPE4M6(uint32_t x)
-//{
-//    uint32_t E, M;
-//
-//    for (E = 0; E <= PARAM_MAX_EXPONENT; E++)
-//    {   for (M = 0; M <= PARAM_MAX_MANTISSA; M++)
-//        {   if ((M << E) >= x)
-//                return (E<<6) | M;
-//        }
-//    }
-//    return 0;
-//}
-
 
 /* ---------------------------------------------------------------------- */
 uint32_t quantized_FS (float FS)
@@ -283,12 +269,43 @@ void read_input_file(char* file_name, char * inputFile)
 { 
     FILE * ptf_platform_manifest_file;
     uint32_t idx;
+
     if (0 == (ptf_platform_manifest_file = fopen(file_name, "rt"))) exit(-1);
     idx = 0;
     while (1) if (0 == fread(&(inputFile[idx++]), 1, 1, ptf_platform_manifest_file)) break;
     fclose(ptf_platform_manifest_file);
 }
 
+
+
+/**
+  @brief            search a word in a long string
+  @param[in/out]    strings
+  @return           int
+
+  @par              
+  @remark
+ */
+
+int search_word(char line[], char word[])
+{
+    int i, j, found;
+
+    for (i = 0; i <= strlen(line) - strlen(word); i++) {
+        found = 1;
+        for (j = 0; j < strlen(word); j++) {
+            if (line[i + j] != word[j]) {
+                found = 0;
+                break;
+            }
+        }
+        if (found == 1) {
+            return i;
+        }
+    }
+
+    return -1;
+}
 
 /**
   @brief            (main)
@@ -304,7 +321,7 @@ void read_input_file(char* file_name, char * inputFile)
  example : fields_extract(&pt_line, "III", &ARC_ID, &IFORMAT, &SIZE);
 */
 
-void fields_extract(char **pt_line, char *types,  ...)
+int fields_extract(char **pt_line, char *types,  ...)
 {
     char *ptstart, *ptstart0, S[200], *vaS;
     int ifield, I, *vaI, nchar, n, nfields;
@@ -323,6 +340,11 @@ void fields_extract(char **pt_line, char *types,  ...)
     va_start(vl,types);
 
     jump2next_valid_line(pt_line); 
+
+    if (search_word(*pt_line, SECTION_END) < 0)
+    {   return -1;
+    }
+
     ptstart = *pt_line;
     nfields = (int)strlen(types);
 
@@ -331,10 +353,6 @@ void fields_extract(char **pt_line, char *types,  ...)
         ptstart0 = strchr (ptstart, ' ');   // find the next white space
         while (ptstart0[1] == ' ') 
             ptstart0++;
-        //ptstart1 = strchr (ptstart, '\n');   // find the next end of line
-        //if (ptstart0-ptstart > ptstart1-ptstart)
-        //{   ptstart0 = ptstart1;        // ptstart0 = next blank or end of line
-        //}
 
         switch(types[ifield])
         {
@@ -388,6 +406,8 @@ void fields_extract(char **pt_line, char *types,  ...)
     }
     *pt_line = ptstart;
     va_end(vl);
+
+    return 1;
 }
 
 

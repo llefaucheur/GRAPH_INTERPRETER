@@ -32,7 +32,7 @@
 #include "stream_const.h"
 #include "stream_types.h"
 #include "stream_extern.h"
-#include "../stream_al/platform_al.h"
+
 SECTION_START
 
 
@@ -59,13 +59,13 @@ SECTION_START
   @remark
  */
 
-void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
+void arm_graph_interpreter_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
 {
-    extern arm_stream_instance_t * platform_io_callback_parameter [];
-    arm_stream_instance_t *S = platform_io_callback_parameter[fw_io_idx];
+    extern arm_stream_instance_t * platform_io_callback_parameter;
+    arm_stream_instance_t *S = platform_io_callback_parameter;
     uint32_t *arc;
     uint32_t *pio;
-    uint8_t *ioctrl;
+    uint32_t *ioctrl;
 
     uint32_t read;
     uint32_t write;
@@ -106,7 +106,7 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
             */
             if (fifosize - write < data_size)   /* free area too small => overflow */
             {   /* overflow issue */
-                platform_al(PLATFORM_ERROR, 0,0,0);
+                //platform_al(PLATFORM_ERROR, 0,0,0);
                 /* TODO : implement the flow management desired for "flow_error" */
                 //flow_error = (uint8_t) RD(arc[2], OVERFLRD_ARCW2);
                 data_size = fifosize - write;
@@ -116,7 +116,7 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
             /* only one node can read the write-index at a time : no collision is possible */
             src = data;
             dst = &(long_base[write]);
-            MEMCPY (dst, src, data_size)
+            MEMCPY (dst, src, (uint32_t)data_size)
             write = write + data_size;
             ST(arc[3], WRITE_ARCW3, write);     /* update the write index */
 
@@ -143,9 +143,10 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
         else /* IO_COMMAND_SET_BUFFER */
         {
             /* arc_set_base_address_to_arc */
-            ST(arc[2], READ_ARCW2, 0);
             ST(arc[0], BASEIDXOFFARCW0, lin2pack(S, data));
-            ST(arc[3], WRITE_ARCW3, data_size);
+            ST(arc[1], BUFF_SIZE_ARCW1, data_size); /* FIFO size aligned with the buffer size */
+            ST(arc[2], READ_ARCW2, 0);
+            ST(arc[3], WRITE_ARCW3, data_size); /* automatic rewind after read */
             ioctrl[fw_io_idx] = 0;
         }
     }
@@ -160,7 +161,7 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
             */
             if (write - read < data_size)   /* data available for TX is too small => underflow */
             {   /* underflow issue */
-                platform_al(PLATFORM_ERROR, 0,0,0);
+                //platform_al(PLATFORM_ERROR, 0,0,0);
                 /* TODO : implement the flow management desired for "flow_error" */
                 //flow_error = (uint8_t) RD(arc[2], OVERFLRD_ARCW2);
                 data_size = write - read;
@@ -170,7 +171,7 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
             /* only one node can read the write-index at a time : no collision is possible */
             src = &(long_base[read]);
             dst = data;
-            MEMCPY (dst, src, data_size)
+            MEMCPY (dst, src, (uint32_t)data_size)
             read = read + data_size;
             ST(arc[2], READ_ARCW2, read);   /* update the read index */
 
@@ -178,7 +179,7 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
             if (0u != TEST_BIT (arc[3], ALIGNBLCK_ARCW3_LSB))
             {   src = &(long_base[read]);
                 dst =  long_base;
-                MEMCPY (dst, src, write-read)
+                MEMCPY (dst, src, (uint32_t)(write-read))
 
                 /* update the indexes Read=0, Write=dataLength */
                 ST(arc[2], READ_ARCW2, 0);
@@ -204,7 +205,6 @@ void platform_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t data_size)
             ioctrl[fw_io_idx] = 0;
         }
     }
-    DATA_MEMORY_BARRIER;
 }
 
 SECTION_STOP

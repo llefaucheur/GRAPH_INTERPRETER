@@ -40,7 +40,7 @@
 SECTION_START 
 
 
-static void stream_copy_graph(arm_stream_instance_t *stream_instance, uint32_t *graph);
+static void stream_copy_graph(arm_stream_instance_t *stream_instance);
 static void stream_init_io(arm_stream_instance_t *stream_instance);
 
 #define L S->long_offset
@@ -70,30 +70,23 @@ static void stream_init_io(arm_stream_instance_t *stream_instance);
                       
   @remark
  */
-void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint32_t *data)
+void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint8_t *data, uint32_t size)
 {   
-	switch (command)
+	switch (RD(command, COMMAND_CMD))
     {
-        /* usage: arm_stream(STREAM_RESET, &instance,graph_input); */
+        /* usage: arm_stream(STREAM_RESET, &instance,graph_input, 0); */
 	    case STREAM_RESET: 
-	    {   stream_copy_graph (S, data);
-            S->linked_list_ptr = S->linked_list;
-
+	    {   stream_copy_graph (S);
+            /* @@@ TODO  check scheduler_control S->scheduler_control .BOOT_SCTRL to clear 
+                the backup memory area STREAM_COLD_BOOT / STREAM_WARM_BOOT
+             */
             stream_scan_graph (S, STREAM_RESET);
-
-            //@@@@@ /* skip the first component = debug script node */
-            //#define XX 8 // size of the SWC of the debug trace script
-            //#define YY 3 // offset to the instance of the script
-            //S->script_offsets = (uint32_t *)PACK2LINADDR(S->long_offset, S->linked_list[YY]);
-            //S->linked_list = &(S->linked_list[XX]);
-            //S->linked_list_ptr = S->linked_list;
-
             stream_init_io (S);
-            break;
 
+            break;
         }
 
-        /* usage: arm_stream(STREAM_RUN, &instance,0); */
+        /* usage: arm_stream(STREAM_RUN, &instance,0, 0); */
 	    case STREAM_RUN:   
 	    {   if (RD(S->parameters, INSTANCE_ON_PARINST))
             {   stream_scan_graph (S, STREAM_RUN);
@@ -101,28 +94,38 @@ void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint32_
             break;
         }   
 
-        /* usage: arm_graph_interpreter (STREAM_STOP, &instance, 0); */
+        /* change the use-case  : 
+            usage: arm_graph_interpreter (STREAM_SET_PARAMETER, &instance, &use-case, 0); */
+        case STREAM_SET_PARAMETER:
+	    {   /* @@@ calls the main script with SET_PARAMETER */
+            /* update parameter of a specific nanoAppRT 
+                usage: arm_graph_interpreter (STREAM_SET_NANOAPPRT_PARAMETER, &instance, &parameters, 0); */
+	        /* @@@ calls specific nanoAppRT with SET_PARAMETER */
+            break;
+        }
+
+
+        /* usage: arm_graph_interpreter (STREAM_STOP, &instance, 0, 0); */
         case STREAM_STOP:
 	    {   stream_scan_graph (S, STREAM_STOP);
             break;
         }
 
-        /* arm_graph_interpreter (STREAM_READ_PARAMETER, 8 bytes use-case, 0, 0)*/
-        case STREAM_READ_PARAMETER: 
-        {   /* byte stream format 64bits/8bytes: command + length, byte-stream. Use-case : 
-                node set/read parameters 
-               Implemented with the main script of the (sub) graph
-             */
+        /* manual data push/pop : read information (available free space, or data amount to read)
+            arm_graph_interpreter(STREAM_FIFO_STATUS_PACK(io_platform_data_in_0), instance, *fifo size, 0) 
+            */
+        case STREAM_FIFO_STATUS: 
+        {   extern void check_graph_boundaries(arm_stream_instance_t *S);
+            check_graph_boundaries(S);
+            *(uint32_t *)data = RD(S->ioctrl[STREAM_DATA_STREAM_UNPACK_FIFO(command)], ONGOING_IOSIZE);
             break;
         }
 
-        //  Eight registered callback for scripts (CALS [8..15])
-        //  Default "CALS" callback(stream_script_callback)
-        //      #8  sleep / deep - sleep activation
-        //      #9  system regsters access : who am I ?
-        //      #10 timer control(default implementation with SYSTICK)
-        // 
-        //    example specific : IP address, password to share, Ping IP to blink the LED, read RSSI, read IP@
+        /* usage: arm_graph_interpreter(STREAM_DATA_STREAM_PACK(FIFO_ID), instance, *data, size) */
+        case STREAM_DATA_STREAM: 
+        {   arm_graph_interpreter_io_ack (STREAM_DATA_STREAM_UNPACK_FIFO(command), data, size);
+            break;
+        }
 
         default:
             break;
@@ -157,24 +160,20 @@ void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint32_
 /*---------------------------------------------------------------------------
  * Application execution
  *---------------------------------------------------------------------------*/
-static void stream_copy_graph(arm_stream_instance_t *S, uint32_t *graph0)
+static void stream_copy_graph(arm_stream_instance_t *S)
 {
     uint8_t RAMsplit;
     uint32_t graph_words_in_ram, graph_size_word32;
-    uint32_t *graph_src;
+    uint32_t *graph_src, *graph0;
     uint32_t *graph_dst;
 
     /* 
         start copying the graph in RAM 
         initialize the current Graph interpreter instance (->node_entry_points, ->graph)
         initialize the IO boundaries of the graph
-
-        read the processors' long_offset table */
-    platform_al (PLATFORM_OFFSETS, (uint8_t *)&(S->long_offset),0,0);
-    
-    /* realign "graph0" */
-    graph_size_word32 = graph0[0];
-    graph0 = &(graph0[GRAPH_SIZE_SKIP_WORD0]);
+     realign "graph0" */
+    graph_size_word32 = S->graph[-1];
+    graph0 = S->graph;
 
     /* default : 
         COPY_CONF_GRAPH0_COPY_ALL_IN_RAM    graph0 in flash -> GRAPH_RAM_OFFSET_PTR()
@@ -207,7 +206,7 @@ static void stream_copy_graph(arm_stream_instance_t *S, uint32_t *graph0)
     case COPY_CONF_GRAPH0_ALREADY_IN_RAM:
 
         offsetWords = GRAPH_HEADER_NBWORDS;
-        S->pio = &(graph_dst[offsetWords - STREAM_IOFMT_SIZE_W32]);   /* pio starts with fw_io_idx = 1, index 0 is unused */
+        S->pio = &(graph_dst[offsetWords]);   /* pio / fw_io_idx */
 
         offsetWords += (RD(graph0[1], NB_IOS_GR1) * STREAM_IOFMT_SIZE_W32);
         S->all_formats = &(graph_dst[offsetWords]);
@@ -226,7 +225,7 @@ static void stream_copy_graph(arm_stream_instance_t *S, uint32_t *graph0)
     case COPY_CONF_GRAPH0_FROM_ARC_DESCS:   /* option 3 */
 
         offsetWords = GRAPH_HEADER_NBWORDS;
-        S->pio = &(graph0[offsetWords - STREAM_IOFMT_SIZE_W32]);   /* pio starts with fw_io_idx = 1, index 0 is unused */
+        S->pio = &(graph0[offsetWords]); 
 
         offsetWords += (RD(graph0[1], NB_IOS_GR1) * STREAM_IOFMT_SIZE_W32);
         S->all_formats = &(graph0[offsetWords]);
@@ -260,31 +259,31 @@ static void stream_copy_graph(arm_stream_instance_t *S, uint32_t *graph0)
     }
 
     /* finalize the copy by telling the other processors */   
-    if (RD(S->scheduler_control, MAININST_SCTRL)) 
-    {   
-        if (RD(S->scheduler_control, MAININST_SCTRL)) 
+    //if (RD(S->scheduler_control, MAININST_SCTRL)) 
+    //{   
+    //    if (RD(S->scheduler_control, MAININST_SCTRL)) 
         {   uint32_t i; 
             for (i=0;i<graph_words_in_ram;i++)
             {   graph_dst[i]=graph_src[i];
             }
         }    
-        /* declare the graph memory as shared */
-        if (RD(graph0[0],SHAREDRAM_GRAPH0))
-        {   platform_al (PLATFORM_MP_GRAPH_SHARED, 
-                (uint8_t *)graph_dst,   /* shared RAM range */
-                (uint8_t *)&(graph_dst[graph_words_in_ram]),0);
-        }
+    //    /* declare the graph memory as shared */
+    //    if (RD(graph0[0],SHAREDRAM_GRAPH0))
+    //    {   platform_al (PLATFORM_MP_GRAPH_SHARED, 
+    //            (uint8_t *)graph_dst,   /* shared RAM range */
+    //            (uint8_t *)&(graph_dst[graph_words_in_ram]),0);
+    //    }
 
-        /* all other process can be released from wait state */
-        platform_al (PLATFORM_MP_BOOT_DONE,0,0,0); 
-    }
-    else
-    {   /* wait until the graph is copied in RAM */
-        uint8_t wait; 
-        do {
-            platform_al (PLATFORM_MP_BOOT_WAIT, &wait, 0,0);
-        } while (0u != wait);
-    }
+    //    /* all other process can be released from wait state */
+    //    platform_al (PLATFORM_MP_BOOT_DONE,0,0,0); 
+    //}
+    //else
+    //{   /* wait until the graph is copied in RAM */
+    //    uint8_t wait; 
+    //    do {
+    //        platform_al (PLATFORM_MP_BOOT_WAIT, &wait, 0,0);
+    //    } while (0u != wait);
+    //}
 
     /* if the application sets the debug option then don't use the one from the graph */
     if (STREAM_SCHD_NO_SCRIPT == RD(S->scheduler_control, SCRIPT_SCTRL))
@@ -293,22 +292,10 @@ static void stream_copy_graph(arm_stream_instance_t *S, uint32_t *graph0)
         ST(S->scheduler_control, SCRIPT_SCTRL, debug_script_option);
     }
 
-    /* initialize local static */
-    {
-        struct HW_params params;
-        platform_al (PLATFORM_PROC_HW, (uint8_t *)&params, 0, 0);
-        ST (S->whoami_ports, PROCID_PARCH, params.procID);
-        ST (S->whoami_ports, ARCHID_PARCH, params.archID);
-        ST (S->whoami_ports, INSTANCE_PARCH, RD(S->scheduler_control, INSTANCE_SCTRL));
-        S->iomask = params.iomask;
-        S->ioctrl = params.ioctrl;
-    }
+    S->linked_list_ptr = S->linked_list;
 
     S->parameters = 0;
     ST (S->parameters, INSTANCE_ON_PARINST, 1);
-
-    /* initialize the pointer to set/start/stop of IOs */
-    platform_al (PLATFORM_IO_STRUCT, (uint8_t *)(&(S->platform_io)), 0, 0);
 
     arm_stream_services(STREAM_SERVICE_INTERNAL_RESET, (uint8_t *)&(S), 0, 0, 0); 
 }
@@ -327,29 +314,28 @@ static void stream_init_io(arm_stream_instance_t *S)
 {
     uint32_t nio;
     uint8_t fw_io_idx;
-    uint32_t *pio;
-    uint32_t stream_format_io;
+    uint32_t *pio, *pio_base;
     uint32_t stream_format_io_setting;
     uint32_t io_mask;
     uint32_t iarc; 
     uint32_t *all_arcs; 
-    io_function_control_ptr io_func;
-    struct platform_io_control *io_manifest;
+    const p_io_function_ctrl *io_func;
+    const p_stream_al_services *al_func;
 
+    extern arm_stream_instance_t * platform_io_callback_parameter;
     /*-------------------------------------------*/
 
     /* if cold start : clear the backup area */
     if (TEST_BIT(S->scheduler_control, BOOT_SCTRL_LSB) == STREAM_COLD_BOOT)
-    {   platform_al (PLATFORM_CLEAR_BACKUP_MEM, 0,0,0);
+    {   al_func = &(S->al_services[0]);
+        (*al_func)(PACK_AL_SERVICE(0,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0,0,0);
     }
 
-    platform_al (PLATFORM_MP_RESET_DONE, 0,0, RD(S->scheduler_control, INSTANCE_SCTRL));
-
     /* wait all the process have initialized the graph */
-    {   uint8_t wait; 
-        do {
-            platform_al (PLATFORM_MP_RESET_WAIT, &wait, 0, RD(S->scheduler_control, NBINSTAN_SCTRL));
-        } while (wait == 0);
+    {   //uint8_t wait; 
+        //do {
+        //    platform_al (PLATFORM_MP_RESET_WAIT, &wait, 0, RD(S->scheduler_control, NBINSTAN_SCTRL));
+        //} while (wait == 0);
     }
 
     /*-------------------------------------------*/
@@ -357,54 +343,50 @@ static void stream_init_io(arm_stream_instance_t *S)
         initialization of the graph IO ports 
     */     
     io_mask = S->iomask;
-    pio = S->pio;
+    pio_base = S->pio;
     nio = RD(S->graph[1],NB_IOS_GR1);
     all_arcs = S->all_arcs;
 
 
-    for (fw_io_idx = 1; fw_io_idx < nio; fw_io_idx++)
+    /* the Graph interpreter instance holds the memory pointers */
+    platform_io_callback_parameter = S;
+
+    for (fw_io_idx = 0; fw_io_idx < nio; fw_io_idx++)
     {
         uint8_t *address;
         uint32_t size;
-        extern arm_stream_instance_t * platform_io_callback_parameter[MAX_IO_FUNCTION_PLATFORM];
+
+        pio = &(pio_base[fw_io_idx * STREAM_IOFMT_SIZE_W32]);
 
         /* does this port is managed by the Graph interpreter instance ? */
         if (0 == (io_mask & (1U << fw_io_idx))) 
             continue; 
 
-        /* no init for the IO  dedicated to control */
-        if (0 == fw_io_idx)
-            continue;
-
-        stream_format_io = pio[fw_io_idx*STREAM_IOFMT_SIZE_W32];
-
         /* no init for the unset IO */
-        if (0xFFFFFFFFL == stream_format_io)
+        if (0 != TEST_BIT(*pio, QUICKSKIP_IOFMT_LSB))
             continue;
 
         /* default value settings */
-        stream_format_io_setting = pio[1 + fw_io_idx*STREAM_IOFMT_SIZE_W32];
+        stream_format_io_setting = pio[1];
+        io_func = &(S->platform_io[fw_io_idx]);
+        if (*io_func == 0) 
+        {   continue;
+        }
+        (*io_func)(STREAM_RESET, (uint8_t *)&stream_format_io_setting, 0);
 
-        /* IO-Interface can define its buffer on its own
-           */
-        if (0 != TEST_BIT(stream_format_io, SET0COPY1_IOFMT_LSB))
+        /* 
+            IO-Interface expects the buffer to be declared by the graph 
+        */
+        if (0 == TEST_BIT(*pio, SET0COPY1_IOFMT_LSB))
         {
-            iarc = RD(stream_format_io, IOARCID_IOFMT);
+            iarc = RD(*pio, IOARCID_IOFMT);
             iarc = SIZEOF_ARCDESC_W32 * iarc;
             address = (uint8_t *)pack2linaddr_ptr(S->long_offset, all_arcs[iarc + BUF_PTR_ARCW0]);
             size = (uint32_t)RD(all_arcs[iarc + BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
-        }
-        else
-        {   address = 0;
-            size = 0;
-        }
 
-        /* the Graph interpreter instance holds the memory offsets */
-        platform_io_callback_parameter [fw_io_idx] = S;
-
-        io_manifest = &(S->platform_io[fw_io_idx]);
-        io_func = io_manifest->io_set;
-        (*io_func)(&stream_format_io_setting, address, size);
+            io_func = &(S->platform_io[fw_io_idx]);
+            (*io_func)(STREAM_SET_BUFFER, address, size);
+        }
     } 
 }
 

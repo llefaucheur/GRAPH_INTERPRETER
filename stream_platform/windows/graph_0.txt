@@ -1,0 +1,277 @@
+;----------------------------------------------------------------------------------------
+;   Stream-based processing using a graph interpreter                                                    
+;   
+;   data_in_0
+;   +----------+     +--------+
+;   | APP      +---->+decode  +----------+
+;   +----------+     +--------+          |
+;   data_in_1                            |
+;   +----------+     +--------+      +---v-----+    +--------+      +---------+
+;   | Commands +----->Tone    +------>Mixer    +----> filter +------> line-out| line_out_0
+;   +----------+     +--------+      +---------+    +--------+      +---------+
+;   analog_sensor_0
+;   +----------+     +--------+               +------------+
+;   | ADC      +----->detect  +---------------> Graph      | 
+;   +----------+     +--------+               | Debug Trace|
+;   2d_in_0                                   | or         |
+;   +----------+     +--------+               | Script     |        +--------+
+;   | 2D       +---->+IAD     +--------------->            +--------> GPIO   | gpio_out_0
+;   +----------+     +--------+               |--------+   |        +--------+
+;   motion_in_0                                        |   |
+;   +----------+     +--------+      +---------+       |   |
+;   | IMU      +----->router  +------>detect   +------->   |
+;   +----------+     +--split-+      +---------+       +-^-+
+;   audio_in_0                                           |
+;   +----------+    +---------+      +---------+     +---+----+
+;   | MIC      +----> router  +--+--->filter   +----->detect  |
+;   +----------+    +---split-+  |   +-notch---+     +--------+
+;                                |
+;                                |   +---------+                    +----------+
+;                                +--->encoder  +--------------------> APP      | data_out_0
+;                                    +---------+                    +----------+
+;   
+;
+;----------------------------------------------------------------------------------------
+
+graph
+
+top_header
+
+    ; - packed format of the final binary graph file (COPY_CONF_GRAPH0_COPY_ALL_IN_RAM=0, COPY_CONF_GRAPH0_FROM_STREAM_INST=2) 
+    ; - script control option in the scheduler (S->scheduler_control[SCRIPT_SCTRL])
+    ; - bit-field of allowed processors (procid_allowed GR[4])
+
+    0 0 1 
+
+;----------------------------------------------------------------------------------------
+;   file paths for sub graphs and scripts
+
+paths
+    ./              path index 0 is local
+    ../stream_graph path index 1
+    ../stream_test  path index 2
+_end_
+
+; --------------------------------------------------
+;   the data stream format used in the graph are grouped here :
+;   ID; FrameSize(22b); Raw; Nchan; FS(float); Timestp; Interleaving; specific(Word2)
+
+format
+;   I F   R N    FS T I S
+    0 8  17 1 16000 0 0 3    
+    1 12 17 1 16000 0 0 4    formatID1; frameSize; raw; nchan; FS(float); timestp; intlv; specific(Word2);
+    2 8  17 0     0 0 0 0    commands = 8 bytes
+_end_
+
+;----------------------------------------------------------------------------------------
+; list of HW IOs from "stream_tools_files_manifests_PLATFORMNAME.txt" + IO arc patched with this IO.
+;   nb HW IO interfaces
+;   - (S)simple / (X)extended format
+;   - index used during the declarion of IO-arcs
+;   - stream format (index for the table above)
+;   - ID of the interface given in "files_manifests_computer"
+;   X common setting (8bits intlv/nchan/frame/FS = ARC0 producer format + mixed-signal settings 24bits)
+;   X VID of buffer : memory bank index from platform_manifest_computer.txt (special DMA, speed)
+;
+;   in comments : the incremented index of the interface used when building the graph (arc section below)
+    
+top_graph_interface
+; F  Idx F  HWID  
+  S  0   0  0    format 0 FWIDX=0 io_platform_data_in_0.txt       
+  S  1   0  1    format 0 FWIDX=1 io_platform_analog_sensor_0.txt 
+  S  2   0  2    format 0 FWIDX=2 io_platform_motion_in_0.txt     
+  S  3   1  3    format 1 FWIDX=3 io_platform_audio_in_0.txt      
+  S  4   0  4    format 0 FWIDX=4 io_platform_d2_in_0.txt         
+  S  5   0  5    format 0 FWIDX=5 io_platform_line_out_0.txt      
+  S  6   0  6    format 0 FWIDX=6 io_platform_gpio_out_0.txt      
+  S  7   1  7    format 1 FWIDX=7 io_platform_gpio_out_1.txt      
+  S  8   0  8    format 0 FWIDX=8 io_platform_data_out_0.txt      
+
+    _end_
+
+
+;----------------------------------------------------------------------------------------
+; filter the event to log in the trace buffers and route them to the HW IOs
+;   
+;top_trace
+;   ./subgraph_name/node_name instanceID 
+;    _end_
+
+;---------------
+node
+    arm_stream_script 0    0= main script managing parameters, >0 = index of the script in the SCRIPT_LW0 table
+    0 1 0 0         number of registers, stack depth, not shared RAM, script/binary format
+    0 0 0 3         no assignment to proc / arch / priority / verbose debug trace 
+
+    1  h8; 90   OPRC RETS      
+    _end_               end of byte codes
+
+    parameters_arc                          arc with parameters 
+        2  u8; 0 255                        no preset, TAG = "all parameters"
+        1  u8;  2                           Two biquads
+        1  u8;  0                           postShift
+        5 h16; 1231 1D28 1231 63E8 D475     b0/b1/b2/-a1/-a2  ellip(4, 1, 40, 3600/8000, 'low') 
+        5 h16; 1231 0B34 1231 2470 9821     second biquad
+        ;  _include    1   arm_stream_filter_parameters_x.txt      
+        _end_
+
+    parameters                              parameters in flash, after byte codes
+        5 h16; 1231 1D28 1231 63E8 D475     
+        5 h16; 1231 0B34 1231 2470 9821     
+        _end_
+_end_               
+
+;---------------
+node
+    arm_stream_script 1        index of the script : for FILTER(0) control
+    1 2 1 0         number of registers, stack depth, not shared RAM, script/binary format
+    
+;   R0 = 0:reset 1:pre-processing 2:post-processing
+;   Algorithm : 
+;       if R0=2 (post-processing)
+;           NOP
+;       end
+;
+    1  h8; 02   PSHC INT8   
+    1  h8; 02               S0=2 > R0?
+    1  h8; AD   GTR
+    1  h8; 61   JMPC #1     2 > R0 : exit
+    1  h8; 92   NOP
+    1  h8; B1   LABL #1
+    1  h8; 90   OPRC RETS      
+    _end_               end of byte codes
+_end_
+
+
+;---------------
+node
+    arm_stream_script 2    index of the script : for DETECTOR control
+    1 4 1 0         number of registers, stack depth, not shared RAM, script/binary format
+    
+;   R0 = 0:reset 1:pre-processing 2:post-processing
+;   Algorithm : 
+;       if R0=2 (post-processing)
+;           read VAD decision and write it to GPIO arc0
+;       end
+;
+    1  h8; 02   PSHC INT8   
+    1  h8; 02               S0=2 > R0?
+    1  h8; AD   GTR
+    1  h8; 61   JMPC #1     2 > R0 : exit
+    1  h8; 02   PSHC INT8   
+    1  h8; 00               VAD (id)
+    1  h8; 02   PSHC INT8
+    1  h8; 01               flags: mySWC=0, toArc=1
+    1  h8; 02   PSHC INT16
+    1 h16; 0001             ARC1
+    1  h8; 71   CALS READPARAM  (param_id, /mySWC /toArc, arcID) 
+    1  h8; B1   LABL #1
+    1  h8; 90   OPRC RETS      
+
+    _end_               end of byte codes
+_end_
+
+
+;----------------------------------------------------------------------------------------
+; arm_stream_filter
+;----------------------------------------------------------------------------------------
+;   Operation : receives one multichannel stream and produces one filtered multichannel stream. 
+;   Filtering is identical on each channel. GUI parameters are given in float, implementation 
+;   is CMSIS-DSP through Stream services
+;   Parameters : biquad filters coefficients used in cascade. Implementation is 2 Biquads max.
+;   (see www.w3.org/TR/audio-eq-cookbook)
+;
+;   presets:
+;   #0 : bypass
+;   #1 : LPF fc=fs/4
+;   #11..42: delay-line of 1..32 samples
+;
+;   parameter of filter : 
+;   - number of biquads in cascade (1 or 2)
+;   - coefficients in Q15
+;
+node
+    arm_stream_filter 0         node subroutine name + instance ID
+;
+    S 0     preset
+;
+    parameters
+        2  u8; 0 0                          no preset, TAG = "all parameters"
+
+        1  u8;  2                           Two biquads
+        1  u8;  0                           postShift
+        5 h16; 1231 1D28 1231 63E8 D475     b0/b1/b2/-a1/-a2  ellip(4, 1, 40, 3600/8000, 'low') 
+        5 h16; 1231 0B34 1231 2470 9821     second biquad
+        ;  _include    1   arm_stream_filter_parameters_x.txt      
+        _end_
+
+    _end_
+
+;----------------------------------------------------------------------------------------
+; 	arm_stream_detector
+;----------------------------------------------------------------------------------------
+;   Operation : provides a boolean output stream from the detection of a rising 
+;   edge above a tunable signal to noise ratio. 
+;   A tunable delay allows to maintain the boolean value for a minimum amount of time 
+;   Use-case example 1: debouncing analog input and LED / user-interface.
+;   Use-case example 2: IMU and voice activity detection (VAD)
+;
+node 
+    arm_stream_detector 0       node name  + instance ID
+    S 1                         preset 
+;
+
+;----------------------------------------------------------------------------------------
+; 	arm_stream_decompressor
+;----------------------------------------------------------------------------------------
+;   ADPCM decompressor
+node 
+    arm_stream_decompressor 0       node name  + instance ID
+    S 2 
+;
+;--------------- LAST SECTION OF THE GRAPH-------------------------------------
+;
+;  debug registers have 64bits and are stored in the first arc descriptors, the first arc index is >0 (<2K)
+;   there are 16 debug registers max (including for subgraphs)
+;
+;           1      2       3    4          5     6   7   8    9    10    
+; ARCs  ProdFMT ConsFMT   VID IOSizeMulfac OVF  UND  CMD REG FLUSH EXTD
+;
+;       Memory bank virtual index(0 or speed control); buffer size scaling 
+;       factor (float) to apply to the minimum possible size between the producer and the consumer
+;
+;       Node/Stream name, instance source and its output port ID
+;       Node/destination, its instance and input port ID       
+;
+;       optional filling pattern to read from a file (file name, nb of data to read); 
+;
+;       Extended format = 
+;         X 0 0  0 0 0 0 0 0 0 1.0  Xtended ProdFMT ConsFMT OVF, UND, DBGCMD, REG, FLUSH, EXTD  VID IOSizeMulfac (xFrame) 
+;       Simple format = 
+;         S 0 0                     Simple  ProdFMT ConsFMT 
+;       Optional :
+;          parameters
+;            _include 2 TestPattern.txt     filepathID and fileName (test-pattern, NN model, ...)
+;          parameter_end  
+;
+arc
+    S 0 0                           Simple ProductionFormat ConsumptionFormat 
+    _graph_interface    1  1        1 = analog_sensor_0, second parameter=set0_copy1
+    arm_stream_filter   0  0        [0]:filter instance       [0]:RX arc of the node
+
+    S 0 0                           Simple ProductionFormat ConsumptionFormat 
+    arm_stream_filter   0  1        [0]:instance of the node, [1]:index of the arc (TX)
+    arm_stream_detector 0  0        [0]:instance of the node, [0]:index of the arc (RX)
+
+    S 0 1                           Simple ProductionFormat ConsumptionFormat 
+    arm_stream_detector 0  1   
+    _graph_interface    6  0        6 = gpio_out_0 ,  set buffer
+
+    S 0 1                           Simple ProductionFormat ConsumptionFormat 
+    arm_stream_detector 0  1   
+    arm_stream_detector 0  0        @@@@@
+
+    S 0 1                           Simple ProductionFormat ConsumptionFormat 
+    arm_stream_script          0  0   
+    _graph_interface    8  0        8 = data_out_0 (TRACE),  set buffer
+_end_

@@ -37,7 +37,6 @@
 
 
 #include "stream_const.h"
-#include "../stream_al/platform_al.h"
 
 
 /* 
@@ -73,6 +72,14 @@ typedef struct stream_xdmbuffer stream_xdmbuffer_t;
 
 typedef uint32_t stream_service_command;
 
+#if STREAM_FLOAT_ALLOWED==1
+typedef float sfloat;
+typedef double sdouble;
+#else
+typedef uint32_t sfloat;
+typedef uint64_t sdouble;
+#endif
+
 /*
     opaque access to the static area of the node 
 */
@@ -80,43 +87,54 @@ typedef void *stream_handle_t;
 
 /*==================================================== SWC  ======================================================================*/
 /* 
- * command ; *instance pointer ; two pointers to a temporary area holding : 
- *      (*,input data size)  x N_stream_input
- *      (*,output free_area) x N_stream_output
- *    the SWC updates the (*,n) fields before returning, to  
+ *  parameters 
+ *    command
+ *    *instance pointer
+ *    stream_xdmbuffer_t data pointers 
+ *    "state" 
+ *  the SWC updates the (*,n) fields before returning
+ * 
+ * The availabilty of data is managed from the scheduler/application to avoid the event scheme of CHRE
+ *    When a SWC/nanoAppRT is called this is for real 
+ *    https://cs.android.com/android/platform/superproject/+/master:system/chre/pal/include/chre/pal/sensor.h
+ *    https://github.com/FromLiQg/chre-wasm/blob/wasm/doc/nanoapp_developer_guide.md
+ * 
+ * We have one entry-point per nanoAppRT instead of 3 for Android
+ *    Android’s context hub enables the use of nanoapps which haev 3 entry points seen in chre_api/chre/nanoapp.h:
+ *  - nanoappStart function used to notify the nanoapp that it is now active.
+ *  - nanoappHandleEvent function used to notify the nanoapp tha an event of interest took place.
+ *  - nanoappEnd function used to notify the nanoapp that it is now deactivated.
  * 
  */
 
-typedef void (stream_services_entry) (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n); 
+typedef void    (stream_al_services) (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n); 
+typedef void (*p_stream_al_services) (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n); 
+
+typedef void    (stream_node) (uint32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *state);
 typedef void (*p_stream_node) (uint32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *state);
-typedef void (stream_node)    (uint32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *state);
 
-//typedef uint32_t (stream_node) (uint32_t command, void * ptr1, void * ptr2, void * ptr3); 
-//typedef void (*io_callback_ptr)      (uint32_t idx, uint8_t *data, uint32_t length);   
+typedef void    (io_function_ctrl) (uint32_t command, uint8_t *data, uint32_t length);   
+typedef void (*p_io_function_ctrl) (uint32_t command, uint8_t *data, uint32_t length);  
 
-typedef uint8_t (*io_function_control_ptr)  (uint32_t *setting, uint8_t *data, uint32_t length);  
-typedef uint8_t (io_function_control) (uint32_t *setting, uint8_t *data, uint32_t length);  
-
-// callbacks used from scripts
-typedef void (*p_stream_script_callback) (uint32_t command, intPtr_t* ptr1, intPtr_t* ptr2, uint32_t n);
 
 //------------------------------------------------------------------------------------------------------
 /*  Time format - 64 bits
- *  Local time in bit-fields : years/../millisecond, WWW=day of the week 
- *  (0=Sunday, 1=Monday..)
- *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
- *  000______________________.YY.YY.YY.YY.MMM.DDDD.SSSSS.MM.MM.MM.WW
- * 
- *  q42.17 milliseconds from January 1st 1970 UTC (or internal AL reference)
- *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
- *  001mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmqqqqqqqqqqqqqqqqq q42.17 ms (140 Y +/- 8ns)
  *  
  *  q42.17 seconds "stream_time64"
  *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
- *  010ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqqq q32.29 s (140 Y +/- 2ns)
+ *  000ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqqq q3.32.29 [s]  (140 Y +/- 2ns)
  * 
- *  systick increment of 1ms =  0x00041893 = 1ms x 2^28 = 1.7 ppm resolution, 1minute/year
- *  In each systick ISR, time64 is incremented by 1ms x 2^32 = fraction increment
+ *  systick increment for 1ms =  0x00041893 = 1ms x 2^28 = 1.7 ppm resolution, 1minute/year
+ *
+ *  Local time in BINARY bit-fields : years/../millisecond, WWW=day of the week 
+ *  (0=Sunday, 1=Monday..)
+ *      COVESA allowed formats : ['YYYY_MM_DD', 'DD_MM_YYYY', 'MM_DD_YYYY', 'YY_MM_DD', 'DD_MM_YY', 'MM_DD_YY']
+ *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
+ *  001______________________.YY.YY.YY.YY.MMM.DDDD.SSSSS.MM.MM.MM.WW
+ * 
+ *  q42.17 milliseconds from January 1st 1970 UTC (or internal AL reference)
+ *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
+ *  010mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmqqqqqqqqqqqqqqqqq q3.42.17 ms (140 Y +/- 8ns)
  */
 
 typedef uint64_t stream_time64;
@@ -168,49 +186,37 @@ typedef uint32_t stream_time16;
     each stream domain instance is controled by 3 functions and presets
     domain have common bitfields for settings (see example platform_audio_out_bit_fields[]).
 */
-#define IO_PLATFORM_DATA_IN                 1   /* generic (a)synchronous sensor */
-#define IO_PLATFORM_DATA_OUT                2   /*    electrical, chemical, color, .. remote data */
-#define IO_PLATFORM_DATA_STREAM_IN          3   /* generic flow sensor */
-#define IO_PLATFORM_DATA_STREAM_OUT         4
-#define IO_PLATFORM_AUDIO_IN                5
-#define IO_PLATFORM_AUDIO_OUT               6
-#define IO_PLATFORM_GPIO_IN                 7
-#define IO_PLATFORM_GPIO_OUT                8
-#define IO_PLATFORM_MOTION_IN               9
-#define IO_PLATFORM_2D_IN                  10
-#define IO_PLATFORM_2D_OUT                 11  
-#define IO_PLATFORM_USER_INTERFACE_IN      12   /* button, slider, rotary button */
-#define IO_PLATFORM_USER_INTERFACE_OUT     13 
-#define IO_PLATFORM_COMMAND_IN             14   /* UART/I2C serial interface */
-#define IO_PLATFORM_COMMAND_OUT            15
-#define IO_PLATFORM_ANALOG_SENSOR          16   /* with aging control */
-#define IO_PLATFORM_ANALOG_TRANSDUCER      17 
-#define IO_PLATFORM_RTC_IN                 18 
-#define IO_PLATFORM_RTC_OUT                19
-#define IO_PLATFORM_STORAGE_OUT            20 
-#define IO_PLATFORM_AV_CODEC               21 
-#define IO_PLATFORM_UNUSED_1               22 
-#define IO_PLATFORM_UNUSED_2               23
-#define IO_PLATFORM_UNUSED_3               24
-#define IO_PLATFORM_UNUSED_4               25
-#define IO_PLATFORM_UNUSED_5               26
-#define IO_PLATFORM_UNUSED_6               27
-#define IO_PLATFORM_UNUSED_7               28
-#define IO_PLATFORM_UNUSED_8               29
-#define IO_PLATFORM_UNUSED_9               30
-#define IO_PLATFORM_MAX_NB_DOMAINS         (IO_PLATFORM_UNUSED_9+1)
-
-
-/*
-    each stream is controled by 3 functions and presets
-    domain presets are defined with bitfields (see example platform_audio_out_bit_fields[]).
-*/
-struct platform_io_control           
-{   io_function_control *io_set;
-    io_function_control *io_start;
-    io_function_control *io_stop;
-};
-typedef struct platform_io_control platform_io_control_t;
+#define IO_DOMAIN_DATA_IN                 1   /* generic (a)synchronous sensor */
+#define IO_DOMAIN_DATA_OUT                2   /*    electrical, chemical, color, .. remote data */
+#define IO_DOMAIN_DATA_STREAM_IN          3   /* generic flow sensor */
+#define IO_DOMAIN_DATA_STREAM_OUT         4
+#define IO_DOMAIN_AUDIO_IN                5
+#define IO_DOMAIN_AUDIO_OUT               6
+#define IO_DOMAIN_GPIO_IN                 7
+#define IO_DOMAIN_GPIO_OUT                8
+#define IO_DOMAIN_MOTION_IN               9
+#define IO_DOMAIN_2D_IN                  10
+#define IO_DOMAIN_2D_OUT                 11  
+#define IO_DOMAIN_USER_INTERFACE_IN      12   /* button, slider, rotary button */
+#define IO_DOMAIN_USER_INTERFACE_OUT     13 
+#define IO_DOMAIN_COMMAND_IN             14   /* UART/I2C serial interface */
+#define IO_DOMAIN_COMMAND_OUT            15
+#define IO_DOMAIN_ANALOG_SENSOR          16   /* with aging control */
+#define IO_DOMAIN_ANALOG_TRANSDUCER      17 
+#define IO_DOMAIN_RTC_IN                 18 
+#define IO_DOMAIN_RTC_OUT                19
+#define IO_DOMAIN_STORAGE_OUT            20 
+#define IO_DOMAIN_AV_CODEC               21 
+#define IO_DOMAIN_UNUSED_1               22 
+#define IO_DOMAIN_UNUSED_2               23
+#define IO_DOMAIN_UNUSED_3               24
+#define IO_DOMAIN_UNUSED_4               25
+#define IO_DOMAIN_UNUSED_5               26
+#define IO_DOMAIN_UNUSED_6               27
+#define IO_DOMAIN_UNUSED_7               28
+#define IO_DOMAIN_UNUSED_8               29
+#define IO_DOMAIN_UNUSED_9               30
+#define IO_DOMAIN_MAX_NB_DOMAINS         (IO_DOMAIN_UNUSED_9+1)
 
 
 enum 
@@ -239,7 +245,7 @@ enum stream_raw_data
 
     /* one bit per data */
     STREAM_S1,                     /*   S, one signed bit, "0" = +1 */
-    STREAM_U1,                     /*   one bit unsigned */
+    STREAM_U1,                     /*   one bit unsigned, boolean */
                                       
     /* two bits per data */           
     STREAM_S2,                     /*   SX  */
@@ -256,7 +262,7 @@ enum stream_raw_data
     /* eight bits per data */         
     STREAM_S8,                     /*11 Sxxxxxxx  */
     STREAM_U8,                     /*   xxxxxxxx  */
-    STREAM_Q7,                     /*   Sxxxxxxx  */
+    STREAM_Q7,                     /*   Sxxxxxxx  arithmetic saturation */
     STREAM_CHAR,                   /*   xxxxxxxx  */
     STREAM_FP8_E4M3,               /*   Seeeemmm  NV tiny-float [0.02 .. 448] */
     STREAM_FP8_E5M2,               /*   Seeeeemm  IEEE-754 [0.0001 .. 57344] */
@@ -264,7 +270,7 @@ enum stream_raw_data
     /* 2 bytes per data */            
     STREAM_S16,                    /*   Sxxxxxxx.xxxxxxxx  */
     STREAM_U16,                    /*   xxxxxxxx.xxxxxxxx  */
-    STREAM_Q15,                    /*19 Sxxxxxxx.xxxxxxxx  */
+    STREAM_Q15,                    /*19 Sxxxxxxx.xxxxxxxx  arithmetic saturation */
     STREAM_FP16,                   /*   Seeeeemm.mmmmmmmm  half-precision float */
     STREAM_BF16,                   /*   Seeeeeee.mmmmmmmm  bfloat */
 
@@ -310,8 +316,19 @@ enum stream_raw_data
     STREAM_BW1B,                   /*   Y, 1bpp, 0 is black, 1 is white */
     STREAM_GREY2B,                 /*   Y, 2bpp, 0 is black, 3 is white, ordered from lsb to msb  */
     STREAM_GREY4B,                 /*   Y, 4bpp, 0 is black, 15 is white, ordered from lsb to msb */
-    STREAM_GREY8B,                 /*53 Grey 8b, 0 is black, 255 is white */
+    STREAM_GREY8B,                 /*   Grey 8b, 0 is black, 255 is white */
     
+    STREAM_TIMER16,                /*54 Scripts data types */
+    STREAM_TIMER32,                /*    */
+    STREAM_TIMER64,                /*    */
+    STREAM_PTRPHY,                 /*    */
+    STREAM_PTR27B,                 /*58  */
+    STREAM_UNUSED_5,               /*59  */
+    STREAM_UNUSED_4,               /*60  */
+    STREAM_UNUSED_3,               /*61  */
+    STREAM_UNUSED_2,               /*62  */
+    STREAM_UNUSED_1,               /*63  */
+
     LAST_RAW_TYPE  = 64         /* coded on 6bits RAW_FMT0_LSB */
 };
 
@@ -340,16 +357,18 @@ enum stream_raw_data
 /* "registers / computing stack" of the Stream instance */
 typedef struct  
 {  
-    intPtr_t *long_offset;          /* pointer to "intPtr_t long_offset[MAX_NB_MEMORY_OFFSET];" */
+    const intPtr_t *long_offset;          /* pointer to "intPtr_t long_offset[MAX_NB_MEMORY_OFFSET];" */
     uint32_t *graph;
     uint32_t *pio;
     uint32_t *all_formats;   
     uint32_t *all_arcs;
     uint32_t *linked_list;   
     uint32_t *script_offsets;   
-    struct platform_io_control *platform_io;
+    const p_io_function_ctrl *platform_io;
+    const p_stream_node *node_entry_point_table;
 
-    p_stream_script_callback* application_callbacks;
+    const p_stream_al_services * application_callbacks;
+    const p_stream_al_services * al_services;
 
     p_stream_node address_swc;
     uint32_t *linked_list_ptr;      // current position of the linked-list read pointer
@@ -380,41 +399,33 @@ typedef struct
 
 #define STREAM_MAIN_INSTANCE 1
 
-
 #define   UNUSED_SCTRL_MSB U(31)   
-#define   UNUSED_SCTRL_LSB U(26)  /* 6 */ 
-#define  DATA_PP_SCTRL_MSB U(25)   
-#define  DATA_PP_SCTRL_LSB U(25)  /* 1 data/TCM ping-pong, reload index */ 
-#define  PROG_PP_SCTRL_MSB U(24)   
-#define  PROG_PP_SCTRL_LSB U(24)  /* 1 program ping-pong, reload index */ 
-#define PRIORITY_SCTRL_MSB U(23)   
-#define PRIORITY_SCTRL_LSB U(22)  /* 2 */ 
-#define MAININST_SCTRL_MSB U(21)   
-#define MAININST_SCTRL_LSB U(21)  /* 1 main instance to set the graph at boot time */
-#define NODEEXEC_SCTRL_MSB U(20)   
-#define NODEEXEC_SCTRL_LSB U(20)  /* 1 */
-#define ENDLLIST_SCTRL_MSB U(19)   
-#define ENDLLIST_SCTRL_LSB U(19)  /* 1 endLinkedList detected */
-#define STILDATA_SCTRL_MSB U(18)   
-#define STILDATA_SCTRL_LSB U(18)  /* 1 still some_components_have_data*/
-#define NBINSTAN_SCTRL_MSB U(17)   
-#define NBINSTAN_SCTRL_LSB U(14)  /* 4 used at boot time to reset the synchronization flags */
-#define     BOOT_SCTRL_MSB U(13)   
-#define     BOOT_SCTRL_LSB U(13)  /* 1 cold0/warm1 boot : Reset + restore memory banks from retention */
-#define   SCRIPT_SCTRL_MSB U(12)   
-#define   SCRIPT_SCTRL_LSB U( 7)  /* 6 script call options bit-field (before/after SWC/loop/full) */
-#define   RETURN_SCTRL_MSB U( 6)
-#define   RETURN_SCTRL_LSB U( 4)  /* 3 return options (each SWC, each parse, once starving */
-#define INSTANCE_SCTRL_MSB U( 3)
-#define INSTANCE_SCTRL_LSB U( 0)  /* 4 instance index */
-#define PACK_STREAM_PARAM(M,P,N,B,S,R,I) (  \
-            ((M)<<MAININST_SCTRL_LSB) |     \
-            ((P)<<PRIORITY_SCTRL_LSB) |     \
-            ((N)<<NBINSTAN_SCTRL_LSB) |     \
-            ((B)<<    BOOT_SCTRL_LSB) |     \
-            ((S)<<  SCRIPT_SCTRL_LSB) |     \
-            ((R)<<  RETURN_SCTRL_LSB) |     \
-             (I))
+#define   UNUSED_SCTRL_LSB U(20)  /* 12 */ 
+#define PRIORITY_SCTRL_MSB U(19)   
+#define PRIORITY_SCTRL_LSB U(18)  /* 2 for RTOS instances. 1:low-latency tasks, 2:heavy background tasks*/ 
+#define MAININST_SCTRL_MSB U(17)   
+#define MAININST_SCTRL_LSB U(17)  /* 1 main instance to set the graph at boot time */
+#define NODEEXEC_SCTRL_MSB U(16)   
+#define NODEEXEC_SCTRL_LSB U(16)  /* 1 */
+#define ENDLLIST_SCTRL_MSB U(15)   
+#define ENDLLIST_SCTRL_LSB U(15)  /* 1 endLinkedList detected */
+#define STILDATA_SCTRL_MSB U(14)   
+#define STILDATA_SCTRL_LSB U(14)  /* 1 still some_components_have_data*/
+#define NBINSTAN_SCTRL_MSB U(13)   
+#define NBINSTAN_SCTRL_LSB U(10)  /* 4 used at boot time to reset the synchronization flags */
+#define     BOOT_SCTRL_MSB U( 9)   
+#define     BOOT_SCTRL_LSB U( 9)  /* 1 cold0/warm1 boot : Reset + restore memory banks from retention */
+#define   SCRIPT_SCTRL_MSB U( 8)   
+#define   SCRIPT_SCTRL_LSB U( 3)  /* 6 script call options bit-field (before/after SWC/loop/full) */
+#define   RETURN_SCTRL_MSB U( 2)
+#define   RETURN_SCTRL_LSB U( 0)  /* 3 return options (each SWC, each parse, once starving */
+#define PACK_STREAM_PARAM(M,P,N,B,S,R) (  \
+            ((M)<<MAININST_SCTRL_LSB) |   \
+            ((P)<<PRIORITY_SCTRL_LSB) |   \
+            ((N)<<NBINSTAN_SCTRL_LSB) |   \
+            ((B)<<    BOOT_SCTRL_LSB) |   \
+            ((S)<<  SCRIPT_SCTRL_LSB) |   \
+            ((R)<<  RETURN_SCTRL_LSB) )
     uint32_t scheduler_control;     // PACK_STREAM_PARAM(..);
 
     /* identification "whoami", next SWC to run*/
@@ -438,10 +449,12 @@ typedef struct
 
     /* list of bytes holding the status of the on-going data moves (MP) */
     #define MAX_GRAPH_NB_IO_STREAM 32
-    #define ONGOING_IOCTRL_MSB U( 0)  
-    #define ONGOING_IOCRTL_LSB U( 0)   /* on-going request on IO */
+    #define ONGOING_IOCTRL_MSB U(31)  
+    #define ONGOING_IOCRTL_LSB U(31)   /* on-going request on IO */
+    #define ONGOING_IOSIZE_MSB U(30)  
+    #define ONGOING_IOSIZE_LSB U( 0)   /* on-going request on IO */
 
-    uint8_t *ioctrl;                    /* byte array of request fields */
+    uint32_t *ioctrl;                    /* byte array of request fields */
 
     /* word 2 IO streams to scan , max = 32  = 1 << (NB_IOS_GR1_MSB - NB_IOS_GR1_LSB + 1) */
     #define MAX_GRAPH_NB_IO_STREAM 32

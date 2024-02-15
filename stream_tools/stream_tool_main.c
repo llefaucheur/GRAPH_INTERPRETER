@@ -28,10 +28,9 @@
 
 #include "stream_tool_include.h"
 
-#define GRAPH_ALL_MANIFESTS "../../../stream_al/platform_computer/files_manifests_computer.txt"
-#define GRAPH_TXT           "../../../stream_graph/graph_0.txt"     /* almost-binary graph with soft addresses hand optimized mapping and multi-processor mapping */
-#define GRAPH_LST           "../../../stream_graph/graph_0_listing.txt"     /* almost-binary graph with soft addresses hand optimized mapping and multi-processor mapping */
-#define GRAPH_BIN           "../../../stream_graph/graph_0_bin.txt"   /* final binary graph file */
+#define GRAPH_ALL_MANIFESTS "../../stream_platform/windows/manifest/all_io_manifests_computer.txt"
+#define GRAPH_TXT           "../../stream_platform/windows/graph_0.txt"     /* almost-binary graph with soft addresses hand optimized mapping and multi-processor mapping */
+#define GRAPH_BIN           "../../stream_platform/windows/graph_0_bin.txt"   /* final binary graph file */
 
 
 char all_files[MAXINPUT];
@@ -39,15 +38,11 @@ char ggraph [MAXINPUT];
 char listing [MAXINPUT];
 char output[MAXOUTPUT];
 
-FILE *ptf_listing;
-
 struct stream_platform_manifest platform;
 struct stream_graph_linkedlist graph;
 
 extern void arm_stream_read_manifests (struct stream_platform_manifest *platform, char *all_files);
 extern void arm_stream_read_graph(struct stream_platform_manifest* platform,struct stream_graph_linkedlist *graph, char* ggraph_txt);
-extern void arm_stream_script_assembler (char *script, FILE *ptf_graph_script_bytecode, char *script_bytecode, uint32_t *nbByteCodes);
-extern void arm_stream_graphFormatChecks (struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph);
 extern void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph, FILE *ptf_graph_bin);
 
 /**
@@ -72,7 +67,7 @@ void main(void)
     memset(&graph, 0, sizeof(struct stream_graph_linkedlist));
 
     read_input_file (GRAPH_ALL_MANIFESTS, all_files);
-    arm_stream_read_manifests(&platform,  all_files);
+    arm_stream_read_manifests(&platform, all_files);
     
 
     /*
@@ -94,24 +89,15 @@ void main(void)
     */
     
 
-    if (0 == (ptf_listing = fopen(GRAPH_LST, "wt"))) exit(-1);
-
     read_input_file (GRAPH_TXT, ggraph);
 
     arm_stream_read_graph(&platform, &graph, ggraph);
 
-    fclose(ptf_listing); 
-    
 
     /* 
         check format compatibility and insert conversion nodes
-        remove formats declared twice
+        remove formats declared twice @@@@ TODO
 
-    */
-
-    arm_stream_graphFormatChecks(&platform, &graph);
-
-    /* 
         Convert the structure to the binary format
             used by the graph interpreter and scheduler
     */
@@ -121,6 +107,7 @@ void main(void)
 
         arm_stream_graphTxt2Bin(&platform, &graph, ptf_graph_bin);
         fclose(ptf_graph_bin); 
-    }
+
+     }
     exit (-3); 
 }

@@ -1,0 +1,69 @@
+; ------------------------------------------------------------------------------------------------------------
+; Graph interface abstraction to a motion sensor (data access with the AL functions set/start/stop)
+; ------------------------------------------------------------------------------------------------------------
+;   IO transducers manifests
+;   description consists in the "digital format" common to all the streams
+;     + specific calibration and mixed-signal settings specific to the "domain" of operation 
+;
+                                                                       
+    io_accelero_gyro_0      name for the GUI                            
+    motion_in               domain name 
+
+; ------------------------------------------------------------------------------------------------------------
+;   Loop on the IO arcs of this component
+;
+;       - Digital frame format, common to all transducers and arcs
+;       - Specific information and tuning of the domain
+;
+;   ARC0
+
+      
+    1   commander=0 servant=1                               
+    0   buffer declared from the BSP 0 or Graph x (multiplication factor of the Frame size)           
+    0   in standard RAM=0, in HW IO RAM=1                   
+    255 processor affinity bit-field                        
+
+    0   rx0tx1  
+    17  raw format (STREAM_S16)
+    0   time-stamp                                          
+    1   frame length unit (0:in milliseconds 1:in samples)
+    1   sampling rate unit (0:Hz, 1:seconds, 2:days)
+    0   percent FS deviation allowed                                 
+
+    ;   Lists of options, starting with the default index (0 means "any")
+    0   0                   ;f [1bits] interleaving options 
+    0   1                   ;f [3bits] nb channels options list 
+    1   4 5 6               ;f [2bits] frame_size option in samples default=4samples = 8Bytes/frame
+    0   0                   ;f [4bits] any sampling rate option
+  
+
+    ;-------------------
+    ; motion_in domain SPECIFIC (digital format) stream_interfaces_motion_specific
+    
+      4                 interleaved acc(X)/gyro(X)/no magnetometer (see "imu_channel_format")
+
+    ;-------------------
+    ; motion_in SPECIFIC (mixed signal setting) stream_interfaces_motion_specific
+    ;
+        20 21 22        RFC8428 units per channel (see stream_unit_physical)
+    ;  
+    ;                   sensitivity options of accelerometer [g max], starting with the default index 
+    0   2 4 8 16        [3bits] in [g] max
+        0.2             default sensitivity FS scaling to reach RFC8428 1 g
+    ;                   averaging of acelerometer (filtering)
+    0   1 4 16 32       [3bits] in number of samples, starting with the default index 
+
+
+    0   1               [3bits] sensitivity options in [dps] max
+        0.333           default, sensitivity option to reach RFC8428 1 dps
+
+    ;                   averaging of acelerometer (filtering)
+    0   1 4 16 32       [3bits] in number of samples
+
+
+    0   1               [3bits] sensitivity of magnetometer in [Gauss] max
+        0.4444          default sensitivity FS scaling to reach RFC8428 1 Gauss
+    ;                   averaging of acelerometer (filtering)
+    0   1 4 16 32       [3bits] default averaging in number of samples
+    ;
+;

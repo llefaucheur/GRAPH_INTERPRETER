@@ -48,12 +48,14 @@
 #define _debug       'd'
 
 char * dbgplus;
+uint32_t addrRAM;
 uint32_t addrBytes;
 FILE *ptf_graph_dbg;
 struct stream_graph_linkedlist *G;
 
 void PRINTF(uint32_t d, char *c) 
 {
+    int32_t iRAM;
     uint32_t i;
     char cplus[MAXNBCHAR_LINE];
     char line[MAXNBCHAR_LINE];
@@ -71,7 +73,9 @@ void PRINTF(uint32_t d, char *c)
         }
     }
 
-    sprintf (line, "0x%08X, // %03X %03X %s \n", (d), addrBytes, addrBytes/4, cplus);
+    iRAM = (int)addrBytes - (int)addrRAM;
+    if (iRAM < 0) iRAM = 0;
+    sprintf (line, "0x%08X, // %03X %03X %03X %s \n", (d), addrBytes, iRAM, iRAM/4, cplus);
     fprintf(ptf_graph_dbg, "%s", line); 
     addrBytes += 4;
 }
@@ -113,11 +117,12 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     struct tm * timeinfo;
     //union {uint8_t indexes_fw_io_idx_u8[256]; 
     //       uint32_t indexes_fw_io_idx_u32[32]; } UIO;
-    struct io_arcstruct *arcIO;
+    struct arcStruct *arcIO;
 
     addrBytes = 0;
     ptf_graph_dbg = ptf_graph_bin;
     G = graph;
+    addrRAM = graph->offsetToRam;
 
     /*
         Graph data format :
@@ -131,6 +136,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         DEBUG REGISTERS and vectors from ARC content analysis 
         BUFFERS memory banks (internal/external/LLRAM) used for FIFO buffers 
     */
+
     fprintf(ptf_graph_dbg, "//--------------------------------------\n"); 
     time ( &rawtime );
     timeinfo = localtime ( &rawtime );
@@ -140,6 +146,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     fprintf(ptf_graph_dbg, "//--------------------------------------\n"); 
 
     fgetpos (ptf_graph_bin, &pos_NWords);
+
     // @@@@ code badly duplicated at the end of this file 
         fprintf(ptf_graph_bin, "0x%08X, // number of words\n", addrBytes/4); // [-1] size of the graph in Words 
         FMT0 = 0;
@@ -154,7 +161,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         PRINTF(FMT0, tmpstring);     // [1] number of FORMAT, size of SCRIPTS
 
         FMT0 = 0; ST(FMT0, LINKEDLIST_SIZE_GR2, (LK2-LK1)/4);
-        sprintf(tmpstring, "2 size of the linked-list of nanoApp + parameters"); 
+        sprintf(tmpstring, "2 size of the linked-list of nanoAppRT + parameters"); 
         PRINTF(FMT0, tmpstring);   // [2] size of LINKEDLIST
 
         FMT0 = 0; ST(FMT0, NB_ARCS_GR3, graph->nb_arcs);
@@ -177,21 +184,17 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     /*
         STREAM IO   start from 1, fw_io_idx=0 is reserved for script controls
     */
-    //nUIO8 = 4*((platform->nb_hwio_stream +3)/4);      /* indexes to FW IO IDX */
-    //for (fw_io_idx = 1; fw_io_idx <= platform->nb_hwio_stream ; fw_io_idx++) 
-    //{   
-    //}
 
-
-    for (fw_io_idx = 1; fw_io_idx <= platform->nb_hwio_stream ; fw_io_idx++) 
+    for (fw_io_idx = 0; fw_io_idx < platform->nb_hwio_stream ; fw_io_idx++) 
     {   
         uint8_t arcBuffer_shared_with_IO;
         FMT0 = FMT1 = 0xFFFFFFFFL;
         arcIO = &(graph->arcIO[fw_io_idx]);
         sprintf(tmpstring, "");
 
-        if (arcIO->top_graph_index != 0xFFFF)
+        if (arcIO->arcIDstream != 0xFFFF)
         {
+            ST(FMT0, QUICKSKIP_IOFMT, 0);
             ST(FMT0,   IOARCID_IOFMT, arcIO->arcIDstream);
             ST(FMT0,    RX0TX1_IOFMT, arcIO->sc.rx0tx1);
             ST(FMT0,  SERVANT1_IOFMT, arcIO->si.commander0_servant1);
@@ -199,7 +202,11 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             arcBuffer_shared_with_IO = (0 != arcIO->si.graphalloc_X_bsp_0)? 1: 0;
             ST(FMT0, SHAREBUFF_IOFMT, arcBuffer_shared_with_IO);
             FMT1 = arcIO->si.settings;
-            sprintf(tmpstring, "IO-Interface_%d", fw_io_idx); 
+            sprintf(tmpstring, "IO-Interface(%d) set0_copy1=%d arc(%d) rx0tx1=%d", fw_io_idx, arcIO->si.set0_copy1, arcIO->arcIDstream, arcIO->sc.rx0tx1); 
+        }
+        else
+        {
+            ST(FMT0, QUICKSKIP_IOFMT, 1);
         }
 
         PRINTF(FMT0, tmpstring);
@@ -280,7 +287,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         n = &(graph->all_nodes[i]);
 
         /* word 1 - main Header */
-        strcpy(tmpstring, "-------------------- nanoApp : "); strcat(tmpstring, graph->all_nodes[i].nodeName);
+        strcpy(tmpstring, "-------------------- nanoAppRT : "); strcat(tmpstring, graph->all_nodes[i].nodeName);
         PRINTF(n->headerPACK, tmpstring);
 
         /* word 2 - arcs */
@@ -299,7 +306,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             ST(FMT0, ARC0D_LW1, (arc[iarc  ].sc.rx0tx1 >0));    /* set the rx0tx1 arc direction bit */
             ST(FMT0, ARC1D_LW1, (arc[iarc+1].sc.rx0tx1 >0));    
 
-            PRINTF(FMT0, "Indexes of ARC 0 and 1 of the nanoApp");
+            PRINTF(FMT0, "Indexes of ARC 0 and 1 of the nanoAppRT");
         }
 
         /* word 3 - memory banks */
@@ -307,9 +314,13 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         {
             FMT0 = 0;
             if (imem == 0) ST(FMT0, NBALLOC_LW2,  n->nbMemorySegment);  // instance pointer has the number of memory banks on MSBs
-            if (n->defaultParameterSizeW32 > 1) ST(FMT0, PARAMETER_LW2, 1);
+            //if (n->defaultParameterSizeW32 > 1) ST(FMT0, PARAMETER_LW2, 1);
             ST(FMT0, BASEIDXOFFLW2, n->memreq[imem].graph_basePACK);    // address 
             sprintf(tmpstring, "Reserved memory bank(%d)", imem); 
+            PRINTF(FMT0, tmpstring);
+
+            FMT0 = 0;
+            sprintf(tmpstring, "size of the memory bank(%d)", imem); 
             PRINTF(FMT0, tmpstring);
         }
 
@@ -323,7 +334,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     }
 
     /* LAST WORD */
-    PRINTF(GRAPH_LAST_WORD, "^^^^^^^^ FLASH ^^^^^^^^  vvvvvvvvv RAM vvvvvvvvv");
+    PRINTF(GRAPH_LAST_WORD, "-------------------  vvvvvvvvv RAM vvvvvvvvv");
     LK2 = addrBytes;
 
     /*
@@ -382,7 +393,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     PRINTF(FMT0, tmpstring);     // [1] number of FORMAT, size of SCRIPTS
 
     FMT0 = 0; ST(FMT0, LINKEDLIST_SIZE_GR2, (LK2-LK1)/4);
-    sprintf(tmpstring, "2 size of the linked-list of nanoApp + parameters"); 
+    sprintf(tmpstring, "2 size of the linked-list of nanoAppRT + parameters"); 
     PRINTF(FMT0, tmpstring);   // [2] size of LINKEDLIST
 
     FMT0 = 0; ST(FMT0, NB_ARCS_GR3, graph->nb_arcs);
@@ -403,6 +414,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
     fsetpos (ptf_graph_bin, &pos_end);  
 }
+
 
 #ifdef __cplusplus
 }

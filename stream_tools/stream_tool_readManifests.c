@@ -53,27 +53,27 @@ char inputFile[MAXINPUT];
  */
 void decode_domain(int *domain_index, char *input)
 {                                                       
-    if (0 == strncmp(input, "data_in",           strlen("data_in")))            *domain_index = IO_PLATFORM_DATA_IN; /* w/wo  sampling rates */
-    if (0 == strncmp(input, "data_out",          strlen("data_out")))           *domain_index = IO_PLATFORM_DATA_OUT;
-    if (0 == strncmp(input, "data_stream_in",    strlen("data_stream_in")))     *domain_index = IO_PLATFORM_DATA_STREAM_IN; /* with sampling rate */
-    if (0 == strncmp(input, "data_stream_out",   strlen("data_stream_out")))    *domain_index = IO_PLATFORM_DATA_STREAM_OUT;
-    if (0 == strncmp(input, "audio_in",          strlen("audio_in")))           *domain_index = IO_PLATFORM_AUDIO_IN; /* for PDM, I2S, ADC */
-    if (0 == strncmp(input, "audio_out",         strlen("audio_out")))          *domain_index = IO_PLATFORM_AUDIO_OUT;
-    if (0 == strncmp(input, "gpio_in",           strlen("gpio_in")))            *domain_index = IO_PLATFORM_GPIO_IN; /* extra data for BSP (delay, edge, HiZ, debouncing, analog mix..) */
-    if (0 == strncmp(input, "gpio_out",          strlen("gpio_out")))           *domain_index = IO_PLATFORM_GPIO_OUT;
-    if (0 == strncmp(input, "motion_in",         strlen("motion_in")))          *domain_index = IO_PLATFORM_MOTION_IN;
-    if (0 == strncmp(input, "2d_in",             strlen("2d_in")))              *domain_index = IO_PLATFORM_2D_IN; /* control of AGC, zoom in 1/4 image area */
-    if (0 == strncmp(input, "2d_out",            strlen("2d_out")))             *domain_index = IO_PLATFORM_2D_OUT;
-    if (0 == strncmp(input, "user_interface_in", strlen("user_interface_in")))  *domain_index = IO_PLATFORM_USER_INTERFACE_IN; 
-    if (0 == strncmp(input, "user_interface_out",strlen("user_interface_out"))) *domain_index = IO_PLATFORM_USER_INTERFACE_OUT;
-    if (0 == strncmp(input, "command_in",        strlen("command_in")))         *domain_index = IO_PLATFORM_COMMAND_IN; /* USB/UART */
-    if (0 == strncmp(input, "command_out",       strlen("command_out")))        *domain_index = IO_PLATFORM_COMMAND_OUT;
-    if (0 == strncmp(input, "analog_sensor",     strlen("analog_sensor")))      *domain_index = IO_PLATFORM_ANALOG_SENSOR; /* sensor with aging control */
-    if (0 == strncmp(input, "analog_transducer", strlen("analog_transducer")))  *domain_index = IO_PLATFORM_ANALOG_TRANSDUCER;
-    if (0 == strncmp(input, "rtc_in",            strlen("rtc_in")))             *domain_index = IO_PLATFORM_RTC_IN; /* ticks from clocks */
-    if (0 == strncmp(input, "rtc_out",           strlen("rtc_out")))            *domain_index = IO_PLATFORM_RTC_OUT;
-    if (0 == strncmp(input, "storage_out",       strlen("storage_out")))        *domain_index = IO_PLATFORM_STORAGE_OUT; /* periodic dump of captured data */
-    if (0 == strncmp(input, "av_codec",          strlen("av_codec")))           *domain_index = IO_PLATFORM_AV_CODEC; /* encoded audio/image/video */
+    if (0 == strncmp(input, "data_in",           strlen("data_in")))            *domain_index = IO_DOMAIN_DATA_IN; /* w/wo  sampling rates */
+    if (0 == strncmp(input, "data_out",          strlen("data_out")))           *domain_index = IO_DOMAIN_DATA_OUT;
+    if (0 == strncmp(input, "data_stream_in",    strlen("data_stream_in")))     *domain_index = IO_DOMAIN_DATA_STREAM_IN; /* with sampling rate */
+    if (0 == strncmp(input, "data_stream_out",   strlen("data_stream_out")))    *domain_index = IO_DOMAIN_DATA_STREAM_OUT;
+    if (0 == strncmp(input, "audio_in",          strlen("audio_in")))           *domain_index = IO_DOMAIN_AUDIO_IN; /* for PDM, I2S, ADC */
+    if (0 == strncmp(input, "audio_out",         strlen("audio_out")))          *domain_index = IO_DOMAIN_AUDIO_OUT;
+    if (0 == strncmp(input, "gpio_in",           strlen("gpio_in")))            *domain_index = IO_DOMAIN_GPIO_IN; /* extra data for BSP (delay, edge, HiZ, debouncing, analog mix..) */
+    if (0 == strncmp(input, "gpio_out",          strlen("gpio_out")))           *domain_index = IO_DOMAIN_GPIO_OUT;
+    if (0 == strncmp(input, "motion_in",         strlen("motion_in")))          *domain_index = IO_DOMAIN_MOTION_IN;
+    if (0 == strncmp(input, "2d_in",             strlen("d2_in")))              *domain_index = IO_DOMAIN_2D_IN; /* control of AGC, zoom in 1/4 image area */
+    if (0 == strncmp(input, "2d_out",            strlen("2d_out")))             *domain_index = IO_DOMAIN_2D_OUT;
+    if (0 == strncmp(input, "user_interface_in", strlen("user_interface_in")))  *domain_index = IO_DOMAIN_USER_INTERFACE_IN; 
+    if (0 == strncmp(input, "user_interface_out",strlen("user_interface_out"))) *domain_index = IO_DOMAIN_USER_INTERFACE_OUT;
+    if (0 == strncmp(input, "command_in",        strlen("command_in")))         *domain_index = IO_DOMAIN_COMMAND_IN; /* USB/UART */
+    if (0 == strncmp(input, "command_out",       strlen("command_out")))        *domain_index = IO_DOMAIN_COMMAND_OUT;
+    if (0 == strncmp(input, "analog_sensor",     strlen("analog_sensor")))      *domain_index = IO_DOMAIN_ANALOG_SENSOR; /* sensor with aging control */
+    if (0 == strncmp(input, "analog_transducer", strlen("analog_transducer")))  *domain_index = IO_DOMAIN_ANALOG_TRANSDUCER;
+    if (0 == strncmp(input, "rtc_in",            strlen("rtc_in")))             *domain_index = IO_DOMAIN_RTC_IN; /* ticks from clocks */
+    if (0 == strncmp(input, "rtc_out",           strlen("rtc_out")))            *domain_index = IO_DOMAIN_RTC_OUT;
+    if (0 == strncmp(input, "storage_out",       strlen("storage_out")))        *domain_index = IO_DOMAIN_STORAGE_OUT; /* periodic dump of captured data */
+    if (0 == strncmp(input, "av_codec",          strlen("av_codec")))           *domain_index = IO_DOMAIN_AV_CODEC; /* encoded audio/image/video */
 }
 
 /**
@@ -238,7 +238,7 @@ void read_platform_digital_manifest(char* inputFile, struct stream_platform_mani
 
              &(platform->processor[iproc].membank[ibank].speed),
              &(platform->processor[iproc].membank[ibank].working),
-             &(platform->processor[iproc].membank[ibank].private),
+             &(platform->processor[iproc].membank[ibank].private_ram),
              &(platform->processor[iproc].membank[ibank].hwio),
              &(platform->processor[iproc].membank[ibank].data_access),
 
@@ -256,37 +256,35 @@ void read_platform_digital_manifest(char* inputFile, struct stream_platform_mani
   @par              
   @remark
  */
-void read_platform_io_stream_manifest(char* inputFile, struct stream_IO_interfaces *io_stream)
+void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *io_stream)
 {
     char* pt_line, cstring[NBCHAR_LINE];
     int32_t nb_io_stream;
-    struct arcStruct *pta;
 
     pt_line = inputFile;
     nb_io_stream = 0;
 
-    pta = &(io_stream->arc_flow);
-
     fields_extract(&pt_line, "c", (io_stream->IO_name));
     fields_extract(&pt_line, "c", cstring);
-    decode_domain(&(pta->si.domain), cstring);
+    decode_domain(&(io_stream->si.domain), cstring);
 
-    fields_extract(&pt_line, "i", &(pta->si.commander0_servant1)); 
-    fields_extract(&pt_line, "i", &(pta->si.graphalloc_X_bsp_0)); 
-    fields_extract(&pt_line, "i", &(pta->si.sram0_hwdmaram1)); 
-    fields_extract(&pt_line, "i", &(pta->si.processorBitFieldAffinity)); 
+    fields_extract(&pt_line, "i", &(io_stream->si.commander0_servant1)); 
+    fields_extract(&pt_line, "i", &(io_stream->si.graphalloc_X_bsp_0)); 
+    fields_extract(&pt_line, "i", &(io_stream->si.sram0_hwdmaram1)); 
+    fields_extract(&pt_line, "i", &(io_stream->si.processorBitFieldAffinity)); 
 
-    fields_extract(&pt_line, "i", &(pta->sc.rx0tx1)); 
-    fields_extract(&pt_line, "i", &(pta->sc.raw_type)); 
-    fields_extract(&pt_line, "i", &(pta->sc.timestamp)); 
-    fields_extract(&pt_line, "i", &(pta->sc.framelength_format)); 
-    fields_extract(&pt_line, "i", &(pta->sc.samplingRate_format)); 
-    fields_extract(&pt_line, "f", &(pta->sc.percentFSaccuracy)); 
+    fields_extract(&pt_line, "i", &(io_stream->sc.rx0tx1)); 
+    fields_extract(&pt_line, "i", &(io_stream->sc.raw_type)); 
+    fields_extract(&pt_line, "i", &(io_stream->sc.timestamp)); 
+    fields_extract(&pt_line, "i", &(io_stream->sc.framelength_format)); 
+    fields_extract(&pt_line, "i", &(io_stream->sc.samplingRate_format)); 
+    fields_extract(&pt_line, "f", &(io_stream->sc.percentFSaccuracy)); 
 
-    fields_list(&pt_line, &(pta->interleaving_option)); 
-    fields_list(&pt_line, &(pta->nbchannel_option)); 
-    fields_list(&pt_line, &(pta->frame_size_option)); 
-    fields_list(&pt_line, &(pta->sampling_rate_option)); 
+    fields_list(&pt_line, &(io_stream->interleaving_option)); 
+    fields_list(&pt_line, &(io_stream->nbchannel_option)); 
+    fields_list(&pt_line, &(io_stream->frame_size_option)); 
+    fields_list(&pt_line, &(io_stream->sampling_rate_option)); 
+
 
     /* read domain-specific digital format data */
     /* read domain-specific mixed-signal format data */
@@ -456,8 +454,6 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
 
         read_input_file(file_name, inputFile);
         read_platform_io_stream_manifest(inputFile, &(platform->io_stream[istream]));
-
-        platform->io_stream[istream].fw_io_idx;
     }
 
     /* read the fw_io_idx mapping to platform capabilities @@@ */

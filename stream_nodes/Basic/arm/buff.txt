@@ -1,0 +1,29 @@
+ Volume in drive C is OSDisk
+ Volume Serial Number is EAFE-85DA
+
+ Directory of C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes\Basic\arm
+
+02/12/2024  12:58 PM    <DIR>          .
+02/12/2024  12:58 PM    <DIR>          ..
+02/04/2024  08:34 AM    <DIR>          amplifier
+02/12/2024  12:58 PM                 0 buff.txt
+02/12/2024  11:27 AM    <DIR>          compressor
+02/04/2024  08:34 AM    <DIR>          converter
+02/12/2024  11:27 AM    <DIR>          decompressor
+02/04/2024  08:34 AM    <DIR>          demodulator
+02/06/2024  10:03 PM    <DIR>          detector
+02/04/2024  05:36 PM    <DIR>          detector2D
+02/12/2024  10:54 AM    <DIR>          filter
+01/02/2024  10:38 AM    <DIR>          filter2D
+02/04/2024  08:34 AM    <DIR>          interpolator
+01/02/2024  10:38 AM    <DIR>          interpolator2D
+02/04/2024  09:11 AM    <DIR>          mixer
+02/04/2024  08:34 AM    <DIR>          modulator
+02/12/2024  11:50 AM            26,536 NodeTemplate.txt
+02/04/2024  08:34 AM    <DIR>          rescaler
+02/04/2024  08:34 AM    <DIR>          router
+02/12/2024  11:28 AM    <DIR>          script
+02/04/2024  09:11 AM    <DIR>          shared
+02/04/2024  08:34 AM    <DIR>          synchro
+               2 File(s)         26,536 bytes
+              20 Dir(s)  202,881,466,368 bytes free

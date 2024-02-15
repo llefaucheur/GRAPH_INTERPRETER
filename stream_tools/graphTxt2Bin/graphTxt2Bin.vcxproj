@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\stream_src\stream_const.h" />
+    <ClInclude Include="..\..\stream_src\stream_types.h" />
+    <ClInclude Include="..\stream_tool.h" />
+    <ClInclude Include="..\stream_tool_define.h" />
+    <ClInclude Include="..\stream_tool_include.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\stream_nodes\Audio\arm\compressor\swc_manifest_compressor.txt" />
+    <Text Include="..\..\stream_nodes\Audio\arm\decompressor\swc_manifest_decompressor.txt" />
+    <Text Include="..\..\stream_nodes\Audio\arm\detector\swc_manifest_detector.txt" />
+    <Text Include="..\..\stream_nodes\Audio\arm\filter\swc_manifest_filter.txt" />
+    <Text Include="..\..\stream_nodes\Basic\arm\amplifier\swc_manifest_amplifier.txt" />
+    <Text Include="..\..\stream_nodes\Basic\arm\converter\swc_manifest_converter.txt" />
+    <Text Include="..\..\stream_nodes\Basic\arm\demodulator\swc_manifest_demodulator.txt" />
+    <Text Include="..\..\stream_nodes\Basic\arm\interpolator\swc_manifest_interpolator.txt" />
+    <Text Include="..\..\stream_nodes\Basic\arm\mixer\swc_manifest_mixer.txt" />
+    <Text Include="..\..\stream_nodes\Basic\arm\modulator\swc_manifest_modulator.txt" />
+    <Text Include="..\..\stream_nodes\Basic\arm\NodeTemplate.txt" />
+    <Text Include="..\..\stream_nodes\Basic\arm\qos\swc_manifest_qos.txt" />
+    <Text Include="..\..\stream_nodes\Basic\arm\rescaler\swc_manifest_rescaler.txt" />
+    <Text Include="..\..\stream_nodes\Basic\arm\router\swc_manifest_router.txt" />
+    <Text Include="..\..\stream_nodes\Basic\arm\script\swc_manifest_script.txt" />
+    <Text Include="..\..\stream_nodes\Basic\arm\shared\swc_manifest_shared.txt" />
+    <Text Include="..\..\stream_nodes\Basic\arm\synchro\swc_manifest_synchro.txt" />
+    <Text Include="..\..\stream_nodes\Image\arm\detector2D\swc_manifest_detector2D.txt" />
+    <Text Include="..\..\stream_nodes\Image\arm\filter2D\swc_manifest_filter2D.txt" />
+    <Text Include="..\..\stream_nodes\Image\arm\interpolator2D\swc_manifest_interpolator2D.txt" />
+    <Text Include="..\..\stream_nodes\Image\elm\TJpgDec\swc_manifest_TjpgDec.txt" />
+    <Text Include="..\..\stream_platform\windows\graph_0.txt" />
+    <Text Include="..\..\stream_platform\windows\graph_0_bin.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\all_io_manifests_computer.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_2d_in_0.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_analog_sensor_0.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_audio_in_0.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_data_in_0.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_data_out_0.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_gpio_out_0.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_gpio_out_1.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_imu_temperature_0.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_line_in_0.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_line_out_0.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_motion_in_0.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_node_trace_0.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_stream_in_0.txt" />
+    <Text Include="..\..\stream_platform\windows\manifest\platform_manifest_computer.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\stream_tool_graph2Bin.c" />
+    <ClCompile Include="..\stream_tool_library.c" />
+    <ClCompile Include="..\stream_tool_main.c" />
+    <ClCompile Include="..\stream_tool_readManifests.c" />
+    <ClCompile Include="..\stream_tool_read_graph.c" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{ec41f3b2-fe8a-4497-812d-20b1f5db4d8d}</ProjectGuid>
+    <RootNamespace>graphTxt2Bin</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>C:\Work\GITHUB_LLF\STREAM\stream_al;C:\Work\GITHUB_LLF\STREAM\stream_src;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

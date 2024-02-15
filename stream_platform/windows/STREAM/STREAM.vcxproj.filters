@@ -1,0 +1,257 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\stream_platform\windows\main.c">
+      <Filter>platform_manifest</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\windows\main_call.c">
+      <Filter>platform_manifest</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\windows\platform_computer.c">
+      <Filter>platform_manifest</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\windows\platform_computer_io_services.c">
+      <Filter>platform_manifest</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\arm_biquad_cascade_df1_fast_q15.c">
+      <Filter>library-cmsis-dsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\arm_biquad_cascade_df1_init_q15.c">
+      <Filter>library-cmsis-dsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\router\arm_stream_router.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\router\arm_stream_router_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\amplifier\arm_stream_amplifier.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\amplifier\arm_stream_amplifier_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\mixer\arm_stream_mixer.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\mixer\arm_stream_mixer_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_src\stream_graph_interpreter.c">
+      <Filter>stream_src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_src\stream_io.c">
+      <Filter>stream_src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_src\stream_scheduler.c">
+      <Filter>stream_src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_src\stream_services.c">
+      <Filter>stream_src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\converter\arm_stream_converter.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\converter\arm_stream_converter_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\rescaler\arm_stream_rescaler.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\rescaler\arm_stream_rescaler_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\modulator\arm_stream_modulator.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\modulator\arm_stream_modulator_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\demodulator\arm_stream_demodulator.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\demodulator\arm_stream_demodulator_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\interpolator\arm_stream_interpolator.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\interpolator\arm_stream_interpolator_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\shared\arm_stream_share.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\synchro\arm_stream_synchro.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\synchro\arm_stream_synchro_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Image\arm\filter2D\arm_stream_filter2D.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Image\arm\interpolator2D\arm_stream_interpolator2D.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Image\arm\interpolator2D\arm_stream_interpolator2D_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor_imadpcm.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor_imadpcm.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\filter\arm_stream_filter.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\detector\arm_stream_detector.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\detector\arm_stream_detector_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\qos\arm_stream_qos.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\qos\arm_stream_qos_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\stream_platform\windows\graph_0_define.h">
+      <Filter>platform_manifest</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_platform\windows\platform_computer.h">
+      <Filter>platform_manifest</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script_instructions.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\router\arm_stream_router.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\amplifier\arm_stream_amplifier.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\mixer\arm_stream_mixer.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_const.h">
+      <Filter>stream_src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_extern.h">
+      <Filter>stream_src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_types.h">
+      <Filter>stream_src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\converter\arm_stream_converter.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\rescaler\arm_stream_rescaler.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\modulator\arm_stream_modulator.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\demodulator\arm_stream_demodulator.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\interpolator\arm_stream_interpolator.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\shared\arm_stream_share.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\synchro\arm_stream_synchro.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Image\arm\filter2D\arm_stream_filter2D.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Image\arm\interpolator2D\arm_stream_interpolator2D.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor_imadpcm.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor_imadpcm.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Audio\arm\filter\arm_stream_filter.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Audio\arm\detector\arm_stream_detector.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\qos\arm_stream_qos.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="stream_src">
+      <UniqueIdentifier>{c588de10-1613-4136-b8b5-e5ddeb5f2345}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="stream_nodes">
+      <UniqueIdentifier>{65e5e215-d3e5-4b55-abec-9954791019db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="library-cmsis-dsp">
+      <UniqueIdentifier>{e83c8890-8848-4c55-8e76-2d73828584ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platform_manifest">
+      <UniqueIdentifier>{97748a8a-4da7-4066-af7e-27a8abb8d503}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="node_manifests">
+      <UniqueIdentifier>{d85b37af-509f-4644-90ff-644e22c6188f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\stream_platform\windows\graph_0.txt">
+      <Filter>platform_manifest</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_platform\windows\graph_0_bin.txt">
+      <Filter>platform_manifest</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\Basic\arm\NodeTemplate.txt">
+      <Filter>stream_nodes</Filter>
+    </Text>
+  </ItemGroup>
+</Project>

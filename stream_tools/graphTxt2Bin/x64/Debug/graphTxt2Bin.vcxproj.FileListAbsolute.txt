@@ -1,0 +1,3 @@
+C:\Work\GITHUB_LLF\STREAM\stream_build\graphTxt2Bin\graphTxt2Bin\x64\Debug\graphTxt2Bin.exe
+C:\Work\GITHUB_LLF\STREAM\stream_platform\graphTxt2Bin\graphTxt2Bin\x64\Debug\graphTxt2Bin.exe
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\graphTxt2Bin\x64\Debug\graphTxt2Bin.exe
