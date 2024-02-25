@@ -68,7 +68,7 @@ void PRINTF(uint32_t d, char *c)
 
     for (i = 0; i < G->idbg; i++)
     {
-        if (addrBytes/4 == G->dbg[i].address)
+        if (addrBytes == G->dbg[i].address)
         {   strcat(cplus, G->dbg[i].toprint);
         }
     }
@@ -301,7 +301,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             if (iarc == 0) // the first ARC word holds the XDM11 flag
             {   int xdm11;
                 xdm11 = platform->all_nodes[n->swc_idx].RWinSWC;
-                ST(FMT0, XDM11_LW1, xdm11); 
+                ST(FMT0, XDM11_LW2, xdm11); 
             }
             ST(FMT0, ARC0D_LW1, (arc[iarc  ].sc.rx0tx1 >0));    /* set the rx0tx1 arc direction bit */
             ST(FMT0, ARC1D_LW1, (arc[iarc+1].sc.rx0tx1 >0));    
@@ -346,6 +346,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         i2 = 0;
         for (j = 0; j < G->idbg; j++)
         {   i1 = RD(graph->arc[i].ARCW0, BASEIDX_ARCW0);
+            i1 = i1 * 4; /* BASEIDX_ARCW0 is in WORD32 */
             if (i1 == G->dbg[j].address)
             {   strcat(tmpstring, G->dbg[j].toprint);
                 if (0 == strncmp(G->dbg[j].toprint,"SC",2)) 

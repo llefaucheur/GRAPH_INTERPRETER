@@ -4,13 +4,15 @@
 ;
     ARM             developer name
     arm_stream_detector node name for the GUI and the graph compiler (node and arc src/dst)
-    1 1 0 1   1 1 0 31  
+    X 1 1 0 1   1 1 0 31  
+;                   S:simple file format   X:all the details
 ;                   nb input arcs 
 ;                   nb output arcs (in + out = ARCSRDY_LW0_LSB first arcs, data availability checked before RUN )
 ;                   nb parameter-arcs arcs, (NN model..), nodes with parameter arc have "xdm11=0" to keep the read index on the parameter
 ;                   index of the arc used for the byte synchronization in MP
 ;
-;                   0: arc R/W managed in the SWC  1: all arcs are using the same frame size (see "xdm11") 3:DTCM used (DTCM_LW1)
+;                   0: arc R/W managed in the SWC  1: all arcs are using the same frame size (see "xdm11") 
+;                           bit1:DTCM used (DTCM_LW2) when 
 ;                   0: no need the push the format of the arcs (see reset_component(S)) 1: arc format is used by the component
 ;                   delivery 0:source, 1:binary, 2: 2 binaries (fat binary)
 ;                   mask: dependency to EXTDSPML EXTMATH EXTAUDIO EXTIMAGE EXTSTDLIB
@@ -34,7 +36,7 @@
 ;   INSTANCE MEM is the first one, even if the size is null
 ;
 ;   Memory Size Bytes = A(32b) + Delta(64b) + B x nb_channels_arc(i) + C x samplingHz_arc(j) 
-;       + D x frame_size_arc(k) + E x maxParameterSize + F x use-case
+;       + D x frame_size_arc(k) + E x maxParameterSize + F x graphTXT_information 
 ;
 ;   A D64 B C D E F,  indexes i,j,k,  alignment, static0/working1/retention2,  
 ;                                       any0/normal1/fast2/critical3,  relocatable
@@ -59,8 +61,11 @@
     0   sampling rate format (0:Hz, 1:seconds, 2:days)    
     3   percent FS minimum accuracy
 
-    ;   Lists of options, starting with the default index 
-    ;   (0="any", followed by min and max value range)
+    ;   Lists of options, starting with the default index
+    ;   default_index = 0 means "any" in the data allowed following values   A1 A2 A3 .. */
+    ;   default_index = -1 means data range followed by three values   Amin Astep Amax */
+    ;
+
     1   0                   ;i interleaving options list
     0   1 8                 ;i any Min = 1 channel, Max = 8 channels 
     0   0                   ;f any frame_size option in samples  (or millis) 
@@ -86,3 +91,16 @@
     1   1                   ;f one sample frame_size (in samples)
     0   0                   ;f 
 _END_
+
+
+; ------------------------------------------------------------------------------------------------------------
+; SOFTWARE COMPONENT MANIFEST - "arm_stream_detector"  with the short format 
+
+    ARM             developer name
+    arm_stream_detector node name for the GUI and the graph compiler (node and arc src/dst)
+    S 1 1           nb input arcs   +   nb output arcs 
+    6               raw data format                                          
+    0               first arc = RX 
+    1               second arc = RX 
+_END_
+

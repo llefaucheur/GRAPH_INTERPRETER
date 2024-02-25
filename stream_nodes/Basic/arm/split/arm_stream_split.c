@@ -6,7 +6,7 @@
 
 
  * Project:      CMSIS Stream
- * Title:        arm_stream_share.c
+ * Title:        arm_stream_split.c
  * Description:  filters
  *
  * $Date:        15 February 2023
@@ -37,11 +37,11 @@
 
 #include "stream_const.h"
 #include "stream_types.h"
-#include "arm_stream_share.h"
+#include "arm_stream_split.h"
 
 /*
 ;----------------------------------------------------------------------------------------
-;5.	arm_stream_share
+;5.	arm_stream_split
 ;----------------------------------------------------------------------------------------
 ;   Operation : receives several mono or multichannel streams and produces one output arc. 
 ;   Mixer manages up to 8 multichannels input arcs, the number is given at STREAM_RESET stage.
@@ -90,7 +90,7 @@
 ;           gain (12b)                  format FP_8m4e (0.5% accuracy in -96..+36dB) 0dB = 0x80A
 ;           muted (1b)                  1 = "muted"
 ;
-node arm_stream_share            
+node arm_stream_split            
 ;
 ;   Example: 4 input one mono, one stereo, output is stereo
     3  i8; 0 4 0            instance, number of arcs, preset/tag = 0 arcs unmuted with gain = 0dB
@@ -134,7 +134,7 @@ const uint32_t share_parameter_presets [NB_PRESET][NB_W32_PARAMETERS] =
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void arm_stream_share (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void arm_stream_split (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
     *status = TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
@@ -218,7 +218,7 @@ void arm_stream_share (int32_t command, stream_handle_t instance, stream_xdmbuff
         */         
         case STREAM_RUN:   
         {   /* mixing of the 4 input arcs */
-            //arm_stream_share_process((arm_share_instance *) instance, data, 4);
+            //arm_stream_split_process((arm_share_instance *) instance, data, 4);
             break;
         }
     }

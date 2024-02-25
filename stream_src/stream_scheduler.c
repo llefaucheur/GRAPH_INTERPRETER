@@ -31,11 +31,8 @@
     
 
 #include "stream_const.h"      /* graph list */
-
 #include "stream_types.h"
 #include "stream_extern.h"
-
-#include <string.h>             /* for memcpy */
 
 SECTION_START
 
@@ -50,6 +47,7 @@ static void run_node (arm_stream_instance_t *S);
 static uint8_t arc_ready_for_write(arm_stream_instance_t *S, uint32_t *arc, uint32_t *frame_size);
 static uint8_t arc_ready_for_read(arm_stream_instance_t *S, uint32_t *arc, uint32_t *frame_size);
 static intPtr_t arc_extract_info_int (arm_stream_instance_t *S, uint32_t *arc, uint8_t tag);
+static void load_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1);
 
 #define script_option (RD(S->scheduler_control, SCRIPT_SCTRL))
 #define return_option (RD(S->scheduler_control, RETURN_SCTRL))
@@ -116,24 +114,33 @@ static void stream_calls_swc (arm_stream_instance_t *S,
  */
 
 /*----------------------------------------------------------*/
-intPtr_t pack2linaddr_int(const intPtr_t *long_offset, uint32_t x)
+static intPtr_t pack2linaddr_int(const intPtr_t *long_offset, uint32_t x)
 {
     intPtr_t dbg1, dbg2, dbg3;
-     dbg1 = *((long_offset)+RD(x,DATAOFF_ARCW0));
-     dbg2 =  BASEINWORD32 * RD((x),BASEIDX_ARCW0);
 
-     if (RD(x,BAS_SIGN_ARCW0))  // to test @@@
-        dbg3 = dbg1 + ~(dbg2) +1; // dbg1-dbg2 with unsigned
-      else
+    dbg1 = long_offset[RD(x,DATAOFF_ARCW0)];    
+    dbg2 = (intPtr_t)(BASEINWORD32 * (intPtr_t)RD((x),BASEIDX_ARCW0));
+
+    if (RD(x,BAS_SIGN_ARCW0)) 
+        dbg3 = dbg1 + ~(dbg2) +1;   // dbg1-dbg2 using unsigned integers
+     else
         dbg3 = dbg1 + dbg2;
 
-    return dbg3; // PACK2LINADDR(long_offset,x);
+
+//#define PACK2LINADDR(o,x) (o[RD(x,DATAOFF_ARCW0)] + 
+//        (RD(x,BAS_SIGN_ARCW0))? 
+//            (1 + ~(((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32)):
+//            ( ((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32))
+
+
+    return dbg3;   // PACK2LINADDR(long_offset,x);
 }
 
 void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data)
 {
     return (void *) (pack2linaddr_int(long_offset, data));
 }
+
 
 
 /**
@@ -373,6 +380,7 @@ void arc_data_operations (
     {
     /* data is left shifted to the base address to avoid circular addressing */ 
     /*   or, buffer is empty but R/W are at the end of the buffer => reset/loop the indexes */ 
+
     case arc_data_realignment_to_base:
         read =  RD(arc[2], READ_ARCW2);
         if (read == 0)
@@ -396,7 +404,7 @@ void arc_data_operations (
     break;
 
     /* move in and increment write index, update filling status */
-    case arc_IO_move_to_arc : 
+    case data_move_to_arc : 
         /* only one node can read the write-index at a time : no collision is possible */
         write = RD(arc[3], WRITE_ARCW3);
         src = buffer;
@@ -404,22 +412,25 @@ void arc_data_operations (
         MEMCPY (dst, src, (uint32_t)datasize);
         write = write + datasize;
         ST(arc[3], WRITE_ARCW3, write);
-
-        /* check overflow */
-        set_alignment_bit (S, arc);
-
-        DATA_MEMORY_BARRIER;
+        set_alignment_bit (S, arc); /* check overflow */
         break;
 
     /* move out was notified in the driver, do the data move increment read index, 
         update emptiness status */
-    case arc_IO_moved_from_arc  : 
+    case data_moved_from_arc  : 
         /* only one node can update the read-index at a time : no collision is possible */
         read = RD(arc[2], READ_ARCW2);
         src = &(long_base[read]);
         dst = buffer;
         MEMCPY (dst, src, (uint32_t)datasize);
+        break;
 
+    case data_swapped_with_arc:
+        read = RD(arc[2], READ_ARCW2);
+        src = &(long_base[read]);
+        dst = buffer;
+        MEMSWAP (dst, src, (uint32_t)datasize);
+        break;
                
     default : 
         break; 
@@ -460,27 +471,25 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
     /* all is fine by default */
     ret = 1;        
 
-    /* if are we preparing a call to a script the xdm_data is the byte-code */
-    if (arm_stream_script_INDEX == (uint16_t)RD(S->swc_header[0], SWC_IDX_LW0))
+   
+    /* if this is a call to a script : XDM is bytes code + Stream instance + arc */
+    if (arm_stream_script_index == (uint16_t)RD(S->swc_header[0], SWC_IDX_LW0))
     {   uint32_t *byte_codes;
         uint32_t *script_offsets;
-        
-        //arcID = (S->arcID[0]);  /* the first arc is the FIFO TX */
-        //arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
-        //base = RD(arc[0], BASEIDXOFFARCW0);
-
-        //xdm_data[0].address = pack2linaddr_int(S->long_offset, base); 
-        //xdm_data[0].size = RD(arc[1], BUFF_SIZE_ARCW1);
+        uint32_t *arc;
 
         script_offsets = S->script_offsets;
+        arc =  &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & (S->arcID[0]))]);
         byte_codes = &(script_offsets[RD(S->swc_header[0], SCRIPT_LW0)]);
-        byte_codes = &(script_offsets[RD(*byte_codes, OFFSET_SCRIPTIDX)]);
+
         xdm_data[0].address = (intPtr_t)byte_codes;
-        xdm_data[0].size = RD(*byte_codes, CODESIZE_SCRIPTIDX); 
+        xdm_data[1].address = (intPtr_t)S;
+        xdm_data[2].address = (intPtr_t)arc;
         return (ret);
     }
-    
-    xdm11 = TEST_BIT(S->swc_header[1], XDM11_LW1_LSB);
+
+
+    xdm11 = TEST_BIT(S->swc_header[S->swc_memory_banks_offset+ADDR_LW2], XDM11_LW2_LSB);
 
     /*
        The arc descriptor gives, in the 2nd word, the stream format used by
@@ -613,13 +622,64 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
         }
     }
 
-    //@@@@ TODO DTCM in stack
-    if (TEST_BIT(S->swc_header[1], DTCM_LW1_LSB))
+    // DTCM/FastMem in stack : AL gives the address of the the fast memory
+    if (TEST_BIT(S->swc_header[S->swc_memory_banks_offset+ADDR_LW2], DTCM_LW2_LSB))
     {   /* push the DTCM address of the processor */
+        const p_stream_al_services *al_func;
+        uint32_t *fast_mem;
+        al_func = &(S->al_services[0]);
+        (*al_func)(PACK_AL_SERVICE(0,AL_SERVICE_READ_MEMORY_FAST_MEM_ADDRESS,AL_SERVICE_READ_MEMORY), (uint8_t *)&fast_mem, 0, 0, 0);
+        xdm_data[iarc].address = (intPtr_t)(fast_mem);
     }
     return ret;
  }
 
+/**
+  @brief        copy/swap FIFO to fast memory
+  @return       none
+
+  @par          parse memory_segment_swap, extract the arcID (SWAPBUFID_LW2S)
+                use the arcID descriptor for the address and length of data to copy/swap
+                parameter pre0post1 tells if we are before or after processing
+                the field SWAP_LW2S tells to copy or swap the memory segment
+
+  @remark
+ */
+/* --------------------------------------------------------------------------------------------------
+      check input ring buffers :
+      each Stream instance has a list of graph boundary to check for in/out data
+ */
+void load_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1)
+{
+    uint8_t imem, mask, arcID;
+    intPtr_t *memaddr;
+    uint32_t *memreq, *arc, memlen;
+    
+    mask = S->memory_segment_swap;                          /* bit-field of segments to swap */
+    memreq = &(S->swc_header[S->swc_memory_banks_offset]);  /* list of memory segments to copy */
+    
+    for (imem = 0; imem < MAX_NB_MEM_REQ_PER_NODE; imem++)
+    {   
+        if (TEST_BIT(mask, imem))
+        {   memaddr = (intPtr_t *)pack2linaddr_ptr (S->long_offset, memreq[NB_LW2 * imem + ADDR_LW2]);
+            arcID = RD(memaddr, SWAPBUFID_LW2S);
+            arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
+            memlen = RD(arc[1], BUFF_SIZE_ARCW1);
+
+            if (LW2S_COPY == RD(memaddr, SWAP_LW2S))
+            {   arc_data_operations (S, arc, data_moved_from_arc, (uint8_t *)memaddr, memlen);
+            } 
+            else
+            {   arc_data_operations (S, arc, data_swapped_with_arc, (uint8_t *)memaddr, memlen);
+            } 
+
+            CLEAR_BIT(mask, imem);
+            if (mask == 0)  /* does all memory segments are copied ? */
+            {   return;
+            }
+        }
+    }      
+}
 
 
 /**
@@ -765,7 +825,6 @@ static uint32_t check_hwsw_compatibility(arm_stream_instance_t *S)
     uint8_t match = 1;
     uint32_t whoami = S->whoami_ports;
     uint32_t header = (S->swc_header)[0];
-    uint32_t control = S->scheduler_control;
 
     if (RD(header, ARCHID_LW0) > 0u) /* do I care about the architecture ID ? */
     {   match = (RD(header, ARCHID_LW0) == RD(whoami, ARCHID_PARCH));
@@ -776,7 +835,7 @@ static uint32_t check_hwsw_compatibility(arm_stream_instance_t *S)
     }
 
     if (RD(header, PRIORITY_LW0) > 0u) /* do I care about the priority ? */
-    {   match = match & (RD(header, PRIORITY_LW0) == RD(control, PRIORITY_SCTRL));
+    {   match = match & (RD(header, PRIORITY_LW0) == RD(whoami, PRIORITY_PARCH));
     }
 
     return match;
@@ -875,7 +934,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command)
                 {   /* search the RX arcs being blocked in producer's side */
                     arcID = (S->arcID[iarc]);
                     if (0 == (ARC_RX0TX1_MASK & arcID))
-                    {   arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * arcID]);
+                    {   arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
                         if (0u != TEST_BIT (arc[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB))
                         {   arc_data_operations (S, arc, arc_data_realignment_to_base, 0, 0);
                         }
@@ -947,7 +1006,7 @@ static void read_header (arm_stream_instance_t *S)
     S->swc_memory_banks_offset = 1 +(narc/2);
 
     S->swc_parameters_offset = S->swc_memory_banks_offset 
-        + RD(S->swc_header[S->swc_memory_banks_offset], NBALLOC_LW2);
+        + NB_LW2 * RD(S->swc_header[S->swc_memory_banks_offset], NBALLOC_LW2);
 
     /* default parameters of the node */
     S->pack_command = PACK_COMMAND(
@@ -957,12 +1016,15 @@ static void read_header (arm_stream_instance_t *S)
         RD(S->scheduler_control, BOOT_SCTRL), /* cold/warm boot, SWC knows */
         0);     /* command */
 
-    /* physical address of the instance and the code */
+    /* physical address of the instance (descriptor address for scripts) */
     idx_swc = (uint16_t)RD(S->swc_header[0], SWC_IDX_LW0);
     S->swc_instance_addr = (stream_handle_t)pack2linaddr_int
         (S->long_offset, 
          S->swc_header[S->swc_memory_banks_offset]
         );
+
+    /* list of memory segment to swap */
+    S->memory_segment_swap = (uint8_t)RD(((uint32_t *)S->swc_instance_addr)[SIZE_LW2], TO_SWAP_LW2S);
 
     /* read the physical address */
     S->address_swc = S->node_entry_point_table[idx_swc];
@@ -971,17 +1033,17 @@ static void read_header (arm_stream_instance_t *S)
     for (iarc = 0; iarc < MIN(narc +1, MAX_NB_STREAM_PER_SWC); iarc+=2)
     {   uint32_t arcs;
         arcs = (S->swc_header)[1+iarc/2];
-        S->arcID[iarc]   = RD(arcs, ARC0_LW1);
-        S->arcID[iarc+1] = RD(arcs, ARC1_LW1);
+        S->arcID[iarc]   = (uint16_t)arcs;
+        S->arcID[iarc+1] = (uint16_t)(arcs>>16);
     }    
 
     /* SWC arcs indexes = [0..narc-1], arcs of the associated script = narc (optionaly narc+1) */
-    S->script_arctx = (uint8_t) (S->arcID[narc]);
+    S->script_arctx = (uint8_t)(ARC_RX0TX1_CLEAR & (S->arcID[narc]));
 
     /* byte pointer for locking the node, can be the arc 0/1/2/3 ARCLOCK_LW0 has 2bits */
     x = RD(S->swc_header[0], ARCLOCK_LW0);
-    iarc = S->arcID[x];
-    x = WRIOCOLL_ARCW3 + SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & iarc);
+    iarc = ARC_RX0TX1_CLEAR & S->arcID[x];
+    x = WRIOCOLL_ARCW3 + SIZEOF_ARCDESC_W32 * iarc;
     S->pt8b_collision_arc = (uint8_t *)&(S->all_arcs[x]);
     S->pt8b_collision_arc = &(S->pt8b_collision_arc[COLLISION_ARC_OFFSET_BYTE]);
 
@@ -1028,19 +1090,17 @@ static uint8_t lock_this_component (arm_stream_instance_t *S)
 
     /* ---------------------SWC reservation attempt -------------------*/            
     /* if the SWC is already used skip it */
-    // RD_BYTE_MP_(check, S->pt8b_collision_arc);
-
-    //(*al_func)(PACK_AL_SERVICE(0,AL_SERVICE_MUTUAL_EXCLUSION_RD_BYTE_MP,AL_SERVICE_MUTUAL_EXCLUSION), S->pt8b_collision_arc, &check, &tmp, 0);
-    //if (check != U8(0))
-    //{   return 0;
-    //}
+    (*al_func)(PACK_AL_SERVICE(0,AL_SERVICE_MUTUAL_EXCLUSION_RD_BYTE_MP,AL_SERVICE_MUTUAL_EXCLUSION), S->pt8b_collision_arc, &check, &tmp, 0);
+    if (check != U8(0))
+    {   return 0;
+    }
  
-    //tmp = RD(S->whoami_ports, INST_ID_PARCH);  
-    //(*al_func)(PACK_AL_SERVICE(0,AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP,AL_SERVICE_MUTUAL_EXCLUSION), S->pt8b_collision_arc, &check, &tmp, 0);
+    tmp = RD(S->whoami_ports, INST_ID_PARCH);  
+    (*al_func)(PACK_AL_SERVICE(0,AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP,AL_SERVICE_MUTUAL_EXCLUSION), S->pt8b_collision_arc, &check, &tmp, 0);
 
-    //if (0 == check)
-    //{   return 0;   /* a collision occured, don't wait, jump to next nanoAppRT */
-    //}
+    if (0 == check)
+    {   return 0;   /* a collision occured, don't wait, jump to next nanoAppRT */
+    }
     /* ------------------SWC is now locked for me ! --------------------*/            
 
     return 1;
@@ -1067,18 +1127,18 @@ static void reset_component (arm_stream_instance_t *S)
 #define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (SIZEOF_ARCDESC_SHORT_W32*MAX_NB_STREAM_PER_SWC))
 
     intPtr_t memreq_physical[MEMRESET];
-    uint16_t nbmem;
+    uint8_t nbmem;
     uint8_t imem, j, narc;
     uint32_t *memreq, check;
 
     memreq = &(S->swc_header[S->swc_memory_banks_offset]);
-    nbmem = (uint16_t)RD(memreq[0],NBALLOC_LW2);
+    nbmem = (uint8_t)RD(memreq[0],NBALLOC_LW2);
     memreq_physical[0] = (intPtr_t)(uint64_t)(S->swc_instance_addr);
 
 
     for (imem = 1; imem < nbmem; imem++)
     {   /* create pointers to the right memory bank */
-        memreq_physical[imem] = pack2linaddr_int(S->long_offset, memreq[imem]);
+        memreq_physical[imem] = pack2linaddr_int(S->long_offset, memreq[NB_LW2 * imem]);
     }      
 
     /* push the FORMAT of the arcs */
@@ -1107,16 +1167,6 @@ static void reset_component (arm_stream_instance_t *S)
         (stream_handle_t) memreq_physical, 
         (stream_xdmbuffer_t *) arm_stream_services, 
         &check);
-
-    /* reset the associated script, if any */
-    if (RD(S->swc_header, SCRIPT_LW0) != 0)
-    {   uint16_t scriptid = RD(S->swc_header, SCRIPT_LW0);
-        uint16_t arcid;
-    
-        arcid = S->arcID[0];    /* FIFOTX = script instance */
-        memreq_physical[0] = (intPtr_t)(uint64_t)(pack2linaddr_int(S->long_offset, S->all_arcs[arcid]));
-        arm_stream_script (S->pack_command, (stream_handle_t) memreq_physical, 0, 0);
-    }
 }
 
 
@@ -1183,11 +1233,8 @@ static void run_node (arm_stream_instance_t *S)
 {
     stream_xdmbuffer_t xdm_data[MAX_NB_STREAM_PER_SWC];
     uint32_t check;
-   
-    //if (script_option & STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC) {script_processing (S->script_offsets); }
-    //script_processing (RD(S->swc_header[0], SCRIPT_LW0));
- 
- /* push all the ARCs on the stack and check arcs buffer are ready */
+  
+    /* push all the ARCs on the stack and check arcs buffer are ready */
     if (0 == arc_index_update(S, xdm_data, 0))
     {   return; /* buffers are not ready */
     }
@@ -1197,9 +1244,10 @@ static void run_node (arm_stream_instance_t *S)
    
     ST(S->pack_command, COMMAND_CMD, STREAM_RUN);
 
-    // @@@ TODO : check memory segments for copy to TCM
-    // @@@ TODO : DTCM_LW1 , load point to relocatable DTCM for SMP
-
+    /* check memory segments for copy to TCM/fast memory @@@*/
+    if (S->memory_segment_swap)
+    {   load_memory_segments (S, 0);
+    }
 
     // @@@ TODO : repeat the SWC execution 'MAX_SWC_REPEAT' times 
     do 
@@ -1209,10 +1257,6 @@ static void run_node (arm_stream_instance_t *S)
            long SWC can be split to allow data moves without RTOS */
         stream_calls_swc (S,
             S->swc_instance_addr, xdm_data,  &check);
-    
-        //if (TASKS_NOT_COMPLETED == check)
-        //{   check_graph_boundaries(S); 
-        //}
     } 
     while (check == TASKS_NOT_COMPLETED);
     
@@ -1221,9 +1265,11 @@ static void run_node (arm_stream_instance_t *S)
         The SWC don't wait and let the consumer manage the alignement 
     */
     arc_index_update(S, xdm_data, 1); 
-    
-    // @@@ TODO : check memory segments for swap back 
 
+    /* check memory segments for restore / swap back */
+    if (S->memory_segment_swap)
+    {   load_memory_segments (S, 1);
+    }    
 
     //if (script_option & STREAM_SCHD_SCRIPT_AFTER_EACH_SWC) {script_processing (S->script_offsets);}
 }

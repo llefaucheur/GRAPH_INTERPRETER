@@ -91,12 +91,9 @@
 */
 // MEMORY BANKS
 
-#define PROC_ID 1
+#define PROC_ID 1                       /* must be >0 */
 #define ARCH_ID 0 
 
-
-
-#define MAX_NB_MEMORY_OFFSET 2          /* 2 memory banks offsets */
 #define MBANK_GRAPH     0               /* graph base address (shared) */
 #define MBANK_DMEMFAST  1               /* not shared DTCM Cortex-M/LLRAM Cortex-R, swapped between SWC calls if static */
 #define SIZE_MBANK_DMEM_EXT   0x100     /* external (buffers) */
@@ -119,14 +116,15 @@
 #define STREAM_NB_ARCHITECTURES 1
 
 #define IO_PLATFORM_DATA_IN_0        0 
-#define IO_PLATFORM_ANALOG_SENSOR_0  1 
-#define IO_PLATFORM_MOTION_IN_0      2 
-#define IO_PLATFORM_AUDIO_IN_0       3 
-#define IO_PLATFORM_2D_IN_0          4 
-#define IO_PLATFORM_LINE_OUT_0       5 
-#define IO_PLATFORM_GPIO_OUT_0       6 
-#define IO_PLATFORM_GPIO_OUT_1       7 
-#define IO_PLATFORM_DATA_OUT_0       8 
+#define IO_PLATFORM_DATA_IN_1        1 
+#define IO_PLATFORM_ANALOG_SENSOR_0  2 
+#define IO_PLATFORM_MOTION_IN_0      3 
+#define IO_PLATFORM_AUDIO_IN_0       4 
+#define IO_PLATFORM_2D_IN_0          5 
+#define IO_PLATFORM_LINE_OUT_0       6 
+#define IO_PLATFORM_GPIO_OUT_0       7 
+#define IO_PLATFORM_GPIO_OUT_1       8 
+#define IO_PLATFORM_DATA_OUT_0       9
 
 #define LAST_IO_FUNCTION_PLATFORM (IO_PLATFORM_DATA_OUT_0+1)  /* table of platform_io[fw_io_idx] */
 
@@ -138,7 +136,8 @@
         long_offset[MBANK_GRAPH]    = (const intPtr_t)&(MEXT[10]); 
         long_offset[MBANK_DMEMFAST] = (const intPtr_t)&(TCM1[10]); 
 */
-#define MAX_NB_MEMORY_OFFSET 2 /* 2 memory banks offsets */
+#define MAX_NB_MEMORY_OFFSET 3 /* 2 memory banks offsets + 1 for DTCM used for  */
+#define CRITICAL_FAST_SEGMENT_IDX (MAX_NB_MEMORY_OFFSET-1)
 
 
 #endif /* #ifndef PLATFORM_COMPUTER_H */

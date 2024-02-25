@@ -52,32 +52,14 @@ typedef union
     sdouble f64;
 } regdata_t;
 
-typedef struct
-{
-#define     __unused_SCRIPT_MSB U(31)  /*  6    */     
-#define     __unused_SCRIPT_LSB U(26)  
-#define       FORMAT_SCRIPT_MSB U(25)  /*  2   native/stream byte codes format */
-#define       FORMAT_SCRIPT_LSB U(24)  /*      */
-#define       PRESET_SCRIPT_MSB U(23)  /*  4   control parameter */
-#define       PRESET_SCRIPT_LSB U(20)  /*      */
-#define LOG2MAXCYCLE_SCRIPT_MSB U(19)  /*  8   minifloat reset and return when reaching this number of decoded instructions */
-#define LOG2MAXCYCLE_SCRIPT_LSB U(12)  /*      */
-#define NEW_USE_CASE_SCRIPT_MSB U(11)  /*  1   new use-case arrived */
-#define NEW_USE_CASE_SCRIPT_LSB U(11)  /*      */
-#define       NSTACK_SCRIPT_MSB U(10)  /*  7   size of the stack */
-#define       NSTACK_SCRIPT_LSB U( 4)  /*      */
-#define        NREGS_SCRIPT_MSB U( 3)  /*  4   number of registers */
-#define        NREGS_SCRIPT_LSB U( 0)  /*      */
-    
-    uint32_t state;
-    const intPtr_t *long_offset;          /* pointer to "intPtr_t long_offset[MAX_NB_MEMORY_OFFSET];" */
-    uint32_t use_case[2];
-
-} arm_stream_script_instance;
 
 extern void arm_stream_script_interpreter (
-    arm_stream_script_instance *S,
-    stream_xdmbuffer_t *byte_code);
+    arm_stream_instance_t *S,
+    uint32_t *descriptor,
+    uint16_t *byte_code,
+    uint8_t *ram);
+
+extern void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data);
 
 #endif
 

@@ -112,7 +112,6 @@ void arm_graph_interpreter_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t d
                 data_size = fifosize - write;
             }
 
-            /* arc_IO_move_to_arc */
             /* only one node can read the write-index at a time : no collision is possible */
             src = data;
             dst = &(long_base[write]);
@@ -167,7 +166,6 @@ void arm_graph_interpreter_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t d
                 data_size = write - read;
             }
 
-            /* arc_IO_move_to_arc */
             /* only one node can read the write-index at a time : no collision is possible */
             src = &(long_base[read]);
             dst = data;

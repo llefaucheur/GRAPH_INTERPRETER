@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        arm_stream_share.h
+ * Title:        arm_stream_split.h
  * Description:  filters
  *
  * $Date:        15 February 2023
@@ -30,8 +30,8 @@
 #endif
    
 
-#ifndef cARM_STREAM_SHARE_H
-#define cARM_STREAM_SHARE_H
+#ifndef carm_stream_split_H
+#define carm_stream_split_H
 
 
 #include "stream_const.h"      
@@ -142,7 +142,7 @@ typedef struct
 
 } arm_share_instance;
 
-extern void arm_stream_share_process (arm_share_instance *instance, stream_xdmbuffer_t *xdm_buf, uint8_t narc);
+extern void arm_stream_split_process (arm_share_instance *instance, stream_xdmbuffer_t *xdm_buf, uint8_t narc);
 
 
 

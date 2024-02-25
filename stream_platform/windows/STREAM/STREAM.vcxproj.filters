@@ -85,7 +85,7 @@
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\interpolator\arm_stream_interpolator_process.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\shared\arm_stream_share.c">
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\shared\arm_stream_split.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\synchro\arm_stream_synchro.c">
@@ -189,7 +189,7 @@
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\interpolator\arm_stream_interpolator.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\shared\arm_stream_share.h">
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\shared\arm_stream_split.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\synchro\arm_stream_synchro.h">

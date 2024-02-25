@@ -59,6 +59,7 @@
     Registers 
         Instance static = 
             14 registers 8bytes R0..R13 general purpose and pointers 
+            'R14'=S0 'R15'=S1
             DTYPE 4bits: 
                 0: int32    default types at reset
                 1: q15
@@ -74,8 +75,9 @@
         Instance memory area (from const.h)
             TX ARC descriptor: locks execution, 
                 base address = instance, registers
-                read index = start of stack
-                write index = start of parameters
+                length = code length + byte code format
+                read index = start of stack index
+                write index = start of parameters index + synchronization byte
 
             stack and registers are preserved between calls 
             the conditional flag is set at reset to allow specific initialization
@@ -90,7 +92,7 @@
             The initial SP position is preserved for fast return
 
     Instructions 
-        format 16its : IIII.rrrr + XXXX.YYYY 
+        format 16its : IIII.rrrr + XXXX.YYYY sometime X.Y is not used 
 
         0000 0000 Clll.llll (C)JUMPLAB un/conditional jump to label
         0000 0001 CSoo.oooo (C)JUMP un/conditional offset (+/-63) jump 
@@ -118,11 +120,12 @@
 
         11cc cccc XXXXYYYY control and arithmetic followed by  [yyyyxxxx] R14=S0 R15=S1 (popped from stack)
            when the data types are different the one of DESTINATION is used  
-           stack[SP++] push, stack[--SP] pop
+           (stack[SP++] push, stack[--SP] pop)
 
-        00 RET   subroutine return, restore SP, flags
-        01 RETP  keep RX and RY on the stack as parameters, restore and return
-        02 PSHT  push test result on stack for OPRA logical operations (DTYPE = boolean) 
+    CODES corresponding to "arm_stream_script_instructions.h"
+        00 RET   subroutine return, restore SP, flags : C000
+        01 RETP  keep RX and RY on the stack as parameters, restore and return : C1XY
+        02 PSHT  push test result on stack for logical operations (DTYPE = boolean) 
         03 RESET RX is a bit-field of data to reset (stack, SP, registers, flags)
         04 DUP   S0 is duplicated (repushed)
         05 NOP
@@ -165,6 +168,7 @@
   
         From Android CHRE  https://source.android.com/docs/core/interaction/contexthub
         String/array utilities: memcmp, memcpy, memmove, memset, strlen
+            IEC61131-3 : LEN , LEFT, RIGHT, MID, CONCAT,INSERT, DELETE , REPLACE, FIND
         Math library: Commonly used single-precision floating-point functions:
             Basic operations: ceilf, fabsf, floorf, fmaxf, fminf, fmodf, roundf, lroundf, remainderf
             Exponential/power functions: expf, log2f, powf, sqrtf
@@ -262,10 +266,13 @@
 */
 
 void arm_stream_script_interpreter (
-    arm_stream_script_instance *S,
-    stream_xdmbuffer_t *byte_code)
+    arm_stream_instance_t *S,
+    uint32_t *descriptor,
+    uint16_t *code,
+    uint8_t *ram)
 {
-    uint8_t *typ8, SP, F, *code, tmp8, lownib, highnib, regX, regY, *src, *dst;
+    uint8_t *typ8, SP, F, tmp8, lownib, highnib, regX, regY, *src, *dst;
+    uint16_t instruction;
     // uint8_t *paRAM, *paROM, typeX, typeY;
     regdata_t *R, *stack;
     uint32_t time, timeMax, PC;
@@ -274,17 +281,20 @@ void arm_stream_script_interpreter (
 
     PC = 0;
     F = 0;
-    SP = RD(S->state, NREGS_SCRIPT);                    /* stack index is after registers */
-    typ8 = (uint8_t *)&(S[1]);                          /* register types are after the instance */
-    R = (regdata_t *)&(typ8[SP + RD(S->state, NSTACK_SCRIPT)]); /* registers are after types[regs + stack] */
+
+    tmp8 = RD(descriptor[SCRIPT_PTR_SCRARCW0], NBREGS_SCRARCW0);    
+    SP = (REGSIZE +1) * tmp8;                       /* stack index is after registers */
+
+    typ8 = ram;                                     /* register types  */
+    R = (regdata_t *)&(typ8[SP + RD(descriptor[WRIOCOLL_SCRARCW3], NSTACK_SCRARCW3)]); /* registers are after types[regs + stack] */
     R = (regdata_t *)(((intPtr_t)R + 7) & (~7));  /* align on the next 8 Bytes boundary */
+
     stack = &(R[SP]);                                /* stack is just after the registers */
-    //src = &(stack[RD(S->state, NSTACK_SCRIPT)]);        /* soft parameters (RAM) are after the stack */
+    //src = &(stack[RD(Script->state, NSTACK_SCRIPT)]);        /* soft parameters (RAM) are after the stack */
     //paRAM = (uint8_t *) src;
-    code = (uint8_t *)(byte_code->address);             /* hard parmeters (Flash) are after the code */
     //paROM = &(code[byte_code->size]);
 
-    timeMax = MINIFLOAT2Q31(RD(S->state, LOG2MAXCYCLE_SCRIPT));
+    //timeMax = MINIFLOAT2Q31(RD(descriptor[SCRIPT_PTRWRIOCOLL_SCRARCW3], LOG2MAXCYCLE_SCRIPT));
     timeMax = 0x7FFFFFFFL;
     time = 0;
 
@@ -293,12 +303,15 @@ void arm_stream_script_interpreter (
 
     while (time++ < timeMax)
     {
-        tmp8 = code[PC++]; lownib = tmp8 & 0xF; highnib = tmp8 >> 4;
+        instruction = code[PC++]; 
+        lownib = instruction & 0xF; highnib = (instruction >> 4) & 0xF;
 
         switch(highnib)
         {
         case iBRANCHs:   /* branch */
-        {   tmp8 = code[PC++];
+        {   
+        
+        //tmp8 = code[PC++];
             switch(lownib & 0x7)
             {
             /* 0000 0000 Clll.llll (C)JUMPLAB un/conditional jump to label */
@@ -343,13 +356,14 @@ void arm_stream_script_interpreter (
 
         /* 0001 _SiX XXXX.YYYY COPY RX <= RY (R15 unused) iX/iY=0/1/2/3 increment 0/+1/-1/+1_both */
         case iCOPY:   /* copy */
-            tmp8 = code[PC++]; regX = tmp8 >> 4; regY = tmp8 & 0xF; 
+//            tmp8 = code[PC++]; 
+            tmp8=0; regX = tmp8 >> 4; regY = tmp8 & 0xF; 
             R[regX].i32 = R[regY].i32;
             break;
         
         /* 0010 TTTT XXXX.YYYY LOADK  load the next word16 as a constant of TTTT DTYPE to RX/RY (R15 unused) */
         case iLOADK:   /* litterals */
-            tmp8 = code[PC++]; regX = tmp8 >> 4; 
+  //          tmp8 = code[PC++]; regX = tmp8 >> 4; 
             src = (uint8_t *)&(code[PC]);
             dst = (uint8_t *)&(R[regX]);
             MEMCPY(dst, src, 4); 
@@ -371,15 +385,17 @@ void arm_stream_script_interpreter (
                 break;
 
             case iEQU: 
-                tmp8 = code[PC++]; regX = tmp8 >> 4; regY = tmp8 & 0xF; 
+                //tmp8 = code[PC++]; 
+                tmp8=0; regX = tmp8 >> 4; regY = tmp8 & 0xF; 
                 F = (R[regX].i32 == R[regY].i32);
                 break;
 
             case iADD: time = timeMax;
-                tmp8 = code[PC++]; regX = tmp8 >> 4; regY = tmp8 & 0xF; 
+//                tmp8 = code[PC++]; 
+                tmp8=0; regX = tmp8 >> 4; regY = tmp8 & 0xF; 
                 R[regX].i32 = R[regX].i32 + R[regY].i32;                
                 break;
             }
-        }
-    }
+        } /* switch(highnib) */
+    } /* while (time++ < timeMax) */
 }

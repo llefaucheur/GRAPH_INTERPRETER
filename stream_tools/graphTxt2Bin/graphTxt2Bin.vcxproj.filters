@@ -96,9 +96,6 @@
     <Text Include="..\..\stream_nodes\Basic\arm\mixer\swc_manifest_mixer.txt">
       <Filter>NodesManifests</Filter>
     </Text>
-    <Text Include="..\..\stream_nodes\Basic\arm\shared\swc_manifest_shared.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
     <Text Include="..\..\stream_nodes\Basic\arm\synchro\swc_manifest_synchro.txt">
       <Filter>NodesManifests</Filter>
     </Text>
@@ -152,6 +149,15 @@
     </Text>
     <Text Include="..\..\stream_nodes\Basic\arm\qos\swc_manifest_qos.txt">
       <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\windows\graph_0_bin_.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\windows\graph_1.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\windows\manifest\io_platform_data_in_1.txt">
+      <Filter>PlatformsManifests</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>

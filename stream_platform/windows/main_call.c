@@ -41,12 +41,11 @@
  */
 void main_call(void)
 {
-    extern void init_stream_instance(arm_stream_instance_t *instance, uint8_t idx);
-    #define STREAM_CURRENT_INSTANCE 0
+    extern void init_stream_instance(arm_stream_instance_t *instance);
     arm_stream_instance_t instance;
-    uint32_t data_in, fifo_freeArea;
+    //uint32_t data_in, fifo_freeArea;
 
-    init_stream_instance (&instance, STREAM_CURRENT_INSTANCE);
+    init_stream_instance (&instance);
 
     /* reset the graph */
 	arm_graph_interpreter (STREAM_RESET, &instance, 0, 0);

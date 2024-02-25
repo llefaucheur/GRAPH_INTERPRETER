@@ -79,37 +79,40 @@ uint32_t lcm(uint32_t a, uint32_t b) { return (a / gcd(a, b)) * b; }
   @par             
   @remark
  */
-void jump2next_line(char **line)
+void jump2next_line(char **pt_line)
 {
-    while (*(*line) != '\n') 
-    {   (*line)++;
+    while (*(*pt_line) != '\n') 
+    {   (*pt_line)++;
     };
-    (*line)++;
+    (*pt_line)++;
 }
 
 /* 
     find a line which does not start with ';'
     return : line is pointing to the next valid character 
 */
-int jump2next_valid_line(char **line)
+int jump2next_valid_line(char **pt_line)
 {
     int i;
     char *p;
 
+    jump2next_line(pt_line);
 L_jump2next_valid_line:
-    jump2next_line(line);
-    p = *line;
+
+    p = *pt_line;
     for (i = 0; i < NBCHAR_LINE; i++)
     {   if (' ' != (*p)) break;
         p++;
     }
     if ((*p) == ';' || (*p) == '\n')
-    {   goto L_jump2next_valid_line;
+    {   
+        jump2next_line(pt_line);
+        goto L_jump2next_valid_line;
     }
 
-    *line = p;
+    *pt_line = p;
 
-    if (0 == strncmp (*line,"_END_",strlen("_END_")))
+    if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
         return FOUND_END_OF_FILE;
     else
         return NOT_YET_END_OF_FILE;
@@ -135,7 +138,7 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
     char c, *ptstart, *ptend, stype[9], *ptchar, inputchar[200];
     uint8_t *ptu8;
     uint16_t *ptu16;
-    uint32_t ifield, nfield, *ptu32;
+    int32_t ifield, nfield, *ptu32;
     uint64_t *ptu64;
     int64_t i;
     float  f32, *ptf32;
@@ -144,7 +147,7 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
 
     jump2next_valid_line(pt_line);
 
-    if (search_word(*pt_line, SECTION_END) < 0)
+    if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
     {   *nbfields = 0;
         return;
     }
@@ -154,7 +157,7 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
     ptend = strchr(ptstart, ';');
     i = ptend - ptstart;
     strncpy(inputchar, ptstart, (int)i); inputchar[i] = '\0';
-    c = sscanf(inputchar, "%d %s;", &nfield, stype);
+    c = sscanf(inputchar, "%d %s;", &nfield, stype);            
     stype[8] = '\0';
 
     /* find the start of the fields */
@@ -289,9 +292,11 @@ void read_input_file(char* file_name, char * inputFile)
 
 int search_word(char line[], char word[])
 {
-    int i, j, found;
+    int i, j, found, L;
 
-    for (i = 0; i <= strlen(line) - strlen(word); i++) {
+    L = (int)strlen(line);
+    L = L - (int)strlen(word);
+    for (i = 0; i <= L; i++) {
         found = 1;
         for (j = 0; j < strlen(word); j++) {
             if (line[i + j] != word[j]) {
@@ -339,20 +344,26 @@ int fields_extract(char **pt_line, char *types,  ...)
 
     va_start(vl,types);
 
-    jump2next_valid_line(pt_line); 
-
-    if (search_word(*pt_line, SECTION_END) < 0)
-    {   return -1;
-    }
+    if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
+        return -1;
 
     ptstart = *pt_line;
     nfields = (int)strlen(types);
+    ptstart0 = ptstart;
 
     for (ifield = 0; ifield < nfields; ifield++)
     {
-        ptstart0 = strchr (ptstart, ' ');   // find the next white space
-        while (ptstart0[1] == ' ') 
+        while (*ptstart0 != ' ')            // find the next non-white space
+        {   if (*ptstart0 == '\n')
+                break;
             ptstart0++;
+        }
+
+        while (*ptstart0 == ' ')            // find the next non-white space
+        {   ptstart0++;
+            if (*ptstart0 == '\n')
+                break;
+        }
 
         switch(types[ifield])
         {
@@ -402,9 +413,12 @@ int fields_extract(char **pt_line, char *types,  ...)
                 break;
         }
 
-        ptstart = ptstart0 + 1;      /* skip the ';\n' separators */
+        ptstart = ptstart0;
     }
+
     *pt_line = ptstart;
+    jump2next_valid_line (pt_line);
+
     va_end(vl);
 
     return 1;
@@ -427,7 +441,6 @@ void fields_list(char **pt_line, struct options *opt)
     int nfields;
     float F;
 
-    jump2next_valid_line(pt_line); 
     ptstart = *pt_line;
     nfields = 0;
     sscanf (ptstart,"%d",&(opt->default_index));
@@ -449,6 +462,7 @@ void fields_list(char **pt_line, struct options *opt)
         ptstart = pend + 1; 
     }
     *pt_line = pend;
+    jump2next_valid_line(pt_line); 
     opt->nb_option = nfields;
 }
 

@@ -15,8 +15,6 @@
 ;       - Digital frame format, common to all transducers and arcs
 ;       - Specific information and tuning of the domain
 ;
-;   ARC0
-
       
     1   commander=0 servant=1                               
     0   buffer declared from the BSP 0 or Graph x (multiplication factor of the Frame size)           

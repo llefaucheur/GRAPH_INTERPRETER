@@ -113,7 +113,7 @@ char domain_name[IO_DOMAIN_MAX_NB_DOMAINS][CHARLENDOMAINS] =
 
 
 /*
-    Read and pack the script until finding "_end_"
+    Read and pack the script until finding "_end_" / SECTION_END
 
     script_byte_codes
     ....
@@ -215,7 +215,7 @@ void compute_memreq(struct stream_node_manifest *node, struct formatStruct *all_
             // m->graph_basePACK will be computed after all the static areas (swc+arcs) are allocated 
 
             //sprintf(DBG,"%s scratch memory bank(%d) address=0x%X",node->nodeName,(int)imem,(int)mem);  
-            //DBGG((uint32_t)working address/4, DBG);
+            //DBGG((uint32_t)working address, DBG);
         }
         else
         {
@@ -232,7 +232,7 @@ void compute_memreq(struct stream_node_manifest *node, struct formatStruct *all_
             mem = mem & alignmask;
 
             sprintf(DBG,"%s static memory bank(%d) address=0x%X",node->nodeName,(int)imem,(int)mem);  
-            DBGG((uint32_t)mem/4, DBG);
+            DBGG((uint32_t)mem, DBG);
 
             m->graph_basePACK = (uint32_t)mem >> 2; /* memory in W32 */
 
@@ -246,43 +246,6 @@ void compute_memreq(struct stream_node_manifest *node, struct formatStruct *all_
     }
 }
             
-
-
-/*----------------------------------------------------------------------------
-    convert a physical address to a portable multiprocessor address with offset 0
- *----------------------------------------------------------------------------*/
-uint32_t lin2pack_simple (arm_stream_instance_t *S, uint8_t *buffer)
-{
-    uint64_t mindist;
-    uint64_t pack;
-    uint64_t buff;
-    int64_t distance;
-    uint8_t i;
-
-    /* packed address range is [ long_offset[IDX]  +/- 8MB ]*/
-#define MAX_PACK_ADDR_RANGE ((1<<(BASEIDX_ARCW0_MSB - BASEIDX_ARCW0_LSB-1))-1)
-
-    buff = (uint64_t)buffer;
-    pack = 0;
-
-    /* find the base offset */
-    mindist = MAX_PACK_ADDR_RANGE;
-    for (i = 0; i < (uint8_t)MAX_NB_MEMORY_OFFSET; i++)
-    {
-        distance = S->long_offset[i] - buff;
-        if (ABS(distance) > MAX_PACK_ADDR_RANGE) 
-        {   continue; 
-        }
-        else
-        {   mindist = distance & MAX_PACK_ADDR_RANGE;
-            pack = mindist | ((uint64_t)i << (uint8_t)DATAOFF_ARCW0_LSB);
-        }
-    }
-
-    /* @@@ to check */
-    return (uint32_t)pack;
-}
-
 
 /**
   @brief            (main) 
@@ -298,19 +261,19 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
                             struct stream_graph_linkedlist *graph, 
                             char *ggraph_txt)
 {
-    char *pt_line;
+    char *pt_line, *pt_line2;
     char paths[MAX_NB_PATH][NBCHAR_LINE];
     uint32_t scriptctrl, procs /* @@@@ */;
-    uint32_t iscripts = 0, first_arc = 1;
+    uint32_t iscripts = 0, first_arc = 1, arcSection = 0;
     uint64_t cumulStaticW32, cumulStaticByte, offset_buffer, offset_instance, offset_descriptor;
     char shortFormat[2];
 
     pt_line = ggraph_txt;
     cumulStaticW32 = GRAPH_HEADER_NBWORDS; 
     dbggraph = graph;
-
+    jump2next_valid_line(&pt_line);
     
-    while (NOT_YET_END_OF_FILE == jump2next_valid_line(&pt_line))
+    while (FOUND_END_OF_FILE != jump2next_valid_line(&pt_line) || (arcSection == 0))
     {
         /* -------------------------- HEADER -------------------------------------- */
         if (0 == strncmp (pt_line, HEADER, strlen(HEADER)))
@@ -326,8 +289,11 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
             i = 0;
             while (1)
-            {   if (fields_extract(&pt_line, "C", paths[i]) > 0)
-                    break;
+            {   /* read the paths until finding _end_ / SECTION_END */
+                if (fields_extract(&pt_line, "C", paths[i]) < 0)
+                {   break;
+                }
+                i++;
             }
         }
         /* ----------------------------top_graph_interface------------------------- */
@@ -345,10 +311,9 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
             /*
             top_graph_interface
-                2               4 interfaces (max 255)
-            ;   I  F  I S  V
-                0  0  2 0  0       index-0   format 0 FWIDX=2 gpio_out_0  default settings, VID0
-                1  1  3 0  0       index-1,  format 1 FWIDX=3 line_out_0  default settings, VID0   
+            ; s  I  F  H   if s='X' S  V
+              S  0  0  2            0  0       index-0   format 0 FWIDX=2 gpio_out_0        settings, VID0
+              S  1  1  3            0  0       index-1,  format 1 FWIDX=3 line_out_0        settings, VID0   
                 _end_    
             */
             for (i=0; i<=platform->nb_hwio_stream; i++)
@@ -361,17 +326,15 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
             while (1)
             {   
-                if (fields_extract(&pt_line, "CIIIII", shortFormat, &idx, &iformat, &fw_io_idx, &settings, &memVID_buffer) < 0)
-                {   break;
-                }
-                if (idx != i)
-                {   printf ("\n\n IO index incorrect \n\n");
-                    exit (-100);
+                pt_line2 = pt_line;
+                if (fields_extract(&pt_line, "CIII", shortFormat, &idx, &iformat, &fw_io_idx) < 0) break;
+                if (shortFormat[0] != 'S' && shortFormat[0] != 's')   /* is it a long format ? */
+                {   pt_line = pt_line2;
+                    if (fields_extract(&pt_line, "CIIIII", shortFormat, &idx, &iformat, &fw_io_idx, &settings, &memVID_buffer) <0) break;
                 }
 
                 arcIO = &(graph->arcIO[fw_io_idx]);
                 graph->nbio_interfaces ++;
-
 
                 if (shortFormat[0] == 'S' || shortFormat[0] == 's')   /* is it a short format ? */
                 {   arcIO->memVID = 0;
@@ -479,13 +442,11 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
             node = &(graph->all_nodes[graph->nb_nodes]); 
             platform_node = 0;
-            fields_extract(&pt_line, "ci", node_name, &tmp);  
+            if (fields_extract(&pt_line, "ci", node_name, &(node->instance_idx)) < 0) exit (-4);  
             node_name[MAXINPUT-1] = '\0';
 
-            if (0 != strcmp(node_name, "arm_script"))
-            {
-                node->instance_idx = tmp;
-                for (inode = 1; inode < platform->nb_nodes+1; inode++)
+            if (0 != strcmp(node_name, "arm_stream_script"))        /* is it NOT a script ? */
+            {   for (inode = 1; inode < platform->nb_nodes+1; inode++)
                 {   platform_node = &(platform->all_nodes[inode]);
                     if (0 == strncmp(node_name, platform_node->nodeName,strlen(platform_node->nodeName)))
                     {   break;
@@ -496,14 +457,18 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
                 *node = platform->all_nodes[inode];
                 node->swc_idx = inode;
 
-                fields_extract(&pt_line, "CIIIIII", shortFormat,
+                pt_line2 = pt_line;
+                if (fields_extract(&pt_line, "CI", shortFormat, &(node->preset)) < 0) exit(-4);
+                if (shortFormat[0] != 'S' && shortFormat[0] != 's')   /* is it a long format ? */
+                {   pt_line = pt_line2;
+                    if (fields_extract(&pt_line, "CIIIIII", shortFormat,
                         &(node->preset),
                         &(node->local_script_index),
                         &(node->swc_assigned_arch),
                         &(node->swc_assigned_proc),
                         &(node->swc_assigned_priority),
-                        &(node->swc_verbose)
-                    );  
+                        &(node->swc_verbose)) <0) exit(-4);
+                }
 
                 if (shortFormat[0] == 'S' || shortFormat[0] == 's')   /* is it a short format ? */
                 {   node->local_script_index = 0;
@@ -536,7 +501,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
                 jump2next_valid_line(&pt_line);
 
                 if (0 == strncmp (pt_line, PARAMETER_START, strlen(PARAMETER_START)))
-                {  stream_tool_read_parameters(&pt_line, node); /*  returns on "_end_"  */
+                {  stream_tool_read_parameters(&pt_line, node); /*  returns on "_end_" SECTION_END */
                 }
                 else
                 {   node->PackedParameters[0] = 0;
@@ -563,73 +528,49 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
                         no SET_PARAMETER step  the "nregs, stacklength, byte code format" are pre-loaded in the FIFO  
                    */
             {
-                uint32_t nreg, stackdepth, nbByteCodes=0, nbBytesCodes, sharedRAM;
+                uint32_t nreg, stackdepthW32, nbByteCodes=0, nbBytesCodes, privateRAM;
                 uint32_t scriptFormat;  /* select byte-code format / binary code of the processor */
 
                 //FILE *ptf_graph_script_bytecode;
                 //char filename[120];
 
-                iscripts = tmp;     // @@@ warning this index must fit with the SWC declaration &(node->local_script_index)
-                fields_extract(&pt_line, "iii", &nreg, &stackdepth, &sharedRAM, &scriptFormat);  
+                iscripts = node->instance_idx;     // @@@ warning this index must fit with the SWC declaration &(node->local_script_index)
+                fields_extract(&pt_line, "ciiii", &shortFormat, &nreg, &stackdepthW32, &privateRAM, &scriptFormat);  
 
                 //sprintf (filename, "SCRIPT_%d.txt", iscripts); 
                 //ptf_graph_script_bytecode = fopen(filename, "wt");
 
-                graph->script_indirect[iscripts] = graph->nb_byte_code;    // BYTECODE offset in script_bytecode[]
+                if (shortFormat[0] == 'S' || shortFormat[0] == 's')   /* is it a short format ? */
+                {   privateRAM = 0;
+                    scriptFormat = 0;
+                }
+
+                // current BYTECODE offset in script_bytecode[]
+                graph->script_indirect[INDEX_SCRIPT_STRUCT_SIZE*iscripts+INDEX_SCRIPT_OFFSET] = graph->nb_byte_code; 
                 graph->script_nregs[iscripts] = nreg;
-                graph->script_stackdepthW32[iscripts] = stackdepth;
-                if (sharedRAM)  // @@@@
+                graph->script_stackdepthW32[iscripts] = stackdepthW32;
+                graph->nb_scriptsARC ++;                                // one arc descriptor per script
+
+                if (privateRAM == 0)                                    // the script is using the shared memory section
                 {   graph->max_nregs = MAX(graph->max_nregs, nreg); 
-                    graph->max_stack = MAX(graph->max_stack, stackdepth); 
+                    graph->max_stackW32 = MAX(graph->max_stackW32, stackdepthW32); 
                     graph->scriptRAMshared[iscripts] = 1;
                     graph->atleastOneScriptShared = 1;
                 } 
-                else
-                {   graph->nb_scriptsARC ++;
-                }
-
-
-                /* reserve 2 bytes for the TX arc ID and the optional const-parameters arc ID */
-                graph->script_bytecode[graph->nb_byte_code] = 0x55;    graph->nb_byte_code ++;
-                graph->script_bytecode[graph->nb_byte_code] = 0x55;    graph->nb_byte_code ++;
+                
                 stream_tool_read_script(&pt_line, &(graph->script_bytecode[graph->nb_byte_code]), &nbBytesCodes);
-
+                nbBytesCodes = (3+nbBytesCodes) & 0xFFFFFFFC;   // round it to W32
+                
                 graph->nb_byte_code += nbBytesCodes;
-                //graph->nb_byte_code = (3+graph->nb_byte_code) & 0xFFFFFFFC;
-                /*cumulStaticW32 += (3+nbBytesCodes)>>2;*/
-
                 graph->nb_scripts ++;
 
-
-                // check extra parameters need to be inserted in the static data arc (indexed with "Read")
-                //      parameters         arc with parameters 
-                //          2  u8; 0 255                        no preset, TAG = "all parameters"
-                //          1  u8;  2                           Two biquads
-                //          1  u8;  0                           postShift
-                //          5 h16; 1231 1D28 1231 63E8 D475     b0/b1/b2/-a1/-a2  ellip(4, 1, 40, 3600/8000, 'low') 
-                //          5 h16; 1231 0B34 1231 2470 9821     second biquad
-                //          ;  _include    1   arm_stream_filter_parameters_x.txt      
-                //          _end_
-
-                /* parameters in RAM */
+                /* extra parameters in FLASH following the code */
                 jump2next_valid_line(&pt_line);
-                if (0 == strncmp (pt_line, PARAMETER_RAM_START, strlen(PARAMETER_RAM_START)))
-                {   stream_tool_read_script(&pt_line, 
-                        &(graph->script_embedded_param[iscripts][0]), 
-                        &(graph->script_param_length[iscripts]) );
-                }
-
-                /* parameters in FLASH W32 aligned */
                 if (0 == strncmp (pt_line, PARAMETER_START, strlen(PARAMETER_START)))
-                {   uint32_t tmp;
-                    graph->nb_byte_code = ((graph->nb_byte_code +3)>>2)<<2; // align parameters on W32 address
-                
-                    stream_tool_read_script(&pt_line, 
-                        &(graph->script_bytecode[graph->nb_byte_code]), 
-                        &tmp );
-                    graph->nb_byte_code += tmp;
+                {   stream_tool_read_script(&pt_line, &(graph->script_bytecode[graph->nb_byte_code]), &nbBytesCodes);
+                    nbBytesCodes = (3+nbBytesCodes) & 0xFFFFFFFC;   // round it to W32
+                    graph->nb_byte_code += nbBytesCodes;
                 }
-
             }
         }
 
@@ -657,6 +598,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             uint32_t fw_io_idx;
 
 
+            arcSection = 1;
 
             /* NO OTHER SCRIPT AFTER ARC DECLARATION */
             cumulStaticW32 += (graph->nb_scripts +1)>>1; // graph->script_indirect[..]
@@ -807,7 +749,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             ST(arc->ARCW0,   DATAOFF_ARCW0, 0);
             ST(arc->ARCW0,   BASEIDX_ARCW0, arcBufferBaseW32);      
             sprintf(DBG,"Data stream ARC%d base address=0x%X  size=0x%X",arcID, arcBufferBaseW32, arcBufferSizeByte);  
-            DBGG(arcBufferBaseW32, DBG); // check on Byte address
+            DBGG(arcBufferBaseW32 *4, DBG); // check on Byte address
 
             ST(arc->ARCW1, CONSUMFMT_ARCW1, ConsFMT);
             ST(arc->ARCW1,   MPFLUSH_ARCW1, FLUSH);
@@ -860,8 +802,8 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
                 RegAndStackW32 = graph->script_nregs[iscripts];
                 stackdepthW32 = graph->script_stackdepthW32[iscripts];
-                arcBufferSizeByte = RegAndStackW32 * SCRIPT_REGISTER_SIZEBYTE; /* SCRIPT_REGISTER_SIZEBYTE = 9 */
-                arcBufferSizeByte+= stackdepthW32 * SCRIPT_REGISTER_SIZEBYTE; /* stack element on 9 bytes too */
+                arcBufferSizeByte = RegAndStackW32 * 8; /* SCRIPT_REGISTER_SIZEBYTE = 9  @@@@@@@@@@@*/
+                arcBufferSizeByte+= stackdepthW32 * 8; /* stack element on 9 bytes too */
                 arcBufferSizeByte = ((arcBufferSizeByte +3)>>2)<<2;
                 graph->script_stackLengthW32[iscripts] = arcBufferSizeByte>>2;
 
@@ -880,11 +822,15 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
                 ST(arc->ARCW0,   DATAOFF_ARCW0, 0);
                 ST(arc->ARCW0,   BASEIDX_ARCW0, arcBufferBaseW32);      
                 sprintf(DBG,"Script stack and registers in ARC%d base address=0x%X  size=0x%X",graph->nb_arcs, arcBufferBaseW32, arcBufferSizeByte);  
-                DBGG(arcBufferBaseW32, DBG); // check on Byte address
+                DBGG(arcBufferBaseW32 *4, DBG); // check on Byte address
                 ST(arc->ARCW1, BUFF_SIZE_ARCW1, arcBufferSizeByte);
 
 
-                //@@@@ add nregs, stacklen, auto-reset/clean on 4bits MSB
+                //the FIFO descriptor   
+                //    base address = instance, registers
+                //    length = code length + byte code format
+                //    read index = start of stack index
+                //    write index = start of parameters index
                 graph->script_offset[iscripts] = arcBufferBaseW32;
                 graph->nb_arcs ++;   // script arcs
             }
@@ -944,25 +890,25 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         }
 
         //////////////////
-        /* arc used for SCRIPTS */            
-        {   uint32_t iscripts, iByteCode, ibin;
-            for (iscripts = 0 ; iscripts < graph->nb_scripts; iscripts++)
-            {    
-                if (0 < graph->script_param_length[iscripts])
-                {   ibin = graph->script_offset[iscripts];
-                    ibin += graph->script_stackLengthW32[iscripts];
-                    for (iByteCode = 0; iByteCode < graph->script_param_length[iscripts]; iByteCode+=4)
-                    {   uint32_t W32, tmp; uint8_t *pt8;
-                        pt8 = &(graph->script_embedded_param[iscripts][iByteCode]);
-                        W32 = *pt8++;   tmp = *pt8++;
-                        W32 |= tmp<<8;  tmp = *pt8++;
-                        W32 |= tmp<<16; tmp = *pt8++;
-                        W32 |= tmp<<24; 
-                        graph->binary_graph[ibin++] = W32;
-                    }
-                }
-            }
-        }   /* arcs of SCRIPTS */
+        ///* arc used for SCRIPTS */            
+        //{   uint32_t iscripts, iByteCode, ibin;
+        //    for (iscripts = 0 ; iscripts < graph->nb_scripts; iscripts++)
+        //    {    
+        //        if (0 < graph->script_param_length[iscripts])
+        //        {   ibin = graph->script_offset[iscripts];
+        //            ibin += graph->script_stackLengthW32[iscripts];
+        //            for (iByteCode = 0; iByteCode < graph->script_param_length[iscripts]; iByteCode+=4)
+        //            {   uint32_t W32, tmp; uint8_t *pt8;
+        //                pt8 = &(graph->script_embedded_param[iscripts][iByteCode]);
+        //                W32 = *pt8++;   tmp = *pt8++;
+        //                W32 |= tmp<<8;  tmp = *pt8++;
+        //                W32 |= tmp<<16; tmp = *pt8++;
+        //                W32 |= tmp<<24; 
+        //                graph->binary_graph[ibin++] = W32;
+        //            }
+        //        }
+        //    }
+        //}   /* arcs of SCRIPTS */
 
 
         /* PIO LOOP aAND ALLOC BUFFER @@@@@ + COPY FMT3 */

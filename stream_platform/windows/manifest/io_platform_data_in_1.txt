@@ -1,19 +1,19 @@
 ;
-    io_platform_data_out_0  name for the GUI                            
-    DATA_OUT                domain name 
+    io_platform_data_in_1   name for the GUI                            
+    DATA_IN                 domain name 
 ; ------------------------------------------------------------------------------------------------------------
 ;   Loop on the IO arcs of this component
 ;
 ;       - Digital frame format, common to all transducers and arcs
 ;       - Specific information and tuning of the domain
 ;
- 
+  
     1   commander=0 servant=1 
     0   buffer declared from the BSP (0) or from the Graph (X) (size=factor of the Frame size)           
     0   in standard RAM=0, in HW IO RAM=1, or HW FIFO of the peripheral
     255 processor affinity bit-field : any of 8 processors (if any) can read the data 
 
-    1   rx0tx1  
+    0   rx0tx1  
     17  raw format s16                                        
     0   time-stamp                                          
     1   frame length format (0:in milliseconds 1:in samples)

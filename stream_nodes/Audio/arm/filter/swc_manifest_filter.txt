@@ -4,7 +4,7 @@
 ;
     ARM             developer name
     arm_stream_filter  node name for the GUI and the graph compiler (node and arc src/dst)
-    1 1 0 1   1 1 0 31  
+    X 1 1 0 1   1 1 0 31  
 ;                   nb input arcs 
 ;                   nb output arcs (in + out = ARCSRDY_LW0_LSB first arcs, data availability checked before RUN )
 ;                   nb parameter-arcs arcs, (NN model..), nodes with parameter arc have "xdm11=0" to keep the read index on the parameter
@@ -54,8 +54,10 @@
     0   sampling rate format (0:Hz, 1:seconds, 2:days)
     3   percent FS accuracy                                 
 
-    ;   Lists of options, starting with the default index (0="any")
-    ;   (0="any", followed by min and max value range)
+    ;   Lists of options, starting with the default index
+    ;   default_index = 0 means "any" in the data allowed following values   A1 A2 A3 .. */
+    ;   default_index = -1 means data range followed by three values   Amin Astep Amax */
+    ;   
     1   0                   ;i interleaving options list
     1   1                   ;i nb channels options list 
     1   1 2 4               ;f frame_size option in samples  (or millis) 

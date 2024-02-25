@@ -38,7 +38,6 @@
 #define IO_INTERFACE "top_graph_interface"
 #define FORMAT "format"
 #define PARAMETER_START "parameters"
-#define PARAMETER_RAM_START "parameters_arc"
 #define NODE "node"
 #define ARM_SCRIPT "arm_script"
 #define SCRIPT "SCRIPT"

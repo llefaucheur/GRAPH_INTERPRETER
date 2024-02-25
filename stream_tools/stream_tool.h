@@ -41,7 +41,12 @@
 struct options
 {
     uint32_t nb_option;
-    uint32_t default_index;
+
+    /* default_index = 0 means "any" in the data allowed following values   A1 A2 A3 .. */
+    /* default_index = -1 means data range followed by three values   Amin Astep Amax */
+    /* @@@@@@@@@@@ */
+    int32_t default_index; 
+
     float options[MAX_NBOPTIONS];   /* options offered through SW settings and stream converters */
 };
 
@@ -431,15 +436,13 @@ struct stream_graph_linkedlist
     uint32_t scriptRAMshared  [1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
     uint32_t script_offset    [1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
     uint32_t script_stackLengthW32[1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
-    uint16_t script_indirect  [1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
+    uint32_t script_indirect  [2* (1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1))];  // script indirection two words SCROFF0/1
     uint32_t script_nregs     [1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
     uint32_t script_stackdepthW32[1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
     uint32_t script_param_length[1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)];
-    uint32_t max_nregs, max_stack;
+    uint32_t max_nregs, max_stackW32;
     #define AVG_SCRIPT_LEN 100          // list of byte-codes
     char script_bytecode      [(1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)) * AVG_SCRIPT_LEN];
-    #define AVG_SCRIPT_PARAM_LEN 1000   // parameters set by scripts
-    char script_embedded_param[1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)][(1<<(SCRIPT_LW0_MSB-SCRIPT_LW0_LSB-1)) * AVG_SCRIPT_LEN];
 
     uint32_t script_sctrl;
 

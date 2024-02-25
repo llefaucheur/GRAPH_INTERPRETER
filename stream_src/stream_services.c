@@ -161,7 +161,7 @@ static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_
         //    debugBufferLength = free_area;
         //}
         *ptr1 = *ptr1; //for debug
-        //arc_data_operations((arm_stream_instance_t*)&stream_instance, arc, arc_IO_move_to_arc, ptr1, debugBufferLength);
+        //arc_data_operations((arm_stream_instance_t*)&stream_instance, arc, data_move_to_arc, ptr1, debugBufferLength);
         break;
     }
 

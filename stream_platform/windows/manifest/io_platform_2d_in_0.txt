@@ -12,8 +12,6 @@
 ;       - Digital frame format, common to all transducers and arcs
 ;       - Specific information and tuning of the domain
 ;
-;   ARC0
-
    
     1   commander=0 servant=1                               
     0   buffer declared from the BSP 0 or Graph x (multiplication factor of the Frame size)           
@@ -34,7 +32,7 @@
     0   0                   ;f [4bits] any sampling rate option
 
 
-;-------------------   @@@@ TO UPDATE @@@@
+;-------------------   @@@@ TO UPDATE WHEN 2D MIXED-SIGNAL OPTION ARE DEFINED @@@@
 ; 2d_in domain SPECIFIC (digital format) : list of the channels
 ;
 ;                  

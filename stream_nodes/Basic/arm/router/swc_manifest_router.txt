@@ -3,8 +3,8 @@
 ; ------------------------------------------------------------------------------------------------------------
 ;
     ARM             developer name
-    ROUTER          node name for the GUI and the graph compiler (node and arc src/dst)
-    1 1 0 1   1 1 0 31  
+    arm_stream_router   node name for the GUI and the graph compiler (node and arc src/dst)
+    X 1 1 0 1   1 1 0 31  
 ;                   nb input arcs 
 ;                   nb output arcs (in + out = ARCSRDY_LW0_LSB first arcs, data availability checked before RUN )
 ;                   nb parameter-arcs arcs, (NN model..), nodes with parameter arc have "xdm11=0" to keep the read index on the parameter
@@ -34,8 +34,8 @@
 ;
 ;   INSTANCE MEM is the first one, even if the size is null
 ;
-;   [12]:   A D64 B C D E, indexes i,j,k,  alignment, static/working/retention,  any/normal/fast/critical,  relocatable (STREAM_UPDATE_RELOCATABLE)
-    54 0 0 0 0 0  0 0 0  4 0 0 0
+;   [13]:   A D64 B C D E, indexes i,j,k,  alignment, static/working/retention,  any/normal/fast/critical,  relocatable (STREAM_UPDATE_RELOCATABLE)
+            54 0  0 0 0 0  0 0 0           4 0 0 0
 
 
 ;-------------------

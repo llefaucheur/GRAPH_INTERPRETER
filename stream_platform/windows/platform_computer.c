@@ -73,7 +73,7 @@ extern p_stream_node arm_stream_modulator;      /* 11*/
 extern p_stream_node arm_stream_demodulator;    /* 12*/
 extern p_stream_node arm_stream_interpolator;   /* 13*/
 extern p_stream_node arm_stream_qos;            /* 14*/
-extern p_stream_node arm_stream_share;          /* 15*/
+extern p_stream_node arm_stream_split;          /* 15*/
 extern p_stream_node arm_stream_detector2D;     /* 16*/
 extern p_stream_node arm_stream_filter2D;       /* 17*/
 extern p_stream_node arm_stream_interpolator2D; /* 18*/
@@ -85,25 +85,25 @@ p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
 {
     /*--------- ARM ---------*/
     /*  0*/ (void *)0,                          /* node disabled */
-    /*  1*/ (void *)&arm_stream_script,         /* byte-code interpreter, index "arm_stream_script_INDEX" */
-    /*  2*/ (void *)&arm_stream_router,         /* copy input arcs and subchannel and output arcs and subchannels   */     
+    /*  1*/ (void *)&arm_stream_script,         /* byte-code interpreter */
+    /*  2*/ (void *)&arm_stream_router,         /* copy input arcs and subchannel and output arcs and subchannels   */  
     /*  3*/ (void *)&arm_stream_converter,      /* raw data format converter */
     /*  4*/ (void *)&arm_stream_amplifier,      /* amplifier mute and un-mute with ramp and delay control */
     /*  5*/ (void *)&arm_stream_mixer,          /* multichannel mixer with mute/unmute and ramp control */
     /*  6*/ (void *)&arm_stream_filter,         /* cascade of DF1 filters */
-    /*  7*/ (void *)&arm_stream_detector,       /* estimates peaks/floor of the mono input and triggers a flag on high SNR */
+    /*  7*/ (void *)&arm_stream_detector,       /* estimates peaks/floor of the input and triggers a flag on high SNR */
     /*  8*/ (void *)&arm_stream_rescaler,       /* raw data values remapping using "interp1" */
-    /*  9*/ (void *)&arm_stream_compressor,     /* raw data compression with adaptive prediction */
+    /*  9*/ (void *)&arm_stream_compressor,     /* raw data compression */
     /* 10*/ (void *)&arm_stream_decompressor,   /* raw data decompression */
     /* 11*/ (void *)&arm_stream_modulator,      /* signal generator with modulation */
     /* 12*/ (void *)&arm_stream_demodulator,    /* signal demodulator, frequency estimator */
     /* 13*/ (void *)&arm_stream_interpolator,   /* asynchronous sample-rate converter */
     /* 14*/ (void *)&arm_stream_qos,            /* raw data interpolator with synchronization with one HQoS stream */
-    /* 15*/ (void *)&arm_stream_share,          /* let a buffer be used by several nodes */
-    /* 16*/ (void *)&arm_stream_detector2D,     /* motion detect */
-    /* 17*/ (void *)&arm_stream_filter2D,       /* arm_stream_filter2D,        */
-    /* 18*/ (void *)&arm_stream_interpolator2D, /* arm_stream_interpolator2D,     */
-    /* 19*/ (void *)&arm_stream_synchro,        /* arm_stream_multistream_synchro, */
+    /* 15*/ (void *)&arm_stream_split,          /* let a buffer be used by several nodes */
+    /* 16*/ (void *)&arm_stream_detector2D,     /* image activity detection */
+    /* 17*/ (void *)&arm_stream_filter2D,       /* convolution filter of the image */
+    /* 18*/ (void *)&arm_stream_interpolator2D, /* change image format and resize */
+    /* 19*/ (void *)&arm_stream_synchro,        /* multi-stream synchro  */
 };
 
 
@@ -226,7 +226,7 @@ uint32_t lin2pack (arm_stream_instance_t *S, uint8_t *buffer)
   @remark
  */
 
-void init_stream_instance(arm_stream_instance_t *instance, uint8_t stream_instance_idx)
+void init_stream_instance(arm_stream_instance_t *instance)
 {
 
 extern p_stream_node node_entry_point_table[];
@@ -245,16 +245,15 @@ extern const p_stream_al_services application_callbacks[];
 
     instance->scheduler_control = PACK_STREAM_PARAM(
             STREAM_MAIN_INSTANCE,
-            STREAM_ANY_PRIORITY,
             STREAM_NB_INSTANCE,
             STREAM_COLD_BOOT,
             STREAM_SCHD_NO_SCRIPT, 
             STREAM_SCHD_RET_END_ALL_PARSED
             );
 
-    ST(instance->whoami_ports, ARCHID_PARCH, ARCH_ID);
+    ST(instance->whoami_ports, ARCHID_PARCH, ARCH_ID);  /* 3 fields used for SWC locking */
     ST(instance->whoami_ports, PROCID_PARCH, PROC_ID);
-    ST(instance->whoami_ports, INSTANCE_PARCH, stream_instance_idx);
+    ST(instance->whoami_ports, PRIORITY_PARCH, STREAM_INSTANCE_LOWLATENCYTASKS);
     
     instance->iomask = 0x03FF;                      /* 10 IOs */
     instance->ioctrl= &(platform_iocontrol[0]);     /* list of bytes holding the status of the on-going data moves (MP) */

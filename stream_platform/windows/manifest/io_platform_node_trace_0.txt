@@ -5,29 +5,7 @@
 ;   description consists in the "digital format" common to all the streams
 ;     + specific calibration and mixed-signal settings specific to the "domain" of operation 
 ;
-;   The list of domain is :
-;       data_in             generic 
-;       data_out            
-;       data_stream_in      generic stream/frame based 
-;       data_stream_out   
-;       audio_in            audio/voice
-;       audio_out         
-;       gpio_in             1 bit peripherals
-;       gpio_out          
-;       motion_in           accelerometer / gyroscope / magnetometer
-;       2d_in               image
-;       2d_out            
-;       user_interface_in   keyboard
-;       user_interface_out
-;       command_in          command from remote computers
-;       command_out       
-;       analog_sensor       sensors with polling mechanismes
-;       analog_transducer 
-;       rtc_in              clocks
-;       rtc_out           
-;       storage_out         
 ; 
-
                                                                       
     trace_file_0            name for the GUI                            
     data_out                generic data domain name :  metadata / trace

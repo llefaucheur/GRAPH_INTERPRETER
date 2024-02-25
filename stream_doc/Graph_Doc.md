@@ -25,54 +25,37 @@ designed for the following typical use-cases:
 -   **Last minute tuning**. A graph of nanoApps needs to be quickly
     updated with new parameters and the insertion of a nanoApp, without
     recompiling the application.
-
--   **Low-code tuning**. A GPIO is triggered upon a change of energy
-    level in an input stream, or a state of a nanoApp, without
-    recompiling the application.
-
--   **Language agnostic**. The nanoApps are developed in various
+-   **Low-code tuning**. A GPIO is triggered upon changes of input signal behavior or for the a state change of a nanoApp, without recompiling the application. 
+-   **Language agnostic**. An aggregation of nanoApps developed in various
     programming language and delivered in binary, with position
     independent compilation.
-
--   **Platform memory abstraction**. The nanoApps are delivered to the
-    system integrator with memory requirements (static and scratch
-    memory, speed and alignment requirements). For example a DTCM
-    presence and size will be abstracted through opaque interface.
-
+-   **Abstraction of the platform memory size and characteristics**. The nanoApps are delivered to the
+    system integrator with memory requirements : static and scratch
+    memory, speed and alignment requirements. TCM is used through opaque interface.
 -   **Stream format conversion**. The nanoApps are delivered with
-    manifests giving the data and stream formats at their interfaces.
+    manifests of the data and stream formats at their interfaces.
     CMSIS-Graph is delivered with stream converters.
-
--   **Different physical domains**. The graph is mixing flows from
-    different families of sensor (motion, temperature, audio, camera ..)
-    and the stream formats are standardized at the IO-interfaces. For
-    example a pressure sensor stream can be used to control the level of
-    a sinewave generator in the audio domain.
-
 -   **Data flows with drifts**. The graph is able to mix flows with flow
     error management. For example mixing streams of audio sources
-    originated from different mixed-signal clock domains.
-
--   **Computing acceleration**. The scheduler proposes DSP and ML
+    originated from different clock domains.
+-   **Computing acceleration**. The graph scheduler offers DSP and ML
     computing services to the nanoApps to facilitate performance scaling
     with code portability. For example a nanoApp compiled for Cortex-M4
     using FFT or convolutional networks will scale in performance on MVE
     architectures, without recompilation.
-
 -   **Heterogenous architectures**. The graph is in a shared memory
     accessed by any processor of any architecture. The graph data
     structures are not using absolute addresses.
-
 -   **Multiprocessing**. The graph allows some nodes to be executed from
     a specific processor, a specific architecture, or a specific task of
     an RTOS. For example, some nodes will have low-latency execution
     constraints, others can be executed in low-priority threads.
+-   **Scripting**. The graph scheduler incorporate a tiny byte-code interpreter to implement state-machines and simple decisions from the generated nanoApps metadata.
+-   **Low memory consumption**. The graph runs simple machine-learning operations on extreme low-cost platforms. For example a graph which consists of DSP filters, a signal to
+    noise detection and a script-controlled GPIO from data thresholds can run on a
+    device using 1kBytes of internal RAM and 8kBytes of Flash.
 
--   **Low memory consumption**. One targeted objective is to execute
-    simple machine-learning operations on extreme low-cost platforms.
-    For example a graph which consists of a DSP filter, a signal to
-    noise detection and GPIO triggered on data thresholds can run on a
-    device having 2kBytes of internal RAM and 16kBytes of Flash.
+## Interface 
 
 The CMSIS-Graph scheduler has one entry point. It takes four parameters:
 a command (reset, run, set parameters), data pointers, length of data
@@ -91,7 +74,7 @@ and pointer the state of the scheduler:
 
 ## Graph-description
 
-The graph is a table of 32bits words interpreted by a nanoApp scheduler.
+The graph is a table of 32bits words interpreted by the scheduler.
 There are seven sections in the graph:
 
 1.  **Header.** Size of the following sections, their memory destination
@@ -123,17 +106,19 @@ There are seven sections in the graph:
 
 The scheduler receives a pointer to the Graph-description and interprets
 it. It returns to the application caller when the data flow is completed
-or after execution of each nanoApp.
+or after execution of each nanoApp. 
+
+For embedded devices the sections [1..5] above can stay in Flash while only sections [6, 7] will be used in RAM.
 
 Example of graph
 [here](https://github.com/ARM-software/EndpointAI/blob/master/Nodes/Graph_Interpreter/graph_doc/graph_example.txt)
 
 ## nanoApps
 
-A nanoApp is a subroutines (single entry point) with four parameters.
-The declaration follows this template: *void nanoApp_name (int32_t
-command, stream_handle_t instance, stream_xdmbuffer_t \*data, uint32_t
-\*status)*
+A nanoApp is a function (a single entry point) with four parameters.
+The declaration follows this template: 
+
+`void nanoApp_name (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status);`
 
 The "**command**" tells if the call is related to initialization/reset,
 or reading/setting parameters, processing a stream of data or stopping
@@ -148,10 +133,13 @@ output processed streams (see details [below](#create-a-nanoapps)).
 ## Scheduler
 
 CMSIS-Graph has two entry points, one is called by the application for
-the interpretation of the graph (*arm_graph_interpreter (command,
-\*instance, \*data, size)*), the second is a call-back to notify the
+the interpretation of the graph 
+
+`arm_graph_interpreter (command, *instance, *data, size)` 
+
+the second is a call-back to notify the
 transfer of data and to update the arcs at the boundary of the graph
-(*platform_io_ack (IO, \*data, size)*).
+`platform_io_ack (IOid, *data, size).`
 
 The scheduler entry point has a prototype similar to nanoApps, with a
 command telling to reset the graph, processing it and setting
@@ -172,10 +160,10 @@ space on the output arcs.
 ## Graph creation
 
 CMSIS-Graph makes no hypothesis on the method used to generate the graph
-binary sequence described [here](#graph-description). A program is
-proposed to translate an ASCII text file to the graph format.
+binary file described [here](#graph-description). A program is
+proposed to translate a file of commands to the graph format.
 
-The text to binary translation consists in reading the "manifests" files
+This text to binary translation consists in reading the "manifests" files
 of the processors (the memory map and processors details), of the
 IO-interface peripheral (data and stream formats, available options for
 set-up), and of the nanoApps (number of arcs and their characteristics,
@@ -196,27 +184,21 @@ The "command" is a bit-field:
 
 -   4 bits reserved for the action: reset, set / read parameters, run,
     stop
-
 -   4 bits for the number of data streams to process in the "data"
     structure
-
 -   4 bits for the "**preset**" : the default values embedded in the
     code of the nanoApps. A "set parameter" command will patch the
-    parameters on top preset.
-
--   8 bits for extra parameters
+    parameters on top preset. 
 
 The "stream_handle" parameter has two meanings:
 
 -   During a reset command it is a pointer to the list of memory
-    addresses (of type \*\*intPtr_t, intPtr_t uint32_t or uint64_t
-    depending on the processor architecture) requested by the nanoApp
+    addresses (of type "intPtr_t" which is *uint32_t or *uint64_t depending on the processor architecture) requested by the nanoApp
     and described in its manifest. The first address of the list is the
     "instance": the static memory which differentiates this nanoApp for
     other replicas in the graph
-
--   For the other commands it is pointer to the instance (type
-    \*intPtr_t)
+    
+-   For the other commands it is pointer to the instance (type intPtr_t)
 
 The "stream_xdmbuffer" parameter has three meanings:
 

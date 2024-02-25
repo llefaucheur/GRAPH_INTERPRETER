@@ -44,6 +44,267 @@
 
 
 
+
+/* 
+    Graph data format :
+    -------------------SHARED FLASH (RAM POSSIBLE)-----------------
+    [-1] size of the graph in Words 
+    Offset_0 (idx_memory_base_offset = MBANK_GRAPH)
+    [0] 27b RAM address of part/all the graph going in RAM, HW-shared MEM configuration, which part is going in RAM
+    [1] number of FORMAT, size of SCRIPTS
+    [2] size of LINKEDLIST, number of STREAM_INSTANCES
+    [3] number of ARCS, number of DEBUG registers
+    [4] list of processors (procID for the scheduler in platform_manifest) processing the graph
+        The linkedList gives the architecture/procID only allowed to execute a SWC
+        This table is made to exclude a group of processor to execute any SWC even if their scheduler is launched.
+    [5,6] UQ8 portion of memory consumed on each long_offset[MAX_NB_MEMORY_OFFSET] 
+    -------------------
+
+    PIO "stream_format_io" (2 words per IO)
+        Word0: ARC ID, domain, io platform index, in/out, command parameter, format
+        Word1: default 32bits mixed-signal settings bit-fields
+    
+    FORMAT used by the arcs (4 words each stream_format)  
+        Word0: Frame size, interleaving scheme, raw data type
+        Word1: Nb Chan, Sampling rate, time-stamp format
+        Word2: depends on IO Domain (audio mapping, picture format, IMU interleaving, ..)
+
+    SCRIPTS in Flash = 2x32b offset table[7b] to the code
+        Indexed with the SWC header 7b index (SCRIPT_LW0) 
+        Parameters can be inserted at the end of the byte code of each script
+            or inserted in the arc buffer in RAM
+
+        Script index #0 means "disabled" 
+        Indexes 1..up to 63 are used for shared subroutines.
+        SWC header can be in RAM (to patch the parameter area, cancel the component..) but the script
+          byte-code do not change => the reason we put it in the SCRIPT section in Flash/RAM
+          or the other option is to have all the graph in RAM
+
+        The first SWC of the graph is a SWC-script interpreting the use-case command, in cascade
+          this script will call other subgraph's script and SWC with SET_PARAM. The graph compilation 
+          tool generates the table of index to let SWC be found with name mangling in the graph hierarchy
+
+        scripts as SWC (in the SWC list) have FIFOTX : TX ARC descriptor: locks execution, and
+            instance address (first memory bank) is the FIFO buffer address
+            the "nregs, stacklength" are pre-loaded in 
+            the FIFO descriptor   
+                base address = instance, registers
+                length = use-case word0
+                read index = use-case word1
+                write index = synchronization byte, time-out, FIFO length
+            
+        scripts used as pre/post processing of SWC (header of the SWC) have FIFOTX for the regs/stack, 
+            but no need for lock.
+
+        script scheduling reset = memreq = instance = raw descriptor address
+            there is no XDM data,   nb arc = 1 TX
+
+    -----------------SHARED FLASH/RAM (FOR NEWPARAM_LW2)----------    
+      
+    LINKED-LIST of SWC
+       minimum 5 words/SWC
+       Word0  : header processor/architecture, nb arcs, SWCID, arc
+       Word0+1: header extension: XDM11
+       Word1+n: arcs * 2  + debug page
+       Word2+n: nb membanks, main instance 27b address
+       Word3+n: Preset, New param!, Skip length, 
+          byte stream: nbparams (ALLPARAM), {tag, nbbytes, params}
+       list Ends with the SWC ID 0x03FF 
+    
+    -----------------SHARED RAM-------------------------------
+offset_descriptor
+    [0..7] can be used for the 16 arc debug registers (2 words each) 
+    ARC descriptors (4 words each)
+       Word0: base offsetm data format, need for flush after write
+       Word1: size, debug result registers
+       Word2: read index, ready for read, flow error and debug tasks index
+       Word3: write index, ready for write, need realignment flag, locking byte
+
+offset_buffer   
+    BUFFERS memory banks (internal/external/LLRAM) used for FIFO buffers 
+       and used for initializations, list of PACKSWCMEM results with fields
+          SIZE, ALIGNMT, SPEED,
+
+offset_instance
+    INSTANCE Pointers (27bits encoded format + bits used for synchonization at boot time and service activations)
+        (indexed by INST_SSRV_CMD of SWC_COMMANDS)
+    
+
+    WORKING areas of INSTANCES
+
+    DEBUG REGISTERS and vectors from ARC content analysis (DEBUG_REG_ARCW1)
+
+    SERVICES_RAM shared between all instances (maximum 5kB)
+        32 memory banks of 16bytes + 64bytes in normal and critical fast memory when possible
+*/
+
+
+/* max number of instances simultaneously reading the graph
+   used to synchronize the RESET sequence in platform_al() 
+   smaller than 1<< NBINSTAN_SCTRL */
+#define MAX_NB_STREAM_INSTANCES 4 
+
+/* max number of nodes installed at compilation time */
+#define NB_NODE_ENTRY_POINTS 20
+
+/* max number of application callbacks used from SWC and scripts */
+#define MAX_NB_APP_CALLBACKS 8
+
+/*  AL SERVICE GROUPS
+    read time
+    sleep control
+    read memory
+    serial communication
+    mutual exclusion
+*/
+#define AL_SERVICE_READ_TIME 0
+    #define AL_SERVICE_READ_TIME_SYSTICK 1
+    #define AL_SERVICE_READ_TIME_CONVERT 2
+
+#define AL_SERVICE_SLEEP_CONTROL 1
+
+#define AL_SERVICE_READ_MEMORY 2
+    /* AL SERVICE FUNCTIONS */
+    #define AL_SERVICE_READ_MEMORY_FAST_MEM_ADDRESS 1
+
+#define AL_SERVICE_SERIAL_COMMUNICATION 3
+
+#define AL_SERVICE_MUTUAL_EXCLUSION 4
+    /* AL SERVICE FUNCTIONS */
+    #define AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP 1
+    #define AL_SERVICE_MUTUAL_EXCLUSION_RD_BYTE_MP 2
+    #define AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP 3
+    #define AL_SERVICE_MUTUAL_EXCLUSION_CLEAR_BIT_MP 4
+
+    #ifdef _MSC_VER 
+    #define DATA_MEMORY_BARRIER
+    #define INSTRUCTION_SYNC_BARRIER
+    #else
+    #if MULTIPROCESSING == 1
+    #define DATA_MEMORY_BARRIER //DMB()
+    #define INSTRUCTION_SYNC_BARRIER //ISB()
+    #else
+    #define DATA_MEMORY_BARRIER 
+    #define INSTRUCTION_SYNC_BARRIER
+    #endif
+    #endif
+
+#define AL_SERVICE_CHANGE_IO_SETTING 5
+
+#define AL_SERVICE_UNUSED2 6
+#define AL_SERVICE_UNUSED3 7
+#define MAX_NB_APP_SERVICES 8
+
+
+
+
+
+/* the first word of the graph holds the number of words32 */
+#define GRAPH_SIZE_SKIP_WORD0 1
+
+/* -------- GRAPH[0] 27b RAM address, HW-shared MEM & RAM copy config---- 
+                                   3 options :
+        IO 2 words                 RAM  Flash  Flash
+        FORMAT 3 words             RAM  Flash  Flash
+        SCRIPTS                    RAM  Flash  Flash
+        LINKED-LIST                RAM  RAM    Flash  RAM allows SWC to be desactivated
+        ARC descriptors 4 words    RAM  RAM    RAM
+        Debug registers, Buffers   RAM  RAM    RAM
+*/
+#define COPY_CONF_GRAPH0_COPY_ALL_IN_RAM 0
+#define COPY_CONF_GRAPH0_FROM_LINKEDLIST 1
+#define COPY_CONF_GRAPH0_FROM_ARC_DESCS 2
+#define COPY_CONF_GRAPH0_ALREADY_IN_RAM 3
+
+#define PACKSHARERAMSPLIT(share,RAMsplit) ((share<<3) + RAMsplit)   // bits 27..30 (PRODUCFMT_ARCW0_LSB 27
+#define ___UNUSED_GRAPH0_MSB U(31) 
+#define ___UNUSED_GRAPH0_LSB U(30) // 2
+#define SHAREDRAM_GRAPH0_MSB U(29) 
+#define SHAREDRAM_GRAPH0_LSB U(29) // 1 to set MPU_RASR[18] = 1 
+#define  RAMSPLIT_GRAPH0_MSB U(28) //   
+#define  RAMSPLIT_GRAPH0_LSB U(27) // 2 COPY_CONF_GRAPH0_COPY_ALL_IN_RAM / _FROM_LINKEDLIST / _FROM_ARCDESC / _ALREADY_IN_RAM
+//#define GRAPH_RAM_OFFSET(L,G)     pack2linaddr_int(L,G[0])
+#define GRAPH_RAM_OFFSET_PTR(L,G) pack2linaddr_ptr(L,G[0])
+
+/* -------- GRAPH[1] number of FORMAT, size of SCRIPTS ---- */
+#define  SCRIPTS_SIZE_GR1_MSB U(31) 
+#define  SCRIPTS_SIZE_GR1_LSB U(12) /* 20 scripts size */
+#define NB_IOS_MARGIN_GR1_MSB U(11) 
+#define NB_IOS_MARGIN_GR1_LSB U(10) /*  2 provision for 128 IOs */
+#define        NB_IOS_GR1_MSB U( 9) 
+#define        NB_IOS_GR1_LSB U( 5) /*  5 Nb of I/O :  up to 32 IO streams */
+#define     NBFORMATS_GR1_MSB U( 4) 
+#define     NBFORMATS_GR1_LSB U( 0) /*  5 formats */
+
+/* -------- GRAPH[2] size of LINKEDLIST, number of STREAM_INSTANCES ---- */
+#define LINKEDLIST_SIZE_GR2_MSB U(26) 
+#define LINKEDLIST_SIZE_GR2_LSB U( 0) /* 27 size of the linkedList with the parameters */
+
+#define PACKLINKEDLNBINSTANCE(LinkedList,NbInstance) (((LinkedList)<<LINKEDLIST_SIZE_GR2_LSB) | (NbInstance))
+
+/* -------- GRAPH[3] number of ARCS, number of DEBUG registers ----*/
+#define ______________GR3_MSB U(31) 
+#define ______________GR3_LSB U(21) /* 11   */
+#define  SCRIPT_SCTRL_GR3_MSB U(20) /* SCRIPT_SCTRL_GR3_LSB+SCRIPT_SCTRL_MSB-SCRIPT_SCTRL_LSB+1) */
+#define  SCRIPT_SCTRL_GR3_LSB U(15) /*  6 debug script options  */
+#define DEBUGREG_SIZE_GR3_MSB U(14) 
+#define DEBUGREG_SIZE_GR3_LSB U(11) /*  4 size of the debug area addressed with DEBUG_REG_ARCW1 */
+#define       NB_ARCS_GR3_MSB U(10) 
+#define       NB_ARCS_GR3_LSB U( 0) /* 11 up to 2K ARCs, see ARC0_LW1 */
+
+#define PACKNBARCDEBUG(dbgScript,SizeDebug,NBarc) (((dbgScript)<<SCRIPT_SCTRL_GR3_LSB) | ((SizeDebug)<<DEBUGREG_SIZE_GR3_LSB) | (NBarc) << NB_ARCS_GR3_LSB)
+
+/* -------- GRAPH[4] bit-field of the processors activated to process this graph ----*/
+#define PROCID_ALLOWED(proc_id) ((1<<(proc_id)) & RD(S->graph[4]))
+
+
+/* -------- GRAPH[5,6] UQ8(-1) (0xFF = 100%, 0x3F = 25%) portion of memory consumed on each 
+    long_offset[MAX_NB_MEMORY_OFFSET] to let the application taking 
+    a piece of the preallocated RAM area 
+*/
+
+#define GRAPH_HEADER_NBWORDS 7    /* GRAPH[0 .. 6] */
+
+
+/*================================= STREAM_FORMAT_IO ================================
+      The graph hold a table of uint32_t "stream_format_io" [LAST_IO_FUNCTION_PLATFORM]
+*/
+
+#define STREAM_IOFMT_SIZE_W32   2   /* one word for controls + one for mixed-signal settings */
+
+#define IO_COMMAND_SET_BUFFER   0u  /* arc buffer point directly to the IO buffer: ping-pong, big buffer */
+#define IO_COMMAND_DATA_MOVE    1u  /* the IO has its own buffer */
+
+#define RX0_TO_GRAPH            0u
+#define TX1_FROM_GRAPH          1u
+
+#define IO_IS_COMMANDER0         0u
+#define IO_IS_SERVANT1           1u
+
+#define ___UNUSED_IOFMT_MSB 31  
+#define ___UNUSED_IOFMT_LSB 16  /* 16 */
+#define QUICKSKIP_IOFMT_MSB 15
+#define QUICKSKIP_IOFMT_LSB 15  /* 1  PIO / FW_IO_idx is reserved in flash but unused by the graph */
+#define SHAREBUFF_IOFMT_MSB 14   
+#define SHAREBUFF_IOFMT_LSB 14  /* 1  share the arc buffer to the BSP */
+#define SET0COPY1_IOFMT_MSB 13  
+#define SET0COPY1_IOFMT_LSB 13  /* 1  command_id IO_COMMAND_SET_BUFFER / IO_COMMAND_DATA_MOVE */
+#define  SERVANT1_IOFMT_MSB 12  
+#define  SERVANT1_IOFMT_LSB 12  /* 1  1=IO_IS_SERVANT1 */
+#define    RX0TX1_IOFMT_MSB 11  /*    direction of the stream */
+#define    RX0TX1_IOFMT_LSB 11  /* 1  0 : to the graph    1 : from the graph */
+#define   IOARCID_IOFMT_MSB 10  
+#define   IOARCID_IOFMT_LSB  0  /* 11  Arc */
+
+//#define FW_IO_IDX_IOFMT_MSB U(19)  /*    fw_io_dx : stream_al/platform_computer.h <=> stream_tools/files_manifests_computer.txt */
+//#define FW_IO_IDX_IOFMT_LSB U(12)  /* 8  platform_io [fw_io_idx] -> io_start(parameter) */
+
+/* data depending of STREAM_IO_DOMAIN : mixed-signal setting, 
+    + bit-field giving the configuration of io_start(setting,*,n)) for variable numbers of frames r/w */
+#define SETTINGS_IOFMT2_MSB U(31)  
+#define SETTINGS_IOFMT2_LSB U( 0) /* 32  second word : common (8b MSB) and mixed-signal (24b LSB) settings */
+
+
 /*================================================== ARC ==================================================================*/
 /*
   arc descriptions : 
@@ -118,7 +379,7 @@
 #define   MPFLUSH_ARCW1_LSB U(26) /* 1  flush data used after processing */
 #define DEBUG_REG_ARCW1_MSB U(25) /*    debug registers have 64bits and are stored in the first arc descriptors  */
 #define DEBUG_REG_ARCW1_LSB U(22) /* 4  debug result index for debug_arcs[0..15] debug_arc_computation_1D */
-#define BUFF_SIZE_ARCW1_MSB U(21) /*    SIZE Byte addressing */
+#define BUFF_SIZE_ARCW1_MSB U(21) /*    SIZE BYTE addressing */
 #define BUFF_SIZE_ARCW1_LSB U( 0) /* 22 Byte-acurate up to 4MBytes (64x4 = 256MB EXTEND_ARCW2=1*/
 
 #define    RDFLOW_ARCW2    U( 2)  /* write access only from the SWC consumer */
@@ -153,256 +414,7 @@
 
 
 /* 
-    Graph data format :
-    -------------------SHARED FLASH (RAM POSSIBLE)-----------------
-    [-1] size of the graph in Words 
-    Offset_0 (idx_memory_base_offset = MBANK_GRAPH)
-    [0] 27b RAM address of part/all the graph going in RAM, HW-shared MEM configuration, which part is going in RAM
-    [1] number of FORMAT, size of SCRIPTS
-    [2] size of LINKEDLIST, number of STREAM_INSTANCES
-    [3] number of ARCS, number of DEBUG registers
-    [4] list of processors (procID for the scheduler in platform_manifest) processing the graph
-        The linkedList gives the architecture/procID only allowed to execute a SWC
-        This table is made to exclude a group of processor to execute any SWC even if their scheduler is launched.
-    [5,6] UQ8 portion of memory consumed on each long_offset[MAX_NB_MEMORY_OFFSET] 
-    -------------------
-
-    PIO "stream_format_io" (2 words per IO)
-        Word0: ARC ID, domain, io platform index, in/out, command parameter, format
-        Word1: default 32bits mixed-signal settings bit-fields
-    
-    FORMAT used by the arcs (3 words each) 
-        Word0: Frame size, interleaving scheme, raw data type
-        Word1: Nb Chan, Sampling rate, time-stamp format
-        Word2: depends on IO Domain (audio mapping, picture format, IMU interleaving, ..)
-
-    SCRIPTS in Flash = byte-offsets to the byte codes : offset (20b) + code size (12b) 
-        Parameters can be inserted at the end of the byte code of each script
-            or inserted in the arc buffer in RAM
-
-        Script index #0 means "disabled" 
-        Indexes 1..up to 63 are used for shared subroutines.
-        Indexes 1..127 are assigned to nodes in the header field SCRIPT_LW0 (1..127)
-            indexes are provided in the graph 
- 
-        SWC can be in RAM (to patch the paraemter area, cancel the component..) but the script
-          byte-code do not change => the reason we put it in the SCRIPT section in Flash/RAM
-
-        The first SWC of the graph is a SWC-script interpreting the use-case command, in cascade
-          this script will call other subgraph's script and SWC with SET_PARAM. The graph compilation 
-          tool generates the table of index to let SWC be found with name mangling in the graph hierarchy
-
-        scripts as SWC (in the SWC list) has FIFOTX : TX ARC descriptor: locks execution, and
-            instance address (first memory bank) is the FIFO buffer address
-            NO SET_PARAMETER step  the "nregs, stacklength, byte code format" are pre-loaded in the FIFO 
-            
-        scripts used as pre/post processing of SWC (header of the SWC) have FIFOTX for the regs/stack, 
-            but no need for lock.
-                   
-    -----------------SHARED FLASH/RAM (FOR NEWPARAM_LW2)----------    
-      
-    LINKED-LIST of SWC
-       minimum 4 words/SWC
-       Word0: header processor/architecture, nb arcs, SWCID, arc
-       Word1+n: arcs * 2
-       Word2+n: nb membanks, main instance 27b address
-       Word3+n: Preset, New param!, Skip length, 
-          byte stream: nbparams (ALLPARAM), {tag, nbbytes, params}
-       list Ends with the SWC ID 0x03FF 
-    
-    -----------------SHARED RAM-------------------------------
-offset_descriptor
-    [0..7] can be used for the 16 arc debug registers (2 words each) 
-    ARC descriptors (4 words each)
-       Word0: base offsetm data format, need for flush after write
-       Word1: size, debug result registers
-       Word2: read index, ready for read, flow error and debug tasks index
-       Word3: write index, ready for write, need realignment flag, locking byte
-
-offset_buffer   
-    BUFFERS memory banks (internal/external/LLRAM) used for FIFO buffers 
-       and used for initializations, list of PACKSWCMEM results with fields
-          SIZE, ALIGNMT, SPEED,
-
-offset_instance
-    INSTANCE Pointers (27bits encoded format + bits used for synchonization at boot time and service activations)
-        (indexed by INST_SSRV_CMD of SWC_COMMANDS)
-    
-
-    WORKING areas of INSTANCES
-
-    DEBUG REGISTERS and vectors from ARC content analysis (DEBUG_REG_ARCW1)
-
-    SERVICES_RAM shared between all instances (maximum 5kB)
-        32 memory banks of 16bytes + 64bytes in normal and critical fast memory when possible
-*/
-
-
-/* max number of instances simultaneously reading the graph
-   used to synchronize the RESET sequence in platform_al() 
-   smaller than 1<< NBINSTAN_SCTRL */
-#define MAX_NB_STREAM_INSTANCES 4 
-
-/* max number of nodes installed at compilation time */
-#define NB_NODE_ENTRY_POINTS 20
-
-/* max number of application callbacks used from SWC and scripts */
-#define MAX_NB_APP_CALLBACKS 8
-
-/*  AL SERVICE GROUPS
-    read time
-    sleep control
-    read memory
-    serial communication
-    mutual exclusion
-*/
-#define AL_SERVICE_READ_TIME 0
-    #define AL_SERVICE_READ_TIME_SYSTICK 1
-    #define AL_SERVICE_READ_TIME_CONVERT 2
-
-#define AL_SERVICE_SLEEP_CONTROL 1
-
-#define AL_SERVICE_READ_MEMORY 2
-
-#define AL_SERVICE_SERIAL_COMMUNICATION 3
-
-#define AL_SERVICE_MUTUAL_EXCLUSION 4
-    /* AL SERVICE FUNCTIONS */
-    #define AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP 1
-    #define AL_SERVICE_MUTUAL_EXCLUSION_RD_BYTE_MP 2
-    #define AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP 3
-    #define AL_SERVICE_MUTUAL_EXCLUSION_CLEAR_BIT_MP 4
-
-    #ifdef _MSC_VER 
-    #define DATA_MEMORY_BARRIER
-    #define INSTRUCTION_SYNC_BARRIER
-    #else
-    #if MULTIPROCESSING == 1
-    #define DATA_MEMORY_BARRIER //DMB()
-    #define INSTRUCTION_SYNC_BARRIER //ISB()
-    #else
-    #define DATA_MEMORY_BARRIER 
-    #define INSTRUCTION_SYNC_BARRIER
-    #endif
-    #endif
-
-#define AL_SERVICE_CHANGE_IO_SETTING 5
-
-#define AL_SERVICE_UNUSED2 6
-#define AL_SERVICE_UNUSED3 7
-#define MAX_NB_APP_SERVICES 8
-
-
-
-
-
-/* the first word of the graph holds the number of words32 */
-#define GRAPH_SIZE_SKIP_WORD0 1
-
-/* -------- GRAPH[0] 27b RAM address, HW-shared MEM & RAM copy config---- 
-                                   3 options :
-        IO 2 words                 RAM  Flash  Flash
-        FORMAT 3 words             RAM  Flash  Flash
-        SCRIPTS                    RAM  Flash  Flash
-        LINKED-LIST                RAM  RAM    Flash  RAM allows SWC to be desactivated
-        ARC descriptors 4 words    RAM  RAM    RAM
-        Debug registers, Buffers   RAM  RAM    RAM
-*/
-#define COPY_CONF_GRAPH0_COPY_ALL_IN_RAM 0
-#define COPY_CONF_GRAPH0_FROM_LINKEDLIST 1
-#define COPY_CONF_GRAPH0_FROM_ARC_DESCS 2
-#define COPY_CONF_GRAPH0_ALREADY_IN_RAM 3
-
-#define PACKSHARERAMSPLIT(share,RAMsplit) ((share<<3) + RAMsplit)   // bits 27..30 (PRODUCFMT_ARCW0_LSB 27
-#define ___UNUSED_GRAPH0_MSB U(31) 
-#define ___UNUSED_GRAPH0_LSB U(30) // 2
-#define SHAREDRAM_GRAPH0_MSB U(29) 
-#define SHAREDRAM_GRAPH0_LSB U(29) // 1 to set MPU_RASR[18] = 1 
-#define  RAMSPLIT_GRAPH0_MSB U(28) //   
-#define  RAMSPLIT_GRAPH0_LSB U(27) // 2 COPY_CONF_GRAPH0_COPY_ALL_IN_RAM / _FROM_LINKEDLIST / _FROM_ARCDESC / _ALREADY_IN_RAM
-#define GRAPH_RAM_OFFSET(L,G)     pack2linaddr_int(L,G[0])
-#define GRAPH_RAM_OFFSET_PTR(L,G) pack2linaddr_ptr(L,G[0])
-
-/* -------- GRAPH[1] number of FORMAT, size of SCRIPTS ---- */
-#define  SCRIPTS_SIZE_GR1_MSB U(31) 
-#define  SCRIPTS_SIZE_GR1_LSB U(12) /* 20 scripts size */
-#define NB_IOS_MARGIN_GR1_MSB U(11) 
-#define NB_IOS_MARGIN_GR1_LSB U(10) /*  2 provision for 128 IOs */
-#define        NB_IOS_GR1_MSB U( 9) 
-#define        NB_IOS_GR1_LSB U( 5) /*  5 Nb of I/O :  up to 32 IO streams */
-#define     NBFORMATS_GR1_MSB U( 4) 
-#define     NBFORMATS_GR1_LSB U( 0) /*  5 formats */
-
-/* -------- GRAPH[2] size of LINKEDLIST, number of STREAM_INSTANCES ---- */
-#define LINKEDLIST_SIZE_GR2_MSB U(26) 
-#define LINKEDLIST_SIZE_GR2_LSB U( 0) /* 27 size of the linkedList with the parameters */
-
-#define PACKLINKEDLNBINSTANCE(LinkedList,NbInstance) (((LinkedList)<<LINKEDLIST_SIZE_GR2_LSB) | (NbInstance))
-
-/* -------- GRAPH[3] number of ARCS, number of DEBUG registers ----*/
-#define ______________GR3_MSB U(31) 
-#define ______________GR3_LSB U(21) /* 11   */
-#define  SCRIPT_SCTRL_GR3_MSB U(20) /* SCRIPT_SCTRL_GR3_LSB+SCRIPT_SCTRL_MSB-SCRIPT_SCTRL_LSB+1) */
-#define  SCRIPT_SCTRL_GR3_LSB U(15) /*  6 debug script options  */
-#define DEBUGREG_SIZE_GR3_MSB U(14) 
-#define DEBUGREG_SIZE_GR3_LSB U(11) /*  4 size of the debug area addressed with DEBUG_REG_ARCW1 */
-#define       NB_ARCS_GR3_MSB U(10) 
-#define       NB_ARCS_GR3_LSB U( 0) /* 11 up to 2K ARCs, see ARC0_LW1 */
-
-#define PACKNBARCDEBUG(dbgScript,SizeDebug,NBarc) (((dbgScript)<<SCRIPT_SCTRL_GR3_LSB) | ((SizeDebug)<<DEBUGREG_SIZE_GR3_LSB) | (NBarc) << NB_ARCS_GR3_LSB)
-
-/* -------- GRAPH[4] bit-field of the processors activated to process this graph ----*/
-#define PROCID_ALLOWED(proc_id) ((1<<(proc_id)) & RD(S->graph[4]))
-
-
-/* -------- GRAPH[5,6] UQ8(-1) (0xFF = 100%, 0x3F = 25%) portion of memory consumed on each 
-    long_offset[MAX_NB_MEMORY_OFFSET] to let the application taking 
-    a piece of the preallocated RAM area 
-*/
-
-#define GRAPH_HEADER_NBWORDS 7    /* GRAPH[0 .. 6] */
-
-
-/*================================= STREAM_FORMAT_IO ================================
-      The graph hold a table of uint32_t "stream_format_io" [LAST_IO_FUNCTION_PLATFORM]
-*/
-
-#define STREAM_IOFMT_SIZE_W32 2   /* one word for controls + for mixed-signal settings */
-
-#define IO_COMMAND_SET_BUFFER   0u  /* arc buffer point directly to the IO buffer: ping-pong, big buffer */
-#define IO_COMMAND_DATA_MOVE    1u  /* the IO has its own buffer */
-
-#define RX0_TO_GRAPH            0u
-#define TX1_FROM_GRAPH          1u
-
-#define IO_IS_COMMANDER0         0u
-#define IO_IS_SERVANT1           1u
-
-#define ___UNUSED_IOFMT_MSB 31  
-#define ___UNUSED_IOFMT_LSB 16  /* 16 */
-#define QUICKSKIP_IOFMT_MSB 15
-#define QUICKSKIP_IOFMT_LSB 15  /* 1  PIO / FW_IO_idx is reserved in flash but unused by the graph */
-#define SHAREBUFF_IOFMT_MSB 14   
-#define SHAREBUFF_IOFMT_LSB 14  /* 1  share the arc buffer to the BSP */
-#define SET0COPY1_IOFMT_MSB 13  
-#define SET0COPY1_IOFMT_LSB 13  /* 1  command_id IO_COMMAND_SET_BUFFER / IO_COMMAND_DATA_MOVE */
-#define  SERVANT1_IOFMT_MSB 12  
-#define  SERVANT1_IOFMT_LSB 12  /* 1  1=IO_IS_SERVANT1 */
-#define    RX0TX1_IOFMT_MSB 11  /*    direction of the stream */
-#define    RX0TX1_IOFMT_LSB 11  /* 1  0 : to the graph    1 : from the graph */
-#define   IOARCID_IOFMT_MSB 10  
-#define   IOARCID_IOFMT_LSB  0  /* 11  Arc */
-
-//#define FW_IO_IDX_IOFMT_MSB U(19)  /*    fw_io_dx : stream_al/platform_computer.h <=> stream_tools/files_manifests_computer.txt */
-//#define FW_IO_IDX_IOFMT_LSB U(12)  /* 8  platform_io [fw_io_idx] -> io_start(parameter) */
-
-/* data depending of STREAM_IO_DOMAIN : mixed-signal setting, 
-    + bit-field giving the configuration of io_start(setting,*,n)) for variable numbers of frames r/w */
-#define SETTINGS_IOFMT2_MSB U(31)  
-#define SETTINGS_IOFMT2_LSB U( 0) /* 32  second word : common (8b MSB) and mixed-signal (24b LSB) settings */
-
-/* 
-   ================================= GRAPH DATA & STREAM FORMATS =======================================
+   ================================= GRAPH DATA &  io_stream_format =======================================
     
     Format 23+4_offsets for buffer BASE ADDRESS
     Frame SIZE and ring indexes are using 22bits linear (0..4MB)
@@ -419,14 +431,13 @@ offset_instance
 /* for MISRA-2012 compliance to Rule 10.4 */
 #define U(x) ((uint32_t)(x)) 
 #define U8(x) ((uint8_t)(x)) 
-//#define S(x) ((int32_t)(x)) 
 #define S8(x) ((int8_t)(x)) 
 
 //enum time_stamp_format_type {
 #define NO_TS 0
-#define ABS_TS_64 1                  /* long time reference */
-#define REL_TS_32 2                  /* time difference from previous frame packet in stream_time_seconds format */
-#define COUNTER_TS 3                 /* counter of data frames */
+#define ABS_TS 1                     /* long time reference stream_time64 */
+#define REL_TS 2                     /* time difference from previous frame packet in stream_time_seconds format */
+#define COUNTER_TS 3                 /* 32bits counter of data frames */
 
 //enum hashing_type {
 #define NO_HASHING 0                 /* cipher protocol under definition */
@@ -463,7 +474,8 @@ offset_instance
                                         A "frame" is the combination of several channels sampled at the same time 
                                         A value =0 means the size is any or defined by the IO AL.
                                         For sensors delivering burst of data not isochronous, it gives the maximum 
-                                        framesize; same comment for the sampling rate. */
+                                        framesize; same comment for the sampling rate. 
+                                        The frameSize is including the time-stamp field */
 
     #define PACKSTREAMFORMAT0(RAW,INTERL,FRAMESIZE) ((U(RAW)<<26)|(U(INTERL)<<24)|U(FRAMESIZE))
 
@@ -471,8 +483,8 @@ offset_instance
 #define   SAMPINGNCHANM1_FMT1  U( 1)
     #define  SAMPLING_FMT1_MSB U(31) /* 23 truncated IEEE-754 Seeeeeeemmmmmmmmmmmmmmm__XXXXXXX  */
     #define  SAMPLING_FMT1_LSB U( 9) /*    FP23_E8_M15        FEDCBA9876543210FEDCBA9876543210  */
-    #define  _________FMT1_MSB U( 8) /* 2   */
-    #define  _________FMT1_LSB U( 7)
+    #define  TSTPSIZE_FMT1_MSB U( 8) /* 2  8/16/32/64 bits format of the time */
+    #define  TSTPSIZE_FMT1_LSB U( 7)
     #define  TIMSTAMP_FMT1_MSB U( 6) /* 2  time_stamp_format_type for time-stamped streams for each interleaved frame */
     #define  TIMSTAMP_FMT1_LSB U( 5) 
     #define   NCHANM1_FMT1_MSB U( 4)
@@ -503,14 +515,14 @@ offset_instance
     #define IMU_DATAFMT_FMT2_LSB U( 0) 
 
 #define SENSOR2D_FMT2 U( 2)
-    #define  _______2DS_FMT2_MSB U(31) /* 12b   */
-    #define  _______2DS_FMT2_LSB U(20)
-    #define  BORDER_2DS_FMT2_MSB U(19) /* 2 pixel border 0,1,2,3   */
-    #define  BORDER_2DS_FMT2_LSB U(18)
-    #define   RATIO_2DS_FMT2_MSB U(17) /* 4 ratio to height : 1:1  4:3 16:9 (panoramic) 3:4 9:16 (portrait)   5:4 16:10 */
-    #define   RATIO_2DS_FMT2_LSB U(14)
-    #define   WIDTH_2DS_FMT2_MSB U(13) /* 14 number of pixel width */
-    #define   WIDTH_2DS_FMT2_LSB U( 0) 
+    #define  _______2DS_FMT2_MSB U(31) /* 14b   */
+    #define  _______2DS_FMT2_LSB U(18)
+    #define  BORDER_2DS_FMT2_MSB U(17) /* 2 pixel border 0,1,2,3   */
+    #define  BORDER_2DS_FMT2_LSB U(16)
+    #define   WIDTH_2DS_FMT2_MSB U(15) /* 13 number of pixels on horizontal lines */
+    #define   WIDTH_2DS_FMT2_LSB U( 3) 
+    #define   RATIO_2DS_FMT2_MSB U( 2) /* 3 ratio to height : 1:1  4:3 16:9 (panoramic) 3:4 9:16 (portrait)   5:4 16:10 */
+    #define   RATIO_2DS_FMT2_LSB U( 0) /*    */
 
 #define DISPLAY_FMT2 U( 2)
     #define  UNUSED_2DD_FMT2_MSB U(31) /* 8b backlight control  */
@@ -520,16 +532,55 @@ offset_instance
     #define   WIDTH_2DD_FMT2_MSB U(11) /* 12 pixel width */
     #define   WIDTH_2DD_FMT2_LSB U( 0) 
 
+
 /* 
-   ================================= GRAPH SCRIPTS =======================================
-*/ 
+   =================================     SCRIPTS     =======================================
 
-#define SCRIPT_REGISTER_SIZEBYTE 9   /*     1 byte for the type, 8 for the data @@@@@@@@ alignments !! */
 
-#define CODESIZE_SCRIPTIDX_MSB U(31) /* 12  Size (16kB) of the block of code without parameters */
-#define CODESIZE_SCRIPTIDX_LSB U(20)
-#define   OFFSET_SCRIPTIDX_MSB U(19) /* 20  Offset (4MB) max all code+parameters */
-#define   OFFSET_SCRIPTIDX_LSB U( 0) 
+    script offset table[7b] to the byte codes : two W32 per script 
+    Max 127 indexes (7b index SCRIPT_LW0) 
+    word0 : offset, word1:length + byteCode Format
+*/
+
+#define INDEX_SCRIPT_STRUCT_SIZE 2
+#define INDEX_SCRIPT_OFFSET 0
+#define INDEX_SCRIPT_SIZE 1
+
+#define  _______SCROFF0_MSB U(31)  /*  12  unused */
+#define  _______SCROFF0_LSB U(20)  /*      */
+#define  FORMAT_SCROFF0_MSB U(19)  /*  20  offset to the W32 script table */
+#define  FORMAT_SCROFF0_LSB U( 0)  /*      */
+         
+#define  _______SCROFF1_MSB U(31)  /* 12   native/stream byte codes format */
+#define  _______SCROFF1_LSB U(20)  /*      */
+#define  FORMAT_SCROFF1_MSB U(19)  /*  2   native/stream byte codes format */
+#define  FORMAT_SCROFF1_LSB U(18)  /*      */
+#define    SIZE_SCROFF1_MSB U(17)  /* 18   size in W32 */
+#define    SIZE_SCROFF1_LSB U( 0)  /*      */
+
+
+/* =================
+    arc descriptors used to address the working area : registers and stack
+*/
+
+#define      SCRIPT_PTR_SCRARCW0  U( 0) /* Base address + NREGS + new UC*/
+#define       SCRIPT_UC_SCRARCW1  U( 1) /* use case UC0 */
+#define       SCRIPT_UC_SCRARCW2  U( 2) /* use-case UC1 */
+#define        WRIOCOLL_SCRARCW3  U( 3) /* synchro byte + STACK LENGTH + Flag logMaxCycles8b */
+          
+#define   NEW_USE_CASE_SCRIPT_MSB U(31) /*  1   new use-case arrived */ 
+#define   NEW_USE_CASE_SCRIPT_LSB U(31) /*      */ 
+#define       NBREGS_SCRARCW0_MSB U(30) /*  4     number of registers used in this script */ 
+#define       NBREGS_SCRARCW0_LSB U(27) /*     */
+#define    BASEIDXOFFSCRARCW0_MSB U(26)    
+#define    BASEIDXOFFSCRARCW0_LSB U( 0) /* 27     base address of the working memory */
+
+#define    COLLISION_SCRARCW3_MSB U(31) /*  8   */
+#define    COLLISION_SCRARCW3_LSB U(24) /*      */
+#define LOG2MAXCYCLE_SCRARCW3_MSB U(23) /*  8   minifloat reset and return when reaching this number of decoded instructions */ 
+#define LOG2MAXCYCLE_SCRARCW3_LSB U(16) /*      */ 
+#define       NSTACK_SCRARCW3_MSB U(15) /* 16   max size of the FIFO/stack in W32 */
+#define       NSTACK_SCRARCW3_LSB U( 0) /*      */
 
 /* 
    ================================= GRAPH LINKED LIST =======================================
@@ -542,10 +593,14 @@ offset_instance
 #define TASKS_COMPLETED 0
 #define TASKS_NOT_COMPLETED 1
 
-#define arm_stream_script_INDEX 1      /* arm_stream_script() is the first one in the list node_entry_point_table[] */
-/* =========================================================================================== */ 
+
+
+#define arm_stream_script_index 1      /* arm_stream_script() is the first one in the list node_entry_point_table[] */
+/* ======================================   SWC   ============================================ */ 
 
         /* word 0 - main Header */
+
+        /* bit-field 24-31 cannot be null: this used to lock */
 
 #define PRIORITY_LW0_MSB U(31) /*   RTOS instances. 1:low-latency tasks, 2:heavy background tasks */
 #define PRIORITY_LW0_LSB U(30) /* 2 up to 4 instances per processors, see PRIORITY_SCTRL  */
@@ -564,10 +619,6 @@ offset_instance
 #define  SWC_IDX_LW0_MSB U( 9) 
 #define  SWC_IDX_LW0_LSB U( 0) /* 10 0=nothing, swc index of node_entry_points[] */
 
-///* 16 arcs per nodes, and per HW IO stream interface (streams and metadata)
-//        struct arcStruct io_stream[MAX_GRAPH_NB_IO_STREAM]; */
-//#define MAX_NB_ARC_STREAM (1<<(NBARCW_LW0_MSB-NBARCW_LW0_LSB+1))
-
 
         /* word 1+n -arcs
 
@@ -575,59 +626,70 @@ offset_instance
             arc(tx) used for locking is ARC0_LW1
         */
 
-// #define MAX_NB_STREAM_PER_SWC 8
-#define MAX_NB_STREAM_PER_SWC 4
+#define MAX_NB_STREAM_PER_SWC 4 /* no limit in practice */
 
-#define ARC_RX0TX1_MASK 0x800 /* MSB gives the direction of the arc */
-#define ARC_RX0TX1_CLEAR 0x7FF 
+#define ARC_RX0TX1_MASK  0x0800 /* MSB gives the direction of the arc */
+#define ARC_RX0TX1_CLEAR 0x07FF 
 
-#define  DTCM_LW1_MSB U(31) /*     for relocatable scratch DTCM usage with SMP, address is changing : */
-#define  DTCM_LW1_LSB U(31) /*  1  arc_index_update() pushed the DTCM address after XDM buffers */
-#define XDM11_LW1_MSB U(30) 
-#define XDM11_LW1_LSB U(30) /*  1  the input and output frame size of all arcs are identical */
-#define DBGB1_LW1_MSB U(29) 
-#define DBGB1_LW1_LSB U(28) /*  2  debug register bank for ARC1 */
+#define DBGB1_LW1_MSB U(31) 
+#define DBGB1_LW1_LSB U(28) /*  4  debug register bank for ARC1 */
 #define  ARC1_LW1_MSB U(27)
-#define ARC1D_LW1_LSB U(27) /*     ARC0 direction */
+#define ARC1D_LW1_LSB U(27) /*     ARC1 direction */
 #define ARC1D_LW1_MSB U(27)
 #define  ARC1_LW1_LSB U(16) /* 12  ARC1  11 usefull bits + 1 MSB to tell rx0tx1 */
 
-#define __UN0_LW1_MSB U(15) 
-#define __UN0_LW1_LSB U(14) /*  2   */
-#define DBGB0_LW1_MSB U(13) 
-#define DBGB0_LW1_LSB U(12) /*  2  debug register bank for ARC0 */
+#define DBGB0_LW1_MSB U(15) 
+#define DBGB0_LW1_LSB U(12) /*  4  debug register bank for ARC0 : debug-arc index of the debug data */
 #define  ARC0_LW1_MSB U(11)
 #define ARC0D_LW1_LSB U(11) /*     ARC0 direction */
 #define ARC0D_LW1_MSB U(11)
 #define  ARC0_LW1_LSB U( 0) /* 12  ARC0, (11 + 1 rx0tx1) up to 2K ARCs */
 
 
-        /* word 2+n - memory banks address + size */
+        /* word 2+n - TWO WORDS : memory banks address + size */
 
-#define   NBALLOC_LW2_MSB U(31)
-#define   NBALLOC_LW2_LSB U(29) /*  3  number of memory segments to give at RESET [0..MAX_NB_MEM_REQ_PER_NODE-1] 2 words each */
-#define    _______LW2_MSB U(28) /*     */
-#define    _______LW2_LSB U(27) /*  2  */
+#define NB_LW2  2               /*      there are two words per memory segments  */
+#define ADDR_LW2 0              /*      one for the address */ 
+#define SIZE_LW2 1              /*      one for the size of the segment */ 
+
+            /* first word = base address of the memory segment + control on the first segment */
+#define      DTCM_LW2_MSB U(31) /*      for relocatable scratch DTCM usage with SMP, address is changing : */
+#define      DTCM_LW2_LSB U(31) /*  1   arc_index_update() pushed the DTCM address after XDM buffers */
+#define     XDM11_LW2_MSB U(30) 
+#define     XDM11_LW2_LSB U(30) /*  1   the input and output frame size of all arcs are identical */ 
+#define   NBALLOC_LW2_MSB U(31) /*      number of memory segments to give at RESET [0..MAX_NB_MEM_REQ_PER_NODE-1] */  
+#define   NBALLOC_LW2_LSB U(29) /*  3    2 words each : */
 #define BASEIDXOFFLW2_MSB U(26) 
-#define   DATAOFF_LW2_MSB U(26)
+#define   DATAOFF_LW2_MSB DATAOFF_ARCW0_MSB
 #define   DATAOFF_LW2_LSB DATAOFF_ARCW0_LSB /*  3 bits 64bits offset index see idx_memory_base_offset */
 #define   BASEIDX_LW2_MSB BASEIDX_ARCW0_MSB /*    buffer address 21 + sign + offset = 25 bits (2bits margin) */
-#define   BASEIDX_LW2_LSB U( 0)             /* 21 base address in WORD32 + 1 sign bit*/
-#define BASEIDXOFFLW2_LSB U( 0) /*    27 bits */
+#define   BASEIDX_LW2_LSB BASEIDX_ARCW0_LSB /* 21 base address in WORD32 + 1 sign bit*/
+#define BASEIDXOFFLW2_LSB U( 0) /* 27  */
 
-/* upon STREAM_MEMREQ commands the swc can return up to 6 memory requests for its instance 
-    scratch fast, DTCM, static fast, internal L2, external */
-//      MAX_NB_MEM_REQ_PER_NODE (1<<(NBALLOC_LW2_MSB - NBALLOC_LW2_LSB + 1))  
-#define MAX_NB_MEM_REQ_PER_NODE U(6)  /* table of PACKSWCMEM requirements (speed, size, alignment..) see MAXNB_MEMORY_BASE_MALLOC */
+/* table of PACKSWCMEM requirements (speed, size, alignment..) see MAXNB_MEMORY_BASE_MALLOC */
+#define MAX_NB_MEM_REQ_PER_NODE U(6)    /* TO_SWAP_LW2S limits to 8 MAX */
 
 #define GRAPH_MEM_REQ (U(MEM_WORKING_INTERNAL)+U(1)) 
 
-#define    _______LW2S_MSB U(31) /*      */
-#define    _______LW2S_LSB U(24) /*  8   */
-#define      SWAP_LW2S_MSB U(23) /*      0= normal memory segment, 1 = copy before execute @@@@@ */
-#define      SWAP_LW2S_LSB U(22) /*  2   2= swap before/after execute  @@@@@ */
+            /* second word = size of the memory segment  + control on the first segment 
+                            if the segment is swapped, the LSB bits give the ARC ID of the buffer 
+                            and the memory size is given by the FIFO descriptor (BUFF_SIZE_ARCW1) */
+#define LW2S_NOSWAP 0
+#define LW2S_COPY 1
+#define LW2S_SWAP 2
+
+#define   ________LW2S_MSB U(31) /*      */
+#define   ________LW2S_LSB U(30) /*  2   provision for 8 memory segments */
+#define   TO_SWAP_LW2S_MSB U(29) /*      */
+#define   TO_SWAP_LW2S_LSB U(24) /*  6   one bit per MAX_NB_MEM_REQ_PER_NODE segment to consider for swapping */
+#define      SWAP_LW2S_MSB U(23) /*      0= normal memory segment, 1 = copy before execute */
+#define      SWAP_LW2S_LSB U(22) /*  2   2= swap before/after execute */
 #define BUFF_SIZE_LW2S_MSB U(21) 
 #define BUFF_SIZE_LW2S_LSB U( 0) /* 22   Byte-acurate up to 4MBytes */
+#define SWAPBUFID_LW2S_MSB  ARC0_LW1_MSB 
+#define SWAPBUFID_LW2S_LSB  ARC0_LW1_LSB /* 12  ARC0, (11 + 1) up to 2K FIFO */
+
+
         /* word 3+n - parameters */
 
 /*      
@@ -713,7 +775,7 @@ offset_instance
     #define STREAM_DATA_STREAM_PACK(FIFO) (STREAM_DATA_STREAM + ((FIFO)<<SWC_TAG_CMD_LSB))
     #define STREAM_DATA_STREAM_UNPACK_FIFO(COMMAND) ((COMMAND)>>SWC_TAG_CMD_LSB)
 
-#define STREAM_UPDATE_RELOCATABLE 9u /* update the nanoAppRT pointers to relocatable memory segments */
+//#define STREAM_UPDATE_RELOCATABLE 9u /* update the nanoAppRT pointers to relocatable memory segments */
 
 #define STREAM_COMMAND_UNUSED2 11
 #define STREAM_COMMAND_UNUSED3 12
@@ -920,11 +982,9 @@ offset_instance
 #define MEM_SPEED_REQ_CRITICAL_FAST 3    /* will be TCM when possible
            When a SWC is declaring this segment as relocatable ("RELOC_MEMREQ") it will use 
            physical address different from one TCM to an other depending on the processor running the SWC.
-           The design constraint is to have ONE segment and a pointer to this segment placed 
-           at the beginning of the SWC instance. To let the scheduler modify the TCM address dynamically
-           before calling the SWC. 
-           In all other cases the TCM area will be allocated to one processor designated in 
-           the linked-list parameter "PROCID_GI".
+           The scheduler shares the TCM address dynamically before calling the SWC. 
+           This TCM address is provided as a pointer after the XDM in/out pointer
+           The TCM address is placed at the end (CRITICAL_FAST_SEGMENT_IDX) of long_offset[] 
            */
                                 
 
@@ -1079,34 +1139,35 @@ offset_instance
 
     
 /*==================================================== DOMAINS  ===================================================================*/
+#if 0
     /* physical units rfc8428 rfc8798 */
     /* industry/auto COVESA units https://github.com/COVESA/vehicle_signal_specification/blob/master/spec/units.yaml */
 
-    enum stream_unit_physical
-    {   
-        unused_unit=0,      /* int16_t format */            /* int32_t format */           
-        unit_linear,        /* PCM and default format */    /* PCM and default format */
-        unit_dBm0, 
-        unit_decibel,       /* Q11.4 :   1dB <> 0x0010      Q19.12 :   1dB <> 0x0000 1000  */
-        unit_percentage,    /* Q11.4 :   1 % <> 0x0010      Q19.12 :   1 % <> 0x0000 1000 */
-        unit_meter,         /* Q11.4 :  10 m <> 0x00A0      Q19.12 :  10 m <> 0x0000 A000 */
+    //enum stream_unit_physical
+    //{   
+    //    unused_unit=0,      /* int16_t format */            /* int32_t format */           
+    //    unit_linear,        /* PCM and default format */    /* PCM and default format */
+    //    unit_dBm0, 
+    //    unit_decibel,       /* Q11.4 :   1dB <> 0x0010      Q19.12 :   1dB <> 0x0000 1000  */
+    //    unit_percentage,    /* Q11.4 :   1 % <> 0x0010      Q19.12 :   1 % <> 0x0000 1000 */
+    //    unit_meter,         /* Q11.4 :  10 m <> 0x00A0      Q19.12 :  10 m <> 0x0000 A000 */
 
-        /* audio */
-        unit_SPL = 10,        
-        unit_dBA,           
+    //    /* audio */
+    //    unit_SPL = 10,        
+    //    unit_dBA,           
 
-        /* motion */
-        unit_g = 20,        /* Q11.4 :   1g <> 0x0010       Q19.12 :   1g <> 0x0000 1000  */
-        unit_dps,           /* rotation */
-        unit_G,             /* magnetometer */
+    //    /* motion */
+    //    unit_g = 20,        /* Q11.4 :   1g <> 0x0010       Q19.12 :   1g <> 0x0000 1000  */
+    //    unit_dps,           /* rotation */
+    //    unit_G,             /* magnetometer */
 
-        /* electrical */
-        unit_Vrms = 30,       
-        unit_Ohm,          
+    //    /* electrical */
+    //    unit_Vrms = 30,       
+    //    unit_Ohm,          
 
-        /* time */
-        unit_hour = 40,       
-    };
+    //    /* time */
+    //    unit_hour = 40,       
+    //};
 
 
 /* tuning of PLATFORM_AUDIO_IN */
@@ -1230,6 +1291,8 @@ offset_instance
     1080p
 */
 
+#endif
+
 
 /* constants for uint8_t itoa(char *s, int32_t n, int base) 
 * string conversions to decimal and hexadecimal */
@@ -1347,6 +1410,7 @@ offset_instance
 #define MAXINT32 0x7FFFFFFFL
 //#define MEMCPY(dst,src,n) {void *x; uint32_t i; x=memcpy((dst),(src),(n));}
 #define MEMCPY(dst,src,n) {uint32_t i; for(i=0;i<n;i++){dst[i]=src[i];}}
+#define MEMSWAP(dst,src,n) {uint32_t i, x; for(i=0;i<n;i++){x=dst[i];dst[i]=src[i];src[i]=x;}}
 #define MEMSET(dst,c,n) {uint32_t i; uint8_t *pt8=(uint8_t *)dst; for(i=0;i<n;i++){pt8[i]=c;} }
 
 
@@ -1366,10 +1430,6 @@ offset_instance
 
 #define LOG2BASEINWORD32 2 
 #define BASEINWORD32 (1<<LOG2BASEINWORD32)
-//#define PACK2LINADDR(o,x) (o[RD(x,DATAOFF_ARCW0)] + 
-//        (RD(x,BAS_SIGN_ARCW0))? 
-//            (1 + ~(((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32)):
-//            ( ((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32))
 
 #define SET_BIT(arg, bit)   ((arg) |= (U(1) << U(bit)))
 #define CLEAR_BIT(arg, bit) ((arg) = U(arg) & U(~(U(1) << U(bit))))

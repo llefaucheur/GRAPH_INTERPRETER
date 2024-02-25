@@ -34,7 +34,7 @@
 #define carm_stream_script_INSTRUCTIONS_H
 
 #define iBRANCHs 0x00
-#define     iCJUMP   0x01
+#define iCJUMP   0x01
 
 #define iCOPY    0x01
 #define iLOADK   0x02

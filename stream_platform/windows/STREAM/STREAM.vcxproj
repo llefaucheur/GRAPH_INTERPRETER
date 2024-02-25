@@ -176,7 +176,7 @@
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\router\arm_stream_router_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script_process.c" />
-    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\shared\arm_stream_share.c" />
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\shared\arm_stream_split.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\synchro\arm_stream_synchro.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\synchro\arm_stream_synchro_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D.c" />
@@ -211,7 +211,7 @@
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\router\arm_stream_router.h" />
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script.h" />
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script_instructions.h" />
-    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\shared\arm_stream_share.h" />
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\shared\arm_stream_split.h" />
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\synchro\arm_stream_synchro.h" />
     <ClInclude Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D.h" />
     <ClInclude Include="..\..\..\stream_nodes\Image\arm\filter2D\arm_stream_filter2D.h" />

@@ -1,10 +1,10 @@
 ; ------------------------------------------------------------------------------------------------------------
-; SOFTWARE COMPONENT MANIFEST - "SHARED"
+; SOFTWARE COMPONENT MANIFEST - "SPLIT"
 ; ------------------------------------------------------------------------------------------------------------
 ;
     ARM             developer name
-    SHARED          node name for the GUI and the graph compiler (node and arc src/dst)
-    1 1 0 1   1 1 0 31  
+    arm_stream_split           node name for the GUI and the graph compiler (node and arc src/dst)
+    X 1 1 0 1   1 1 0 31  
 ;                   nb input arcs 
 ;                   nb output arcs (in + out = ARCSRDY_LW0_LSB first arcs, data availability checked before RUN )
 ;                   nb parameter-arcs arcs, (NN model..), nodes with parameter arc have "xdm11=0" to keep the read index on the parameter

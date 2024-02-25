@@ -206,6 +206,7 @@ void read_platform_digital_manifest(char* inputFile, struct stream_platform_mani
     pt_line = inputFile;
     nb_io_stream = 0;
 
+    jump2next_valid_line(&pt_line);
     fields_extract(&pt_line, "II", &(platform->nb_architectures), &(platform->nb_processors));
 
 
@@ -230,7 +231,7 @@ void read_platform_digital_manifest(char* inputFile, struct stream_platform_mani
         }
 
         /*  memory mapping managed using several memory bank */
-        for (ibank = 0; ibank < platform->processor[iproc].nbMemoryBank_detailed -1; ibank ++)
+        for (ibank = 0; ibank < platform->processor[iproc].nbMemoryBank_detailed; ibank ++)
         {
         fields_extract(&pt_line, "iiiiiiiII",
              &(platform->processor[iproc].membank[ibank].offsetID),
@@ -311,85 +312,114 @@ void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *io_stre
  */
 void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
 {
-    char *pt_line;
-    uint32_t iarch, iarc, ibank, NARCS, iscripts = 0, simple_syntax /* @@@@ */;
+    char *pt_line, *pt_line2;
+    uint32_t iarch, iarc, ibank, NARCS, iscripts = 0, extended_syntax, short_syntax, raw;
     struct arcStruct *pta;
+    char shortFormat[2];
 
     pt_line = inputFile;
+    jump2next_valid_line (&pt_line);
 
    /* -------------------------- HEADER -------------------------------------- */
 
     fields_extract(&pt_line, "c", node->developerName);     /* developer's name */
     fields_extract(&pt_line, "c", node->nodeName);          /*  node name for the GUI */
-    fields_extract(&pt_line, "iiiiiiii", &(node->nbInputArc), &(node->nbOutputArc), &(node->nbParameArc), 
-        &(node->idxStreamingArcSync), /* index of the arc for the byte synchronization in SMP */ 
-        &(node->RWinSWC),           /* XDM11 read/write index is managed in SWC, for variable buffer consumption */
-        &(node->formatUsed),        /* buffer format is used by the component */
-        &(node->deliveryMode),      /* 0:source, 1:binary, 2: 2 binaries (fat binary)*/
-        &(node->masklib));          /* dependency to Stream conpute libraries */
- 
+
+    pt_line2 = pt_line;
+    if (fields_extract(&pt_line, "CII", shortFormat,  &(node->nbInputArc), &(node->nbOutputArc)) < 0) exit(-4);
+    extended_syntax = shortFormat[0] != 'S' && shortFormat[0] != 's';
+    short_syntax = shortFormat[0] == 'S' || shortFormat[0] == 's';
+    if (extended_syntax)   /* is it a long format ? */
+    {   pt_line = pt_line2;
+        fields_extract(&pt_line, "Ciiiiiiii", shortFormat, &(node->nbInputArc), &(node->nbOutputArc), &(node->nbParameArc), 
+            &(node->idxStreamingArcSync), /* index of the arc for the byte synchronization in SMP */ 
+            &(node->RWinSWC),           /* XDM11 read/write index is managed in SWC, for variable buffer consumption */
+            &(node->formatUsed),        /* buffer format is used by the component */
+            &(node->deliveryMode),      /* 0:source, 1:binary, 2: 2 binaries (fat binary)*/
+            &(node->masklib));          /* dependency to Stream conpute libraries */
+    }
+
+    if (short_syntax)   /* is it a short format ? */
+    {   node->nbParameArc = 0;
+        node->idxStreamingArcSync = 0;
+        node->RWinSWC = 0;
+        node->formatUsed = 0;        
+        node->deliveryMode = 0;     
+        node->masklib = 0;   
+        node->nbArch = 1;
+    }
     node->nbInputOutputArc = node->nbInputArc + node->nbOutputArc;
 
-    fields_extract(&pt_line, "i", &simple_syntax);  // 0:default 1:simplified
+    if (short_syntax)
+    {   NARCS = node->nbInputArc +  node->nbOutputArc;
+        fields_extract(&pt_line, "i", &raw); 
+        for (iarc = 0; iarc < NARCS; iarc++)
+        {   pta = &(node->arc[iarc]);
+            fields_extract(&pt_line, "i", &(pta->sc.rx0tx1)); 
+            pta->sc.raw_type = raw;
+        }    
 
-    fields_extract(&pt_line, "i", &(node->nbArch));
-    for (iarch = 0; iarch < node->nbArch; iarch++)
-    {   fields_extract(&pt_line, "ii", &(node->arch), &(node->fpu));  
     }
-    
-    /* code version sub-version */
-    fields_extract(&pt_line, "ii", &(node->codeVersion), &(node->schedulerVersion));  
-
-    /* number of memory banks */
-    fields_extract(&pt_line, "i", &(node->nbMemorySegment));  
-
-    for (ibank =0; ibank < node->nbMemorySegment; ibank++)
-    {
-        fields_extract(&pt_line, "iiffffiiiiiii", 
-            &(node->memreq[ibank].size0),           /* 'A' */
-            &(node->memreq[ibank].DeltaSize64),    /* 'DA64' */
-            &(node->memreq[ibank].sizeNchan),       /* 'B' */
-            &(node->memreq[ibank].sizeFS),          /* 'C' */
-            &(node->memreq[ibank].sizeFrame),       /* 'D' */
-            &(node->memreq[ibank].sizeParameter),   /* 'E' */
-
-            &(node->memreq[ibank].iarcChannelI),
-            &(node->memreq[ibank].iarcSamplingJ),
-            &(node->memreq[ibank].iarcFrameK),
-
-            &(node->memreq[ibank].alignmentBytes),
-            &(node->memreq[ibank].usage),
-            &(node->memreq[ibank].speed),
-            &(node->memreq[ibank].relocatable) );  
-    }
-    
-    NARCS = node->nbInputArc +  node->nbOutputArc + node->nbParameArc;
-    for (iarc = 0; iarc < NARCS; iarc++)
-    {
-        pta = &(node->arc[iarc]);
-
-        /* inplace buffer destination = n + NARCS */
-        fields_extract(&pt_line, "i", &(node->inPlaceProcessing)); 
-        if (iarc == node->inPlaceProcessing)
-        {   node->arcIDbufferOverlay = 0;
-            node->inPlaceProcessing = 0;
-        }
-        else
-        {   node->arcIDbufferOverlay = NARCS - node->inPlaceProcessing;
-            node->inPlaceProcessing = 1;
+    else
+    {   fields_extract(&pt_line, "i", &(node->nbArch));
+        for (iarch = 0; iarch < node->nbArch; iarch++)
+        {   fields_extract(&pt_line, "ii", &(node->arch), &(node->fpu));  
         }
 
-        fields_extract(&pt_line, "i", &(pta->sc.rx0tx1)); 
-        fields_extract(&pt_line, "i", &(pta->sc.raw_type)); 
-        fields_extract(&pt_line, "i", &(pta->sc.timestamp)); 
-        fields_extract(&pt_line, "i", &(pta->sc.framelength_format)); 
-        fields_extract(&pt_line, "i", &(pta->sc.samplingRate_format)); 
-        fields_extract(&pt_line, "f", &(pta->sc.percentFSaccuracy)); 
+        /* code version sub-version */
+        fields_extract(&pt_line, "ii", &(node->codeVersion), &(node->schedulerVersion));  
 
-        fields_list(&pt_line, &(pta->interleaving_option)); 
-        fields_list(&pt_line, &(pta->nbchannel_option)); 
-        fields_list(&pt_line, &(pta->frame_size_option)); 
-        fields_list(&pt_line, &(pta->sampling_rate_option)); 
+        /* number of memory banks */
+        fields_extract(&pt_line, "i", &(node->nbMemorySegment));  
+
+        for (ibank =0; ibank < node->nbMemorySegment; ibank++)
+        {
+            fields_extract(&pt_line, "iiffffiiiiiii", 
+                &(node->memreq[ibank].size0),           /* 'A' */
+                &(node->memreq[ibank].DeltaSize64),     /* 'DA64' */
+                &(node->memreq[ibank].sizeNchan),       /* 'B' */
+                &(node->memreq[ibank].sizeFS),          /* 'C' */
+                &(node->memreq[ibank].sizeFrame),       /* 'D' */
+                &(node->memreq[ibank].sizeParameter),   /* 'E' */
+
+                &(node->memreq[ibank].iarcChannelI),
+                &(node->memreq[ibank].iarcSamplingJ),
+                &(node->memreq[ibank].iarcFrameK),
+
+                &(node->memreq[ibank].alignmentBytes),
+                &(node->memreq[ibank].usage),
+                &(node->memreq[ibank].speed),
+                &(node->memreq[ibank].relocatable) );  
+        }
+    
+        NARCS = node->nbInputArc +  node->nbOutputArc + node->nbParameArc;
+        for (iarc = 0; iarc < NARCS; iarc++)
+        {
+            pta = &(node->arc[iarc]);
+
+            /* inplace buffer destination = n + NARCS */
+            fields_extract(&pt_line, "i", &(node->inPlaceProcessing)); 
+            if (iarc == node->inPlaceProcessing)
+            {   node->arcIDbufferOverlay = 0;
+                node->inPlaceProcessing = 0;
+            }
+            else
+            {   node->arcIDbufferOverlay = NARCS - node->inPlaceProcessing;
+                node->inPlaceProcessing = 1;
+            }
+
+            fields_extract(&pt_line, "i", &(pta->sc.rx0tx1)); 
+            fields_extract(&pt_line, "i", &(pta->sc.raw_type)); 
+            fields_extract(&pt_line, "i", &(pta->sc.timestamp)); 
+            fields_extract(&pt_line, "i", &(pta->sc.framelength_format)); 
+            fields_extract(&pt_line, "i", &(pta->sc.samplingRate_format)); 
+            fields_extract(&pt_line, "f", &(pta->sc.percentFSaccuracy)); 
+
+            fields_list(&pt_line, &(pta->interleaving_option)); 
+            fields_list(&pt_line, &(pta->nbchannel_option)); 
+            fields_list(&pt_line, &(pta->frame_size_option)); 
+            fields_list(&pt_line, &(pta->sampling_rate_option)); 
+        }
     }
 }
 
@@ -428,7 +458,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
 
     jump2next_valid_line(&pt_line);
     sscanf(pt_line, "%d %s", &ipath, graph_platform_manifest_name); /* read the platform_manifest name*/
-    jump2next_line(&pt_line);
+
     strcpy(file_name, paths[ipath]);
     strcat(file_name, graph_platform_manifest_name);
 
@@ -442,7 +472,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     */
     jump2next_valid_line(&pt_line);
     sscanf(pt_line, "%d", &nb_stream);  /* read the number of streams in this plaform */
-    jump2next_line(&pt_line);
+
     platform->nb_hwio_stream = nb_stream;
 
     for (istream = 0; istream < nb_stream; istream++)

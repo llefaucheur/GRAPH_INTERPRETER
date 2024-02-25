@@ -160,12 +160,21 @@ typedef uint32_t stream_time32;
 /*
  * stream_time_seconds in 16bits : "stream_time16"
  *  F_______________________________F_______________FEDCBA9876543210
- *  1_______________________________1_______________qqqqqqqqqqqqqqqq q15 x 250ms  (1/4 s +/- 15us)
- *  1_______________________________1_______________ssssssssssssssqq q14.2 seconds (4 hours 30mn +/- 0.25s)
+ *  1_______________________________1_______________qqqqqqqqqqqqqqqq q15 x 250ms relative time (1/4 s +/- 15us)
+ *  1_______________________________1_______________ssssssssssssssqq q14.2 absolute seconds (4 hours 30mn +/- 0.25s)
  */
 typedef uint32_t stream_time16;
 #define     TIME_T16_MSB 15
 #define     TIME_T16_LSB  0 
+
+/*
+ * stream_time_seconds in 8bits : "stream_time8"
+ *  F_______________________________F_______________________76543210
+ *  1_______________________________1_______________________ssssssqq q7 x 250ms relative time (63 seconds +/- 0.25s)
+ */
+typedef uint32_t stream_time16;
+#define     TIME_T8_MSB  7
+#define     TIME_T8_LSB  0 
 
 /* 
     MANIFEST of IO functions and capabilities
@@ -219,21 +228,20 @@ typedef uint32_t stream_time16;
 #define IO_DOMAIN_MAX_NB_DOMAINS         (IO_DOMAIN_UNUSED_9+1)
 
 
-enum 
-{   arc_read_address,
-    arc_write_address,
-    arc_data_amount,
-    arc_free_area,
-    arc_buffer_size,
-    arc_IO_move_to_arc,
-    arc_IO_moved_from_arc,
-    //arc_IO_moved_from_arc_update,
+#define arc_read_address                1 
+#define arc_write_address               2 
+#define arc_data_amount                 3 
+#define arc_free_area                   4
+#define arc_buffer_size                 5
+#define data_move_to_arc                6
+#define data_moved_from_arc             7
+#define data_swapped_with_arc           8
+#define arc_data_realignment_to_base    9
+    //data_moved_from_arc_update,          
     //arc_set_base_address_to_arc,
     //arc_set_base_address_from_arc,
-    arc_data_realignment_to_base,
     //consumer_frame_size,
     //producer_frame_size
-};
 
 
  
@@ -379,30 +387,26 @@ typedef struct
     uint8_t *pt8b_collision_arc;
     uint32_t pack_command;          // preset, narc, tag, instanceID, command
 
-    //uint32_t *stack_services;       // memory reserved for stream_services.c
-    //uint32_t stack_services_size;
-
     uint8_t swc_memory_banks_offset;// offset in words
     uint8_t swc_parameters_offset;
 
     uint8_t nb_stream_instances;    // stream instances pointers (in words) = &(all_arcs[ -nb_stream_instances])
     uint8_t script_arctx;           // arc buffer for the static area of the script
+    uint8_t memory_segment_swap;    // bit-field of the memory segments to swap (TO_SWAP_LW2S)
 
 /* */
 #define STREAM_COLD_BOOT 0u
 #define STREAM_WARM_BOOT 1u         /* Reset + restore memory banks from retention */
 
-#define STREAM_ANY_PRIORITY 0u      /* PRIORITY_SCTRL */
-#define STREAM_LOWLATENCYTASKS 1u
-#define STREAM_MIDLATENCYTASKS 2u
-#define STREAM_BACKGROUNDTASKS 3u
+#define STREAM_INSTANCE_ANY_PRIORITY    0u      /* PRIORITY_SCTRL_LSB */
+#define STREAM_INSTANCE_LOWLATENCYTASKS 1u
+#define STREAM_INSTANCE_MIDLATENCYTASKS 2u
+#define STREAM_INSTANCE_BACKGROUNDTASKS 3u
 
 #define STREAM_MAIN_INSTANCE 1
 
 #define   UNUSED_SCTRL_MSB U(31)   
-#define   UNUSED_SCTRL_LSB U(20)  /* 12 */ 
-#define PRIORITY_SCTRL_MSB U(19)   
-#define PRIORITY_SCTRL_LSB U(18)  /* 2 for RTOS instances. 1:low-latency tasks, 2:heavy background tasks*/ 
+#define   UNUSED_SCTRL_LSB U(18)  /* 14 */ 
 #define MAININST_SCTRL_MSB U(17)   
 #define MAININST_SCTRL_LSB U(17)  /* 1 main instance to set the graph at boot time */
 #define NODEEXEC_SCTRL_MSB U(16)   
@@ -419,9 +423,8 @@ typedef struct
 #define   SCRIPT_SCTRL_LSB U( 3)  /* 6 script call options bit-field (before/after SWC/loop/full) */
 #define   RETURN_SCTRL_MSB U( 2)
 #define   RETURN_SCTRL_LSB U( 0)  /* 3 return options (each SWC, each parse, once starving */
-#define PACK_STREAM_PARAM(M,P,N,B,S,R) (  \
+#define PACK_STREAM_PARAM(M,N,B,S,R) (  \
             ((M)<<MAININST_SCTRL_LSB) |   \
-            ((P)<<PRIORITY_SCTRL_LSB) |   \
             ((N)<<NBINSTAN_SCTRL_LSB) |   \
             ((B)<<    BOOT_SCTRL_LSB) |   \
             ((S)<<  SCRIPT_SCTRL_LSB) |   \
@@ -431,8 +434,8 @@ typedef struct
     /* identification "whoami", next SWC to run*/
     #define    INST_ID_PARCH_MSB U(31)
     #define     WHOAMI_PARCH_MSB U(31)
-    #define   INSTANCE_PARCH_MSB U(31)  /* avoid locking an arc by the same processor, but different RTOS instances*/
-    #define   INSTANCE_PARCH_LSB U(30)  /* 2 [0..3] up to 4 instances per processors, 0=main instance at boot */
+    #define   PRIORITY_PARCH_MSB U(31)  /* avoid locking an arc by the same processor, but different RTOS instances*/
+    #define   PRIORITY_PARCH_LSB U(30)  /* 2 [0..3] up to 4 instances per processors, 0=main instance at boot */
     #define     PROCID_PARCH_MSB U(29)  /*   indexes from Manifest(tools) and PLATFORM_PROC_HW */
     #define     PROCID_PARCH_LSB U(27)  /* 3 processor index [0..7] for this architecture 0="commander processor" */  
     #define     ARCHID_PARCH_MSB U(26)

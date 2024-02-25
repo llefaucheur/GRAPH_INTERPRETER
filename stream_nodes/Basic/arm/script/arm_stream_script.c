@@ -41,44 +41,27 @@
 #include "arm_stream_script.h"
 
 /*
-    command  = reset/run + nbreg + stack size
-    instance = pointer to the static area (the base address of the arc)
-    data     = byte codes
+    command  = reset/set-param/stop/run
+    instance = pointer to the descriptor base address of the arc)
+    data     = XDM[0] data to byte codes XDM[1] Stream instance 
+    status 
 */
 void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
     switch (RD(command,COMMAND_CMD))
     { 
         /* func(command = (STREAM_RESET, COLD, PRESET, TRACEID tag, NB ARCS IN/OUT)
-                instance = memory_results and all memory banks following
+                instance = memory_results and all memory banks
                 data = address of Stream function
-                
-                memresults are followed by 2 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
-                memory pointers are in the same order as described in the SWC manifest
-
-                memresult[0] : instance of the component (FIFOTX base address)
-                memresult[n+1]:pointer to the allocated memory
-                memresult[2] : input arc Word 0 SIZSFTRAW_FMT0 (frame size..)
-                memresult[3] : input arc Word 1 SAMPINGNCHANM1_FMT1 
-                memresult[4] : output arc Word 0 SIZSFTRAW_FMT0 
-                memresult[5] : output arc Word 1 SAMPINGNCHANM1_FMT1 
-
-                preset (8bits) : unused
-                tag (8bits)  : unused
+                No arc
+                memresult[0] : instance of the component (FIFOTX descbase address)
+                    base address = instance, registers
+                    length = code length + byte code format
+                    read index = start of stack index
+                    write index = start of parameters index + synchronization byte
         */
         case STREAM_RESET: 
         {   
-            intPtr_t *memreq;
-            arm_stream_script_instance *pinstance;
-            uint32_t clear_size;
-
-            memreq = (intPtr_t *)instance;
-            pinstance = (arm_stream_script_instance *) (*memreq);
-
-            /* reset the data after instance : registers_8B[] + type_1B[]*/
-            clear_size = (REGSIZE + 1) * RD(pinstance->state, NREGS_SCRIPT) + RD(pinstance->state, NSTACK_SCRIPT);
-            MEMSET((uint8_t *) &(pinstance[1]), 0, clear_size);
-
             break;
         }    
 
@@ -89,18 +72,37 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
         */ 
         case STREAM_SET_PARAMETER:  
         {   uint32_t *pt32bsrc;
-            arm_stream_script_instance *pinstance = (arm_stream_script_instance *) instance;
+            uint32_t *arc_desc = (uint32_t *) instance;
             pt32bsrc = (uint32_t *) data;
-            pinstance->use_case[0] = (*pt32bsrc++);       // 8-bytes use-case communicated by uper layers
-            pinstance->use_case[1] = (*pt32bsrc);
-            SET_BIT(pinstance->state, NEW_USE_CASE_SCRIPT_LSB);
+            arc_desc[SCRIPT_UC_SCRARCW1] = (*pt32bsrc++);       // 2x4-bytes use-case communicated by uper layers
+            arc_desc[SCRIPT_UC_SCRARCW2] = (*pt32bsrc++);       // 
+            SET_BIT(arc_desc[SCRIPT_PTR_SCRARCW0], NEW_USE_CASE_SCRIPT_LSB);
         }
 
-        /* byte-code execution, reset the stack pointer, byte_code = data */       
+        /* byte-code execution,                 
+            xdm_data[0].address = (intPtr_t)byte_codes;
+            xdm_data[1].address = (intPtr_t)S;
+            xdm_data[2].address = (intPtr_t)arc;
+        */
         case STREAM_RUN:   
-        {   
-            arm_stream_script_instance *pinstance = (arm_stream_script_instance *) instance;
-            arm_stream_script_interpreter (pinstance, data);
+        {   uint32_t clear_size;
+            stream_xdmbuffer_t *pt_pt;
+            arm_stream_instance_t *S;
+            uint32_t *arc_desc = (uint32_t *) instance;
+            uint16_t *byte_code;
+            uint8_t *src;
+
+            pt_pt = data;   byte_code = (uint16_t *)pt_pt->address;  
+            pt_pt++;        S = (arm_stream_instance_t *)pt_pt->address; 
+            pt_pt++;        arc_desc = (uint32_t *)pt_pt->address;  
+
+            /* reset the instance */
+            clear_size =  (REGSIZE + 1) * RD(arc_desc[SCRIPT_PTR_SCRARCW0], NBREGS_SCRARCW0);
+            clear_size += (REGSIZE + 1) * RD(arc_desc[WRIOCOLL_SCRARCW3], NSTACK_SCRARCW3);
+            src = (uint8_t *)pack2linaddr_ptr(S->long_offset, RD(arc_desc[SCRIPT_PTR_SCRARCW0], BASEIDXOFFSCRARCW0));
+            MEMSET(src, 0, clear_size);
+
+            arm_stream_script_interpreter (S, arc_desc, byte_code, src);
             break;
         }
         default: break;

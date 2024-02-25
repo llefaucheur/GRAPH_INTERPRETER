@@ -3,8 +3,8 @@
 ; ------------------------------------------------------------------------------------------------------------
 ;
     ARM             developer name
-    SCRIPT  node name for the GUI and the graph compiler (node and arc src/dst)
-    0 1 0 0   0 0 0 31  
+    arm_stream_script  node name for the GUI and the graph compiler (node and arc src/dst)
+    X 0 1 0 0   0 0 0 31  
 ;                   nb input arcs 
 ;                   nb output arcs (in + out = ARCSRDY_LW0_LSB first arcs, data availability checked before RUN )
 ;                   nb parameter-arcs arcs, (NN model..), nodes with parameter arc have "xdm11=0" to keep the read index on the parameter
@@ -15,7 +15,7 @@
 ;                   delivery 0:source, 1:binary, 2: 2 binaries (fat binary)
 ;                   mask: dependency to EXTDSPML EXTMATH EXTAUDIO EXTIMAGE EXTSTDLIB
 ;
-    0           0:default 1:simple syntax
+
     1               number of architecture options below
     0 2             0: arch (0=source code), 2: FPU option (enum stream_processor_sub_arch_fpu)
     0 1             code version, version of the scheduler it is compatible with
@@ -23,22 +23,16 @@
 ;----------------------------------------------------------------------------------------
 ; Loop on memory banks (max=4)
 ;
-    2               memory bank allocation = instance + working area in TCM
+    1               memory bank allocation = instance + working area in TCM
  
-;   Memory Size Bytes = (A + DeltaA64 + B x nb_channels_arc(i) + C x samplingHz_arc(j) + 
-;       D x frame_size_arc(k) + E x maxParameterSize)
+;
+;   Memory Size Bytes = A(32b) + Delta(64b) + B x nb_channels_arc(i) + C x samplingHz_arc(j) + D x frame_size_arc(k) + E x maxParameterSize
 ;
 ;   INSTANCE MEM is the first one, even if the size is null
 ;
-;   [12]:   A B C D E,     indexes i,j,k,  
-;           alignment, static/working/retention,  any/normal/fast/critical,  relocatable
-    0 0 0 0 0 0   0 0 0   4 0 0 0
+;   [13]:   A D64 B C D E, indexes i,j,k,  alignment, static/working/retention,  any/normal/fast/critical,  relocatable (STREAM_UPDATE_RELOCATABLE)
+            0  0  0 0 0 0  0 0 0            4 0 0 0
 
-;---------------------------------------------------
-;   0: arc R/W managed in the SWC  1: all arcs are using the same frame size (see "xdm11")
-;   0: no need the push the format of the arcs (see reset_component(S))
-
-    0 0
 
 ;-------------------
 ; output_arc : "0"
