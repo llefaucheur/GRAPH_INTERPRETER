@@ -88,6 +88,16 @@ top_graph_interface
   S  7   1  7    format 1 FWIDX=7 io_platform_gpio_out_1.txt      
   S  8   0  8    format 0 FWIDX=8 io_platform_data_out_0.txt      
 
+;#define IO_PLATFORM_DATA_IN_0        0
+;#define IO_PLATFORM_DATA_IN_1        1
+;#define IO_PLATFORM_ANALOG_SENSOR_0  2
+;#define IO_PLATFORM_MOTION_IN_0      3
+;#define IO_PLATFORM_AUDIO_IN_0       4
+;#define IO_PLATFORM_2D_IN_0          5
+;#define IO_PLATFORM_LINE_OUT_0       6
+;#define IO_PLATFORM_GPIO_OUT_0       7
+;#define IO_PLATFORM_GPIO_OUT_1       8
+;#define IO_PLATFORM_DATA_OUT_0       9
     _end_
 
 ;
@@ -251,7 +261,7 @@ node
 ;
 ;  debug registers have 64bits and are stored in the first arc descriptors, the first arc index is >0 (<2K)
 ;   there are 16 debug registers max (including for subgraphs)
-;  To manage subgraph arc debug without changing the rdebug register index, there is a "bank" (DBGB0_LW1) 
+;  To manage subgraph arc debug without changing the debug register index, there is a "bank" (DBGB0_LW1) 
 ;   associated to arcs when the SWC is launched set at the top of the main graph (top_arc_debug_offset)
 ;
 ;       Memory bank virtual index(0 or speed control); buffer size scaling 
@@ -275,7 +285,7 @@ node
 ;
 arc
     S 0 0                           Simple ProductionFormat ConsumptionFormat 
-    _graph_interface    1  1        1 = analog_sensor_0, second parameter=set0_copy1
+    graph_interface    1  1        1 = analog_sensor_0, second parameter=set0_copy1
     arm_stream_filter   0  0        [0]:filter instance       [0]:RX arc of the node
 
     S 0 0                           Simple ProductionFormat ConsumptionFormat 
@@ -284,7 +294,7 @@ arc
 
     S 0 1                           Simple ProductionFormat ConsumptionFormat 
     arm_stream_detector 0  1   
-    _graph_interface    6  0        6 = gpio_out_0 ,  set buffer
+    graph_interface    6  0        6 = gpio_out_0 ,  set buffer
 
     S 0 1                           Simple ProductionFormat ConsumptionFormat 
     arm_stream_detector 0  1   
@@ -292,5 +302,5 @@ arc
 
     S 0 1                           Simple ProductionFormat ConsumptionFormat 
     arm_stream_script   0  0   
-    _graph_interface    8  0        8 = data_out_0 (TRACE),  set buffer
+    graph_interface    8  0        8 = data_out_0 (TRACE),  set buffer
 _end_

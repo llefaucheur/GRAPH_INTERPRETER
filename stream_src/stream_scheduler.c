@@ -42,7 +42,7 @@ static long DEBUG_CNT;
 static void read_header (arm_stream_instance_t *S);
 static void reset_component (arm_stream_instance_t *S);
 static uint8_t lock_this_component (arm_stream_instance_t *S);
-static void set_new_parameters (arm_stream_instance_t *S);
+static void set_new_parameters (arm_stream_instance_t *S, uint32_t *ptr_param32b);
 static void run_node (arm_stream_instance_t *S);
 static uint8_t arc_ready_for_write(arm_stream_instance_t *S, uint32_t *arc, uint32_t *frame_size);
 static uint8_t arc_ready_for_read(arm_stream_instance_t *S, uint32_t *arc, uint32_t *frame_size);
@@ -355,7 +355,7 @@ static uint8_t arc_ready_for_read(arm_stream_instance_t *S, uint32_t *arc, uint3
   @remark
  */
 
-void arc_data_operations (
+static void arc_data_operations (
         arm_stream_instance_t *S, 
         uint32_t *arc, 
         uint8_t tag, 
@@ -462,10 +462,9 @@ void arc_data_operations (
 static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *xdm_data, uint8_t pre0post1)
 {
     uint32_t fifosize, read, write;
-    uint32_t increment;
     uint32_t *arc;
     uint16_t iarc, arcID;
-    uint8_t xdm11, ret;
+    uint8_t xdm11, ret, narc;
     uint32_t xdm11_frame_size, tmp;      // same frame size between input and output arcs "1 to 1 XDM frame size"
      
     /* all is fine by default */
@@ -502,12 +501,14 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
        function updates the go/no-go flag.
     */
     xdm11_frame_size = MAXINT32;
-    for (iarc = 0; iarc < RD(S->swc_header[0], ARCSRDY_LW0); iarc++)
+    narc = RD((S->swc_header)[0], NBARCW_LW0);
+
+    for (iarc = 0; iarc < narc; iarc++)
     {
         arcID = S->arcID[iarc];
         arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
 
-        if (0 == (ARC_RX0TX1_MASK & arcID))
+        if (0 == (ARC_RX0TX1_CLEAR & arcID))
         {   
             ret &= arc_ready_for_read(S, arc, &tmp);
             xdm11_frame_size = MIN(xdm11_frame_size, tmp);
@@ -524,7 +525,7 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
     }
 
 
-    for (iarc = 0; iarc < RD((S->swc_header)[0], NBARCW_LW0); iarc++)
+    for (iarc = 0; iarc < narc; iarc++)
     {   
         arcID = (S->arcID[iarc]);
         arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
@@ -532,7 +533,7 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
         write = RD(arc[3], WRITE_ARCW3);
         fifosize =  RD(arc[1], BUFF_SIZE_ARCW1);
 
-        if (ARC_RX0TX1_MASK & arcID)
+        if (ARC_RX0TX1_CLEAR & arcID)
         {   /* TX arc case */
             if (0 == pre0post1)
             {   xdm_data[iarc].address = (intPtr_t)(arc_extract_info_pt (S, arc, arc_write_address));
@@ -545,7 +546,8 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
                 }
             }
             else
-            {   /* to save cycles and code size, the SWC can avoid incrementing the pointers */
+            {   uint32_t increment;
+                /* to save cycles and code size, the SWC can avoid incrementing the pointers */
                 if (xdm11) 
                 {   increment = xdm11_frame_size;
                 }
@@ -601,7 +603,8 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
                 }
             }
             else
-            {   /* to save code and cycles, the SWC is not incrementing the pointers*/
+            {   uint32_t increment;
+                /* to save code and cycles, the SWC is not incrementing the pointers*/
                 if (xdm11) 
                 {   increment = xdm11_frame_size;
                 }
@@ -629,7 +632,7 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
         uint32_t *fast_mem;
         al_func = &(S->al_services[0]);
         (*al_func)(PACK_AL_SERVICE(0,AL_SERVICE_READ_MEMORY_FAST_MEM_ADDRESS,AL_SERVICE_READ_MEMORY), (uint8_t *)&fast_mem, 0, 0, 0);
-        xdm_data[iarc].address = (intPtr_t)(fast_mem);
+        xdm_data[narc].address = (intPtr_t)(fast_mem);
     }
     return ret;
  }
@@ -747,7 +750,7 @@ void check_graph_boundaries(arm_stream_instance_t *S)
         ST(*ioctrl, ONGOING_IOSIZE, size);
 
         /* if this is an input stream : check the buffer is empty  */
-        if (RX0_TO_GRAPH == RD(*pio, RX0TX1_IOFMT))
+        if (RX0_TO_GRAPH == RD(*pio, ARC_RX0TX1_CLEAR))
         {   need_data_move = arc_ready_for_write(S, arc, &size);
             buffer = arc_extract_info_pt(S, arc, arc_write_address);
             if (size == 0)
@@ -795,7 +798,7 @@ void check_graph_boundaries(arm_stream_instance_t *S)
             (*io_func)(STREAM_RUN, buffer, size);
 
             /* if this is an input stream : check the buffer needs alignment by the consumer */
-            if (RX0_TO_GRAPH == RD(*pio, RX0TX1_IOFMT))
+            if (RX0_TO_GRAPH == RD(*pio, ARC_RX0TX1_CLEAR))
             {   //set_alignment_bit (S, arc);
 
                 /* does data realignement must be done ? : realign and clear the bit */
@@ -826,15 +829,15 @@ static uint32_t check_hwsw_compatibility(arm_stream_instance_t *S)
     uint32_t whoami = S->whoami_ports;
     uint32_t header = (S->swc_header)[0];
 
-    if (RD(header, ARCHID_LW0) > 0u) /* do I care about the architecture ID ? */
+    if (RD(header, ARCHID_LW0) > 0u) /* do we care about the architecture ID ? */
     {   match = (RD(header, ARCHID_LW0) == RD(whoami, ARCHID_PARCH));
     }
 
-    if (RD(header, PROCID_LW0) > 0u) /* do I care about the processor ID ? */
+    if (RD(header, PROCID_LW0) > 0u) /* do we care about the processor ID ? */
     {   match = match & (RD(header, PROCID_LW0) == RD(whoami, PROCID_PARCH));
     }
 
-    if (RD(header, PRIORITY_LW0) > 0u) /* do I care about the priority ? */
+    if (RD(header, PRIORITY_LW0) > 0u) /* do we care about the priority ? */
     {   match = match & (RD(header, PRIORITY_LW0) == RD(whoami, PRIORITY_PARCH));
     }
 
@@ -862,7 +865,7 @@ static uint32_t check_hwsw_compatibility(arm_stream_instance_t *S)
  */
 
 
-void stream_scan_graph (arm_stream_instance_t *S, int8_t command) 
+void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data) 
 {
     //if (script_option & STREAM_SCHD_SCRIPT_START) { script_processing (S->script_offsets);}
 
@@ -903,9 +906,14 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command)
 
             /* ---------------- parameter was changed, or reset phase ? -------------------- */
             if (command == STREAM_RESET)
-            {   
-                reset_component (S);
-                set_new_parameters (S);
+            {   reset_component (S);
+
+                /* read the parameter header -   "word 3+n" */
+                set_new_parameters (S, &((S->swc_header)[S->swc_parameters_offset]));
+            }
+
+            if (command == STREAM_SET_PARAMETER)
+            {   set_new_parameters (S, data);
             }
 
             /* end of graph processing ? */
@@ -933,7 +941,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command)
                 for (iarc = 0; iarc < RD(S->swc_header[0], NBARCW_LW0); iarc++)
                 {   /* search the RX arcs being blocked in producer's side */
                     arcID = (S->arcID[iarc]);
-                    if (0 == (ARC_RX0TX1_MASK & arcID))
+                    if (0 == (ARC_RX0TX1_CLEAR & arcID))
                     {   arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
                         if (0u != TEST_BIT (arc[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB))
                         {   arc_data_operations (S, arc, arc_data_realignment_to_base, 0, 0);
@@ -1040,8 +1048,9 @@ static void read_header (arm_stream_instance_t *S)
     /* SWC arcs indexes = [0..narc-1], arcs of the associated script = narc (optionaly narc+1) */
     S->script_arctx = (uint8_t)(ARC_RX0TX1_CLEAR & (S->arcID[narc]));
 
-    /* byte pointer for locking the node, can be the arc 0/1/2/3 ARCLOCK_LW0 has 2bits */
-    x = RD(S->swc_header[0], ARCLOCK_LW0);
+    ///* byte pointer for locking the node, can be the arc 0/1/2/3 ARCLOCK_LW0 has 2bits */
+    //x = RD(S->swc_header[0], ARCLOCK_LW0);
+    x = 0;
     iarc = ARC_RX0TX1_CLEAR & S->arcID[x];
     x = WRIOCOLL_ARCW3 + SIZEOF_ARCDESC_W32 * iarc;
     S->pt8b_collision_arc = (uint8_t *)&(S->all_arcs[x]);
@@ -1124,40 +1133,43 @@ static uint8_t lock_this_component (arm_stream_instance_t *S)
 
 static void reset_component (arm_stream_instance_t *S)
 {
-#define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (SIZEOF_ARCDESC_SHORT_W32*MAX_NB_STREAM_PER_SWC))
-
-    intPtr_t memreq_physical[MEMRESET];
     uint8_t nbmem;
-    uint8_t imem, j, narc;
+    uint8_t imem, j, iformat, narc;
     uint32_t *memreq, check;
-
+    
+    #define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (STREAM_FORMAT_SIZE_W32*MAX_NB_STREAM_PER_SWC))
+    intPtr_t memreq_physical[MEMRESET];
+    
     memreq = &(S->swc_header[S->swc_memory_banks_offset]);
     nbmem = (uint8_t)RD(memreq[0],NBALLOC_LW2);
     memreq_physical[0] = (intPtr_t)(uint64_t)(S->swc_instance_addr);
-
 
     for (imem = 1; imem < nbmem; imem++)
     {   /* create pointers to the right memory bank */
         memreq_physical[imem] = pack2linaddr_int(S->long_offset, memreq[NB_LW2 * imem]);
     }      
 
-    /* push the FORMAT of the arcs */
-    narc = MIN(MAX_NB_STREAM_PER_SWC, RD(S->swc_header[0], NBARCW_LW0));
+    if (TEST_BIT(S->swc_header[S->swc_memory_banks_offset+ADDR_LW2], LOADFMT_LW0_LSB))
+    {   /* push the FORMAT of the arcs */
+        narc = MIN(MAX_NB_STREAM_PER_SWC, RD(S->swc_header[0], NBARCW_LW0));
 
-    for (j = 0; j < narc; j++)
-    {   uint32_t *F, ifmt;
-        if (ARC_RX0TX1_MASK & (S->arcID)[j])
-        {   ifmt = STREAM_FORMAT_SIZE_W32 * 
-                (ARC_RX0TX1_CLEAR & RD((S->arcID)[j],PRODUCFMT_ARCW0));
-        }
-        else
-        {   ifmt = STREAM_FORMAT_SIZE_W32 * 
-                (ARC_RX0TX1_CLEAR & RD((S->arcID)[j],CONSUMFMT_ARCW1));
-        }
-        F = &(S->all_formats[ifmt]);
-        memreq_physical[imem++] = F[0];     /* Word 0 SIZSFTRAW_FMT0 */
-        memreq_physical[imem++] = F[1];     /* Word 1 SAMPINGNCHANM1_FMT1 */
-    }      
+        for (j = 0; j < narc; j++)
+        {   uint32_t *F, ifmt;
+            if (ARC_RX0TX1_CLEAR & (S->arcID)[j])
+            {   ifmt = STREAM_FORMAT_SIZE_W32 * 
+                    (ARC_RX0TX1_CLEAR & RD((S->arcID)[j],PRODUCFMT_ARCW0));
+            }
+            else
+            {   ifmt = STREAM_FORMAT_SIZE_W32 * 
+                    (ARC_RX0TX1_CLEAR & RD((S->arcID)[j],CONSUMFMT_ARCW1));
+            }
+
+            F = &(S->all_formats[ifmt]);
+            for (iformat = 0; iformat < STREAM_FORMAT_SIZE_W32; iformat++)
+            {   memreq_physical[imem++] = F[iformat]; 
+            }
+        }      
+    }
 
     /* reset the component with the parameter TraceID (6bits) */
     ST(S->pack_command, COMMAND_CMD, STREAM_RESET);
@@ -1173,36 +1185,30 @@ static void reset_component (arm_stream_instance_t *S)
 /**
   @brief         Set new parameters
   @param[in]     instance   pointer to the static area of the current Stream instance
-
+                 ptr_param32b : 32bits-aligned section of parameters (32 TAGS + 
+                    parameters following, see PARAM_TAG_LW3)
   @return        none
     
   @remark
  */
 
-static void set_new_parameters (arm_stream_instance_t *S)
+static void set_new_parameters (arm_stream_instance_t *S, uint32_t *ptr_param32b)
 {
-    uint32_t *ptr_param32b, tmp;
+    uint32_t tmp;
     int status;
 
     /*
-        BOOTPARAMS (if W32LENGTH_LW3 > 0)
-
-        TAG       : 6  for TAG_CMD (0='all parameters')
-        TRACEID   : 6  trace routing
+        BOOTPARAMS: 
+        PARAM_TAG : 4  index to parameter (0='all parameters')
         PRESET    : 4  preset index (SWC delivery)
-        W32LENGTH :16  nb of WORD32 to skip at run time, 0 means no parameter, max=256kB
-
-        SWC can use an input arc to receive a huge set of parameters, for example a NN model
-        The arc read pointer is never incremented during the execution of the node.
+        TRACEID   : 8  
+        W32LENGTH :16  nb of WORD32 to skip at run time, 0 means NO PARAMETER, max=256kB
     */
 
     if (1 < RD((S->swc_header)[S->swc_parameters_offset], W32LENGTH_LW3))
     {
         /* change the SWC command to "Set Parameter" */
         ST(S->pack_command, COMMAND_CMD, STREAM_SET_PARAMETER);
-
-        /* read the parameter header -   "word 3+n" */
-        ptr_param32b = &((S->swc_header)[S->swc_parameters_offset]);
 
         tmp = RD(*ptr_param32b, PARAM_TAG_LW3); /* copy the param_tag to swc_tag for parameter index */
         ST(S->pack_command, SWC_TAG_CMD, tmp);

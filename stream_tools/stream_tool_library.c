@@ -28,9 +28,13 @@
 #ifdef __cplusplus
  extern "C" {
 #endif
-    
+
+   
 #include "stream_tool_include.h"
 
+uint8_t globalEndFile;
+uint8_t FoundEndSection;
+ 
 int stream_bitsize_of_raw(uint8_t raw)
 {
     switch (raw)
@@ -72,6 +76,66 @@ uint32_t lcm(uint32_t a, uint32_t b) { return (a / gcd(a, b)) * b; }
 
 
 /**
+  @brief            MALLOC with VIDs
+  @param[in/out]    
+  @return           
+
+  @par             
+  @remark
+  parse the membank
+
+ */
+int vid_malloc(uint32_t VID, intPtr_t size, uint32_t alignemnt,     /* input */
+                uint32_t *pack27b, uint8_t *ptr,                    /* results */
+                struct stream_platform_manifest *platform,          /* context */
+                struct stream_graph_linkedlist *graph) 
+{ 
+    uint32_t imem, alignmask, aligninc, found, ibank;
+    intPtr_t workingmem, mem, tmp;
+    struct node_memory_bank *m;
+
+    /* 
+        platform->membank[ibank].base32;    
+
+        find the ibank associated to VID(input) = virtualID(processor_memory_bank)
+        increment its ptalloc_static with the corresponding alignment
+    */
+
+    for (found = ibank = 0; ibank < platform->nbMemoryBank_detailed; ibank++)
+    {
+        if (platform->membank[ibank].virtualID == VID)
+        {   found = 1;
+            break;
+        }
+    }
+
+    if (found == 0) 
+        exit(-5);
+
+    //platform->membank[ibank].
+    //mem = (*mbank_VID1_Byte);
+    //aligninc = m->alignmentBytes -1;
+    //alignmask = ~aligninc;
+    //mem = mem + aligninc;
+    //mem = mem & alignmask;
+    //
+    //sprintf(DBG,"%s static memory bank(%d) address=0x%X",node->nodeName,(int)imem,(int)mem);  
+    //DBGG((uint32_t)mem, DBG);
+    //
+    //m->graph_basePACK = (uint32_t)mem >> 2; /* memory in W32 */
+    //
+    ///* jump to the next memory segment */
+    //(*mbank_VID1_Byte) =  (*mbank_VID1_Byte) + size;
+
+    //return 0;   // success
+
+    return -1;
+    exit(-6);
+} 
+
+
+  
+/**
   @brief            read the file to a table of char
   @param[in/out]    none
   @return           int
@@ -91,31 +155,37 @@ void jump2next_line(char **pt_line)
     find a line which does not start with ';'
     return : line is pointing to the next valid character 
 */
-int jump2next_valid_line(char **pt_line)
+void jump2next_valid_line(char **pt_line)
 {
     int i;
     char *p;
 
-    jump2next_line(pt_line);
+    FoundEndSection = 0;
+
 L_jump2next_valid_line:
+    jump2next_line(pt_line);
 
     p = *pt_line;
     for (i = 0; i < NBCHAR_LINE; i++)
     {   if (' ' != (*p)) break;
         p++;
     }
+
     if ((*p) == ';' || (*p) == '\n')
-    {   
-        jump2next_line(pt_line);
+    {   goto L_jump2next_valid_line;
+    }
+
+    if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
+    {   FoundEndSection = 1;
         goto L_jump2next_valid_line;
     }
 
     *pt_line = p;
 
-    if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
-        return FOUND_END_OF_FILE;
+    if (0 == strncmp (*pt_line,GRAPH_END,strlen(GRAPH_END)))
+        globalEndFile = FOUND_END_OF_FILE;
     else
-        return NOT_YET_END_OF_FILE;
+        globalEndFile = NOT_YET_END_OF_FILE;
 }
 
 
@@ -145,10 +215,9 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
     double f64, *ptf64;
     #define LL NBCHAR_LINE
 
-    jump2next_valid_line(pt_line);
-
     if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
     {   *nbfields = 0;
+        jump2next_valid_line (pt_line);
         return;
     }
 
@@ -233,8 +302,7 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
     /* return nb and type information */
     *nbfields = nfield;
 
-    /* skip the end of line comments */
-    *pt_line = ptstart;
+    jump2next_valid_line (pt_line);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -273,9 +341,13 @@ void read_input_file(char* file_name, char * inputFile)
     FILE * ptf_platform_manifest_file;
     uint32_t idx;
 
-    if (0 == (ptf_platform_manifest_file = fopen(file_name, "rt"))) exit(-1);
+    if (0 == (ptf_platform_manifest_file = fopen(file_name, "rt")))
+        exit(-1);
     idx = 0;
-    while (1) if (0 == fread(&(inputFile[idx++]), 1, 1, ptf_platform_manifest_file)) break;
+    while (1) {
+        if (0 == fread(&(inputFile[idx++]), 1, 1, ptf_platform_manifest_file)) 
+            break;
+    }
     fclose(ptf_platform_manifest_file);
 }
 
@@ -345,7 +417,9 @@ int fields_extract(char **pt_line, char *types,  ...)
     va_start(vl,types);
 
     if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
+    {   FoundEndSection = 1;
         return -1;
+    }
 
     ptstart = *pt_line;
     nfields = (int)strlen(types);
@@ -422,6 +496,65 @@ int fields_extract(char **pt_line, char *types,  ...)
     va_end(vl);
 
     return 1;
+}
+
+
+/**
+  @brief            read pairs of informations : RAW data type + subtype_units (SUBTYPE_FMT1)
+  @param[in/out]    none
+  @return           int
+
+  @par              
+                    
+  @remark
+ */
+
+void fields_list_subtype(char **pt_line, struct options_subtype *opt)
+{
+    char *ptstart, *pend;
+    int nfields;
+    float F;
+
+    ptstart = *pt_line;
+    nfields = 0;
+    sscanf (ptstart,"%d",&(opt->default_index));
+
+    while (1)
+    {   /*--- read the arithmetic type ---*/
+        pend = strchr (ptstart, ' ');   
+        while (pend[1] == ' ')          // find the next non white space
+        {   pend++;
+        }
+
+        if (pend[1] == ';')
+        {   break;
+        }
+        else
+        {   sscanf (pend,"%f",&F);
+            opt->options[nfields] = F;
+            ptstart = pend + 1; 
+        }
+
+        /*--- read the subtype_units ---*/
+        pend = strchr (ptstart, ' ');   
+        while (pend[1] == ' ')          // find the next non white space
+        {   pend++;
+        }
+
+        if (pend[1] == ';')
+        {   break;
+        }
+        else
+        {   sscanf (pend,"%f",&F);
+            opt->subtype_options[nfields] = F;
+            ptstart = pend + 1; 
+
+            nfields++;
+        }
+    }
+    *pt_line = pend;
+    jump2next_valid_line(pt_line); 
+    opt->nb_option = nfields;
 }
 
 

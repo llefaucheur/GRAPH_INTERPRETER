@@ -1,27 +1,6 @@
-;
-    io_platform_data_in_0   name for the GUI                            
-    DATA_IN                 domain name 
 ; ------------------------------------------------------------------------------------------------------------
-;   Loop on the IO arcs of this component
-;
-;       - Digital frame format, common to all transducers and arcs
-;       - Specific information and tuning of the domain
-;
-  
-    1   commander=0 servant=1 
-    0   buffer declared from the BSP (0) or from the Graph (X) (size=factor of the Frame size)           
-    0   in standard RAM=0, in HW IO RAM=1, or HW FIFO of the peripheral
-    255 processor affinity bit-field : any of 8 processors (if any) can read the data 
-
-    0   rx0tx1  
-    17  raw format s16                                        
-    0   time-stamp                                          
-    1   frame length format (0:in milliseconds 1:in samples)
-    1   sampling rate format (0:Hz, 1:seconds, 2:days)
-    3   percent FS accuracy                                 
-
-    ;   Lists of options, starting with the default index 
-    0   0                   ;f [1bits] interleaving options 
-    0   1                   ;f [3bits] nb channels options list 
-    1   4 5 6               ;f [2bits] frame_size option in samples default=4samples = 8Bytes/frame
-    0   0                   ;f [4bits] any sampling rate option
+; Manifest of generic data input 
+; ------------------------------------------------------------------------------------------------------------
+                                                                       
+    io_platform_data_in_0  ; name for the tools                            
+    data_in                ; domain name,   no specific field

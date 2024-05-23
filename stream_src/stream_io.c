@@ -52,10 +52,22 @@ SECTION_START
                  from this place, and for this amount of bytes". The address can change from last 
                  callback in case the device driver is commander and using a ping-pong buffer protocol.
 
+        Trigger is "give me data to arc[w], and raise the flag" 
+        Upon RX ISR (*,n) : check overflow, then either
+            set arc base address to * parameter, and release the flag
+            or copy to arc, increment W, 
+                if arc(data-received) > consumer frame,  then reset the flag
+
+
                  TX case : IO is commander case : "I have completed the last transfer, you can fill 
                  this buffer for the next transfer". IO is slave case : "I have completed the 
                  transfer of this buffer you told me to move out using io_start() with this amount 
                  of bytes, you can reset the flag telling the transfer is on-going". 
+
+        Trigger is "new data to send from arc[r], raise the flag
+        Upon TX ISR (*,n) : check overflow, flag-reset happened, then either
+            set the arc base address to * parameter, n = frame size, src=dst, reset the flag
+            or copy arc[r], n data, R=R+n, if arc(available data) < Frame TX then reset the flag
   @remark
  */
 

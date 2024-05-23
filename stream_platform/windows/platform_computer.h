@@ -48,6 +48,14 @@
 //#endif
 
 
+
+/* max number of nodes installed at compilation time */
+#define NB_NODE_ENTRY_POINTS 21
+
+/* max number of application callbacks used from SWC and scripts */
+#define MAX_NB_APP_CALLBACKS 8
+
+
 /* code size saving switch */
 #define STREAM_SERVICE_LOW_MEMORY 1 /* FFT tables are computed */
 
@@ -115,6 +123,7 @@
 #define STREAM_MAXNB_PROCESSOR_PER_ARCH 1
 #define STREAM_NB_ARCHITECTURES 1
 
+        /* warning : changing the indexes impacts the "top_graph_interface" of each graph.txt */
 #define IO_PLATFORM_DATA_IN_0        0 
 #define IO_PLATFORM_DATA_IN_1        1 
 #define IO_PLATFORM_ANALOG_SENSOR_0  2 

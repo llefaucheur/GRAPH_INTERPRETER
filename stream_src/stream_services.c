@@ -170,6 +170,14 @@ static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_
     {   break;
     }
 
+
+    /* stream format of an OUTPUT arc is changed on-the-fly : 
+        update bit-fields of nchan, FS, units, interleaving, audio mapping, RAW format */
+    case STREAM_SERVICE_INTERNAL_FORMAT_UPDATE:
+    {   /* checks the index of the SWC arc and update the format for the format converter or the next consumer */ 
+        break;
+    }
+
     /* return the list of services available to let the SWC decide between its library or the accelerated ones
        by MVE architecture or specific acceleration schemes like coprocessors and custom instructions */
     //case STREAM_SERVICE_AVAILABLE:
@@ -329,6 +337,22 @@ void arm_stream_services_mm_image (uint32_t command, uint8_t* ptr1, uint8_t* ptr
 }
 
 
+/**
+  @brief        remote debugger command interpreter (set/read parameters)
+  @param[in]    
+  @param[in]    
+  @param[in]    
+  @param[in]    
+ 
+  @return       none
+  @par
+  @remark       Un/Pack data from UART 7bits format, interleave long/short answers (<100Bytes) 
+                header, address, function, data[], LRCcheck, end
+                2 channels interleaving, time-stamps, 6bits ASCII format payload = 192bits x n
+ */
+void arm_stream_command_interpreter (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
+{
+}
 
 /**
   @brief        Service entry point for nodes

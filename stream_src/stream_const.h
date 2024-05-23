@@ -49,7 +49,7 @@
     Graph data format :
     -------------------SHARED FLASH (RAM POSSIBLE)-----------------
     [-1] size of the graph in Words 
-    Offset_0 (idx_memory_base_offset = MBANK_GRAPH)
+    Offset_0 (long_offset = MBANK_GRAPH)
     [0] 27b RAM address of part/all the graph going in RAM, HW-shared MEM configuration, which part is going in RAM
     [1] number of FORMAT, size of SCRIPTS
     [2] size of LINKEDLIST, number of STREAM_INSTANCES
@@ -61,16 +61,11 @@
     -------------------
 
     PIO "stream_format_io" (2 words per IO)
-        Word0: ARC ID, domain, io platform index, in/out, command parameter, format
+        Word0: ARC ID, in/out, command parameter,                   <domain, io platform index, format>
         Word1: default 32bits mixed-signal settings bit-fields
-    
-    FORMAT used by the arcs (4 words each stream_format)  
-        Word0: Frame size, interleaving scheme, raw data type
-        Word1: Nb Chan, Sampling rate, time-stamp format
-        Word2: depends on IO Domain (audio mapping, picture format, IMU interleaving, ..)
 
-    SCRIPTS in Flash = 2x32b offset table[7b] to the code
-        Indexed with the SWC header 7b index (SCRIPT_LW0) 
+    SCRIPTS used for per/post processing of nodes = 2x32b offset table[64] to the code
+        The first are indexed with the SWC header 6b index (SCRIPT_LW0) 
         Parameters can be inserted at the end of the byte code of each script
             or inserted in the arc buffer in RAM
 
@@ -99,26 +94,40 @@
         script scheduling reset = memreq = instance = raw descriptor address
             there is no XDM data,   nb arc = 1 TX
 
-    -----------------SHARED FLASH/RAM (FOR NEWPARAM_LW2)----------    
-      
+     
     LINKED-LIST of SWC
        minimum 5 words/SWC
        Word0  : header processor/architecture, nb arcs, SWCID, arc
-       Word0+1: header extension: XDM11
        Word1+n: arcs * 2  + debug page
-       Word2+n: nb membanks, main instance 27b address
+       Word2+n: 2xW32 : ADDR + SIZE + nb of memory segments
        Word3+n: Preset, New param!, Skip length, 
           byte stream: nbparams (ALLPARAM), {tag, nbbytes, params}
        list Ends with the SWC ID 0x03FF 
     
     -----------------SHARED RAM-------------------------------
-offset_descriptor
+    
+    FORMAT used by the arcs (4 words each stream_format)  
+        Word0: Frame size, interleaving scheme, arithmetics raw data type
+        Word1: time-stamp, domain, nchan, physical unit (pixel format, IMU interleaving..)
+        Word2: depends on IO Domain
+        Word3: depends on IO Domain
+
+    offset_descriptor
+    [0..1] can be used for tunable formats, corresponding the indexes 30,31
+        This is used the SWC generates variable frame formats (JPG decoder, MP3 decoder..)
+
     [0..7] can be used for the 16 arc debug registers (2 words each) 
+    DEBUG REGISTERS and vectors from ARC content analysis (DEBUG_REG_ARCW1)
+    SERVICES_RAM shared between all instances (maximum 5kB)
+        32 memory banks of 16bytes + 64bytes in normal and critical fast memory when possible
+
     ARC descriptors (4 words each)
        Word0: base offsetm data format, need for flush after write
        Word1: size, debug result registers
        Word2: read index, ready for read, flow error and debug tasks index
        Word3: write index, ready for write, need realignment flag, locking byte
+
+    ----------------- MEMORY BANKS -------------------------------
 
 offset_buffer   
     BUFFERS memory banks (internal/external/LLRAM) used for FIFO buffers 
@@ -132,10 +141,6 @@ offset_instance
 
     WORKING areas of INSTANCES
 
-    DEBUG REGISTERS and vectors from ARC content analysis (DEBUG_REG_ARCW1)
-
-    SERVICES_RAM shared between all instances (maximum 5kB)
-        32 memory banks of 16bytes + 64bytes in normal and critical fast memory when possible
 */
 
 
@@ -144,31 +149,23 @@ offset_instance
    smaller than 1<< NBINSTAN_SCTRL */
 #define MAX_NB_STREAM_INSTANCES 4 
 
-/* max number of nodes installed at compilation time */
-#define NB_NODE_ENTRY_POINTS 20
 
-/* max number of application callbacks used from SWC and scripts */
-#define MAX_NB_APP_CALLBACKS 8
-
-/*  AL SERVICE GROUPS
-    read time
-    sleep control
-    read memory
-    serial communication
-    mutual exclusion
-*/
+/*  AL SERVICE GROUP : TIME ------------------------------- */
 #define AL_SERVICE_READ_TIME 0
-    #define AL_SERVICE_READ_TIME_SYSTICK 1
-    #define AL_SERVICE_READ_TIME_CONVERT 2
+    #define AL_SERVICE_READ_TIME64 1
 
+/*  AL SERVICE GROUP : SLEEP CONTROL ---------------------- */
 #define AL_SERVICE_SLEEP_CONTROL 1
 
+/*  AL SERVICE GROUP : READ MEMORY ------------------------ */
 #define AL_SERVICE_READ_MEMORY 2
     /* AL SERVICE FUNCTIONS */
     #define AL_SERVICE_READ_MEMORY_FAST_MEM_ADDRESS 1
 
+/*  AL SERVICE GROUP : SERIAL COMMUNICATION --------------- */
 #define AL_SERVICE_SERIAL_COMMUNICATION 3
 
+/*  AL SERVICE GROUP : MUTUAL EXCLUSION ------------------- */
 #define AL_SERVICE_MUTUAL_EXCLUSION 4
     /* AL SERVICE FUNCTIONS */
     #define AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP 1
@@ -189,7 +186,11 @@ offset_instance
     #endif
     #endif
 
+/*  AL SERVICE GROUP : IO SETTINGS -------------------------*/
 #define AL_SERVICE_CHANGE_IO_SETTING 5
+
+
+
 
 #define AL_SERVICE_UNUSED2 6
 #define AL_SERVICE_UNUSED3 7
@@ -203,18 +204,18 @@ offset_instance
 #define GRAPH_SIZE_SKIP_WORD0 1
 
 /* -------- GRAPH[0] 27b RAM address, HW-shared MEM & RAM copy config---- 
-                                   3 options :
-        IO 2 words                 RAM  Flash  Flash
-        FORMAT 3 words             RAM  Flash  Flash
-        SCRIPTS                    RAM  Flash  Flash
-        LINKED-LIST                RAM  RAM    Flash  RAM allows SWC to be desactivated
-        ARC descriptors 4 words    RAM  RAM    RAM
-        Debug registers, Buffers   RAM  RAM    RAM
+                                   2 options :
+        IO 2 words                 RAM  Flash
+        FORMAT 3 words             RAM  Flash
+        SCRIPTS                    RAM  Flash
+        LINKED-LIST                RAM  Flash  RAM allows SWC to be desactivated
+        ARC descriptors 4 words    RAM  RAM
+        Debug registers, Buffers   RAM  RAM
 */
 #define COPY_CONF_GRAPH0_COPY_ALL_IN_RAM 0
-#define COPY_CONF_GRAPH0_FROM_LINKEDLIST 1
-#define COPY_CONF_GRAPH0_FROM_ARC_DESCS 2
-#define COPY_CONF_GRAPH0_ALREADY_IN_RAM 3
+//#define COPY_CONF_GRAPH0_FROM_LINKEDLIST 1
+#define COPY_CONF_GRAPH0_FROM_ARC_DESCS 1
+#define COPY_CONF_GRAPH0_ALREADY_IN_RAM 2
 
 #define PACKSHARERAMSPLIT(share,RAMsplit) ((share<<3) + RAMsplit)   // bits 27..30 (PRODUCFMT_ARCW0_LSB 27
 #define ___UNUSED_GRAPH0_MSB U(31) 
@@ -223,16 +224,15 @@ offset_instance
 #define SHAREDRAM_GRAPH0_LSB U(29) // 1 to set MPU_RASR[18] = 1 
 #define  RAMSPLIT_GRAPH0_MSB U(28) //   
 #define  RAMSPLIT_GRAPH0_LSB U(27) // 2 COPY_CONF_GRAPH0_COPY_ALL_IN_RAM / _FROM_LINKEDLIST / _FROM_ARCDESC / _ALREADY_IN_RAM
-//#define GRAPH_RAM_OFFSET(L,G)     pack2linaddr_int(L,G[0])
+
+#define GRAPH_RAM_OFFSET(L,G)     pack2linaddr_int(L,G[0])
 #define GRAPH_RAM_OFFSET_PTR(L,G) pack2linaddr_ptr(L,G[0])
 
 /* -------- GRAPH[1] number of FORMAT, size of SCRIPTS ---- */
 #define  SCRIPTS_SIZE_GR1_MSB U(31) 
 #define  SCRIPTS_SIZE_GR1_LSB U(12) /* 20 scripts size */
-#define NB_IOS_MARGIN_GR1_MSB U(11) 
-#define NB_IOS_MARGIN_GR1_LSB U(10) /*  2 provision for 128 IOs */
-#define        NB_IOS_GR1_MSB U( 9) 
-#define        NB_IOS_GR1_LSB U( 5) /*  5 Nb of I/O :  up to 32 IO streams */
+#define        NB_IOS_GR1_MSB U(11) 
+#define        NB_IOS_GR1_LSB U( 5) /*  7 Nb of I/O :  up to 128 IO streams */
 #define     NBFORMATS_GR1_MSB U( 4) 
 #define     NBFORMATS_GR1_LSB U( 0) /*  5 formats */
 
@@ -240,19 +240,17 @@ offset_instance
 #define LINKEDLIST_SIZE_GR2_MSB U(26) 
 #define LINKEDLIST_SIZE_GR2_LSB U( 0) /* 27 size of the linkedList with the parameters */
 
-#define PACKLINKEDLNBINSTANCE(LinkedList,NbInstance) (((LinkedList)<<LINKEDLIST_SIZE_GR2_LSB) | (NbInstance))
-
 /* -------- GRAPH[3] number of ARCS, number of DEBUG registers ----*/
 #define ______________GR3_MSB U(31) 
-#define ______________GR3_LSB U(21) /* 11   */
-#define  SCRIPT_SCTRL_GR3_MSB U(20) /* SCRIPT_SCTRL_GR3_LSB+SCRIPT_SCTRL_MSB-SCRIPT_SCTRL_LSB+1) */
-#define  SCRIPT_SCTRL_GR3_LSB U(15) /*  6 debug script options  */
+#define ______________GR3_LSB U(24) /* 8   */
+#define  SCRIPT_SCTRL_GR3_MSB U(23) /*    SCRIPT_SCTRL_GR3_LSB+SCRIPT_SCTRL_MSB-SCRIPT_SCTRL_LSB+1) */
+#define  SCRIPT_SCTRL_GR3_LSB U(18) /* 6  debug script options  */
+#define  RETURN_SCTRL_GR3_MSB U(17)
+#define  RETURN_SCTRL_GR3_LSB U(15) /* 3  return options (each SWC, each parse, once starving */
 #define DEBUGREG_SIZE_GR3_MSB U(14) 
-#define DEBUGREG_SIZE_GR3_LSB U(11) /*  4 size of the debug area addressed with DEBUG_REG_ARCW1 */
+#define DEBUGREG_SIZE_GR3_LSB U(11) /* 4  size of the debug area addressed with DEBUG_REG_ARCW1 */
 #define       NB_ARCS_GR3_MSB U(10) 
 #define       NB_ARCS_GR3_LSB U( 0) /* 11 up to 2K ARCs, see ARC0_LW1 */
-
-#define PACKNBARCDEBUG(dbgScript,SizeDebug,NBarc) (((dbgScript)<<SCRIPT_SCTRL_GR3_LSB) | ((SizeDebug)<<DEBUGREG_SIZE_GR3_LSB) | (NBarc) << NB_ARCS_GR3_LSB)
 
 /* -------- GRAPH[4] bit-field of the processors activated to process this graph ----*/
 #define PROCID_ALLOWED(proc_id) ((1<<(proc_id)) & RD(S->graph[4]))
@@ -268,8 +266,10 @@ offset_instance
 
 /*================================= STREAM_FORMAT_IO ================================
       The graph hold a table of uint32_t "stream_format_io" [LAST_IO_FUNCTION_PLATFORM]
-*/
 
+      (TODO) this would deserve an indirection table to avoid putting all the FW_IO_IDX
+             when only few are used in the graph
+*/
 #define STREAM_IOFMT_SIZE_W32   2   /* one word for controls + one for mixed-signal settings */
 
 #define IO_COMMAND_SET_BUFFER   0u  /* arc buffer point directly to the IO buffer: ping-pong, big buffer */
@@ -278,151 +278,221 @@ offset_instance
 #define RX0_TO_GRAPH            0u
 #define TX1_FROM_GRAPH          1u
 
-#define IO_IS_COMMANDER0         0u
-#define IO_IS_SERVANT1           1u
+#define IO_IS_COMMANDER0        0u
+#define IO_IS_SERVANT1          1u
 
 #define ___UNUSED_IOFMT_MSB 31  
-#define ___UNUSED_IOFMT_LSB 16  /* 16 */
+#define ___UNUSED_IOFMT_LSB 21  /* 11 */
+#define IO_DOMAIN_IOFMT_MSB 20  /*    the domain should match with the arc prod/cons format */
+#define IO_DOMAIN_IOFMT_LSB 16  /* 5  32 Domains, to select the format of the tuning word2 */
 #define QUICKSKIP_IOFMT_MSB 15
 #define QUICKSKIP_IOFMT_LSB 15  /* 1  PIO / FW_IO_idx is reserved in flash but unused by the graph */
 #define SHAREBUFF_IOFMT_MSB 14   
-#define SHAREBUFF_IOFMT_LSB 14  /* 1  share the arc buffer to the BSP */
+#define SHAREBUFF_IOFMT_LSB 14  /* 1  share the arc buffer with the IO BSP */
 #define SET0COPY1_IOFMT_MSB 13  
 #define SET0COPY1_IOFMT_LSB 13  /* 1  command_id IO_COMMAND_SET_BUFFER / IO_COMMAND_DATA_MOVE */
 #define  SERVANT1_IOFMT_MSB 12  
 #define  SERVANT1_IOFMT_LSB 12  /* 1  1=IO_IS_SERVANT1 */
 #define    RX0TX1_IOFMT_MSB 11  /*    direction of the stream */
 #define    RX0TX1_IOFMT_LSB 11  /* 1  0 : to the graph    1 : from the graph */
-#define   IOARCID_IOFMT_MSB 10  
-#define   IOARCID_IOFMT_LSB  0  /* 11  Arc */
+#define   IOARCID_IOFMT_MSB 10 
+#define   IOARCID_IOFMT_LSB  0  /* 11  Arc gives the STREAM_IO_DOMAIN */
+
 
 //#define FW_IO_IDX_IOFMT_MSB U(19)  /*    fw_io_dx : stream_al/platform_computer.h <=> stream_tools/files_manifests_computer.txt */
 //#define FW_IO_IDX_IOFMT_LSB U(12)  /* 8  platform_io [fw_io_idx] -> io_start(parameter) */
 
+
 /* data depending of STREAM_IO_DOMAIN : mixed-signal setting, 
     + bit-field giving the configuration of io_start(setting,*,n)) for variable numbers of frames r/w */
+
 #define SETTINGS_IOFMT2_MSB U(31)  
 #define SETTINGS_IOFMT2_LSB U( 0) /* 32  second word : common (8b MSB) and mixed-signal (24b LSB) settings */
 
 
-/*================================================== ARC ==================================================================*/
-/*
-  arc descriptions : 
-                             
-      - arc_descriptor_ring : R/W are used to manage the alignment of data to the base address and notify the SWC
-                              debug pattern, statistics on data, time-stamps of access, 
-                              realignment of data to base-address when READ > (SIZE)*THR
-                              deinterleave multichannel have the same read/write offset but the base address starts 
-                              from the end of the previous channel
-                              boundary of the graph, thresholds and flow errors, func_exchange_data
+/* ==========================================================================================
+
+    IO_DOMAIN physical types and tuning
+
+   ==========================================================================================
 */
 
-// enum arc_data_operations_threshold
-// enum debug_arc_computation_1D { /* 4bits */
-// extra_command_id (8 commands) used in EXDTCMD_IOFMT from STREAM_FORMAT_IO[]
-// other commands used with ARCs COMPUTCMD_ARCW2 (16 commands)
-#define ARC_NO_ACTION 0u                
-#define ARC_INCREMENT_REG 1u        /* increment DEBUG_REG_ARCW1 */
-#define ARC_SET_ZERO_ADDR 2u        /* set a 0 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to clear */
-#define ARC_SET_ONE_ADDR 3u         /* set a 1 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to set */
-#define ARC_INCREMENT_REG_ADDR 4u   /* increment *DEBUG_REG_ARCW1 */
-#define ARC_PROCESSOR_WAKEUP 5u     /* wake-up processor from DEBUG_REG_ARCW1=[ProcID, command] */
-#define ARC_____UNUSED6 6u
-#define ARC_____UNUSED7 7u
-#define ARC_DATA_RATE 8             /* data rate estimate in DEBUG_REG_ARCW1 */
-#define ARC_TIME_STAMP_LAST_ACCESS 9
-#define ARC_PEAK_DATA 10            /* peak/mean/min with forgeting factor 1/256 in DEBUG_REG_ARCW1 */
-#define ARC_MEAN_DATA 11
-#define ARC_MIN_DATA 12
-#define ARC_ABSMEAN_DATA 13
-#define ARC_DATA_TO_OTHER_ARC 14    /* when data is changing the new data is push to another arc DEBUG_REG_ARCW1=[ArcID] */
-#define ARC_LOOPBACK 15             /* automatic rewind read/write */
-//};
+    /* IO_DOMAIN_GENERAL           : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2  */
+        #define STREAM_SUBT_GENERAL          0
+        #define STREAM_SUBT_GENERAL_COMP195X 1  /* compressed byte stream following RFC1950 / RFC1951 ("deflate") */
+        #define STREAM_SUBT_GENERAL_DPCM     2  /* compressed byte stream */
+        #define STREAM_SUBT_GENERAL_JSON     3  /* JSON */
+        #define STREAM_SUBT_GENERAL_XFORMAT  4  /* SensorThings MultiDatastream extension */
 
-//enum underflow_error_service_id{/* 2bits UNDERFLRD_ARCW2, OVERFLRD_ARCW2 */
-#define NO_UNDERFLOW_MANAGEMENT 0  /* just RD/WR index alignment on the next frame size */
-#define REPEAT_LAST_FRAME 1          /* flow errors management */
-#define GENERATE_ZEROES 2
-#define INTERPOLATE_FRAME 3          /* MPEG decoder underflow : tell the decoder, mute the output */
-//};
+    /* IO_DOMAIN_AUDIO_IN          : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+        #define STREAM_SUBT_AUDIO_IN        0   /* no subtype_units : integer/ADC format  */
+        #define STREAM_SUBT_AUDIO_MPG       0   /* compressed byte stream */
 
-//enum overflow_error_service_id {/* 2bits UNDERFLRD_ARCW2, OVERFLRD_ARCW2 */
-#define NO_OVERFLOW_MANAGEMENT 0     /* just RD/WR index alignment on the next frame size */
-#define SKIP_LAST_FRAME 1            /* flow errors management */
-#define DECIMATE_FRAME 2
-//};
+    /* IO_DOMAIN_AUDIO_OUT         : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+        #define STREAM_SUBT_AUDIO_OUT       0   /* no subtype_units : integer/DAC format  */
+
+    /* IO_DOMAIN_GPIO_IN           : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+    /* IO_DOMAIN_GPIO_OUT          : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+
+            #define STREAM_SUBT_GPIO_IN     0   /* no subtype_units  */
+            #define STREAM_SUBT_GPIO_OUT    0   /* no subtype_units  */
+
+    /* IO_DOMAIN_MOTION_IN         : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+            #define STREAM_SUBT_MOTION_A     1
+            #define STREAM_SUBT_MOTION_G     2
+            #define STREAM_SUBT_MOTION_B     3
+            #define STREAM_SUBT_MOTION_AG    4
+            #define STREAM_SUBT_MOTION_AB    5
+            #define STREAM_SUBT_MOTION_GB    6
+            #define STREAM_SUBT_MOTION_AGB   7
+
+    /* IO_DOMAIN_2D_IN             : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+    /* IO_DOMAIN_2D_OUT            : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+            #define STREAM_SUBT_2D_YUV420P   1  /* Luminance, Blue projection, Red projection, 6 bytes per 4 pixels, reordered */
+            #define STREAM_SUBT_2D_YUV422P   2  /* 8 bytes per 4 pixels, or 16bpp, Y0 Cb Y1 Cr (1 Cr & Cb sample per 2x1 Y samples) */
+            #define STREAM_SUBT_2D_YUV444P   3  /* 12 bytes per 4 pixels, or 24bpp, (1 Cr & Cb sample per 1x1 Y samples) */
+            #define STREAM_SUBT_2D_CYM24     4  /* cyan yellow magenta */
+            #define STREAM_SUBT_2D_CYMK32    5  /* cyan yellow magenta black */
+            #define STREAM_SUBT_2D_RGB8      6  /* RGB  3:3:2,  8bpp, (msb)2B 3G 3R(lsb) */
+            #define STREAM_SUBT_2D_RGB16     7  /* RGB  5:6:5, 16bpp, (msb)5R 6G 5B(lsb) */
+            #define STREAM_SUBT_2D_RGBA16    8  /* RGBA 4:4:4:4 32bpp (msb)4R */
+            #define STREAM_SUBT_2D_RGB24     9  /* BBGGRR 24bpp (msb)8B */
+            #define STREAM_SUBT_2D_RGBA32   10  /* BBGGRRAA 32bpp (msb)8B */
+            #define STREAM_SUBT_2D_RGBA8888 11  /* AABBRRGG OpenGL/PNG format R=lsb A=MSB ("ABGR32" little endian) */
+            #define STREAM_SUBT_2D_BW1B     12  /* Y, 1bpp, 0 is black, 1 is white */
+            #define STREAM_SUBT_2D_GREY2B   13  /* Y, 2bpp, 0 is black, 3 is white, ordered from lsb to msb  */
+            #define STREAM_SUBT_2D_GREY4B   14  /* Y, 4bpp, 0 is black, 15 is white, ordered from lsb to msb */
+            #define STREAM_SUBT_2D_GREY8B   15  /* Grey 8b, 0 is black, 255 is white */
 
 
-/*==========================================  ARCS  ===================================================*/
+    /* IO_DOMAIN_ANALOG_IN     : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+    /* IO_DOMAIN_ANALOG_OUT : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+            #define STREAM_SUBT_ANA_ANY             0 /*        any                        */        
+            #define STREAM_SUBT_ANA_METER           1 /* m         meter                   */
+            #define STREAM_SUBT_ANA_KGRAM           2 /* kg        kilogram                */
+            #define STREAM_SUBT_ANA_GRAM            3 /* g         gram*                   */
+            #define STREAM_SUBT_ANA_SECOND          4 /* s         second                  */
+            #define STREAM_SUBT_ANA_AMPERE          5 /* A         ampere                  */
+            #define STREAM_SUBT_ANA_KELVIB          6 /* K         kelvin                  */
+            #define STREAM_SUBT_ANA_CANDELA         7 /* cd        candela                 */
+            #define STREAM_SUBT_ANA_MOLE            8 /* mol       mole                    */
+            #define STREAM_SUBT_ANA_HERTZ           9 /* Hz        hertz                   */
+            #define STREAM_SUBT_ANA_RADIAN         10 /* rad       radian                  */
+            #define STREAM_SUBT_ANA_STERADIAN      11 /* sr        steradian               */
+            #define STREAM_SUBT_ANA_NEWTON         12 /* N         newton                  */
+            #define STREAM_SUBT_ANA_PASCAL         13 /* Pa        pascal                  */
+            #define STREAM_SUBT_ANA_JOULE          14 /* J         joule                   */
+            #define STREAM_SUBT_ANA_WATT           15 /* W         watt                    */
+            #define STREAM_SUBT_ANA_COULOMB        16 /* C         coulomb                 */
+            #define STREAM_SUBT_ANA_VOLT           17 /* V         volt                    */
+            #define STREAM_SUBT_ANA_FARAD          18 /* F         farad                   */
+            #define STREAM_SUBT_ANA_OHM            19 /* Ohm       ohm                     */
+            #define STREAM_SUBT_ANA_SIEMENS        20 /* S         siemens                 */
+            #define STREAM_SUBT_ANA_WEBER          21 /* Wb        weber                   */
+            #define STREAM_SUBT_ANA_TESLA          22 /* T         tesla                   */
+            #define STREAM_SUBT_ANA_HENRY          23 /* H         henry                   */
+            #define STREAM_SUBT_ANA_CELSIUSDEG     24 /* Cel       degrees Celsius         */
+            #define STREAM_SUBT_ANA_LUMEN          25 /* lm        lumen                   */
+            #define STREAM_SUBT_ANA_LUX            26 /* lx        lux                     */
+            #define STREAM_SUBT_ANA_BQ             27 /* Bq        becquerel               */
+            #define STREAM_SUBT_ANA_GRAY           28 /* Gy        gray                    */
+            #define STREAM_SUBT_ANA_SIVERT         29 /* Sv        sievert                 */
+            #define STREAM_SUBT_ANA_KATAL          30 /* kat       katal                   */
+            #define STREAM_SUBT_ANA_METERSQUARE    31 /* m2        square meter (area)     */
+            #define STREAM_SUBT_ANA_CUBICMETER     32 /* m3        cubic meter (volume)    */
+            #define STREAM_SUBT_ANA_LITER          33 /* l         liter (volume)                               */
+            #define STREAM_SUBT_ANA_M_PER_S        34 /* m/s       meter per second (velocity)                  */
+            #define STREAM_SUBT_ANA_M_PER_S2       35 /* m/s2      meter per square second (acceleration)       */
+            #define STREAM_SUBT_ANA_M3_PER_S       36 /* m3/s      cubic meter per second (flow rate)           */
+            #define STREAM_SUBT_ANA_L_PER_S        37 /* l/s       liter per second (flow rate)*                */
+            #define STREAM_SUBT_ANA_W_PER_M2       38 /* W/m2      watt per square meter (irradiance)           */
+            #define STREAM_SUBT_ANA_CD_PER_M2      39 /* cd/m2     candela per square meter (luminance)         */
+            #define STREAM_SUBT_ANA_BIT            40 /* bit       bit (information content)                    */
+            #define STREAM_SUBT_ANA_BIT_PER_S      41 /* bit/s     bit per second (data rate)                   */
+            #define STREAM_SUBT_ANA_LATITUDE       42 /* lat       degrees latitude[1]                          */
+            #define STREAM_SUBT_ANA_LONGITUDE      43 /* lon       degrees longitude[1]                         */
+            #define STREAM_SUBT_ANA_PH             44 /* pH        pH value (acidity; logarithmic quantity)     */
+            #define STREAM_SUBT_ANA_DB             45 /* dB        decibel (logarithmic quantity)               */
+            #define STREAM_SUBT_ANA_DBW            46 /* dBW       decibel relative to 1 W (power level)        */
+            #define STREAM_SUBT_ANA_BSPL           47 /* Bspl      bel (sound pressure level; log quantity)     */
+            #define STREAM_SUBT_ANA_COUNT          48 /* count     1 (counter value)                            */
+            #define STREAM_SUBT_ANA_PER            49 /* /         1 (ratio e.g., value of a switch; [2])       */
+            #define STREAM_SUBT_ANA_PERCENT        50 /* %         1 (ratio e.g., value of a switch; [2])*      */
+            #define STREAM_SUBT_ANA_PERCENTRH      51 /* %RH       Percentage (Relative Humidity)               */
+            #define STREAM_SUBT_ANA_PERCENTEL      52 /* %EL       Percentage (remaining battery energy level)  */
+            #define STREAM_SUBT_ANA_ENERGYLEVEL    53 /* EL        seconds (remaining battery energy level)     */
+            #define STREAM_SUBT_ANA_1_PER_S        54 /* 1/s       1 per second (event rate)                    */
+            #define STREAM_SUBT_ANA_1_PER_MIN      55 /* 1/min     1 per minute (event rate, "rpm")*            */
+            #define STREAM_SUBT_ANA_BEAT_PER_MIN   56 /* beat/min  1 per minute (heart rate in beats per minute)*/
+            #define STREAM_SUBT_ANA_BEATS          57 /* beats     1 (Cumulative number of heart beats)*        */
+            #define STREAM_SUBT_ANA_SIEMPERMETER   58 /* S/m       Siemens per meter (conductivity)             */
+            #define STREAM_SUBT_ANA_BYTE           59 /* B         Byte (information content)                   */
+            #define STREAM_SUBT_ANA_VOLTAMPERE     60 /* VA        volt-ampere (Apparent Power)                 */
+            #define STREAM_SUBT_ANA_VOLTAMPERESEC  61 /* VAs       volt-ampere second (Apparent Energy)         */
+            #define STREAM_SUBT_ANA_VAREACTIVE     62 /* var       volt-ampere reactive (Reactive Power)        */
+            #define STREAM_SUBT_ANA_VAREACTIVESEC  63 /* vars      volt-ampere-reactive second (Reactive Energy)*/
+            #define STREAM_SUBT_ANA_JOULE_PER_M    64 /* J/m       joule per meter (Energy per distance)        */
+            #define STREAM_SUBT_ANA_KG_PER_M3      65 /* kg/m3     kg/m3 (mass density, mass concentration)     */
+            #define STREAM_SUBT_ANA_DEGREE         66 /* deg       degree (angle)*                              */
+            #define STREAM_SUBT_ANA_NTU            67 /* NTU       Nephelometric Turbidity Unit                 */
 
-#define SIZEOF_ARCDESC_SHORT_W32 2 /* number of arcdesc words shared at STREAM_RESET time */
-#define SIZEOF_ARCDESC_W32 4
+            // Secondary Unit (rfc8798)           Description          SenML Unit     Scale     Offset 
+            #define STREAM_SUBT_ANA_MS             68 /* millisecond                  s      1/1000    0       1ms = 1s x [1/1000] */
+            #define STREAM_SUBT_ANA_MIN            69 /* minute                       s      60        0        */
+            #define STREAM_SUBT_ANA_H              70 /* hour                         s      3600      0        */
+            #define STREAM_SUBT_ANA_MHZ            71 /* megahertz                    Hz     1000000   0        */
+            #define STREAM_SUBT_ANA_KW             72 /* kilowatt                     W      1000      0        */
+            #define STREAM_SUBT_ANA_KVA            73 /* kilovolt-ampere              VA     1000      0        */
+            #define STREAM_SUBT_ANA_KVAR           74 /* kilovar                      var    1000      0        */
+            #define STREAM_SUBT_ANA_AH             75 /* ampere-hour                  C      3600      0        */
+            #define STREAM_SUBT_ANA_WH             76 /* watt-hour                    J      3600      0        */
+            #define STREAM_SUBT_ANA_KWH            77 /* kilowatt-hour                J      3600000   0        */
+            #define STREAM_SUBT_ANA_VARH           78 /* var-hour                     vars   3600      0        */
+            #define STREAM_SUBT_ANA_KVARH          79 /* kilovar-hour                 vars   3600000   0        */
+            #define STREAM_SUBT_ANA_KVAH           80 /* kilovolt-ampere-hour         VAs    3600000   0        */
+            #define STREAM_SUBT_ANA_WH_PER_KM      81 /* watt-hour per kilometer      J/m    3.6       0        */
+            #define STREAM_SUBT_ANA_KIB            82 /* kibibyte                     B      1024      0        */
+            #define STREAM_SUBT_ANA_GB             83 /* gigabyte                     B      1e9       0        */
+            #define STREAM_SUBT_ANA_MBIT_PER_S     84 /* megabit per second           bit/s  1000000   0        */
+            #define STREAM_SUBT_ANA_B_PER_S        85 /* byteper second               bit/s  8         0        */
+            #define STREAM_SUBT_ANA_MB_PER_S       86 /* megabyte per second          bit/s  8000000   0        */
+            #define STREAM_SUBT_ANA_MV             87 /* millivolt                    V      1/1000    0        */
+            #define STREAM_SUBT_ANA_MA             88 /* milliampere                  A      1/1000    0        */
+            #define STREAM_SUBT_ANA_DBM            89 /* decibel rel. to 1 milliwatt  dBW    1       -30     0 dBm = -30 dBW       */
+            #define STREAM_SUBT_ANA_UG_PER_M3      90 /* microgram per cubic meter    kg/m3  1e-9      0        */
+            #define STREAM_SUBT_ANA_MM_PER_H       91 /* millimeter per hour          m/s    1/3600000 0        */
+            #define STREAM_SUBT_ANA_M_PER_H        92 /* meterper hour                m/s    1/3600    0        */
+            #define STREAM_SUBT_ANA_PPM            93 /* partsper million             /      1e-6      0        */
+            #define STREAM_SUBT_ANA_PER_100        94 /* percent                      /      1/100     0        */
+            #define STREAM_SUBT_ANA_PER_1000       95 /* permille                     /      1/1000    0        */
+            #define STREAM_SUBT_ANA_HPA            96 /* hectopascal                  Pa     100       0        */
+            #define STREAM_SUBT_ANA_MM             97 /* millimeter                   m      1/1000    0        */
+            #define STREAM_SUBT_ANA_CM             98 /* centimeter                   m      1/100     0        */
+            #define STREAM_SUBT_ANA_KM             99 /* kilometer                    m      1000      0        */
+            #define STREAM_SUBT_ANA_KM_PER_H      100 /* kilometer per hour           m/s    1/3.6     0        */
+                                                                                                          
+            #define STREAM_SUBT_ANA_GRAVITY       101 /* earth gravity                m/s2   9.81      0       1g = m/s2 x 9.81     */
+            #define STREAM_SUBT_ANA_DPS           102 /* degrees per second           1/s    360       0     1dps = 1/s x 1/360     */   
+            #define STREAM_SUBT_ANA_GAUSS         103 /* Gauss                        Tesla  10-4      0       1G = Tesla x 1/10000 */
+            #define STREAM_SUBT_ANA_VRMS          104 /* Volt rms                     Volt   0.707     0    1Vrms = 1Volt (peak) x 0.707 */
+            #define STREAM_SUBT_ANA_MVPGAUSS      105 /* Hall effect, mV/Gauss        millivolt 1      0    1mV/Gauss                    */
 
-#define   BUF_PTR_ARCW0    U( 0)
-#define PRODUCFMT_ARCW0_MSB U(31) /*  5 bits  PRODUCER format  (intPtr_t) +[ixSTREAM_FORMAT_SIZE_W32]  */ 
-#define PRODUCFMT_ARCW0_LSB U(27) /*    Graph generator gives IN/OUT arc's frame size to be the LCM of SWC "grains" */
-#define BASEIDXOFFARCW0_MSB U(26)    
-#define   DATAOFF_ARCW0_MSB U(26) /*    address = offset[DATAOFF] + 4xBASEIDX [Bytes] */
-#define   DATAOFF_ARCW0_LSB U(24) /*  3 32/64bits offset index see idx_memory_base_offset */
-#define   ________ARCW0_MSB U(23) /*    We don't know yet if the base will be extended with a 2bits shifter */
-#define   ________ARCW0_LSB U(22) /*  2  or if the list of offsets must be increased */
-#define   BASEIDX_ARCW0_MSB U(21) /*    0x2000.0000 = 500MB     */
-#define  BAS_SIGN_ARCW0_MSB U(21) /*    buffer address 21 + sign + offset = 25 bits (+2bits margin) */
-#define  BAS_SIGN_ARCW0_LSB U(21) /*    sign of the address with respect to the offset */
-#define   BASEIDX_ARCW0_LSB U( 0) /* 22 base address 22bits linear address range in WORD32 */
-#define BASEIDXOFFARCW0_LSB U( 0) /*    +/- 0x3F.FFFF (W32) = +/-4MW = 16MBytes (+/-1GB EXTEND_ARCW2=1) */
-                                
-#define BUFSIZDBG_ARCW1    U( 1)
-#define CONSUMFMT_ARCW1_MSB U(31) 
-#define CONSUMFMT_ARCW1_LSB U(27) /* 5 bits  CONSUMER format  */ 
-#define   MPFLUSH_ARCW1_MSB U(26) 
-#define   MPFLUSH_ARCW1_LSB U(26) /* 1  flush data used after processing */
-#define DEBUG_REG_ARCW1_MSB U(25) /*    debug registers have 64bits and are stored in the first arc descriptors  */
-#define DEBUG_REG_ARCW1_LSB U(22) /* 4  debug result index for debug_arcs[0..15] debug_arc_computation_1D */
-#define BUFF_SIZE_ARCW1_MSB U(21) /*    SIZE BYTE addressing */
-#define BUFF_SIZE_ARCW1_LSB U( 0) /* 22 Byte-acurate up to 4MBytes (64x4 = 256MB EXTEND_ARCW2=1*/
+    /* IO_DOMAIN_RTC               : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
 
-#define    RDFLOW_ARCW2    U( 2)  /* write access only from the SWC consumer */
-#define COMPUTCMD_ARCW2_MSB U(31)       
-#define COMPUTCMD_ARCW2_LSB U(28) /* 4  gives the debug task to proceed  (enum debug_arc_computation_1D) */
-#define UNDERFLRD_ARCW2_MSB U(27)
-#define UNDERFLRD_ARCW2_LSB U(26) /* 2  overflow task id 0=nothing , underflow_error_service_id */
-#define  OVERFLRD_ARCW2_MSB U(25)
-#define  OVERFLRD_ARCW2_LSB U(24) /* 2  underflow task id 0=nothing, overflow_error_service_id */
-#define    EXTEND_ARCW2_MSB U(23) /*    Size/Read/Write are used with x64 factor to extend to */
-#define    EXTEND_ARCW2_LSB U(23) /* 1    256MBytes buffers for arcs used to read NN models, video players, etc */
-#define   UNUSED__ARCW2_MSB U(22) /*     */
-#define   UNUSED__ARCW2_LSB U(22) /* 1   */
-#define      READ_ARCW2_MSB U(21) /*    data read index  Byte-acurate up to 4MBytes starting from base address */
-#define      READ_ARCW2_LSB U( 0) /* 22 this is incremented by "frame_size" FRAMESIZE_FMT0  */
-
-#define COLLISION_ARC_OFFSET_BYTE U(3) /* offset in bytes to the collision detection byte */
-#define  WRIOCOLL_ARCW3    U( 3) /* write access only from the SWC producer */
-#define COLLISION_ARCW3_MSB U(31) /* 8  MSB byte used to lock the SWC, loaded with arch+proc+instance ID */ 
-#define COLLISION_ARCW3_LSB U(24) /*       to check node-access collision from an other processor */
-#define ALIGNBLCK_ARCW3_MSB U(23) /*    producer blocked */
-#define ALIGNBLCK_ARCW3_LSB U(23) /* 1  producer sets "need for data realignement"  */
-#define   UNUSED__ARCW3_MSB U(22) /*     */
-#define   UNUSED__ARCW3_LSB U(22) /* 1   */
-#define     WRITE_ARCW3_MSB U(21) /*    write pointer is incremented by FRAMESIZE_FMT0 */
-#define     WRITE_ARCW3_LSB U( 0) /* 22 write read index  Byte-acurate up to 4MBytes starting from base address */
-
-/* arcs with indexes higher than IDX_ARCS_desc, see enum_arc_index */
-
-//#define PLATFORM_IO 0                   /* 3 bits offets code for arcs external to the graph */
-
+    /* IO_DOMAIN_USER_INTERFACE_IN    11 : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+    /* IO_DOMAIN_USER_INTERFACE_OUT   12 : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
 
 
 /* 
-   ================================= GRAPH DATA &  io_stream_format =======================================
+   ================================= stream_format  FORMATS =======================================
     
     Format 23+4_offsets for buffer BASE ADDRESS
     Frame SIZE and ring indexes are using 22bits linear (0..4MB)
 */
-    /*===================================   FORMATS   */
-#define STREAM_FORMAT_SIZE_W32 3            // digital, common part of the format 
+
+#define STREAM_FORMAT_SIZE_W32 4     /*  digital, common part of the format  */
 /*
-*   stream_data_stream_data_format (size multiple of 3 x uint32_t)
+*   STREAM_DATA_START_data_format (size multiple of 3 x uint32_t)
 *       word 0 : common to all domains : frame size, raw format, interleaving
 *       word 1 : common to all domains : time-stamp, sampling rate, nchan         
 *       word 2 : specific to domains : hashing, channel mapping 
@@ -458,107 +528,110 @@ offset_instance
 #define IODIRECTION_RX 0              /* RX from the Graph pont of view */
 #define IODIRECTION_TX 1
 
-/*--------------- WORD 0 - frame size, raw format, interleaving, --------------- */
-#define SIZSFTRAW_FMT0   0
-    //#define MULTIFRME_FMT0_MSB 31 /* 1  allow the scheduler to push multiframes  */
-    //#define MULTIFRME_FMT0_LSB 31
-    #define       RAW_FMT0_MSB 30
-    #define       RAW_FMT0_LSB 25 /* 6  stream_raw_data 6bits (0..63)  */
-    #define INTERLEAV_FMT0_MSB 24       
-    #define INTERLEAV_FMT0_LSB 24 /* 1  interleaving : frame_format_type */
-    #define __________FMT0_MSB 23 
-    #define __________FMT0_LSB 22 /* 2  _____*/
-                                  /*    frame size in bytes for one deinterleaved channel Byte-acurate up to 4MBytes */
-    #define FRAMESIZE_FMT0_MSB 21 /*    raw interleaved buffer size is framesize x nb channel, max = 4MB x nchan */
-    #define FRAMESIZE_FMT0_LSB  0 /* 22 in swc manifests it gives the minimum input size (grain) before activating the swc
-                                        A "frame" is the combination of several channels sampled at the same time 
-                                        A value =0 means the size is any or defined by the IO AL.
-                                        For sensors delivering burst of data not isochronous, it gives the maximum 
-                                        framesize; same comment for the sampling rate. 
-                                        The frameSize is including the time-stamp field */
 
-    #define PACKSTREAMFORMAT0(RAW,INTERL,FRAMESIZE) ((U(RAW)<<26)|(U(INTERL)<<24)|U(FRAMESIZE))
+/*--------------- WORD 0 - frame size, --------------- */
+#define SIZSFTRAW_FMT0   0        /*    frame size in bytes for one deinterleaved channel Byte-acurate up to 4MBytes       */
+                                  /*    raw interleaved buffer size is framesize x nb channel, max = 4MB x nchan           */
+    #define __________FMT0_MSB 31 /*    in swc manifests it gives the minimum input size (grain) before activating the swc */
+    #define __________FMT0_LSB 22 /*    A "frame" is the combination of several channels sampled at the same time          */
+    #define FRAMESIZE_FMT0_MSB 21 /*    A value =0 means the size is any or defined by the IO AL.                          */
+    #define FRAMESIZE_FMT0_LSB  0 /* 22 For sensors delivering burst of data not isochronous, it gives the maximum         */
+                                  /*    framesize; same comment for the sampling rate.                                     */
+                                  /*    The frameSize is including the time-stamp field                                    */
+                                  /*    The ARCs are extending the frame size based on EXTEND_ARCW2 up to 256MB            */
 
-/*--------------- WORD 1 - time-stamp, sampling rate , nchan  -------------*/
-#define   SAMPINGNCHANM1_FMT1  U( 1)
-    #define  SAMPLING_FMT1_MSB U(31) /* 23 truncated IEEE-754 Seeeeeeemmmmmmmmmmmmmmm__XXXXXXX  */
-    #define  SAMPLING_FMT1_LSB U( 9) /*    FP23_E8_M15        FEDCBA9876543210FEDCBA9876543210  */
-    #define  TSTPSIZE_FMT1_MSB U( 8) /* 2  8/16/32/64 bits format of the time */
-    #define  TSTPSIZE_FMT1_LSB U( 7)
-    #define  TIMSTAMP_FMT1_MSB U( 6) /* 2  time_stamp_format_type for time-stamped streams for each interleaved frame */
-    #define  TIMSTAMP_FMT1_LSB U( 5) 
-    #define   NCHANM1_FMT1_MSB U( 4)
-    #define   NCHANM1_FMT1_LSB U( 0) /* 5  nb channels-1 [1..32] */
+/*--------------- WORD 1 - time-stamp, raw format, interleaving, domain, physical unit, nchan  -------------*/
+#define   NCHANM1DOMAIN_FMT1  U( 1)
+    #define    _______FMT1_MSB  31 /*     */  
+    #define    _______FMT1_LSB  29 /* 3  */
+    #define       RAW_FMT0_MSB  28
+    #define       RAW_FMT0_LSB  23 /* 6  arithmetics stream_raw_data 6bits (0..63)  */
+    #define   SUBTYPE_FMT1_MSB  22 
+    #define   SUBTYPE_FMT1_LSB  15 /* 8  rfc8428 / rfc8798 / StreamUnits / compressed formats */
+    #define    DOMAIN_FMT1_MSB  14 
+    #define    DOMAIN_FMT1_LSB  10 /* 5  STREAM_IO_DOMAIN */
+    #define  TSTPSIZE_FMT1_MSB   9 
+    #define  TSTPSIZE_FMT1_LSB   8 /* 2  16/32/64/64TXT time-stamp time format */
+    #define  TIMSTAMP_FMT1_MSB   7 
+    #define  TIMSTAMP_FMT1_LSB   6 /* 2  time_stamp_format_type for time-stamped streams for each interleaved frame */
+    #define INTERLEAV_FMT1_MSB   5       
+    #define INTERLEAV_FMT1_LSB   5 /* 1  interleaving : frame_format_type */
+    #define   NCHANM1_FMT1_MSB   4 
+    #define   NCHANM1_FMT1_LSB   0 /* 5  nb channels-1 [1..32] */
+
+/*  WORD2 content is domain-dependednt */
+    /*--------------- WORD 2 -------------*/
+    #define      FS1D_FMT2_MSB  31 /* 24 truncated IEEE-754 Seee.eeee.mmmmmmmmmmmmmmmm.XXXX.XXXX , 0 means "asynchronous" or "any" */
+    #define      FS1D_FMT2_LSB   8 /*    FP24_E8_M16        FEDC.BA98.76543210FEDCBA98.7654.3210  */
+    #define __________FMT2_MSB   7
+    #define __________FMT2_LSB   0 /* 8   */
+
+    /*--------------- WORD 3 -------*/
+    #define   ________FMT3_MSB U(31) /* 8b   */
+    #define   ________FMT3_LSB U(24) 
+    #define   MAPPING_FMT3_MSB U(23) /* 24 mapping of channels example of 7.1 format (8 channels): */
+    #define   MAPPING_FMT3_LSB U( 0) /*     FrontLeft, FrontRight, FrontCenter, LowFrequency, BackLeft, BackRight, SideLeft, SideRight ..*/
+    
+    
+/*  DOMAIN_FMT1 = IO_DOMAIN_2D_IN/OUT   */
+    /*--------------- WORD 2 -------------*/
+    #define           FS2D_FMT2_MSB U(31) /* 16 truncated IEEE-754 Seee.eeee.mmmm.mmmm.XXXX.XXXX.XXXX.XXXX , 0 means "asynchronous" or "any" */
+    #define           FS2D_FMT2_LSB U(16) /*    FP16_E8_M8         FEDC.BA98.7654.3210.FEDC.BA98.7654.3210  */
+
+    #define  I2D_IN_BORDER_FMT3_MSB U(25) /* 2 pixel border 0,1,2,3   */
+    #define  I2D_IN_BORDER_FMT3_LSB U(24)
+    #define  I2D_IN_HEIGHT_FMT3_MSB U(23) /* 12 pixel height */
+    #define  I2D_IN_HEIGHT_FMT3_LSB U(12)
+    #define   I2D_IN_WIDTH_FMT3_MSB U(11) /* 12 pixel width */
+    #define   I2D_IN_WIDTH_FMT3_LSB U( 0) 
 
 
-    #define PACKSTREAMFORMAT1(TIMESTAMP,SAMPLING, NCHANM1) ((U(TIMESTAMP)<<26)|(U(SAMPLING)<<5)|U(NCHANM1))
-    #define FMT_FS_MAX_EXPONENT 15
-    #define FMT_FS_MAX_MANTISSA 65535
-    #define FMT_FS_EXPSHIFT 16
-    #define HIGH_FMTQ2FS(E,M) ((M*16)/pow(2,(2*E)))
-    #define LOW_FMTQ2FS(E,M)  ((M*16)/pow(2,((3*E)-7)))
+    #define I2D_OUT_HEIGHT_FMT3_MSB U(23) /* 12 pixel height */
+    #define I2D_OUT_HEIGHT_FMT3_LSB U(12)
+    #define  I2D_OUT_WIDTH_FMT3_MSB U(11) /* 12 pixel width */
+    #define  I2D_OUT_WIDTH_FMT3_LSB U( 0) 
 
-/*--------------- WORD 2 -  direction, channel mapping (depends on the "stream_io_domain")------*/
-#define FMT2_AUDIO1D    1
-#define FMT2_IMU        2
-#define FMT2_SENSOR2D   3   
-#define FMT2_DISPLAY    4
+/*  DOMAIN_FMT1 = (MixedFormats)  IO_DOMAIN_MOTION_IN  */
+    /*--------------- WORD 2 -------------*/
+    /*--------------- WORD 3 -------------*/
+    //enum imu_channel_format /* uint8_t : data interleaving possible combinations */
+    #define aXg0m0 1                            /* only accelerometer */
+    #define a0gXm0 2                            /* only gyroscope */
+    #define a0g0mX 3                            /* only magnetometer */
+    #define aXgXm0 4                            /* A + G */
+    #define aXg0mX 5                            /* A + M */
+    #define a0gXmX 6                            /* G + M */
+    #define aXgXmX 7                            /* A + G + M */
 
-#define AUDIO_MAPPING_FMT2 U( 2)         /*     stream_interfaces_audio_specific */
-    #define AUDIO_MAPPING_FMT2_MSB U(31) /* 32 mapping of channels example of 7.1 format (8 channels): */
-    #define AUDIO_MAPPING_FMT2_LSB U( 0) /*     FrontLeft, FrontRight, FrontCenter, LowFrequency, BackLeft, BackRight, SideLeft, SideRight ..*/
+    #define MOTION_IN_MAPPING_FMT3_MSB U(31) 
+    #define MOTION_IN_MAPPING_FMT3_LSB U( 3) 
+    #define MOTION_IN_DATAFMT_FMT3_MSB U( 2)    /* imu_channel_format : A, A+G, A+G+M, ..*/
+    #define MOTION_IN_DATAFMT_FMT3_LSB U( 0) 
 
-#define IMU_FMT2 U( 2)  imu_channel_format
-    #define IMU_MAPPING_FMT2_MSB U(31) 
-    #define IMU_MAPPING_FMT2_LSB U( 3) 
-    #define IMU_DATAFMT_FMT2_MSB U( 2)   /* imu_channel_format : A, A+G, A+G+M, ..*/
-    #define IMU_DATAFMT_FMT2_LSB U( 0) 
-
-#define SENSOR2D_FMT2 U( 2)
-    #define  _______2DS_FMT2_MSB U(31) /* 14b   */
-    #define  _______2DS_FMT2_LSB U(18)
-    #define  BORDER_2DS_FMT2_MSB U(17) /* 2 pixel border 0,1,2,3   */
-    #define  BORDER_2DS_FMT2_LSB U(16)
-    #define   WIDTH_2DS_FMT2_MSB U(15) /* 13 number of pixels on horizontal lines */
-    #define   WIDTH_2DS_FMT2_LSB U( 3) 
-    #define   RATIO_2DS_FMT2_MSB U( 2) /* 3 ratio to height : 1:1  4:3 16:9 (panoramic) 3:4 9:16 (portrait)   5:4 16:10 */
-    #define   RATIO_2DS_FMT2_LSB U( 0) /*    */
-
-#define DISPLAY_FMT2 U( 2)
-    #define  UNUSED_2DD_FMT2_MSB U(31) /* 8b backlight control  */
-    #define  UNUSED_2DD_FMT2_LSB U(24)
-    #define  HEIGHT_2DD_FMT2_MSB U(23) /* 12 pixel height */
-    #define  HEIGHT_2DD_FMT2_LSB U(12)
-    #define   WIDTH_2DD_FMT2_MSB U(11) /* 12 pixel width */
-    #define   WIDTH_2DD_FMT2_LSB U( 0) 
 
 
 /* 
    =================================     SCRIPTS     =======================================
 
-
-    script offset table[7b] to the byte codes : two W32 per script 
-    Max 127 indexes (7b index SCRIPT_LW0) 
-    word0 : offset, word1:length + byteCode Format
+    script offset table[7b] to the byte codes : one W32 per script 
+    Max 128 indexes : offset, byteCode Format
 */
 
-#define INDEX_SCRIPT_STRUCT_SIZE 2
+#define SCRIPT_REGSIZE 8            /* 8 bytes per register */
+
+#define INDEX_SCRIPT_STRUCT_SIZE 1
 #define INDEX_SCRIPT_OFFSET 0
 #define INDEX_SCRIPT_SIZE 1
 
-#define  _______SCROFF0_MSB U(31)  /*  12  unused */
-#define  _______SCROFF0_LSB U(20)  /*      */
-#define  FORMAT_SCROFF0_MSB U(19)  /*  20  offset to the W32 script table */
-#define  FORMAT_SCROFF0_LSB U( 0)  /*      */
+#define  _______SCROFF0_MSB U(31)  /*  9   unused */
+#define  _______SCROFF0_LSB U(23)  /*      */
+#define  COMPACTSCROFF0_MSB U(22)  /*  1   minimum (1) = 2 registers + 1 pointer + 0 special = 24 Bytes + stack */
+#define  COMPACTSCROFF0_LSB U(22)  /*      standard (0) = 6 registers + 6 pointers + 3 special = 120 Bytes + stack */
+#define  FORMAT_SCROFF1_MSB U(21)  /*  2   native/stream byte codes format */
+#define  FORMAT_SCROFF1_LSB U(20)  /*      */
+#define  OFFSET_SCROFF0_MSB U(19)  /*  20  offset to the W32 script table */
+#define  OFFSET_SCROFF0_LSB U( 0)  /*      */
          
-#define  _______SCROFF1_MSB U(31)  /* 12   native/stream byte codes format */
-#define  _______SCROFF1_LSB U(20)  /*      */
-#define  FORMAT_SCROFF1_MSB U(19)  /*  2   native/stream byte codes format */
-#define  FORMAT_SCROFF1_LSB U(18)  /*      */
-#define    SIZE_SCROFF1_MSB U(17)  /* 18   size in W32 */
-#define    SIZE_SCROFF1_LSB U( 0)  /*      */
-
-
 /* =================
     arc descriptors used to address the working area : registers and stack
 */
@@ -593,6 +666,10 @@ offset_instance
 #define TASKS_COMPLETED 0
 #define TASKS_NOT_COMPLETED 1
 
+//#define STREAM_INSTANCE_ANY_PRIORITY    0u      /* PRIORITY_SCTRL_LSB */
+//#define STREAM_INSTANCE_LOWLATENCYTASKS 1u
+//#define STREAM_INSTANCE_MIDLATENCYTASKS 2u
+//#define STREAM_INSTANCE_BACKGROUNDTASKS 3u
 
 
 #define arm_stream_script_index 1      /* arm_stream_script() is the first one in the list node_entry_point_table[] */
@@ -603,19 +680,22 @@ offset_instance
         /* bit-field 24-31 cannot be null: this used to lock */
 
 #define PRIORITY_LW0_MSB U(31) /*   RTOS instances. 1:low-latency tasks, 2:heavy background tasks */
-#define PRIORITY_LW0_LSB U(30) /* 2 up to 4 instances per processors, see PRIORITY_SCTRL  */
-#define   PROCID_LW0_MSB U(29) /*   same as PROCID_PARCH (stream instance) */
-#define   PROCID_LW0_LSB U(27) /* 3 execution reserved to this processor index  */  
-#define   ARCHID_LW0_MSB U(26) /*   SWC_IDX=6 (filter) selection to different arch (see PLATFORM_NODE_ADDRESS) */
-#define   ARCHID_LW0_LSB U(24) /* 3 execution reserved to this processor architectures */
-#define   SCRIPT_LW0_MSB U(23) /*   script parameter (SWC_IDX + Before/After + verbose trace control) */
-#define   SCRIPT_LW0_LSB U(17) /* 7 script ID for script_SWC or to call before and after calling SWC */
-#define   NBARCW_LW0_MSB U(16) 
-#define   NBARCW_LW0_LSB U(14) /* 3  total nb arcs, streaming and metadata/control */
-#define  ARCLOCK_LW0_MSB U(13) 
-#define  ARCLOCK_LW0_LSB U(12) /* 2  index of the arc used to lock SWC */
-#define  ARCSRDY_LW0_MSB U(11) 
-#define  ARCSRDY_LW0_LSB U(10) /* 2  first arcs, nb arcs used to check data availability before RUN */
+#define PRIORITY_LW0_LSB U(30) /* 2 up to 3 instances per processors, see PRIORITY_SCTRL  */
+#define   PROCID_LW0_MSB U(29) /*   same as PROCID_PARCH (stream instance) (1..3) */
+#define   PROCID_LW0_LSB U(27) /* 3 execution reserved to this processor index  (1..7) */  
+#define   ARCHID_LW0_MSB U(26) /*   same as ARCHID_PARCH */
+#define   ARCHID_LW0_LSB U(24) /* 3 execution reserved to this processor architecture (1..7)  */
+/*---------------------------*/
+#define  LOADFMT_LW0_MSB U(23) /*   */
+#define  LOADFMT_LW0_LSB U(23) /* 1 optional arcs format loading in reset_component() */
+#define  ________LW0_MSB U(22) /*   */
+#define  ________LW0_LSB U(22) /* 1 */
+#define   SCRIPT_LW0_MSB U(21) /*   script called Before/After (debug, verbose trace control) */
+#define   SCRIPT_LW0_LSB U(15) /* 7 script ID for script_SWC or to call before and after calling SWC */
+#define  ARCSRDY_LW0_MSB U(14) 
+#define  ARCSRDY_LW0_LSB U(13) /* 2  first arcs, nb arcs used to check data availability before RUN */
+#define   NBARCW_LW0_MSB U(12) 
+#define   NBARCW_LW0_LSB U(10) /* 3  total nb arcs, streaming and metadata/control */
 #define  SWC_IDX_LW0_MSB U( 9) 
 #define  SWC_IDX_LW0_LSB U( 0) /* 10 0=nothing, swc index of node_entry_points[] */
 
@@ -631,37 +711,39 @@ offset_instance
 #define ARC_RX0TX1_MASK  0x0800 /* MSB gives the direction of the arc */
 #define ARC_RX0TX1_CLEAR 0x07FF 
 
-#define DBGB1_LW1_MSB U(31) 
-#define DBGB1_LW1_LSB U(28) /*  4  debug register bank for ARC1 */
-#define  ARC1_LW1_MSB U(27)
-#define ARC1D_LW1_LSB U(27) /*     ARC1 direction */
-#define ARC1D_LW1_MSB U(27)
-#define  ARC1_LW1_LSB U(16) /* 12  ARC1  11 usefull bits + 1 MSB to tell rx0tx1 */
+#define DBGB1_LW1_MSB 31 
+#define DBGB1_LW1_LSB 28 /*  4  debug register bank for ARC1 */
+#define  ARC1_LW1_MSB 27
+#define ARC1D_LW1_LSB 27 /*  1  ARC1 direction */
+#define ARC1D_LW1_MSB 27
+#define  ARC1_LW1_LSB 16 /* 11  ARC1  11 usefull bits + 1 MSB to tell rx0tx1 */
 
-#define DBGB0_LW1_MSB U(15) 
-#define DBGB0_LW1_LSB U(12) /*  4  debug register bank for ARC0 : debug-arc index of the debug data */
-#define  ARC0_LW1_MSB U(11)
-#define ARC0D_LW1_LSB U(11) /*     ARC0 direction */
-#define ARC0D_LW1_MSB U(11)
-#define  ARC0_LW1_LSB U( 0) /* 12  ARC0, (11 + 1 rx0tx1) up to 2K ARCs */
+#define DBGB0_LW1_MSB 15 
+#define DBGB0_LW1_LSB 12 /*  4  debug register bank for ARC0 : debug-arc index of the debug data */
+#define  ARC0_LW1_MSB 11
+#define ARC0D_LW1_LSB 11 /*  1  ARC0 direction */
+#define ARC0D_LW1_MSB 11
+#define  ARC0_LW1_LSB  0 /* 11  ARC0, (11 + 1 rx0tx1) up to 2K ARCs */
 
-
+#if IOARCID_IOFMT_MSB != (ARC0D_LW1_MSB-1)
+#error "IOFORMAT ARC SIZE"
+#endif
         /* word 2+n - TWO WORDS : memory banks address + size */
 
-#define NB_LW2  2               /*      there are two words per memory segments  */
+#define NB_LW2  2               /* there are two words per memory segments, to help programing the memory protection unit (MPU) */
 #define ADDR_LW2 0              /*      one for the address */ 
 #define SIZE_LW2 1              /*      one for the size of the segment */ 
 
             /* first word = base address of the memory segment + control on the first segment */
 #define      DTCM_LW2_MSB U(31) /*      for relocatable scratch DTCM usage with SMP, address is changing : */
 #define      DTCM_LW2_LSB U(31) /*  1   arc_index_update() pushed the DTCM address after XDM buffers */
-#define     XDM11_LW2_MSB U(30) 
+#define     XDM11_LW2_MSB U(30) /*      0: Rx/Tx flow is asynchronous  1: same consumption on Rx/Tx */   
 #define     XDM11_LW2_LSB U(30) /*  1   the input and output frame size of all arcs are identical */ 
-#define   NBALLOC_LW2_MSB U(31) /*      number of memory segments to give at RESET [0..MAX_NB_MEM_REQ_PER_NODE-1] */  
-#define   NBALLOC_LW2_LSB U(29) /*  3    2 words each : */
+#define   NBALLOC_LW2_MSB U(29) /*      number of memory segments to give at RESET [0..MAX_NB_MEM_REQ_PER_NODE-1] */  
+#define   NBALLOC_LW2_LSB U(27) /*  3    2 words each : */
 #define BASEIDXOFFLW2_MSB U(26) 
 #define   DATAOFF_LW2_MSB DATAOFF_ARCW0_MSB
-#define   DATAOFF_LW2_LSB DATAOFF_ARCW0_LSB /*  3 bits 64bits offset index see idx_memory_base_offset */
+#define   DATAOFF_LW2_LSB DATAOFF_ARCW0_LSB /*  3 bits 64bits offset index see long_offset */
 #define   BASEIDX_LW2_MSB BASEIDX_ARCW0_MSB /*    buffer address 21 + sign + offset = 25 bits (2bits margin) */
 #define   BASEIDX_LW2_LSB BASEIDX_ARCW0_LSB /* 21 base address in WORD32 + 1 sign bit*/
 #define BASEIDXOFFLW2_LSB U( 0) /* 27  */
@@ -672,18 +754,18 @@ offset_instance
 #define GRAPH_MEM_REQ (U(MEM_WORKING_INTERNAL)+U(1)) 
 
             /* second word = size of the memory segment  + control on the first segment 
-                            if the segment is swapped, the LSB bits give the ARC ID of the buffer 
+                            if the segment is swapped, the 12-LSB bits give the ARC ID of the buffer 
                             and the memory size is given by the FIFO descriptor (BUFF_SIZE_ARCW1) */
 #define LW2S_NOSWAP 0
-#define LW2S_COPY 1
-#define LW2S_SWAP 2
+#define LW2S_SWAP 1
+#define LW2S_COPY 2
 
 #define   ________LW2S_MSB U(31) /*      */
 #define   ________LW2S_LSB U(30) /*  2   provision for 8 memory segments */
 #define   TO_SWAP_LW2S_MSB U(29) /*      */
 #define   TO_SWAP_LW2S_LSB U(24) /*  6   one bit per MAX_NB_MEM_REQ_PER_NODE segment to consider for swapping */
-#define      SWAP_LW2S_MSB U(23) /*      0= normal memory segment, 1 = copy before execute */
-#define      SWAP_LW2S_LSB U(22) /*  2   2= swap before/after execute */
+#define      SWAP_LW2S_MSB U(23) /*      0= normal memory segment, 2 = copy before execute */
+#define      SWAP_LW2S_LSB U(22) /*  2   1= swap before/after execute */
 #define BUFF_SIZE_LW2S_MSB U(21) 
 #define BUFF_SIZE_LW2S_LSB U( 0) /* 22   Byte-acurate up to 4MBytes */
 #define SWAPBUFID_LW2S_MSB  ARC0_LW1_MSB 
@@ -716,7 +798,7 @@ offset_instance
 
 
 #define PARAM_TAG_LW3_MSB U(31) 
-#define PARAM_TAG_LW3_LSB U(28) /* 4  for PARAM_TAG_CMD (63='all parameters')  */
+#define PARAM_TAG_LW3_LSB U(28) /* 4  for PARAM_TAG_CMD (15='all parameters')  */
 #define    PRESET_LW3_MSB U(27)
 #define    PRESET_LW3_LSB U(24) /* 4  preset   16 precomputed configurations */
 #define   TRACEID_LW3_MSB U(23)       
@@ -738,56 +820,60 @@ offset_instance
 
 /*=====================================================================================*/                          
 /*
-    commands from the application, and from Stream to the SWC
-
-    SWC_COMMANDS 
+    commands 
+        from the application to the graph scheduler         arm_graph_interpreter(command,  arm_stream_instance_t *S, uint8_t *, uint32_t);
+        from the graph scheduler to the nanoApps            S->address_swc (command, stream_handle_t instance, stream_xdmbuffer_t *, uint32_t *);
+        from the Scripts to the IO configuration setting    arm_stream_services (command, uint8_t *, uint8_t *, uint8_t *, uint32_t)
 */
 
-#define  _UNUSED2_CMD_MSB U(31)       
-#define  _UNUSED2_CMD_LSB U(24) /* 8 _______ */
-#define   SWC_TAG_CMD_MSB U(23) /*    parameter, function selection / debug arc index / .. */      
-#define   SWC_TAG_CMD_LSB U(16) /* 8  instanceID for the trace / FIFO_ID for status checks */
-#define    PRESET_CMD_MSB U(15)       
-#define    PRESET_CMD_LSB U(12) /* 4  #16 presets */
-#define      NARC_CMD_MSB U(11)       
-#define      NARC_CMD_LSB U( 8) /* 4 number of arcs */
-#define  __UNUSED_CMD_MSB U( 7)       
-#define  __UNUSED_CMD_LSB U( 5) /* 3 _______ */
-#define  COMMDEXT_CMD_MSB U( 4)       
-#define  COMMDEXT_CMD_LSB U( 4) /* 1 command option (RESET + warmboot)  */
-#define   COMMAND_CMD_MSB U( 3)       
-#define   COMMAND_CMD_LSB U( 0) /* 4 command */
 
-#define PACK_COMMAND(SWCTAG,PRESET,NARC,EXT,CMD) (((SWCTAG)<<SWC_TAG_CMD_LSB)|((PRESET)<<PRESET_CMD_LSB)|((NARC)<<NARC_CMD_LSB)|((EXT)<<COMMDEXT_CMD_LSB)|(CMD))
+/*  FROM APP TO SCHEDULER :     arm_graph_interpreter (STREAM_RESET, &instance, 0, 0); */
+    #define STREAM_RESET            1   /* arm_graph_interpreter(STREAM_RESET, *instance, * memory_results) */
+    #define STREAM_SET_PARAMETER    2   /* APP sets SWC parameters swc instances are protected by multithread effects when changing parmeters on the fly */
+    #define STREAM_READ_PARAMETER   3   /* used from script */
+    #define STREAM_RUN              4   /* arm_graph_interpreter(STREAM_RUN, instance, *in_out) */
+    #define STREAM_STOP             5   /* arm_graph_interpreter(STREAM_STOP, instance, 0)  swc calls free() if it used stdlib's malloc */
+    #define STREAM_SET_BUFFER       6   /* arm_graph_interpreter(STREAM_SET_BUFFER, IO buffer, size) */
+    #define STREAM_FIFO_STATUS      7   /* arm_graph_interpreter(STREAM_FIFO_STATUS + (FIFO_ID<<SWC_TAG_CMD), instance, returned information, 0) */
+/* FROM THE SCRIPTS and SCHEDULER TO THE IO CONFIGURATION SETTING */    
+    #define STREAM_DATA_START       8   /* initiates a new data transfer wakeup the IO : 
+                                            p_io_function_ctrl(STREAM_DATA_START + (FIFO_ID<<SWC_TAG_CMD), instance, *data, data size) */
+    #define STREAM_UPDATE_RELOCATABLE 9 /* update the nanoAppRT pointers to relocatable memory segments */
 
-//enum stream_command (4bits LSB)
-//{
-#define STREAM_RESET 1u             /* func(STREAM_RESET, *instance, * memory_results) */
-#define STREAM_SET_PARAMETER 2u     /* swc instances are protected by multithread effects when changing parmeters on the fly */
-#define STREAM_READ_PARAMETER 3u    
-#define STREAM_RUN 4u               /* func(STREAM_RUN, instance, *in_out) */
-#define STREAM_STOP 5u              /* func(STREAM_STOP, instance, 0)  swc calls free() if it used stdlib's malloc */
+    #define STREAM_SET_IO_CONFIG STREAM_SET_PARAMETER /* 
+            reconfigure the IO : p_io_function_ctrl(STREAM_SET_IO_CONFIG + (FIFO_ID<<SWC_TAG_CMD), 0, new_configuration_index) */
 
-#define STREAM_SET_BUFFER 6u        /* func(STREAM_SET_BUFFER, IO buffer, size) */
-#define STREAM_FIFO_STATUS 7u       /* func(STREAM_FIFO_STATUS + (FIFO_ID<<SWC_TAG_CMD), instance, returned information, 0) */
-#define STREAM_DATA_STREAM 8u       /* func(STREAM_DATA_STREAM + (FIFO_ID<<SWC_TAG_CMD), instance, *data, data size) */
+/*  FROM THE GRAPH SCHEDULER TO THE NANOAPPS   SWC_COMMANDS  */
+    #define  _UNUSED2_CMD_MSB U(31)       
+    #define  _UNUSED2_CMD_LSB U(24) /* 8 _______ */
+    #define   SWC_TAG_CMD_MSB U(23) /*    parameter, function selection / debug arc index / .. */      
+    #define   SWC_TAG_CMD_LSB U(16) /* 8  instanceID for the trace / FIFO_ID for status checks */
+    #define    PRESET_CMD_MSB U(15)       
+    #define    PRESET_CMD_LSB U(12) /* 4  #16 presets */
+    #define      NARC_CMD_MSB U(11)       
+    #define      NARC_CMD_LSB U( 8) /* 4 number of arcs */
+    #define  __UNUSED_CMD_MSB U( 7)       
+    #define  __UNUSED_CMD_LSB U( 5) /* 3 _______ */
+    #define  COMMDEXT_CMD_MSB U( 4)       
+    #define  COMMDEXT_CMD_LSB U( 4) /* 1 command option (RESET + warmboot)  */
+    #define   COMMAND_CMD_MSB U( 3)       
+    #define   COMMAND_CMD_LSB U( 0) /* 4 command */
+
+    #define PACK_COMMAND(SWCTAG,PRESET,NARC,EXT,CMD) (((SWCTAG)<<SWC_TAG_CMD_LSB)|((PRESET)<<PRESET_CMD_LSB)|((NARC)<<NARC_CMD_LSB)|((EXT)<<COMMDEXT_CMD_LSB)|(CMD))
+
     #define STREAM_FIFO_STATUS_PACK(FIFO) (STREAM_FIFO_STATUS + ((FIFO)<<SWC_TAG_CMD_LSB))
-    #define STREAM_DATA_STREAM_PACK(FIFO) (STREAM_DATA_STREAM + ((FIFO)<<SWC_TAG_CMD_LSB))
-    #define STREAM_DATA_STREAM_UNPACK_FIFO(COMMAND) ((COMMAND)>>SWC_TAG_CMD_LSB)
+    #define STREAM_DATA_START_PACK(FIFO) (STREAM_DATA_START + ((FIFO)<<SWC_TAG_CMD_LSB))
+    #define STREAM_DATA_START_UNPACK_FIFO(COMMAND) ((COMMAND)>>SWC_TAG_CMD_LSB)
 
-//#define STREAM_UPDATE_RELOCATABLE 9u /* update the nanoAppRT pointers to relocatable memory segments */
-
-#define STREAM_COMMAND_UNUSED2 11
-#define STREAM_COMMAND_UNUSED3 12
-#define STREAM_COMMAND_UNUSED4 13
-#define STREAM_COMMAND_UNUSED5 14
-#define STREAM_COMMAND_UNUSED6 15
 
 /*=====================================================================================*/    
 /*
     "stream_service_command"  from the nodes, to "arm_stream_services"
+
+    void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n)
 */
 
+/* arm_stream_services COMMAND */
 #define  _UNUSED_SSRV_MSB U(31)       
 #define  _UNUSED_SSRV_LSB U(29) /* 3 _______ */
 #define  CONTROL_SSRV_MSB U(28)       
@@ -817,15 +903,17 @@ offset_instance
 
     each family can define 256 operations (TAG_CMD_LSB)
 */
-//enum stream_service_group
-#define STREAM_SERVICE_INTERNAL 10
-#define STREAM_SERVICE_FLOW 1
-#define STREAM_SERVICE_CONVERSION 2
-#define STREAM_SERVICE_STDLIB 3
-#define STREAM_SERVICE_MATH 4
-#define STREAM_SERVICE_DSP_ML 5
-#define STREAM_SERVICE_MM_AUDIO 6
-#define STREAM_SERVICE_MM_IMAGE 7
+//enum stream_service_group     
+
+                /* needs a registered return address (Y/N)  (TBD @@@) */
+#define STREAM_SERVICE_INTERNAL     1   /* Y */
+#define STREAM_SERVICE_FLOW         2   /* Y */
+#define STREAM_SERVICE_CONVERSION   3   /* N */
+#define STREAM_SERVICE_STDLIB       4   /* Y */
+#define STREAM_SERVICE_MATH         5   /* N */
+#define STREAM_SERVICE_DSP_ML       6   /* N */
+#define STREAM_SERVICE_MM_AUDIO     7   /* Y */
+#define STREAM_SERVICE_MM_IMAGE     8   /* Y */
 
 //{
     /* 0/STREAM_SERVICE_INTERNAL ------------------------------------------------ */
@@ -833,10 +921,13 @@ offset_instance
     #define STREAM_SERVICE_INTERNAL_RESET 1u
     #define STREAM_SERVICE_INTERNAL_NODE_REGISTER 2u
 
-    #define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_FS 3u       /* SWC information for a change of stream format, sampling, nb of channel */
-    #define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_NCHAN 4u     /* raw data sample, mapping of channels, (web radio use-case) */
-    #define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_RAW 5u
-    #define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_MAP 6u
+    /* change stream format from SWC media decoder, script applying change of use-case (IO_format, vocoder frame-size..): sampling, nb of channel, 2D frame size */
+    #define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE 3u      
+
+    //#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_FS 3u       /* SWC information for a change of stream format, sampling, nb of channel */
+    //#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_NCHAN 4u     /* raw data sample, mapping of channels, (web radio use-case) */
+    //#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_RAW 5u
+    //#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_MAP 6u
 
     #define STREAM_SERVICE_INTERNAL_AUDIO_ERROR 7u        /* PLC applied, Bad frame (no header, no synchro, bad data format), bad parameter */
     
@@ -884,8 +975,9 @@ offset_instance
 
         /* time.h */
         //STREAM_ASCTIMECLOCK, STREAM_DIFFTIME, STREAM_SYS_CLOCK (ms since reset), STREAM_TIME (linux seconds)
-        //STREAM_READ_TIME, STREAM_READ_TIME_FROM_START, STREAM_TIME_DIFFERENCE, 
-        //STREAM_TIME_CONVERSION,  
+        //STREAM_READ_TIME (high-resolution timer), STREAM_READ_TIME_FROM_START, 
+        //STREAM_TIME_DIFFERENCE, STREAM_TIME_CONVERSION,  
+        // 
         //STREAM_TEA,
 
         /* From Android CHRE  https://source.android.com/docs/core/interaction/contexthub
@@ -977,9 +1069,8 @@ offset_instance
 
 //enum mem_speed_type                         /* memory requirements associated to enum memory_banks */
 #define MEM_SPEED_REQ_ANY           0    /* best effort */
-#define MEM_SPEED_REQ_NORMAL        1    /* can be external memory */
-#define MEM_SPEED_REQ_FAST          2    /* will be internal SRAM when possible */
-#define MEM_SPEED_REQ_CRITICAL_FAST 3    /* will be TCM when possible
+#define MEM_SPEED_REQ_FAST          1    /* will be internal SRAM when possible */
+#define MEM_SPEED_REQ_CRITICAL_FAST 2    /* will be TCM when possible
            When a SWC is declaring this segment as relocatable ("RELOC_MEMREQ") it will use 
            physical address different from one TCM to an other depending on the processor running the SWC.
            The scheduler shares the TCM address dynamically before calling the SWC. 
@@ -1042,7 +1133,7 @@ offset_instance
 //#define     TYPE_MEMREQ_MSB U(27)     
 //#define     TYPE_MEMREQ_LSB U(26) /* 2  mem_mapping_type  static, working, pseudo_working, hot_static      */
 //#define    SPEED_MEMREQ_MSB U(25)     
-//#define    SPEED_MEMREQ_LSB U(23) /* 3  mem_speed_type "idx_memory_base_offset"   */
+//#define    SPEED_MEMREQ_LSB U(23) /* 3  mem_speed_type "long_offset"   */
 //#define  ALIGNMT_MEMREQ_MSB U(22)     
 //#define  ALIGNMT_MEMREQ_LSB U(20) /* 3  buffer_alignment_type */
 //#define    SHIFT_MEMREQ_MSB U(19)     
@@ -1059,6 +1150,106 @@ offset_instance
 //#define NBPRESET_SWPARAM_LSB U( 0) /* 6 nb parameters presets (max 64) */
 //
 //#define PACKSWCPARAM(PSZ,NBPST) (((PSZ)<<6)|(NBPST))
+
+
+
+
+/*================================================== ARC ==================================================================*/
+/*
+  arc descriptions : 
+                             
+      - arc_descriptor_ring : R/W are used to manage the alignment of data to the base address and notify the SWC
+                              debug pattern, statistics on data, time-stamps of access, 
+                              realignment of data to base-address when READ > (SIZE) - consumer frame-size
+                              deinterleave multichannel have the same read/write offset but the base address starts 
+                              from the end of the previous channel boundary of the graph
+*/
+
+// enum debug_arc_computation_1D { COMPUTCMD_ARCW2 /* 5bits */
+
+#define COMPUTCMD_ARCW2_NO_ACTION 0                 
+#define COMPUTCMD_ARCW2_INCREMENT_REG 1         /* increment DEBUG_REG_ARCW1 with the number of RAW samples */
+#define COMPUTCMD_ARCW2_SET_ZERO_ADDR 2         /* set a 0 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to clear */
+#define COMPUTCMD_ARCW2_SET_ONE_ADDR 3          /* set a 1 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to set */
+#define COMPUTCMD_ARCW2_INCREMENT_REG_ADDR 4    /* increment *DEBUG_REG_ARCW1 */
+#define COMPUTCMD_ARCW2__5 5
+#define COMPUTCMD_ARCW2_APP_CALLBACK1 6         /* call-back in the application side, data rate estimate in DEBUG_REG_ARCW1 */
+#define COMPUTCMD_ARCW2_APP_CALLBACK2 7         /* second call-back : wake-up processor from DEBUG_REG_ARCW1=[ProcID, command]  */
+#define COMPUTCMD_ARCW2__8 8
+#define COMPUTCMD_ARCW2_TIME_STAMP_LAST_ACCESS 9
+#define COMPUTCMD_ARCW2_PEAK_DATA 10            /* peak/mean/min with forgeting factor 1/256 in DEBUG_REG_ARCW1 */
+#define COMPUTCMD_ARCW2_MEAN_DATA 11
+#define COMPUTCMD_ARCW2_MIN_DATA 12
+#define COMPUTCMD_ARCW2_ABSMEAN_DATA 13
+//#define COMPUTCMD_ARCW2_DATA_TO_OTHER_ARC 14    /* when data is changing the new data is push to another arc DEBUG_REG_ARCW1=[ArcID] */
+#define COMPUTCMD_ARCW2_LOOPBACK 15             /* automatic rewind read/write */
+
+// #define COMPUTCMD_ARCW2_XXXX 30
+#define COMPUTCMD_ARCW2_LAST 31
+//};
+
+//enum overflow_error_service_id {/* 2bits UNDERFLRD_ARCW2, OVERFLRD_ARCW2 */
+#define NO_OVERFLOW_MANAGEMENT 0     /* just RD/WR index alignment on the next frame size */
+#define SKIP_LAST_FRAME 1            /* flow errors management */
+#define DECIMATE_FRAME 2
+//};
+
+#define ARC_DBG_REGISTER_SIZE_W32 2     /* debug registers on 64 bits */
+
+/*==========================================  ARCS  ===================================================*/
+
+#define SIZEOF_ARCDESC_W32 4
+
+#define   BUF_PTR_ARCW0    U( 0)
+#define PRODUCFMT_ARCW0_MSB U(31) /*  5 bits  PRODUCER format  (intPtr_t) +[i x STREAM_FORMAT_SIZE_W32]  */ 
+#define PRODUCFMT_ARCW0_LSB U(27) /*    Graph generator gives IN/OUT arc's frame size to be the LCM of SWC "grains" */
+#define BASEIDXOFFARCW0_MSB U(26)    
+#define   DATAOFF_ARCW0_MSB U(26) /*    address = offset[DATAOFF] + 4x BASEIDX[Bytes] */
+#define   DATAOFF_ARCW0_LSB U(24) /*  3 32/64bits offset index see long_offset */
+#define   BASEIDX_ARCW0_MSB U(23) /*    +/- 0x0080.0000 = 8MW=2^23    0x2000.0000 = 512MW */
+#define  BAS_SIGN_ARCW0_MSB U(23) /*    buffer address 23 + sign + offset = 27 bits */
+#define  BAS_SIGN_ARCW0_LSB U(23) /*    sign of the address with respect to the offset */
+#define   BASEIDX_ARCW0_LSB U( 0) /* 24 base address 24bits linear address range in WORD32 */
+#define BASEIDXOFFARCW0_LSB U( 0) /*    +/- 0x7F.FFFF(W32) =  +/- 8MW/32MBytes (+/-2GB EXTEND_ARCW2=1) */
+                                
+#define BUFSIZDBG_ARCW1    U( 1)
+#define CONSUMFMT_ARCW1_MSB U(31) /*    indexes 30,31 are reserved for tunable formats in RAM in the offset_descriptor area */
+#define CONSUMFMT_ARCW1_LSB U(27) /* 5  CONSUMER format  */ 
+#define   MPFLUSH_ARCW1_MSB U(26) 
+#define   MPFLUSH_ARCW1_LSB U(26) /* 1  flush data used after processing */
+#define DEBUG_REG_ARCW1_MSB U(25) /*    debug registers have 64bits and are stored in the first arc descriptors  */
+#define DEBUG_REG_ARCW1_LSB U(22) /* 4  2x32bits debug result index [0..15][page: DBGB0_LW1] = data + STREAM_TIMESTMP */
+#define BUFF_SIZE_ARCW1_MSB U(21) /*    SIZE BYTE addressing */
+#define BUFF_SIZE_ARCW1_LSB U( 0) /* 22 Byte-acurate up to 4MBytes (4 x64 = 256MB EXTEND_ARCW2=1*/
+
+#define    RDFLOW_ARCW2    U( 2)  /* write access only from the SWC consumer */
+#define COMPUTCMD_ARCW2_MSB U(31)       
+#define COMPUTCMD_ARCW2_LSB U(27) /* 5  gives the debug task to proceed  (enum debug_arc_computation_1D) */
+#define FLOWERROR_ARCW2_MSB U(26)
+#define FLOWERROR_ARCW2_LSB U(26) /* 1  under/overflow 0=nothing or best effort from IO_DOMAIN_IOFMT */
+#define    EXTEND_ARCW2_MSB U(25) /*    Size/Read/Write are used with x64 factor to extend to */
+#define    EXTEND_ARCW2_LSB U(24) /* 2  256MBytes size for arcs used to read NN models, video players, etc */
+#define    _______ARCW2_MSB U(23) /*    */
+#define    _______ARCW2_LSB U(22) /* 2  */
+#define      READ_ARCW2_MSB U(21) /*    data read index  Byte-acurate up to 4MBytes starting from base address */
+#define      READ_ARCW2_LSB U( 0) /* 22 this is incremented by "frame_size" FRAMESIZE_FMT0  */
+
+#define COLLISION_ARC_OFFSET_BYTE U(3) /* offset in bytes to the collision detection byte */
+#define  WRIOCOLL_ARCW3    U( 3) /* write access only from the SWC producer */
+#define COLLISION_ARCW3_MSB U(31) /* 8  MSB byte used to lock the SWC, loaded with arch+proc+instance ID */ 
+#define COLLISION_ARCW3_LSB U(24) /*       to check node-access collision from an other processor */
+#define ALIGNBLCK_ARCW3_MSB U(23) /*    producer blocked */
+#define ALIGNBLCK_ARCW3_LSB U(23) /* 1  producer sets "need for data realignement"  */
+#define   UNUSED__ARCW3_MSB U(22) /*     */
+#define   UNUSED__ARCW3_LSB U(22) /* 1   */
+#define     WRITE_ARCW3_MSB U(21) /*    write pointer is incremented by FRAMESIZE_FMT0 */
+#define     WRITE_ARCW3_LSB U( 0) /* 22 write read index  Byte-acurate up to 4MBytes starting from base address */
+
+/* arcs with indexes higher than IDX_ARCS_desc, see enum_arc_index */
+
+//#define PLATFORM_IO 0                   /* 3 bits offets code for arcs external to the graph */
+
+
 
 /*
  * -----------------------------------------------------------------------
@@ -1107,12 +1298,10 @@ offset_instance
 #define ERROR_MEMORY_ALLOCATION     1u
 
 
-/* ----------------- PLATFORM_IO_MANIFEST ------------------------*/
 
 
 /*
     STREAM SERVICES
-
 */
 
 #define  UNUSED_SRV_MSB U(31)
@@ -1137,161 +1326,145 @@ offset_instance
 #define EXT_SERVICE_STDLIB 5
 
 
-    
-/*==================================================== DOMAINS  ===================================================================*/
-#if 0
-    /* physical units rfc8428 rfc8798 */
-    /* industry/auto COVESA units https://github.com/COVESA/vehicle_signal_specification/blob/master/spec/units.yaml */
 
-    //enum stream_unit_physical
-    //{   
-    //    unused_unit=0,      /* int16_t format */            /* int32_t format */           
-    //    unit_linear,        /* PCM and default format */    /* PCM and default format */
-    //    unit_dBm0, 
-    //    unit_decibel,       /* Q11.4 :   1dB <> 0x0010      Q19.12 :   1dB <> 0x0000 1000  */
-    //    unit_percentage,    /* Q11.4 :   1 % <> 0x0010      Q19.12 :   1 % <> 0x0000 1000 */
-    //    unit_meter,         /* Q11.4 :  10 m <> 0x00A0      Q19.12 :  10 m <> 0x0000 A000 */
+//------------------------------------------------------------------------------------------------------
+/*  Time format - 64 bits
+ * 
+ *  140 years ~2^32 ~ 4.4 G = 0x1.0000.0000 seconds 
+ *  1 year = 31.56 M seconds
+ *  1 day = 86.400 seconds
+ * 
+ *  "stream_time64" 
+ *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
+ *  ____ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqq q32.28 [s]  140 Y + Q28 [s]
+ *  systick increment for  1ms =  0x00041893 =  1ms x 2^28
+ *  systick increment for 10ms =  0x0028F5C2 = 10ms x 2^28
+ *
+ *  140 years in ms = 4400G ms = 0x400.0000.0000 ms 42bits
+ *  milliseconds from January 1st 1970 UTC (or internal AL reference)
+ *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
+ *  ______________________mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm ms 
+ *
+ *
+ *  Local time in BINARY bit-fields : years/../millisecond, WWW=day of the week 
+ *  (0=Sunday, 1=Monday..)
+ *      COVESA allowed formats : ['YYYY_MM_DD', 'DD_MM_YYYY', 'MM_DD_YYYY', 'YY_MM_DD', 'DD_MM_YY', 'MM_DD_YY']
+ *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
+ *  _________________________.YY.YY.YY.YY.MMM.DDDD.SSSSS.MM.MM.MM.WW
+ * 
+ */
 
-    //    /* audio */
-    //    unit_SPL = 10,        
-    //    unit_dBA,           
+typedef uint64_t stream_time64;
+#define   TYPE_T64_MSB 63
+#define   TYPE_T64_LSB 61 
+#define SECOND_T64_MSB 60
+#define SECOND_T64_LSB 29
+#define  FRACT_T64_MSB 28 
+#define  FRACT_T64_LSB  0
 
-    //    /* motion */
-    //    unit_g = 20,        /* Q11.4 :   1g <> 0x0010       Q19.12 :   1g <> 0x0000 1000  */
-    //    unit_dps,           /* rotation */
-    //    unit_G,             /* magnetometer */
+/*
+ * stream_time_seconds in 32bits : "stream_time32"
+ *  FEDCBA9876543210FEDCBA9876543210
+ *  ssssssssssssssssssssssssssssqqqq q28.4  [s] (8.5 years +/- 0.0625s)
+ *  stream_time32 = (stream_time64 >> 24) 
+ *
+ * delta_stream_time_seconds in 32bits : "stream_time32_diff"
+ *  FEDCBA9876543210FEDCBA9876543210
+ *  sssssssssssssssssqqqqqqqqqqqqqqq q17.15 [s] (36h, +/- 30us)
+ *  stream_time32_diff = (stream_time64 >> 13) 
 
-    //    /* electrical */
-    //    unit_Vrms = 30,       
-    //    unit_Ohm,          
+ * ARC time-stamp in 32bits : "stream_timestamp32" 
+ *  FEDCBA9876543210FEDCBA9876543210
+ *  ssssssssssssssssssssqqqqqqqqqqqq q20.12 [s] (12 days, +/- 0.25ms)
+ *  stream_time32_diff = (stream_time64 >> 10) 
+ *
+ */
+typedef uint32_t stream_time32;
+#define   FORMAT_T32_MSB 31
+#define   FORMAT_T32_LSB 30 
+#define     TIME_T32_MSB 29
+#define     TIME_T32_LSB  0 
 
-    //    /* time */
-    //    unit_hour = 40,       
-    //};
-
-
-/* tuning of PLATFORM_AUDIO_IN */
-    //const float audio_settings [] = { 
-    ///* [stream_units_physical_t, scaling to full-scale] */  
-    //unit_pascal, 1.0f,
-    ///* nb of bits */
-    ///* 3  nchan */              3,   1, 2, 8,  
-    ///* 4  FS */                 2,   16000.0f, 48000.0f, 
-    ///* 2  framesize [s] */      2,   0.01f, 0.016f, 
-    ///*    1 option = "fixed in HW and this is the setting" */
-    ///*    0 option = "fixed in HW, and it depends" */
-    ///* 4  PGA gain + digital gain option [dB]*/  0,          
-    ///* 2  hpf set at 20Hz */    1,   20.0f,
-    ///* 1  agc option */         0,
-    ///* 2  router to MIC, LINE, BT, LOOP */ 0,          
-    ///*14 bits remains */    
-//#define AUDIO_REC_STREAM_SETTING
-//    #define _UNUSED_AUDIO_REC_MSB 31
-//    #define _UNUSED_AUDIO_REC_LSB 16
-//    #define     AGC_AUDIO_REC_MSB 15 
-//    #define     AGC_AUDIO_REC_LSB 15 /* O6 AGC on/off */
-//    #define     HPF_AUDIO_REC_MSB 14 
-//    #define     HPF_AUDIO_REC_LSB 14 /* O5 HPF on/off */
-//    #define     PGA_AUDIO_REC_MSB 13 
-//    #define     PGA_AUDIO_REC_LSB 10 /* O4 16 analog PGA + digital PGA settings [dB] */
-//    #define   DBSPL_AUDIO_REC_MSB  9 
-//    #define   DBSPL_AUDIO_REC_LSB  9 /* O3 2 max dBSPL options */
-//    #define FRMSIZE_AUDIO_REC_MSB  8 
-//    #define FRMSIZE_AUDIO_REC_LSB  7 /* O2 4 frame size options, in seconds */
-//    #define      FS_AUDIO_REC_MSB  6 
-//    #define      FS_AUDIO_REC_LSB  3 /* O1 16 sampling rates options  */
-//    #define   NCHAN_AUDIO_REC_MSB  2 
-//    #define   NCHAN_AUDIO_REC_LSB  0 /* O0 8 nchan options  */
-//    #define PACKAUDIORECOPTIONS3(O6,O5,O4,O3,O2,O1,O0) ((O6<<15)|(O5<<14)|(O4<<10)|(O3<<9)|(O2<<7)|(O1<<3)|(O0)) 
-
-/* tuning of PLATFORM_AUDIO_OUT */
-
-    //const int32_t audio_out_settings [] = { 
-    ///* nb options nbbits */
-    ///*  8  3  nchan */         3,   1, 2, 8,
-    ///* 16  4  FS */            2,   16000, 48000, 
-    ///*  4  2  framesize [ms] */2,   10, 16, 
-    ///*  8  3  mVrms max */     2,   100, 700,
-    ///* 16  4  PGA gain */      0,
-    ///*  4  2  bass gain dB */  4,   0, -3, 3, 6,
-    ///*  2  1  bass frequency */2,   80, 200,       
-    ///*  4  2  mid gain */      4,   0, -3, 3, 6,
-    ///*  2  1  mid frequency */ 2,   500, 2000,       
-    ///*  4  2  high gain */     4,   0, -3, 3, 6,
-    ///*  2  1  high frequency */2,   4000, 8000,       
-    ///*  2  1  agc gain */      0,
-    ///*  4  2  router */        0,  /* SPK, EAR, LINE, BT */
-    ///*     2 bits remains */ 
+/*
+ *  stream_time_seconds in 16bits : "stream_time16"
+ *  FEDCBA9876543210
+ *  ssssssssssssqqqq q14.2   1 hour + 8mn +/- 0.0625s
+ *
+ *  FEDCBA9876543210
+ *  stream_time_seconds differencein 16bits : "stream_time16diff"
+ *  qqqqqqqqqqqqqqqq q15 [s] time difference +/- 15us
+ */
+typedef uint32_t stream_time16;
+#define     TIME_T16_MSB 15
+#define     TIME_T16_LSB  0 
 
 
-/* tuning of PLATFORM_GPIO_IN / OUT */
-    //const int32_tgpio_out_0_settings [] = {    
-    /* nb options nbbits */
-    //State : High-Z, low, high, duration, frequency
-    //type : PWM, motor control, GPIO
-    //PWM duty, duration, frequency (buzzer)
-    //Servo motor control -120 .. +120 deg
-    //keep the servo position
+/*================================ STREAM ARITHMETICS DATA/TYPE ====================================================*/
+/* types fit in 6bits, arrays start with 0, stream_bitsize_of_raw() is identical */
 
-/* tuning of PLATFORM_RTC_IN / OUT */
-    /* a FIFO is filled from RTC on periodic basis : */
-    //const int32_t timer_in_settings [] = {    
-    //    /* nb options nbbits */
-    //    /*  8  3  unit : Days Hours Minutes Seconds 1ms
-    //    /* Flexible bit-fields implementation-dependent
-    //    /*   period Q8.4 x [unit]
-    //    /*   offset (Q8) from the start of the day (watering)
-    // use-case = periodic comparison of ADC value, periodic activation of GPIO
-    //   one FIFO is trigered by unit: days one other by minutes, a script can
-    //   implement the state machine to read sensors or activate watering
+enum stream_raw_data 
+{
+#define STREAM_DATA_ARRAY 0 /* see stream_array: [0NNNTT00] 0, type, nb */
+#define STREAM_S1         1 /* S, one signed bit, "0" = +1 */                           /* one bit per data */
+#define STREAM_U1         2 /* one bit unsigned, boolean */
+#define STREAM_S2         3 /* SX  */                                                   /* two bits per data */
+#define STREAM_U2         4 /* XX  */
+#define STREAM_Q1         5 /* Sx ~stream_s2 with saturation management*/
+#define STREAM_S4         6 /* Sxxx  */                                                 /* four bits per data */
+#define STREAM_U4         7 /* xxxx  */
+#define STREAM_Q3         8 /* Sxxx  */
+#define STREAM_FP4_E2M1   9 /* Seem  micro-float [8 .. 64] */
+#define STREAM_FP4_E3M0  10 /* Seee  [8 .. 512] */
+#define STREAM_S8        11 /* Sxxxxxxx  */                                             /* eight bits per data */
+#define STREAM_U8        12 /* xxxxxxxx  ASCII char, numbers.. */
+#define STREAM_Q7        13 /* Sxxxxxxx  arithmetic saturation */
+#define STREAM_CHAR      14 /* xxxxxxxx  */
+#define STREAM_FP8_E4M3  15 /* Seeeemmm  NV tiny-float [0.02 .. 448] */                 
+#define STREAM_FP8_E5M2  16 /* Seeeeemm  IEEE-754 [0.0001 .. 57344] */
+#define STREAM_S16       17 /* Sxxxxxxx.xxxxxxxx  */                                    /* 2 bytes per data */
+#define STREAM_U16       18 /* xxxxxxxx.xxxxxxxx  Numbers, UTF-16 characters */
+#define STREAM_Q15       19 /* Sxxxxxxx.xxxxxxxx  arithmetic saturation */
+#define STREAM_FP16      20 /* Seeeeemm.mmmmmmmm  half-precision float */
+#define STREAM_BF16      21 /* Seeeeeee.mmmmmmmm  bfloat */
+#define STREAM_Q23       22 /* Sxxxxxxx.xxxxxxxx.xxxxxxxx  24bits */                    /* 3 bytes per data */ 
+#define STREAM_Q23_32    23 /* SSSSSSSS.Sxxxxxxx.xxxxxxxx.xxxxxxxx  */                  /* 4 bytes per data */
+#define STREAM_S32       24 /* one long word  */
+#define STREAM_U32       25 /* xxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx UTF-32, .. */
+#define STREAM_Q31       26 /* Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx  */
+#define STREAM_FP32      27 /* Seeeeeee.mmmmmmmm.mmmmmmmm.mmmmmmmm  FP32 */             
+#define STREAM_CQ15      28 /* Sxxxxxxx.xxxxxxxx Sxxxxxxx.xxxxxxxx (I Q) */             
+#define STREAM_CFP16     29 /* Seeeeemm.mmmmmmmm Seeeeemm.mmmmmmmm (I Q) */             
+#define STREAM_S64       30 /* long long */                                             /* 8 bytes per data */
+#define STREAM_U64       31 /* unsigned  64 bits */
+#define STREAM_Q63       32 /* Sxxxxxxx.xxxxxx ....... xxxxx.xxxxxxxx  */
+#define STREAM_CQ31      33 /* Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx Sxxxx..*/
+#define STREAM_FP64      34 /* Seeeeeee.eeemmmmm.mmmmmmm ... double  */
+#define STREAM_CFP32     35 /* Seeeeeee.mmmmmmmm.mmmmmmmm.mmmmmmmm Seee.. (I Q)  */
+#define STREAM_FP128     36 /* Seeeeeee.eeeeeeee.mmmmmmm ... quadruple precision */     /* 16 bytes per data */
+#define STREAM_CFP64     37 /* fp64 fp64 (I Q)  */
+#define STREAM_FP256     38 /* Seeeeeee.eeeeeeee.eeeeemm ... octuple precision  */      /* 32 bytes per data */
+#define STREAM_TIME16    39 /* ssssssssssssqqqq q14.2   1 hour + 8mn +/- 0.0625 */
+#define STREAM_TIME16D   40 /* qqqqqqqqqqqqqqqq q15 [s] time difference +/- 15us */
+#define STREAM_TIME32    41 /* ssssssssssssssssssssssssssssqqqq q28.4  [s] (8.5 years +/- 0.0625s) */ 
+#define STREAM_TIME32D   42 /* ssssssssssssssssqqqqqqqqqqqqqqqq q17.15 [s] (36h, +/- 30us) time difference */   
+#define STREAM_TIMESTMP  43 /* ssssssssssssssssssssqqqqqqqqqqqq q20.12 [s] (12 days, +/- 0.25ms) */   
+#define STREAM_TIME64    44 /* ____ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqq q32.28 [s] 140 Y +Q28 [s] */   
+#define STREAM_TIME64MS  45 /* ______________________mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm u42 [ms] 140 years */   
+#define STREAM_TIME64ISO 46 /* ___..YY..YY..YY..YY..MM..MM..DD..DD..SS..SS.....offs..MM..MM..MM ISO8601 signed offset 2024-05-04T21:12:02+07:00  */   
+#define STREAM_WGS84     47 /* <--LATITUDE 32B--><--LONGITUDE 32B-->  lat="52.518611" 0x4252130f   lon="13.376111" 0x4156048d - dual IEEE754 */   
+#define STREAM_HEXBINARY 48 /* UTF-8 lower case hexadecimal byte stream */
+#define STREAM_BASE64    49 /* RFC-2045 base64 for xsd:base64Binary XML data */
+#define STREAM_STRING8   50 /* UTF-8 string of char terminated by 0 */
+#define STREAM_STRING16  51 /* UTF-16 string of char terminated by 0 */
 
-/* tuning of PLATFORM_USER_INTERFACE_IN / OUT */
-    /* a FIFO is filled from UI detection of a button */
-    /* one FIFO per button to ease the routing to specific nodes */
 
-    /* Default implementation using SYSTICK
-       Time format - 40 bits - SYSTICK 1ms increments, global register
-       GLOBALS : G_INCTICK (64bits), INV_RVR (32bits), G_SYST0 (32bits) interval in Q32 second
-       G_INCTICK : incremented in the SYSTICK interrupt, SYST0=1ms or 10ms
-       FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
-       ________________________qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq with 1ms increment => 35 years (32bits gives only 50 days)
-  
-       SYST_CVR (current value), SYST_CALIB (reload value for 10ms), SYST_RVR (reload value), INV_RVR = 0x10000.0000/SYST_RVR
-       Time sequence : G_INCTICK=>T0  CVR=>C0  G_INCTICK=>T1  CVR=>C1  
 
-       Algorithm : if T0==T1 (no collision) then T=T0,C=C0  else T=T1,C=C1 endif
-        the fraction of SYST0 is (RVR - C) x INV_RVR = xx...xxx
-        the time (64bits Q16)  is  (T<<16) + (((RVR - C) x INV_RVR) >> 16)  => used for time-stamps 
-        FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
-        ________qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqXXXXXXXXXXXXXXXX 
+#define LAST_RAW_TYPE    64 /* coded on 6bits RAW_FMT0_LSB */
+};
 
-       stream_time_seconds in 32bits :
-       bits 31-30 = format  0:seconds from reset, 
-                            1:seconds from Jan 1st 2023 (local time) 
-                            2:format U14.16 for IMU time-stamps differences
-                            3:date format YY:MM:DD:HH:MN:SS
-       bit  29- 0 = time    30bits seconds = 68years
-                            U14.16 = 15us accuracy
-                            __DCBA987654321 FEDCBA9876543210
-                              YYYYYYYMMMMDDDDDHHHHHMMMMMMSSS
-    Decode INPUT image/video files (engineering can change if needed):
-    BMP, PNG, JPG*
-    WMV*
-    AVI, MP4
-    RAW
-    
-    96x96
-    128x128
-    192x192
-    224x224
-    300x300
-    320x320
-    416x416
-    1920x1080
-    1080p
-*/
 
-#endif
+#define STREAM_PTRPHY      4    
+#define STREAM_PTR27B      5    
 
 
 /* constants for uint8_t itoa(char *s, int32_t n, int base) 
@@ -1300,6 +1473,7 @@ offset_instance
 #define C_BASE2 2
 #define C_BASE10 10
 #define C_BASE16 16
+
 
 
 /* ========================== MINIFLOAT 8bits ======================================*/

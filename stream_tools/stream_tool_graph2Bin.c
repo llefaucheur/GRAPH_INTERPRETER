@@ -196,13 +196,13 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         {
             ST(FMT0, QUICKSKIP_IOFMT, 0);
             ST(FMT0,   IOARCID_IOFMT, arcIO->arcIDstream);
-            ST(FMT0,    RX0TX1_IOFMT, arcIO->sc.rx0tx1);
+            ST(FMT0,    rx0tx1_IOFMT, arcIO->sc.rx0tx1);
             ST(FMT0,  SERVANT1_IOFMT, arcIO->si.commander0_servant1);
             ST(FMT0, SET0COPY1_IOFMT, arcIO->si.set0_copy1);
             arcBuffer_shared_with_IO = (0 != arcIO->si.graphalloc_X_bsp_0)? 1: 0;
             ST(FMT0, SHAREBUFF_IOFMT, arcBuffer_shared_with_IO);
             FMT1 = arcIO->si.settings;
-            sprintf(tmpstring, "IO-Interface(%d) set0_copy1=%d arc(%d) rx0tx1=%d", fw_io_idx, arcIO->si.set0_copy1, arcIO->arcIDstream, arcIO->sc.rx0tx1); 
+            sprintf(tmpstring, "IO-Interface(%d) set0_copy1=%d arc(%d) direction_rx0tx1=%d", fw_io_idx, arcIO->si.set0_copy1, arcIO->arcIDstream, arcIO->sc.rx0tx1); 
         }
         else
         {
@@ -245,18 +245,15 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     }
     
     /* 
-        SCRIPTS in Flash 
+        SCRIPTS in Flash     table of 2x W32      word0 : offset, word1:length + byteCode Format
     */
     SC1 = addrBytes;
-    i1 = graph->nb_scripts;
-    i1 = (1+i1)>>1;             // table of W16 round to W32
-    for (j = i = 0; i < i1; i++)
+   
+    for (j = i = 0; i < graph->nb_scripts; i++)
     {   FMT0 = graph->script_indirect[j]; 
-        FMT1 = ((long)(graph->script_indirect[j+1]))<<16; 
-        FMT0 |= FMT1;
-        j = j+2;
-        if (i == 0) PRINTF(FMT0, "nb of scripts, indexes");
-        else PRINTF(FMT0, "script index");
+        PRINTF(FMT0, "script offset");
+        FMT0 = 0; 
+        PRINTF(FMT0, "script length");
     }
 
     i1 = graph->nb_byte_code;
@@ -286,11 +283,11 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
         n = &(graph->all_nodes[i]);
 
-        /* word 1 - main Header */
+        /* word 0 - main Header */
         strcpy(tmpstring, "-------------------- nanoAppRT : "); strcat(tmpstring, graph->all_nodes[i].nodeName);
         PRINTF(n->headerPACK, tmpstring);
 
-        /* word 2 - arcs */
+        /* word 1 - arcs */
         for (iarc = 0; iarc < n->nbInputArc + n->nbOutputArc; iarc+=2)
         {
             arc = &(n->arc[iarc]);
@@ -298,28 +295,33 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             ST(FMT0, ARC1_LW1, arc[iarc+1].arcID);
             ST(FMT0, ARC0_LW1, arc[iarc].arcID);
 
-            if (iarc == 0) // the first ARC word holds the XDM11 flag
-            {   int xdm11;
-                xdm11 = platform->all_nodes[n->swc_idx].RWinSWC;
-                ST(FMT0, XDM11_LW2, xdm11); 
-            }
-            ST(FMT0, ARC0D_LW1, (arc[iarc  ].sc.rx0tx1 >0));    /* set the rx0tx1 arc direction bit */
+            ST(FMT0, ARC0D_LW1, (arc[iarc  ].sc.rx0tx1 >0));    /* set the direction_rx0tx1 arc direction bit */
             ST(FMT0, ARC1D_LW1, (arc[iarc+1].sc.rx0tx1 >0));    
+
+            ST(FMT0, DBGB1_LW1, arc[iarc+1].debug_page_DBGB0_LW1);  
+            ST(FMT0, DBGB0_LW1, arc[iarc].debug_page_DBGB0_LW1);
 
             PRINTF(FMT0, "Indexes of ARC 0 and 1 of the nanoAppRT");
         }
 
-        /* word 3 - memory banks */
+        /* word 2 - memory banks */
         for (imem = 0; imem < n->nbMemorySegment; imem++) 
         {
             FMT0 = 0;
-            if (imem == 0) ST(FMT0, NBALLOC_LW2,  n->nbMemorySegment);  // instance pointer has the number of memory banks on MSBs
+            if (imem == 0) 
+            {   ST(FMT0, NBALLOC_LW2,  n->nbMemorySegment);  // instance pointer has the number of memory banks on MSBs
+                if (iarc == 0)                               // the first memreq word holds the XDM11 flag
+                {   int xdm11;
+                    xdm11 = platform->all_nodes[n->swc_idx].RWinSWC;
+                    ST(FMT0, XDM11_LW2, xdm11); 
+                }
+            }
             //if (n->defaultParameterSizeW32 > 1) ST(FMT0, PARAMETER_LW2, 1);
             ST(FMT0, BASEIDXOFFLW2, n->memreq[imem].graph_basePACK);    // address 
             sprintf(tmpstring, "Reserved memory bank(%d)", imem); 
             PRINTF(FMT0, tmpstring);
 
-            FMT0 = 0;
+            FMT0 = 0;   //@@@@@
             sprintf(tmpstring, "size of the memory bank(%d)", imem); 
             PRINTF(FMT0, tmpstring);
         }
@@ -413,7 +415,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     FMT0 = 0x00000000;      // banks 4,5,6,7 are not used
     PRINTF(FMT0, "6 '''''");      //
 
-    fsetpos (ptf_graph_bin, &pos_end);  
+    // fsetpos (ptf_graph_bin, &pos_end);  
 }
 
 

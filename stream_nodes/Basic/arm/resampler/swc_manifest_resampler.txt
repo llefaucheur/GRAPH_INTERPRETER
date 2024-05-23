@@ -1,0 +1,23 @@
+; ------------------------------------------------------------------------------------------------------------
+; SOFTWARE COMPONENT MANIFEST - "arm_stream_resampler"
+; ------------------------------------------------------------------------------------------------------------
+;
+    ARM                             ; developer name
+    arm_stream_resampler            ; node name
+
+node_steady_stream   0      ; (0) the data flow is variable 
+node_same_data_rate  0      ; (0) the arcs have different data rates
+node_use_arc_format  0      ; default 1 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
+
+;----------------------------------------------------------------------------------------
+;   MEMORY ALLOCATIONS
+
+node_nb_mem_block    1            
+;                A S N
+node_mem_alloc  32 0 1      ; size = 32Bytes data memory, Static, Fast memory block
+
+;--------------------------------------------------------------------------------------------
+;    ARC CONFIGURATION
+
+node_arc_channels 0 0 {1 1} ; 
+node_arc_channels 1 0 {1 1} ; 

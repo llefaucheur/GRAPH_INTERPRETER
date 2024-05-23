@@ -2,86 +2,26 @@
 ; SOFTWARE COMPONENT MANIFEST - "arm_stream_filter"
 ; ------------------------------------------------------------------------------------------------------------
 ;
-    ARM             developer name
-    arm_stream_filter  node name for the GUI and the graph compiler (node and arc src/dst)
-    X 1 1 0 1   1 1 0 31  
-;                   nb input arcs 
-;                   nb output arcs (in + out = ARCSRDY_LW0_LSB first arcs, data availability checked before RUN )
-;                   nb parameter-arcs arcs, (NN model..), nodes with parameter arc have "xdm11=0" to keep the read index on the parameter
-;                   index of the arc used for the byte synchronization in MP
-;
-;                   0: arc R/W managed in the SWC  1: all arcs are using the same frame size (see "xdm11") 3:DTCM used (DTCM_LW1)
-;                   0: no need the push the format of the arcs (see reset_component(S)) 1: arc format is used by the component
-;                   delivery 0:source, 1:binary, 2: 2 binaries (fat binary)
-;                   mask: dependency to EXTDSPML EXTMATH EXTAUDIO EXTIMAGE EXTSTDLIB
-;
-    
+    ARM                     ; developer name
+    arm_stream_filter       ; node name
 
-; list of (architectures+FPU option) the SWC is compatible with
-    1               number of architecture options below
-    0 2             0: arch (0=source code), 2: FPU option (enum stream_processor_sub_arch_fpu)
-
-
-    0 1             code version, version of the scheduler it is compatible with
+node_use_arc_format  1      ; default 1 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
+node_mask_library    15     ; default 0 bit-field of dependencies to computing libraries
 
 ;----------------------------------------------------------------------------------------
-; Loop on memory banks (max=4)
-;
-    2               memory bank allocation = instance + working area in TCM
- 
-;   Memory Size Bytes = (A + DeltaA64 + B x nb_channels_arc(i) + C x samplingHz_arc(j) + 
-;       D x frame_size_arc(k) + E x maxParameterSize)
-;
-;   INSTANCE MEM is the first one, even if the size is null
-;
-;   A D64 B C D E,  indexes i,j,k,  
-;      alignment, static0/working1/retention2,   any0/normal1/fast2/critical3/swappable,  relocatable
-    76 0 6 0 0 0   0 0 0   4 0 0 0
+;   MEMORY ALLOCATIONS
 
-;   TCM MEM (for Z memory and coeffs)
-     4 0 6 0 0 0   0 0 0   4 1 3 1
+node_nb_mem_block    2    
+;                         A   B i       C j   D k   E   A S N R  
+node_mem_alloc_detail    76   0 0   0.001 0   0 0   0   4 0 0 0   ; node instance, 1ms buffer
+node_mem_alloc_detail     6   0 0   0.001 0   0 0   0   4 1 3 1   ; Working TCM MEM (for Z memory and coeffs)
 
-;-------------------
-; input_arc : "0"
-;-------------------            
+;--------------------------------------------------------------------------------------------
+;    ARC CONFIGURATION
 
-    0   n = 0,1,2,NARC-1    n+NARC:input buffer is read and modified
+node_arc_channels        0 0    {1 1 2}  ; arc, intleaved,  options for the number of channels
+node_arc_channels        1 0    {1 1 2}  ; arc, intleaved,  options for the number of channels
 
-    0   rx0tx1  
-    6   raw format                                          
-    0   time-stamp                                          
-    1   frame length format (0:in milliseconds 1:in samples)
-    0   sampling rate format (0:Hz, 1:seconds, 2:days)
-    3   percent FS accuracy                                 
+node_arc_raw_format      0 {1 S16 FP32}  ; arc, options for the raw arithmetics STREAM_S16, STREAM_FP32
+node_arc_raw_format      1 {1 S16 FP32}  ; arc, options for the raw arithmetics STREAM_S16, STREAM_FP32
 
-    ;   Lists of options, starting with the default index
-    ;   default_index = 0 means "any" in the data allowed following values   A1 A2 A3 .. */
-    ;   default_index = -1 means data range followed by three values   Amin Astep Amax */
-    ;   
-    1   0                   ;i interleaving options list
-    1   1                   ;i nb channels options list 
-    1   1 2 4               ;f frame_size option in samples  (or millis) 
-    1                       ;f empty list means "any sampling rate"                          
-
-;-------------------
-; output_arc : "1"
-;-------------------            
-
-    1   n = 0,1,2,NARC-1    in-place processing to arc (n+NARC)
-
-    1   rx0tx1  
-    6   raw format                                          
-    0   time-stamp                                          
-    1   frame length format (0:in milliseconds 1:in samples)
-    0   sampling rate format (0:Hz, 1:seconds, 2:days)
-    3   percent FS accuracy                                 
-
-    ;   Lists of options, starting with the default index (0="any")
-    ;   (0="any", followed by min and max value range)
-    1   0                   ;i interleaving options list
-    1   1                   ;i nb channels options list 
-    1   1 2 4               ;f frame_size option in samples  (or millis) 
-    1   101 202 404         ;f sampling rate options in Hz
-
-
-_END_

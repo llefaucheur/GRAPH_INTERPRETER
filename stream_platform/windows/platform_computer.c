@@ -71,13 +71,13 @@ extern p_stream_node arm_stream_compressor;     /*  9*/
 extern p_stream_node arm_stream_decompressor;   /* 10*/
 extern p_stream_node arm_stream_modulator;      /* 11*/
 extern p_stream_node arm_stream_demodulator;    /* 12*/
-extern p_stream_node arm_stream_interpolator;   /* 13*/
+extern p_stream_node arm_stream_resampler;      /* 13*/
 extern p_stream_node arm_stream_qos;            /* 14*/
 extern p_stream_node arm_stream_split;          /* 15*/
 extern p_stream_node arm_stream_detector2D;     /* 16*/
 extern p_stream_node arm_stream_filter2D;       /* 17*/
-extern p_stream_node arm_stream_interpolator2D; /* 18*/
-extern p_stream_node arm_stream_synchro;        /* 19*/
+extern p_stream_node arm_stream_synchro;        /* 18*/
+extern p_stream_node arm_stream_analysis;       /* 19*/
 
 #define TBD 0
 
@@ -97,13 +97,13 @@ p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
     /* 10*/ (void *)&arm_stream_decompressor,   /* raw data decompression */
     /* 11*/ (void *)&arm_stream_modulator,      /* signal generator with modulation */
     /* 12*/ (void *)&arm_stream_demodulator,    /* signal demodulator, frequency estimator */
-    /* 13*/ (void *)&arm_stream_interpolator,   /* asynchronous sample-rate converter */
+    /* 13*/ (void *)&arm_stream_resampler,      /* asynchronous sample-rate converter */
     /* 14*/ (void *)&arm_stream_qos,            /* raw data interpolator with synchronization with one HQoS stream */
     /* 15*/ (void *)&arm_stream_split,          /* let a buffer be used by several nodes */
     /* 16*/ (void *)&arm_stream_detector2D,     /* image activity detection */
     /* 17*/ (void *)&arm_stream_filter2D,       /* convolution filter of the image */
-    /* 18*/ (void *)&arm_stream_interpolator2D, /* change image format and resize */
-    /* 19*/ (void *)&arm_stream_synchro,        /* multi-stream synchro  */
+    /* 18*/ (void *)&arm_stream_synchro,        /* multi-stream synchro  */
+    /* 19*/ (void *)&arm_stream_analysis,       /* multi-stream synchro  */
 };
 
 
@@ -158,8 +158,28 @@ const uint32_t graph_input[] =
 
 
 /*
-    Four registered callback for SWC and scripts (CALS  system call (0..7) and application callbacks (8..15))
-    Use-case : software timers, event detection trigger, metadata sharing
+ *  TIME (see stream_time64 definition)
+ *
+ *  "stream_time64" example of implementation using a global variable
+ *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
+ *  ____ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqq q32.28 [s]  140 Y + Q28 [s]
+ *  systick increment for  1ms =  0x00041893 =  1ms x 2^28
+ *  systick increment for 10ms =  0x0028F5C2 = 10ms x 2^28
+ * 
+ * Other implementation rely on an HW timer (RP2040)
+*/
+
+uint64_t global_stream_time64;
+
+
+/*
+    Callback for SWC and scripts (CALS  system call (0..7) and application callbacks (8..15))
+        and ARC debug activities (ARC_APP_CALLBACK1) 
+    Use-case : 
+        deep-sleep proposal from the scheduler
+        event detection trigger, software timers 
+        metadata sharing from script
+        allow execution of arm_graph_interpreter(STREAM_RESET..) after a graph remote reload (check IOs are ok)
 */
 const p_stream_al_services application_callbacks[MAX_NB_APP_CALLBACKS] =
 {   (void*)0,

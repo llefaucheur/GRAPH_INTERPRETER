@@ -1,19 +1,19 @@
 //--------------------------------------
-//  date/time: Tue Jan 23 16:38:53 2024
+//  date/time: Mon Mar  4 18:08:36 2024
 //  AUTOMATICALLY GENERATED CODES
 //  DO NOT MODIFY IT !
 //--------------------------------------
-0x00000091, // number of words
+0x00000102, // number of words
 0x00000000, // 000 000 000 0 destination of the graph in RAM 
-0x00009123, // 004 004 001 1 number of IO-Interfaces, size of the script section 
-0x00000010, // 008 008 002 2 size of the linked-list of nanoAppRT + parameters 
-0x00000006, // 00C 00C 003 3 number of arcs and debug/trace registers 
+0x00005142, // 004 004 001 1 number of IO-Interfaces, size of the script section 
+0x00000036, // 008 008 002 2 size of the linked-list of nanoAppRT + parameters 
+0x0000000C, // 00C 00C 003 3 number of arcs and debug/trace registers 
 0x00000001, // 010 010 004 4 list of processors allowed to execute the graph 
 0x000000FF, // 014 014 005 5 percentage of 8 memory banks consumed by the graph 
 0x00000000, // 018 018 006 6 ''''' 
-0xFFFFFFFF, // 01C 01C 007  
-0xFFFFFFFF, // 020 020 008 - 
-0xFFFF3000, // 024 024 009 IO-Interface(1) set0_copy1=1 arc(0) rx0tx1=0 
+0xFFFF3000, // 01C 01C 007 IO-Interface(0) set0_copy1=1 arc(0) direction_rx0tx1=0 
+0x00000000, // 020 020 008 - 
+0xFFFF3000, // 024 024 009 IO-Interface(1) set0_copy1=1 arc(0) direction_rx0tx1=0 
 0x00000000, // 028 028 00A - 
 0xFFFFFFFF, // 02C 02C 00B  
 0xFFFFFFFF, // 030 030 00C - 
@@ -21,131 +21,244 @@
 0xFFFFFFFF, // 038 038 00E - 
 0xFFFFFFFF, // 03C 03C 00F  
 0xFFFFFFFF, // 040 040 010 - 
-0xFFFFFFFF, // 044 044 011  
-0xFFFFFFFF, // 048 048 012 - 
-0xFFFF3802, // 04C 04C 013 IO-Interface(6) set0_copy1=1 arc(2) rx0tx1=1 
+0xFFFF3000, // 044 044 011 IO-Interface(5) set0_copy1=1 arc(0) direction_rx0tx1=0 
+0x00000000, // 048 048 012 - 
+0xFFFF2800, // 04C 04C 013 IO-Interface(6) set0_copy1=1 arc(0) direction_rx0tx1=1 
 0x00000000, // 050 050 014 - 
 0xFFFFFFFF, // 054 054 015  
 0xFFFFFFFF, // 058 058 016 - 
-0xFFFF1803, // 05C 05C 017 IO-Interface(8) set0_copy1=0 arc(3) rx0tx1=1 
-0x00000000, // 060 060 018 - 
-0x22000008, // 064 064 019 Data and frame format 0   frame size 8   nb chan 1   sampling 16000.00 
-0x467A0000, // 068 068 01A  
-0x00000003, // 06C 06C 01B  
-0x2200000C, // 070 070 01C Data and frame format 1   frame size 12   nb chan 1   sampling 16000.00 
-0x467A0000, // 074 074 01D  
-0x00000004, // 078 078 01E  
-0x22000008, // 07C 07C 01F Data and frame format 2   frame size 8   nb chan 32   sampling   0.00 
-0x0000001F, // 080 080 020  
-0x00000000, // 084 084 021  
-0x00000003, // 088 088 022 nb of scripts, indexes 
-0x00030000, // 08C 08C 023 script index 
-0x05900004, // 090 090 024 byte codes 
-0xAD020200, // 094 094 025 byte codes 
-0x90B19261, // 098 098 026 byte codes 
-0x02020005, // 09C 09C 027 byte codes 
-0x000261AD, // 0A0 0A0 028 byte codes 
-0x01020102, // 0A4 0A4 029 byte codes 
-0x90B17100, // 0A8 0A8 02A byte codes 
-0x00029801, // 0AC 0AC 02B -------------------- nanoAppRT : arm_stream_filter 
-0x48010000, // 0B0 0B0 02C Indexes of ARC 0 and 1 of the nanoAppRT 
-0x1000006F, // 0B4 0B4 02D Reserved memory bank(0) 
-0x00000090, // 0B8 0B8 02E Reserved memory bank(1) 
-0x00300007, // 0BC 0BC 02F (0) boot parameters 
-0x12310002, // 0C0 0C0 030 (1) 
-0x12311D28, // 0C4 0C4 031 (2) 
-0xD47563E8, // 0C8 0C8 032 (3) 
-0x0B341231, // 0CC 0CC 033 (4) 
-0x24701231, // 0D0 0D0 034 (5) 
-0x00009821, // 0D4 0D4 035 (6) 
-0x00049802, // 0D8 0D8 036 -------------------- nanoAppRT : arm_stream_detector 
-0x48020001, // 0DC 0DC 037 Indexes of ARC 0 and 1 of the nanoAppRT 
-0x08000082, // 0E0 0E0 038 Reserved memory bank(0) 
-0x00420001, // 0E4 0E4 039 (0) boot parameters 
-0x000003FF, // 0E8 0E8 03A -------------------  vvvvvvvvv RAM vvvvvvvvv 
-0x00000053, // 0EC 0EC 03B Circular buffer ARC descriptor(0) Producer 0 Consumer 0 
-0x00000008, // 0F0 0F0 03C  
-0x00000000, // 0F4 0F4 03D  
-0x00000000, // 0F8 0F8 03E  
-0x00000055, // 0FC 0FC 03F Circular buffer ARC descriptor(1) Producer 0 Consumer 0 
-0x00000008, // 100 100 040  
-0x00000000, // 104 104 041  
-0x00000000, // 108 108 042  
-0x00000057, // 10C 10C 043 Circular buffer ARC descriptor(2) Producer 0 Consumer 1 
-0x08000010, // 110 110 044  
-0x00000000, // 114 114 045  
-0x00000000, // 118 118 046  
-0x0000005B, // 11C 11C 047 Circular buffer ARC descriptor(3) Producer 0 Consumer 1 
-0x08000010, // 120 120 048  
-0x00000000, // 124 124 049  
-0x00000000, // 128 128 04A  
-0x0000005F, // 12C 12C 04B Circular buffer ARC descriptor(4) Producer 0 Consumer 0 
-0x00000024, // 130 130 04C  
-0x00000000, // 134 134 04D  
-0x00000000, // 138 138 04E  
-0x00000068, // 13C 13C 04F Circular buffer ARC descriptor(5) Producer 0 Consumer 0 
-0x0000001C, // 140 140 050  
-0x00000000, // 144 144 051  
-0x00000000, // 148 148 052  
-0xBBBBBBBB, // 14C 14C 053 Data stream ARC0 base address=0x53  size=0x8 
-0xBBBBBBBB, // 150 150 054  
-0xBBBBBBBB, // 154 154 055 Data stream ARC1 base address=0x55  size=0x8 
-0xBBBBBBBB, // 158 158 056  
-0xBBBBBBBB, // 15C 15C 057 Data stream ARC2 base address=0x57  size=0x10 
-0xBBBBBBBB, // 160 160 058  
-0xBBBBBBBB, // 164 164 059  
-0xBBBBBBBB, // 168 168 05A  
-0xBBBBBBBB, // 16C 16C 05B Data stream ARC3 base address=0x5B  size=0x10 
-0xBBBBBBBB, // 170 170 05C  
-0xBBBBBBBB, // 174 174 05D  
-0xBBBBBBBB, // 178 178 05E  
-0xBBBBBBBB, // 17C 17C 05F Script stack and registers in ARC4 base address=0x5F  size=0x24 
-0xBBBBBBBB, // 180 180 060  
-0xBBBBBBBB, // 184 184 061  
-0x0002FF00, // 188 188 062  
-0x1D281231, // 18C 18C 063  
-0x63E81231, // 190 190 064  
-0x1231D475, // 194 194 065  
-0x12310B34, // 198 198 066  
-0x98212470, // 19C 19C 067  
-0xBBBBBBBB, // 1A0 1A0 068 Script stack and registers in ARC5 base address=0x68  size=0x1C 
-0xBBBBBBBB, // 1A4 1A4 069  
-0xBBBBBBBB, // 1A8 1A8 06A  
-0xBBBBBBBB, // 1AC 1AC 06B  
-0xBBBBBBBB, // 1B0 1B0 06C  
-0xBBBBBBBB, // 1B4 1B4 06D  
-0xBBBBBBBB, // 1B8 1B8 06E  
-0x22222222, // 1BC 1BC 06F arm_stream_filter static memory bank(0) address=0x1BC 
-0x22222222, // 1C0 1C0 070  
-0x22222222, // 1C4 1C4 071  
-0x22222222, // 1C8 1C8 072  
-0x22222222, // 1CC 1CC 073  
-0x22222222, // 1D0 1D0 074  
-0x22222222, // 1D4 1D4 075  
-0x22222222, // 1D8 1D8 076  
-0x22222222, // 1DC 1DC 077  
-0x22222222, // 1E0 1E0 078  
-0x22222222, // 1E4 1E4 079  
-0x22222222, // 1E8 1E8 07A  
-0x22222222, // 1EC 1EC 07B  
-0x22222222, // 1F0 1F0 07C  
-0x22222222, // 1F4 1F4 07D  
-0x22222222, // 1F8 1F8 07E  
-0x22222222, // 1FC 1FC 07F  
-0x22222222, // 200 200 080  
-0x22222222, // 204 204 081  
-0x22222222, // 208 208 082 arm_stream_detector static memory bank(0) address=0x208 
-0x22222222, // 20C 20C 083  
-0x22222222, // 210 210 084  
-0x22222222, // 214 214 085  
-0x22222222, // 218 218 086  
-0x22222222, // 21C 21C 087  
-0x22222222, // 220 220 088  
-0x22222222, // 224 224 089  
-0x22222222, // 228 228 08A  
-0x22222222, // 22C 22C 08B  
-0x22222222, // 230 230 08C  
-0x22222222, // 234 234 08D  
-0x22222222, // 238 238 08E  
-0x22222222, // 23C 23C 08F  
-0x33333333, // 240 240 090  
+0xFFFFFFFF, // 05C 05C 017  
+0xFFFFFFFF, // 060 060 018 - 
+0xFFFF1800, // 064 064 019 IO-Interface(9) set0_copy1=2 arc(0) direction_rx0tx1=1 
+0x00000000, // 068 068 01A - 
+0x22000008, // 06C 06C 01B Data and frame format 0   frame size 8   nb chan 1   sampling 16000.00 
+0x467A0000, // 070 070 01C  
+0x00000003, // 074 074 01D  
+0x2200000C, // 078 078 01E Data and frame format 1   frame size 12   nb chan 1   sampling 16000.00 
+0x467A0000, // 07C 07C 01F  
+0x00000004, // 080 080 020  
+0x00000001, // 084 084 021 script offset 
+0x00000000, // 088 088 022 script length 
+0x0001000B, // 08C 08C 023 byte codes 
+0xE81010E0, // 090 090 024 byte codes 
+0xC0000381, // 094 094 025 byte codes 
+0x00008806, // 098 098 026 -------------------- nanoAppRT : arm_stream_filter 
+0x00000000, // 09C 09C 027 Indexes of ARC 0 and 1 of the nanoAppRT 
+0x400000A4, // 0A0 0A0 028 Reserved memory bank(0) 
+0x00000000, // 0A4 0A4 029 size of the memory bank(0) 
+0x00000100, // 0A8 0A8 02A Reserved memory bank(1) 
+0x00000000, // 0AC 0AC 02B size of the memory bank(1) 
+0x20000007, // 0B0 0B0 02C (0) boot parameters 
+0x28123100, // 0B4 0B4 02D (1) 
+0xE812311D, // 0B8 0B8 02E (2) 
+0x31D47563, // 0BC 0BC 02F (3) 
+0x310B3412, // 0C0 0C0 030 (4) 
+0x21247012, // 0C4 0C4 031 (5) 
+0x00000098, // 0C8 0C8 032 (6) 
+0x00008806, // 0CC 0CC 033 -------------------- nanoAppRT : arm_stream_filter 
+0x00000000, // 0D0 0D0 034 Indexes of ARC 0 and 1 of the nanoAppRT 
+0x400000B7, // 0D4 0D4 035 Reserved memory bank(0) 
+0x00000000, // 0D8 0D8 036 size of the memory bank(0) 
+0x00000100, // 0DC 0DC 037 Reserved memory bank(1) 
+0x00000000, // 0E0 0E0 038 size of the memory bank(1) 
+0x10000004, // 0E4 0E4 039 (0) boot parameters 
+0x03010200, // 0E8 0E8 03A (1) 
+0xFE040502, // 0EC 0EC 03B (2) 
+0x00A55A7F, // 0F0 0F0 03C (3) 
+0x00008807, // 0F4 0F4 03D -------------------- nanoAppRT : arm_stream_detector 
+0x00000000, // 0F8 0F8 03E Indexes of ARC 0 and 1 of the nanoAppRT 
+0x200000CA, // 0FC 0FC 03F Reserved memory bank(0) 
+0x00000000, // 100 100 040 size of the memory bank(0) 
+0x01000001, // 104 104 041 (0) boot parameters 
+0x0000880A, // 108 108 042 -------------------- nanoAppRT : arm_stream_decompressor 
+0x00000000, // 10C 10C 043 Indexes of ARC 0 and 1 of the nanoAppRT 
+0x200000D3, // 110 110 044 Reserved memory bank(0) 
+0x00000000, // 114 114 045 size of the memory bank(0) 
+0x01000001, // 118 118 046 (0) boot parameters 
+0x00008803, // 11C 11C 047 -------------------- nanoAppRT : arm_stream_converter 
+0x00000000, // 120 120 048 Indexes of ARC 0 and 1 of the nanoAppRT 
+0x200000DC, // 124 124 049 Reserved memory bank(0) 
+0x00000000, // 128 128 04A size of the memory bank(0) 
+0x00000001, // 12C 12C 04B (0) boot parameters 
+0x0000880B, // 130 130 04C -------------------- nanoAppRT : arm_stream_modulator 
+0x00000000, // 134 134 04D Indexes of ARC 0 and 1 of the nanoAppRT 
+0x200000E5, // 138 138 04E Reserved memory bank(0) 
+0x00000000, // 13C 13C 04F size of the memory bank(0) 
+0x00000001, // 140 140 050 (0) boot parameters 
+0x00008805, // 144 144 051 -------------------- nanoAppRT : arm_stream_mixer 
+0x00000000, // 148 148 052 Indexes of ARC 0 and 1 of the nanoAppRT 
+0x200000EE, // 14C 14C 053 Reserved memory bank(0) 
+0x00000000, // 150 150 054 size of the memory bank(0) 
+0x00000001, // 154 154 055 (0) boot parameters 
+0x0000880F, // 158 158 056 -------------------- nanoAppRT : arm_stream_split 
+0x00000000, // 15C 15C 057 Indexes of ARC 0 and 1 of the nanoAppRT 
+0x200000F7, // 160 160 058 Reserved memory bank(0) 
+0x00000000, // 164 164 059 size of the memory bank(0) 
+0x00000001, // 168 168 05A (0) boot parameters 
+0x000003FF, // 16C 16C 05B -------------------  vvvvvvvvv RAM vvvvvvvvv 
+0x00000076, // 170 170 05C Circular buffer ARC descriptor(0) Producer 0 Consumer 0 
+0x00000008, // 174 174 05D  
+0x00000000, // 178 178 05E  
+0x00000000, // 17C 17C 05F  
+0x00000000, // 180 180 060 Circular buffer ARC descriptor(1) Producer 0 Consumer 0 
+0x00000000, // 184 184 061  
+0x00000000, // 188 188 062 Data stream ARC0 base address=0x62  size=0x8 
+0x00000000, // 18C 18C 063  
+0x00000000, // 190 190 064 Circular buffer ARC descriptor(2) Producer 0 Consumer 0Data stream ARC0 base address=0x64  size=0x8 
+0x00000000, // 194 194 065  
+0x00000000, // 198 198 066 Data stream ARC0 base address=0x66  size=0x8 
+0x00000000, // 19C 19C 067  
+0x00000000, // 1A0 1A0 068 Circular buffer ARC descriptor(3) Producer 0 Consumer 0Data stream ARC0 base address=0x68  size=0x8 
+0x00000000, // 1A4 1A4 069  
+0x00000000, // 1A8 1A8 06A Data stream ARC0 base address=0x6A  size=0x8 
+0x00000000, // 1AC 1AC 06B  
+0x00000000, // 1B0 1B0 06C Circular buffer ARC descriptor(4) Producer 0 Consumer 0Data stream ARC0 base address=0x6C  size=0x8 
+0x00000000, // 1B4 1B4 06D  
+0x00000000, // 1B8 1B8 06E Data stream ARC0 base address=0x6E  size=0x8 
+0x00000000, // 1BC 1BC 06F  
+0x00000000, // 1C0 1C0 070 Circular buffer ARC descriptor(5) Producer 0 Consumer 0Data stream ARC0 base address=0x70  size=0x8 
+0x00000000, // 1C4 1C4 071  
+0x00000000, // 1C8 1C8 072 Data stream ARC0 base address=0x72  size=0x8 
+0x00000000, // 1CC 1CC 073  
+0x00000000, // 1D0 1D0 074 Circular buffer ARC descriptor(6) Producer 0 Consumer 0Data stream ARC0 base address=0x74  size=0x8 
+0x00000000, // 1D4 1D4 075  
+0x00000000, // 1D8 1D8 076 Data stream ARC0 base address=0x76  size=0x8 
+0x00000000, // 1DC 1DC 077  
+0x00000000, // 1E0 1E0 078 Circular buffer ARC descriptor(7) Producer 0 Consumer 0 
+0x00000000, // 1E4 1E4 079  
+0x00000000, // 1E8 1E8 07A  
+0x00000000, // 1EC 1EC 07B  
+0x00000000, // 1F0 1F0 07C Circular buffer ARC descriptor(8) Producer 0 Consumer 0 
+0x00000000, // 1F4 1F4 07D  
+0x00000000, // 1F8 1F8 07E  
+0x00000000, // 1FC 1FC 07F  
+0x00000000, // 200 200 080 Circular buffer ARC descriptor(9) Producer 0 Consumer 0 
+0x00000000, // 204 204 081  
+0x00000000, // 208 208 082  
+0x00000000, // 20C 20C 083  
+0x00000000, // 210 210 084 Circular buffer ARC descriptor(10) Producer 0 Consumer 0 
+0x00000000, // 214 214 085  
+0x00000000, // 218 218 086  
+0x00000000, // 21C 21C 087  
+0x000000A4, // 220 220 088 Circular buffer ARC descriptor(11) Producer 0 Consumer 0 
+0x00000000, // 224 224 089  
+0x00000000, // 228 228 08A  
+0x00000000, // 22C 22C 08B  
+0xDDDDDDDD, // 230 230 08C  
+0xDDDDDDDD, // 234 234 08D  
+0xDDDDDDDD, // 238 238 08E  
+0xDDDDDDDD, // 23C 23C 08F  
+0xDDDDDDDD, // 240 240 090  
+0xDDDDDDDD, // 244 244 091  
+0xDDDDDDDD, // 248 248 092  
+0xDDDDDDDD, // 24C 24C 093  
+0xDDDDDDDD, // 250 250 094  
+0xDDDDDDDD, // 254 254 095  
+0xDDDDDDDD, // 258 258 096  
+0xDDDDDDDD, // 25C 25C 097  
+0xDDDDDDDD, // 260 260 098  
+0xDDDDDDDD, // 264 264 099  
+0xDDDDDDDD, // 268 268 09A  
+0xDDDDDDDD, // 26C 26C 09B  
+0xDDDDDDDD, // 270 270 09C  
+0xDDDDDDDD, // 274 274 09D  
+0xDDDDDDDD, // 278 278 09E  
+0xDDDDDDDD, // 27C 27C 09F  
+0xDDDDDDDD, // 280 280 0A0  
+0xDDDDDDDD, // 284 284 0A1  
+0xDDDDDDDD, // 288 288 0A2  
+0xDDDDDDDD, // 28C 28C 0A3  
+0x22222222, // 290 290 0A4 Script stack and registers in ARC11 base address=0xA4  size=0x0arm_stream_filter static memory bank(0) address=0x290 
+0x22222222, // 294 294 0A5  
+0x22222222, // 298 298 0A6  
+0x22222222, // 29C 29C 0A7  
+0x22222222, // 2A0 2A0 0A8  
+0x22222222, // 2A4 2A4 0A9  
+0x22222222, // 2A8 2A8 0AA  
+0x22222222, // 2AC 2AC 0AB  
+0x22222222, // 2B0 2B0 0AC  
+0x22222222, // 2B4 2B4 0AD  
+0x22222222, // 2B8 2B8 0AE  
+0x22222222, // 2BC 2BC 0AF  
+0x22222222, // 2C0 2C0 0B0  
+0x22222222, // 2C4 2C4 0B1  
+0x22222222, // 2C8 2C8 0B2  
+0x22222222, // 2CC 2CC 0B3  
+0x22222222, // 2D0 2D0 0B4  
+0x22222222, // 2D4 2D4 0B5  
+0x22222222, // 2D8 2D8 0B6  
+0x22222222, // 2DC 2DC 0B7 arm_stream_filter static memory bank(0) address=0x2DC 
+0x22222222, // 2E0 2E0 0B8  
+0x22222222, // 2E4 2E4 0B9  
+0x22222222, // 2E8 2E8 0BA  
+0x22222222, // 2EC 2EC 0BB  
+0x22222222, // 2F0 2F0 0BC  
+0x22222222, // 2F4 2F4 0BD  
+0x22222222, // 2F8 2F8 0BE  
+0x22222222, // 2FC 2FC 0BF  
+0x22222222, // 300 300 0C0  
+0x22222222, // 304 304 0C1  
+0x22222222, // 308 308 0C2  
+0x22222222, // 30C 30C 0C3  
+0x22222222, // 310 310 0C4  
+0x22222222, // 314 314 0C5  
+0x22222222, // 318 318 0C6  
+0x22222222, // 31C 31C 0C7  
+0x22222222, // 320 320 0C8  
+0x22222222, // 324 324 0C9  
+0x22222222, // 328 328 0CA arm_stream_detector static memory bank(0) address=0x328 
+0x22222222, // 32C 32C 0CB  
+0x22222222, // 330 330 0CC  
+0x22222222, // 334 334 0CD  
+0x22222222, // 338 338 0CE  
+0x22222222, // 33C 33C 0CF  
+0x22222222, // 340 340 0D0  
+0x22222222, // 344 344 0D1  
+0x22222222, // 348 348 0D2  
+0x22222222, // 34C 34C 0D3 arm_stream_decompressor static memory bank(0) address=0x34C 
+0x22222222, // 350 350 0D4  
+0x22222222, // 354 354 0D5  
+0x22222222, // 358 358 0D6  
+0x22222222, // 35C 35C 0D7  
+0x22222222, // 360 360 0D8  
+0x22222222, // 364 364 0D9  
+0x22222222, // 368 368 0DA  
+0x22222222, // 36C 36C 0DB  
+0x22222222, // 370 370 0DC arm_stream_converter static memory bank(0) address=0x370 
+0x22222222, // 374 374 0DD  
+0x22222222, // 378 378 0DE  
+0x22222222, // 37C 37C 0DF  
+0x22222222, // 380 380 0E0  
+0x22222222, // 384 384 0E1  
+0x22222222, // 388 388 0E2  
+0x22222222, // 38C 38C 0E3  
+0x22222222, // 390 390 0E4  
+0x22222222, // 394 394 0E5 arm_stream_modulator static memory bank(0) address=0x394 
+0x22222222, // 398 398 0E6  
+0x22222222, // 39C 39C 0E7  
+0x22222222, // 3A0 3A0 0E8  
+0x22222222, // 3A4 3A4 0E9  
+0x22222222, // 3A8 3A8 0EA  
+0x22222222, // 3AC 3AC 0EB  
+0x22222222, // 3B0 3B0 0EC  
+0x22222222, // 3B4 3B4 0ED  
+0x22222222, // 3B8 3B8 0EE arm_stream_mixer static memory bank(0) address=0x3B8 
+0x22222222, // 3BC 3BC 0EF  
+0x22222222, // 3C0 3C0 0F0  
+0x22222222, // 3C4 3C4 0F1  
+0x22222222, // 3C8 3C8 0F2  
+0x22222222, // 3CC 3CC 0F3  
+0x22222222, // 3D0 3D0 0F4  
+0x22222222, // 3D4 3D4 0F5  
+0x22222222, // 3D8 3D8 0F6  
+0x22222222, // 3DC 3DC 0F7 arm_stream_split static memory bank(0) address=0x3DC 
+0x22222222, // 3E0 3E0 0F8  
+0x22222222, // 3E4 3E4 0F9  
+0x22222222, // 3E8 3E8 0FA  
+0x22222222, // 3EC 3EC 0FB  
+0x22222222, // 3F0 3F0 0FC  
+0x22222222, // 3F4 3F4 0FD  
+0x22222222, // 3F8 3F8 0FE  
+0x22222222, // 3FC 3FC 0FF  
+0x33333333, // 400 400 100 WORKING arm_stream_filter base=0x400  max size (all)=0x8WORKING arm_stream_filter base=0x400  max size (all)=0x8 
+0x33333333, // 404 404 101  

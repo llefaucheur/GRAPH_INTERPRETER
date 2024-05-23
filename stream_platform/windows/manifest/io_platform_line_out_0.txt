@@ -1,51 +1,7 @@
 ; ------------------------------------------------------------------------------------------------------------
-; Graph interface abstraction to audio line-out
+; Manifest of audio line-out 
 ; ------------------------------------------------------------------------------------------------------------
-;   IO manifests
-;   description consists in the "digital format" common to all the streams
-;     + specific calibration and mixed-signal settings specific to the "domain" of operation 
-; 
+                                                                       
+io_platform_line_out_0              ; name for the tools                            
+audio_out                           ; domain name,   unit: dB, Vrms
 
-    io_platform_line_out_0      name for the GUI                            
-    audio_out                   domain name among {data_in/out, data_stream.. audio.. gpio.. 2d.. etc}
-
-; ------------------------------------------------------------------------------------------------------------
-;   IO arc description of this component
-;
-;       - Digital frame format, common to all transducers and arcs
-;       - Specific information and tuning of the domain
-;
-    
-    1   commander=0 servant=1, waiting the stream from the processor
-    0   buffer declared from the BSP (0) or from the Graph (X) (size=factor of the Frame size)           
-    0   in standard RAM=0, in HW IO RAM=1, or HW FIFO of the peripheral
-    255 processor affinity bit-field : any of 8 processors (if any) can read the data                     
-
-    1   rx0tx1  
-    17  raw format (STREAM_S16)                                         
-    0   time-stamp                                          
-    1   frame length format (0:in milliseconds 1:in samples)
-    0   sampling rate format (0:Hz, 1:seconds, 2:days)
-    3   percent needed FS accuracy 
-
-    ;   Lists of options, starting with the default index 
-    0   0                   ;f [1bits] interleaving options list
-    1   1 2                 ;f [3bits] nb channels options list 
-    2   4 5 6               ;f [2bits] frame_size option in samples  (or millis) 
-    1   16000 44100 48000   ;f [4bits] sampling rate options in Hz
-
-; ------------------------------------------------------------------------------------------------------------
-;   line_out specific settings :
-    
-    ;   Lists of options, starting with the default index 
-    2   100 700             ;f [3bits] mVrms max corresponding to digital full-scale
-    1   0 20 50             ;f [2bits] DC blocker cut-off frequency
-    0   0                   ;f [2bits] AGC setting, 0 take default HW configuration
-    0   0                   ;f [2bits] router to MIC, LINE, BT, LOOP
-    1   0 -3 3 6            ;f [2bits] bass gain dB
-    2   20 100 200          ;f [2bits] bass frequency
-    1   0 -3 3 6            ;f [2bits] mid gain dB
-    2   500 2000            ;f [2bits] mid frequency
-    1   0 -3 3 6            ;f [2bits] high gain dB
-    2   4000 8000           ;f [2bits] high frequency
-    0   0                   ;f [1bit] free

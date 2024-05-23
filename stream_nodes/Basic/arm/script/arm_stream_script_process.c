@@ -54,23 +54,37 @@
     Script format : 
         Scripts receive parameters:
             - Flag "comparison OK" set during the RESET sequence, reset otherwise
-            - R0 (64bits) 
 
     Registers 
         Instance static = 
-            14 registers 8bytes R0..R13 general purpose and pointers 
-            'R14'=S0 'R15'=S1
-            DTYPE 4bits: 
-                0: int32    default types at reset
-                1: q15
-                2: int64
-                3: boolean
-                4: 8-bits characters (terminated with /0) 
-                5,6,7: STREAM_TIME16/32/64
-                8: 27bits offset format pointer + 4bit type
-                9: type defined by S0
-                A: fp32
-                B: fp64
+            3 bits addressing for 6 x Float + 2 Stack 
+            3 bits for pointers AD0 .. AD5 + SP01
+            3 bits for Special regs : 0:(MaxInc, Inc, Address Loop for LDR/STR), 1(BitFieldPos, Length), 
+                                      2:BanzLoop, 3,4,5:_unused   6:7:SP01
+
+            minimum state memory = (2 registers + 1 pointer + 0 special) x 8 Bytes = 24 Bytes + stack
+            standard state memory = (6 registers + 6 pointers + 3 special) x 8 Bytes = 120 Bytes + stack
+
+            registers format :                                                       DTYPE
+                        <---- MSB word ----------------><---- LSB word ---------------->
+                        FEDCBA9876543210FEDCBA987654321|FEDCBA9876543210FEDCBA987654____
+            int32       <------------------------------>____________________________0000
+            q15         <------------------------------>____________________________0001
+            fp32        <------------------------------>____________________________0010
+            TIME16      ________________<-------------->____________________________0011
+            TIME32      <------------------------------>____________________________0100
+            27bits offset format pointer + 4bit data DTYPE
+                        DTYPE<------ 27bits address---->____________________________0101
+
+            64bits physical address pointer :
+                        <----------------- 64 bits to logical shift right ----------1000
+            TIME64      <----------------- 64 bits to shift right ------------------1001    
+            fp64        <----------------- 64 bits 4bits of mantissa removed--------1010
+            int64-4bits <----------------- 64 bits to arithmetic shift right -------1011 
+            char /0     ________________________<------>____________________________1100
+                        ............................................................1101
+                        ............................................................1110
+                        ............................................................1111
 
         Instance memory area (from const.h)
             TX ARC descriptor: locks execution, 
@@ -91,84 +105,160 @@
             The interpreter keeps the trace of the last 4 instructions for [JUMPOFF backward]
             The initial SP position is preserved for fast return
 
-    Instructions 
-        format 16its : IIII.rrrr + XXXX.YYYY sometime X.Y is not used 
 
-        0000 0000 Clll.llll (C)JUMPLAB un/conditional jump to label
-        0000 0001 CSoo.oooo (C)JUMP un/conditional offset (+/-63) jump 
-        0000 0010 Clll.llll (C)CALL un/conditional call to label defined in the next byte (0..127)
-        0000 0011 Clll.llll (C)CALLSYS un/conditional system call (0..127)
-        0000 0100 C0ll.llll (C)CALLAPP un/conditional application callbacks (0..63)
-        0000 0100 C1ll.llll (C)CALLSCRIPT un/conditional shared scripts (0..63)
-        0000 0101 0lll.llll LABL local-label extra byte is used for the label (0..127)
 
-        0001 _SiX XXXX.YYYY COPY RX <= RY (R15 unused) iX/iY=0/1/2/3 increment 0/+1/-1/+1_both
-             S = 0 keep destination type DT, S = 1 copy source type ST
-                  POP S0            0010 _100 0100.1110 S0    =>  R4     keep destination type (DEFAULT)
-                  POP               0010 _S00 1111.1110 S0    =>  null  
-                  COPY R0 R3 ST     0010 _S01 0000.0011 R3    =>  R0   : simple copy, keep source type
-             with pointers:
-                  LOAD R0 R1 +      0010 _S01 0000.0001 *R1++ =>  R0   : R1 of type pointer, keep destination type
-                  MEMCPY ST ++      0010 _S11 0000.0001 *R1++ => *R0++ : R0 and R1 of type pointer, keep source type
-                  STORE ST -        0010 _S01 0000.0001 R1    => *R0-- : R0 of type pointer, keep source type 
+    Instructions 16bits + 16/32bits constants, all with conditional execution
 
-        0010 TTTT XXXX.YYYY LOADK  load the next word16 as a constant of TTTT DTYPE to RX/RY (R15 unused)
-                  LOADPTR mbank offset type 
-        0011 ____
-        01__ ____
-        10__ ____
+    FEDCBA9876543210
+    C00000000yyyyrrr 1 register
+           yyyy
+           0 EQ0    does rrr == 0
+           1 LE0    does rrr <= 0
+           2 LT0    does rrr < 0
+           3 NE0    does rrr != 0
+           4 GT0    does rrr > 0
+           5 GE0    does rrr >= 0
+           6 PUSH   vvv regs
+           7 POP    vvv
+           8 DUP    duplicate stack
+           9 DELS   remove S0 or up to S1
+          10 RET    subroutine return, restore just SP and flags
+          11 RETR   subroutine return, restore all 
+          12 JMPA   jump to computed address rrr
+          13 CALA   call computed address rrr
+          14 
+          15 
 
-        11cc cccc XXXXYYYY control and arithmetic followed by  [yyyyxxxx] R14=S0 R15=S1 (popped from stack)
-           when the data types are different the one of DESTINATION is used  
-           (stack[SP++] push, stack[--SP] pop)
+    FEDCBA9876543210
+   (C00000000yyyyrrr  1 register )
+    C0000yyyyydddrrr  2 registers
+         yyyyy= 
+           2 EQ     does ddd == rrr
+           3 LE     does ddd <= rrr
+           4 LT     does ddd <  rrr
+           5 NE     does ddd != rrr 
+           6 GT     does ddd > rrr 
+           7 GE     does ddd >= rrr
+           8 BIT0   does ddd & (1 << rrr) = 0
+           9 BIT1   does ddd & (1 << rrr) > 0                           
+          10 SQRT   ddd = square-root(rrr)                              
+          11 NEG    ddd = -(rrr)                                        
+          12 SWAP   ddd <-> rrr                                         
+          13 COPY   ddd <- rrr                                          
+          14 SWAR   ad(ddd) <-> reg(rrr) 
+          15 CPAR   ad(ddd) -> reg(rrr)  
+          16 CPRA   ad(ddd) <- reg(rrr)  
+          17 CPRS   special(ddd) <- reg(rrr)  
+          18 PSHP   *(ddd) increment_rrr                                   
+          19 POPP   *(ddd) increment_rrr                                              
+          20 CNVI   convert (float)rrr to integer => ddd                                       
+          21 CNVF   convert (int)rrr to float => ddd      
+          22
+          23
+          24
+          25
+          26
+          27
+          28
+          29  ??? CPYA  ad05 + SP01 => ad05 + SP01 
+          30      CPYS  sp01 + SP01 => sp05 + SP01 
+          31      CPYR  RR01 + SP01 => RR05 + SP01 
 
-    CODES corresponding to "arm_stream_script_instructions.h"
-        00 RET   subroutine return, restore SP, flags : C000
-        01 RETP  keep RX and RY on the stack as parameters, restore and return : C1XY
-        02 PSHT  push test result on stack for logical operations (DTYPE = boolean) 
-        03 RESET RX is a bit-field of data to reset (stack, SP, registers, flags)
-        04 DUP   S0 is duplicated (repushed)
-        05 NOP
-        06 SWAPXY swap Rx <-> Ry from the next byte information [yyyyxxxx] R14=S0
-        07 CCOPY conditional copy without conversion
-        08 EQU   does RX == RY
-        09 LTE   does RX <= RY
-        0A LTS   does RX <  RY
-        0B EQ0   does RX == 0
-        0C LE0   does RX <= 0
-        0D LT0   does RX < 0
-        0E NEGC  negate comparison
-        0F BIT0  does RX & (1 << RY) = 0
-        10 BIT1  does RX & (1 << RY) > 0
-        11 ADD   RX = RX + RY                    
-        12 SUB   RX = RX - RY 
-        13 RSB   RX = RY - RX
-        14 MUL   RX = RX x RY                    
-        15 DIV   RX = RX / RY                    
-        16 DIVI  RX = RY / RX                    
-        17 MOD   RX = RX mod RY                  
-        18 ASHFT RX = RX << RY arithm-shift (+/-)
-        19 OR    logical  OR 
-        1A XOR   logical XOR 
-        1B AND   logical AND 
-        1C NOR   logical NOR 
-        1D NOT   RX = not(RY)
-        1E NEG   RX = -RY
-        1F NORM  RX normed on MSB, applied shift in RY
-        20 SQRA  RX = RX + (RY * RY) 
-        21 INC   RX = RX + 1
-        22 DEC   RX = RX - 1 
-        23 BANZ  RX = RX - 1 flag set with (RX != 0)?
-        24 BITSET RX = RX | (1 << RY)
-        25 BITCLR RX = RX & ~(1 << RY)
-        26 MAX   RX = max (RX, RY) sets F when RY>RX
-        27 MIN   RX = min (RX, RY) sets F when RY<RX
-        28 CONV  RX converted to the format of RY
-        29 CAST  RX takes the format of RY without data conversion
-  
-        From Android CHRE  https://source.android.com/docs/core/interaction/contexthub
-        String/array utilities: memcmp, memcpy, memmove, memset, strlen
-            IEC61131-3 : LEN , LEFT, RIGHT, MID, CONCAT,INSERT, DELETE , REPLACE, FIND
+
+    FEDCBA9876543210
+   (C0000yyyyydddrrr  2 registers)
+    C0xxxxxddduuuvvv  3 registers
+      xxxxx  
+           4 MOD   ddd = uuu mod vvv                  
+           5 ASHT  ddd = uuu << vvv (arithmetic)
+           6 LSHT  ddd = uuu << vvv (logical)
+           7 OR    ddd = uuu | vvv
+           8 XOR   ddd = uuu ^ vvv
+           9 AND   ddd = uuu & vvv
+          10 NOR   ddd = !(bb | vvv)
+          11 NORM  ddd = normed on MSB(vvv), applied shift in uuu
+          12 BSET  ddd = uuu | (1 << vvv)   
+          13 BCLR  ddd = uuu & ~(1 << vvv)  
+          14 ADD   ddd = uuu + vvv                    
+          15 SUB   ddd = uuu - vvv 
+          16 RSUB  ddd = vvv - uuu
+          17 MUL   ddd = uuu x vvv                    
+          18 DIV   ddd = uuu / vvv                    
+          19 RDIV  ddd = vvv / uuu
+          20 MAX   ddd = max (uuu, vvv) sets F when uuu>vvv
+          21 MIN   ddd = min (uuu, vvv) sets F when uuu<vvv
+          22 AMAX  ddd = max (abs(uuu), abs(vvv)) sets F when abs(vvv)>abs(uuu)
+          23 AMIN  ddd = min (abs(uuu), abs(RYvvv sets F when abs(vvv)<abs(uuu)
+          24 SQRA  ddd = uuu + (vvv * vvv) 
+          25 LDR   uuu = *(vvv) increment_ddd
+          26 STR   *(vvv) increment_ddd = uuu
+          27 
+          28 
+          29 
+          30 
+          31 
+          32 
+          
+
+    FEDCBA9876543210    branch
+   (C0xxxxxddduuuvvv  3 registers)
+    C1000xxxxkkkkkkk  K7 JMP
+         xxxx
+             
+           0 LABEL K7       to address byte-code and parameter constants
+           1 JMP label_K7
+           2 BANZ Label_K7
+           3 JMP signed_K7  signed instruction offset
+           4 CALL Label_K7
+           5 CALLSYS {K7}   system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW)
+           6 CALLSCRPT {K7} common scripts and node control
+           7 CALLAPP {K7}   0K6=64 local callbacks 1K6= 64 global callbacks
+           8 RETK1 return and keep registers in bitfield K7 
+           9 RETK2 return and keep registers, Special, address
+          10 PSHA Label_K7  push the address of Label K7 on the stack
+          11 
+          12 
+          13 
+          14 
+          15 
+
+
+    FEDCBA9876543210    movi, bit-test
+   (C1000xxxxkkkkkkk  K7 JMP)
+    C1xxxxxuuukkkkkk  K6 + R 
+           4 BITS uuu = uuu | (1 << K6)
+           5 BITC uuu = uuu & ~(1 << K6)
+           6 ADDK uuu = uuu + K6        (inc)
+           7 SUBK uuu = uuu - K6        (dec)
+           8 RSBK uuu = K6 - uuu
+           9 DIVK uuu = uuu / K6
+          10 RDVK uuu = K6 / uuu
+          11 MULK uuu = uuu x Signed_K6 (+/- 31)
+          12 BIT0 does uuu & (1 << K6) = 0  
+          13 BIT1 does uuu & (1 << K6) != 0
+          14 ASHL uuu = uuu << K6
+          15 ASHK uuu = uuu >> K6
+          16 LSHK uuu = uuu >> K6 logical
+          17 WRSP *SP[K6] = uuu
+          18 RDSP uuu = *SP[K6]
+          19 MOVI uuu = #signed_k6  (SET 1 / CLR)
+          20 MVIS spc = #signed_k6  (set/clear flag, loop, mask)
+          21 MOVI uuu = #DTYPE following
+          22 MOVA adr = #DTYPE address /16 /32 /64 bits x 2 (integer / float)
+          23 MOVI spc = #DTYPE to special regs
+          24 BITF read : mask SP0, shift and save in uuu
+          24 BITF write : shift uuu + mask to SP0
+          25 
+          26
+          27
+          28
+          29
+          30
+          31
+
+
+=========================================================================================
+
         Math library: Commonly used single-precision floating-point functions:
             Basic operations: ceilf, fabsf, floorf, fmaxf, fminf, fmodf, roundf, lroundf, remainderf
             Exponential/power functions: expf, log2f, powf, sqrtf

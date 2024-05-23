@@ -39,9 +39,9 @@
 
 /*
     content of registers[0] / stack[0]
+    SCRIPT_REGSIZE=8
 */
 
-#define REGSIZE 8   /* size of regdata_t */
 typedef union
 {   char    c;       char v_c[8];
     int8_t  i8;    int8_t v_i8[8];

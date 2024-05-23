@@ -80,7 +80,7 @@ void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint8_t
             /* @@@ TODO  check scheduler_control S->scheduler_control .BOOT_SCTRL to clear 
                 the backup memory area STREAM_COLD_BOOT / STREAM_WARM_BOOT
              */
-            stream_scan_graph (S, STREAM_RESET);
+            stream_scan_graph (S, STREAM_RESET, 0);
             stream_init_io (S);
 
             break;
@@ -89,7 +89,7 @@ void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint8_t
         /* usage: arm_stream(STREAM_RUN, &instance,0, 0); */
 	    case STREAM_RUN:   
 	    {   if (RD(S->parameters, INSTANCE_ON_PARINST))
-            {   stream_scan_graph (S, STREAM_RUN);
+            {   stream_scan_graph (S, STREAM_RUN, 0);
             }
             break;
         }   
@@ -101,13 +101,14 @@ void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint8_t
             /* update parameter of a specific nanoAppRT 
                 usage: arm_graph_interpreter (STREAM_SET_NANOAPPRT_PARAMETER, &instance, &parameters, 0); */
 	        /* @@@ calls specific nanoAppRT with SET_PARAMETER */
+            stream_scan_graph (S, STREAM_SET_PARAMETER, data);
             break;
         }
 
 
         /* usage: arm_graph_interpreter (STREAM_STOP, &instance, 0, 0); */
         case STREAM_STOP:
-	    {   stream_scan_graph (S, STREAM_STOP);
+	    {   stream_scan_graph (S, STREAM_STOP, 0);
             break;
         }
 
@@ -117,13 +118,13 @@ void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint8_t
         case STREAM_FIFO_STATUS: 
         {   extern void check_graph_boundaries(arm_stream_instance_t *S);
             check_graph_boundaries(S);
-            *(uint32_t *)data = RD(S->ioctrl[STREAM_DATA_STREAM_UNPACK_FIFO(command)], ONGOING_IOSIZE);
+            *(uint32_t *)data = RD(S->ioctrl[STREAM_DATA_START_UNPACK_FIFO(command)], ONGOING_IOSIZE);
             break;
         }
 
-        /* usage: arm_graph_interpreter(STREAM_DATA_STREAM_PACK(FIFO_ID), instance, *data, size) */
-        case STREAM_DATA_STREAM: 
-        {   arm_graph_interpreter_io_ack (STREAM_DATA_STREAM_UNPACK_FIFO(command), data, size);
+        /* usage: arm_graph_interpreter(STREAM_DATA_START_PACK(FIFO_ID), instance, *data, size) */
+        case STREAM_DATA_START: 
+        {   arm_graph_interpreter_io_ack (STREAM_DATA_START_UNPACK_FIFO(command), data, size);
             break;
         }
 
@@ -221,8 +222,8 @@ static void stream_copy_graph(arm_stream_instance_t *S)
         S->all_arcs = &(graph_dst[offsetWords]);
         break;
 
-    case COPY_CONF_GRAPH0_FROM_LINKEDLIST:  /* option 2 */
-    case COPY_CONF_GRAPH0_FROM_ARC_DESCS:   /* option 3 */
+    //case COPY_CONF_GRAPH0_FROM_LINKEDLIST:  /* option 2 */
+    case COPY_CONF_GRAPH0_FROM_ARC_DESCS:   /* option 2 */
 
         offsetWords = GRAPH_HEADER_NBWORDS;
         S->pio = &(graph0[offsetWords]); 
@@ -236,17 +237,17 @@ static void stream_copy_graph(arm_stream_instance_t *S)
         S->graph = graph0;                  /* graph base address is in Flash */
         graph_dst = (uint32_t *)GRAPH_RAM_OFFSET_PTR(L,G);
 
-        if (RAMsplit == COPY_CONF_GRAPH0_FROM_LINKEDLIST)   /* 1 */
-        {   
-            offsetWords += (RD(graph0[1], SCRIPTS_SIZE_GR1));
-            graph_src = &(graph0[offsetWords]);     /* linked list in Flash copied in RAM */
-            S->linked_list = graph_dst;             /*  and used by instance in RAM */
-            graph_words_in_ram -= offsetWords;      /* copy from linkedList */
+        //if (RAMsplit == COPY_CONF_GRAPH0_FROM_LINKEDLIST)   /* 1 */
+        //{   
+        //    offsetWords += (RD(graph0[1], SCRIPTS_SIZE_GR1));
+        //    graph_src = &(graph0[offsetWords]);     /* linked list in Flash copied in RAM */
+        //    S->linked_list = graph_dst;             /*  and used by instance in RAM */
+        //    graph_words_in_ram -= offsetWords;      /* copy from linkedList */
 
-            offsetWords = (RD(graph0[2], LINKEDLIST_SIZE_GR2)); /* offset not incremented */
-            S->all_arcs = &(graph_dst[offsetWords]);        
-        }
-        else /* COPY_CONF_GRAPH0_FROM_ARC_DESCS */          /* 2 */
+        //    offsetWords = (RD(graph0[2], LINKEDLIST_SIZE_GR2)); /* offset not incremented */
+        //    S->all_arcs = &(graph_dst[offsetWords]);        
+        //}
+        //else /* COPY_CONF_GRAPH0_FROM_ARC_DESCS */          /* 2 */
         {   offsetWords += (RD(graph0[1], SCRIPTS_SIZE_GR1));
             S->linked_list = &(graph0[offsetWords]);/*  */
 
@@ -285,11 +286,26 @@ static void stream_copy_graph(arm_stream_instance_t *S)
     //    } while (0u != wait);
     //}
 
-    /* if the application sets the debug option then don't use the one from the graph */
+
+    /* if the application sets the debug option then don't use the one from the graph
+        and the application sets the scheduler return option in init_stream_instance() 
+     */
     if (STREAM_SCHD_NO_SCRIPT == RD(S->scheduler_control, SCRIPT_SCTRL))
     {   uint32_t debug_script_option;
         debug_script_option = RD(graph0[3], SCRIPT_SCTRL_GR3);
         ST(S->scheduler_control, SCRIPT_SCTRL, debug_script_option);
+    }
+
+    /* does the graph is deciding the return-from-scheduler option */
+    if (STREAM_SCHD_RET_NO_ACTION == RD(S->scheduler_control, RETURN_SCTRL))
+    {   uint32_t return_script_option;
+        return_script_option = RD(graph0[3], RETURN_SCTRL_GR3);
+
+        /* the return option is undefined : return when no more data is available */
+        if (return_script_option == 0) 
+        {   return_script_option = STREAM_SCHD_RET_END_SWC_NODATA;
+        }
+        ST(S->scheduler_control, RETURN_SCTRL, return_script_option);
     }
 
     S->linked_list_ptr = S->linked_list;
@@ -377,7 +393,7 @@ static void stream_init_io(arm_stream_instance_t *S)
         /* 
             IO-Interface expects the buffer to be declared by the graph 
         */
-        if (0 == TEST_BIT(*pio, SET0COPY1_IOFMT_LSB))
+        if (0 == TEST_BIT(*pio, SHAREBUFF_IOFMT_LSB))
         {
             iarc = RD(*pio, IOARCID_IOFMT);
             iarc = SIZEOF_ARCDESC_W32 * iarc;

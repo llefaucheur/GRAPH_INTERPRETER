@@ -35,15 +35,22 @@
 
 #define HEADER "top_header"
 #define PATHS "paths"
+
 #define IO_INTERFACE "top_graph_interface"
+#define TOP_MEMORY_MAPPING "top_memory_mapping"
+#define TOP_TRACE_NODE "top_trace_node"
+#define TOP_ARC_DEBUG_OFFSET "top_arc_debug_offset"
+
+#define SUBGRAPH "subgraph"
+#define INCLUDE "include"
+
 #define FORMAT "format"
 #define PARAMETER_START "parameters"
 #define NODE "node"
-#define ARM_SCRIPT "arm_script"
-#define SCRIPT "SCRIPT"
+#define SCRIPT "script"
 #define ARC "arc"
-#define INCLUDE "include"
-//#define _INTERFACE_NODE_ID 0
+#define SUBGRAPHSTART "graph"
+#define GRAPH_END "_endgraph_"
 #define SECTION_END "_end_"
 
 #define MAX_NB_NODES 100
@@ -54,6 +61,10 @@
 #define MAXBINARYGRAPHW32 100000
 #define MAXDBGTRACEGRAPH 10000
 
+#define SUBGMAXDEPTH 5          /* subgraphs calling subgraphs */
+#define MAXCHAR_NAME 80
+#define MAXNBARCH 8
+#define MAXNBLIBRARY 16
 #define MAXNBCHAR_LINE 200
 #define NOT_YET_END_OF_FILE 1
 #define FOUND_END_OF_FILE 2
@@ -63,16 +74,29 @@
 #define NBCHAR_LINE 200
 #define NBCHAR_NAME 120
 #define NBCHAR_STREAM_NAME 32   /* name of the HW IO streams and graph interfaces */
-#define MAX_PROC_MEMBANK 32     /* number of physical memory banks of the processor, for the graph processing */
 
-
-#define MAXCHAR_NAME 80
-#define MAXNBARCH 8
-#define MAXNBLIBRARY 16
-#define MAXPARAMETERSIZE ((int64_t)1e5)  /* in word32 */
+#define MAXPARAMETERSIZE ((int64_t)1e3)  /* in word32 */
 
 #define MAX_NBOPTIONS 256 
 
+#define MAX_PROC_MEMBANK 256     /* number of physical memory banks of the processor, for the graph processing */
+
+#define VID_default 1
+
+#define MAX_POSSIBLE_NB_MEMORY_OFFSET 8 /* long_offset[] size */
+
+/*---------- IO MANIFESTS ------------- */
+#define io_commander0_servant1  "io_commander0_servant1"    // {1 0 1}  either commander=0 servant=1
+#define io_buffer_allocation    "io_buffer_allocation"      //  2.0     x framesize
+#define io_direction_rx0tx1     "io_direction_rx0tx1"       //  1       
+#define io_raw_format           "io_raw_format"             // {1 S16}
+#define io_commander0_servant1  "io_commander0_servant1"
+#define io_commander0_servant1  "io_commander0_servant1"
+#define io_commander0_servant1  "io_commander0_servant1"
+#define io_commander0_servant1  "io_commander0_servant1"
+#define io_commander0_servant1  "io_commander0_servant1"
+#define io_commander0_servant1  "io_commander0_servant1"
+#define io_commander0_servant1  "io_commander0_servant1"
 
 #endif /* #ifndef cSTREAM_TOOL_DEFINE_H */
 #ifdef __cplusplus

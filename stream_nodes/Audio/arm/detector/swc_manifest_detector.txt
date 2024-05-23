@@ -2,105 +2,22 @@
 ; SOFTWARE COMPONENT MANIFEST - "arm_stream_detector"
 ; ------------------------------------------------------------------------------------------------------------
 ;
-    ARM             developer name
-    arm_stream_detector node name for the GUI and the graph compiler (node and arc src/dst)
-    X 1 1 0 1   1 1 0 31  
-;                   S:simple file format   X:all the details
-;                   nb input arcs 
-;                   nb output arcs (in + out = ARCSRDY_LW0_LSB first arcs, data availability checked before RUN )
-;                   nb parameter-arcs arcs, (NN model..), nodes with parameter arc have "xdm11=0" to keep the read index on the parameter
-;                   index of the arc used for the byte synchronization in MP
-;
-;                   0: arc R/W managed in the SWC  1: all arcs are using the same frame size (see "xdm11") 
-;                           bit1:DTCM used (DTCM_LW2) when 
-;                   0: no need the push the format of the arcs (see reset_component(S)) 1: arc format is used by the component
-;                   delivery 0:source, 1:binary, 2: 2 binaries (fat binary)
-;                   mask: dependency to EXTDSPML EXTMATH EXTAUDIO EXTIMAGE EXTSTDLIB
+    ARM                     ; developer name
+    arm_stream_detector     ; node name
 
-    
-
-; list of (architectures+FPU option) the SWC is compatible with
-    1               number of architecture options below
-    0 2             0: arch (0=source code), 2: FPU option (enum stream_processor_sub_arch_fpu)
-
-
-    0 1             code version, version of the scheduler it is compatible with
+node_steady_stream   0      ; (0) the data flow is variable 
+node_same_data_rate  0      ; (0) the arcs have different data rates
+node_use_arc_format  0      ; default 1 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
 
 ;----------------------------------------------------------------------------------------
-; Loop on memory banks memory request
-;
-    2               memory bank allocation = instance + backup/retention 
+;   MEMORY ALLOCATIONS
 
-;
+node_nb_mem_block    1            
+;                A S N
+node_mem_alloc  32 0 1      ; size = 32Bytes data memory, Static, Fast memory block
 
-;   INSTANCE MEM is the first one, even if the size is null
-;
-;   Memory Size Bytes = A(32b) + Delta(64b) + B x nb_channels_arc(i) + C x samplingHz_arc(j) 
-;       + D x frame_size_arc(k) + E x maxParameterSize + F x graphTXT_information 
-;
-;   A D64 B C D E F,  indexes i,j,k,  alignment, static0/working1/retention2,  
-;                                       any0/normal1/fast2/critical3,  relocatable
-    32 4 0 0 0 0 12   0 0 0           4 0 0 0
+;--------------------------------------------------------------------------------------------
+;    ARC CONFIGURATION
 
-;   RETENTION MEM (MEM_TYPE_PERIODIC_BACKUP=3)
-;
-    24 0 0 0 0 0 0    0 0 0           4 3 0 0
-
-
-
-;-------------------
-; input_arc : "0" : input samples 
-;-------------------            
-
-    0   n = 0,1,2,NARC-1    n+NARC:input buffer is read and modified
-
-    0   rx0tx1  
-    6   raw data format                                          
-    0   time-stamp                                          
-    1   frame length format (0:in milliseconds 1:in samples)
-    0   sampling rate format (0:Hz, 1:seconds, 2:days)    
-    3   percent FS minimum accuracy
-
-    ;   Lists of options, starting with the default index
-    ;   default_index = 0 means "any" in the data allowed following values   A1 A2 A3 .. */
-    ;   default_index = -1 means data range followed by three values   Amin Astep Amax */
-    ;
-
-    1   0                   ;i interleaving options list
-    0   1 8                 ;i any Min = 1 channel, Max = 8 channels 
-    0   0                   ;f any frame_size option in samples  (or millis) 
-    2   8000 16000 44100    ;f sampling rate options (in Hz)
-                            
-
-;-------------------
-; output_arc : "1" : output arc is the detection decision, filled on transitions
-;-------------------            
-
-    1   n = 0,1,2,NARC-1    in-place processing to arc (n+NARC)
-
-    1   rx0tx1  
-    6   raw format                                          
-    0   time-stamp                                          
-    1   frame length format (0:in milliseconds 1:in samples)
-    0   sampling rate format (0:Hz, 1:seconds, 2:days)    
-    3   percent FS minimum accuracy                               
-
-    ;   Lists of options, starting with the default index (0="any")
-    1   0                   ;i interleaving options list
-    0   1 2 3 4 5 6 7 8     ;i nb channels options list 
-    1   1                   ;f one sample frame_size (in samples)
-    0   0                   ;f 
-_END_
-
-
-; ------------------------------------------------------------------------------------------------------------
-; SOFTWARE COMPONENT MANIFEST - "arm_stream_detector"  with the short format 
-
-    ARM             developer name
-    arm_stream_detector node name for the GUI and the graph compiler (node and arc src/dst)
-    S 1 1           nb input arcs   +   nb output arcs 
-    6               raw data format                                          
-    0               first arc = RX 
-    1               second arc = RX 
-_END_
-
+node_arc_channels 0 0 {1 1} ; 
+node_arc_channels 1 0 {1 1} ; 

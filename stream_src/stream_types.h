@@ -75,7 +75,28 @@ typedef uint32_t stream_service_command;
 #if STREAM_FLOAT_ALLOWED==1
 typedef float sfloat;
 typedef double sdouble;
+
 #else
+union floatb {
+    float f;
+    uint32_t i;
+    struct {
+        unsigned m : 23;   /* Mantissa */
+        unsigned e : 8;    /* Exponent */
+        unsigned s : 1;    /* Sign bit */
+    } b;
+};
+
+union doubleb {
+    double d;
+    uint64_t i;
+    struct {
+        unsigned ml: 32;   /* Mantissa low */
+        unsigned mh: 20;   /* Mantissa high */
+        unsigned e : 11;   /* Exponent */
+        unsigned s : 1;    /* Sign bit */
+    } b;
+};
 typedef uint32_t sfloat;
 typedef uint64_t sdouble;
 #endif
@@ -100,11 +121,16 @@ typedef void *stream_handle_t;
  *    https://github.com/FromLiQg/chre-wasm/blob/wasm/doc/nanoapp_developer_guide.md
  * 
  * We have one entry-point per nanoAppRT instead of 3 for Android
- *    Android’s context hub enables the use of nanoapps which haev 3 entry points seen in chre_api/chre/nanoapp.h:
+ *    Android’s context hub enables the use of nanoapps which have 3 entry points seen in chre_api/chre/nanoapp.h:
  *  - nanoappStart function used to notify the nanoapp that it is now active.
  *  - nanoappHandleEvent function used to notify the nanoapp tha an event of interest took place.
  *  - nanoappEnd function used to notify the nanoapp that it is now deactivated.
  * 
+ * 
+ *  case STREAM_SET_PARAMETER:
+ *  case STREAM_RUN:
+ *  case STREAM_STOP:
+ *  case STREAM_SET_BUFFER:
  */
 
 typedef void    (stream_al_services) (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n); 
@@ -117,64 +143,9 @@ typedef void    (io_function_ctrl) (uint32_t command, uint8_t *data, uint32_t le
 typedef void (*p_io_function_ctrl) (uint32_t command, uint8_t *data, uint32_t length);  
 
 
-//------------------------------------------------------------------------------------------------------
-/*  Time format - 64 bits
- *  
- *  q42.17 seconds "stream_time64"
- *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
- *  000ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqqq q3.32.29 [s]  (140 Y +/- 2ns)
- * 
- *  systick increment for 1ms =  0x00041893 = 1ms x 2^28 = 1.7 ppm resolution, 1minute/year
- *
- *  Local time in BINARY bit-fields : years/../millisecond, WWW=day of the week 
- *  (0=Sunday, 1=Monday..)
- *      COVESA allowed formats : ['YYYY_MM_DD', 'DD_MM_YYYY', 'MM_DD_YYYY', 'YY_MM_DD', 'DD_MM_YY', 'MM_DD_YY']
- *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
- *  001______________________.YY.YY.YY.YY.MMM.DDDD.SSSSS.MM.MM.MM.WW
- * 
- *  q42.17 milliseconds from January 1st 1970 UTC (or internal AL reference)
- *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
- *  010mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmqqqqqqqqqqqqqqqqq q3.42.17 ms (140 Y +/- 8ns)
- */
 
-typedef uint64_t stream_time64;
-#define   TYPE_T64_MSB 63
-#define   TYPE_T64_LSB 61 
-#define SECOND_T64_MSB 60
-#define SECOND_T64_LSB 29
-#define  FRACT_T64_MSB 28 
-#define  FRACT_T64_LSB  0
 
-/*
- * stream_time_seconds in 32bits : "stream_time32"
- *  F_______________________________FEDCBA9876543210FEDCBA9876543210
- *  1_______________________________00ssssssssssssssqqqqqqqqqqqqqqqq q14.16 [s] (4hours 30mn, +/- 15us)
- *  1_______________________________01ssssssssssssssssssssssssssssqq q28.2  [s] (8 years +/- 0.25s)
- */
-typedef uint32_t stream_time32;
-#define   FORMAT_T32_MSB 31
-#define   FORMAT_T32_LSB 30 
-#define     TIME_T32_MSB 29
-#define     TIME_T32_LSB  0 
 
-/*
- * stream_time_seconds in 16bits : "stream_time16"
- *  F_______________________________F_______________FEDCBA9876543210
- *  1_______________________________1_______________qqqqqqqqqqqqqqqq q15 x 250ms relative time (1/4 s +/- 15us)
- *  1_______________________________1_______________ssssssssssssssqq q14.2 absolute seconds (4 hours 30mn +/- 0.25s)
- */
-typedef uint32_t stream_time16;
-#define     TIME_T16_MSB 15
-#define     TIME_T16_LSB  0 
-
-/*
- * stream_time_seconds in 8bits : "stream_time8"
- *  F_______________________________F_______________________76543210
- *  1_______________________________1_______________________ssssssqq q7 x 250ms relative time (63 seconds +/- 0.25s)
- */
-typedef uint32_t stream_time16;
-#define     TIME_T8_MSB  7
-#define     TIME_T8_LSB  0 
 
 /* 
     MANIFEST of IO functions and capabilities
@@ -188,46 +159,35 @@ typedef uint32_t stream_time16;
 #define          PLATFORM_DOMAIN_LSB U( 0)  /* 6  64 different domains */
 #define PACK_PLATFORM_DOMAIN(INST,DOMAIN) (((INST)<<INSTANCE_PLATFORM_DOMAIN_LSB)|(DOMAIN))
 
-/* 
-    STREAM_IO_DOMAIN(s)
 
-    enum stream_io_domain : list of stream "domains" categories, max 64
+
+
+/* ----------------------------------------------------------------------------------------------------------------
+    STREAM_IO_DOMAIN (s)
+
+    enum stream_io_domain : list of stream "domains" categories, max 31 (DOMAIN_FMT1)
     each stream domain instance is controled by 3 functions and presets
     domain have common bitfields for settings (see example platform_audio_out_bit_fields[]).
 */
-#define IO_DOMAIN_DATA_IN                 1   /* generic (a)synchronous sensor */
-#define IO_DOMAIN_DATA_OUT                2   /*    electrical, chemical, color, .. remote data */
-#define IO_DOMAIN_DATA_STREAM_IN          3   /* generic flow sensor */
-#define IO_DOMAIN_DATA_STREAM_OUT         4
-#define IO_DOMAIN_AUDIO_IN                5
-#define IO_DOMAIN_AUDIO_OUT               6
-#define IO_DOMAIN_GPIO_IN                 7
-#define IO_DOMAIN_GPIO_OUT                8
-#define IO_DOMAIN_MOTION_IN               9
-#define IO_DOMAIN_2D_IN                  10
-#define IO_DOMAIN_2D_OUT                 11  
-#define IO_DOMAIN_USER_INTERFACE_IN      12   /* button, slider, rotary button */
-#define IO_DOMAIN_USER_INTERFACE_OUT     13 
-#define IO_DOMAIN_COMMAND_IN             14   /* UART/I2C serial interface */
-#define IO_DOMAIN_COMMAND_OUT            15
-#define IO_DOMAIN_ANALOG_SENSOR          16   /* with aging control */
-#define IO_DOMAIN_ANALOG_TRANSDUCER      17 
-#define IO_DOMAIN_RTC_IN                 18 
-#define IO_DOMAIN_RTC_OUT                19
-#define IO_DOMAIN_STORAGE_OUT            20 
-#define IO_DOMAIN_AV_CODEC               21 
-#define IO_DOMAIN_UNUSED_1               22 
-#define IO_DOMAIN_UNUSED_2               23
-#define IO_DOMAIN_UNUSED_3               24
-#define IO_DOMAIN_UNUSED_4               25
-#define IO_DOMAIN_UNUSED_5               26
-#define IO_DOMAIN_UNUSED_6               27
-#define IO_DOMAIN_UNUSED_7               28
-#define IO_DOMAIN_UNUSED_8               29
-#define IO_DOMAIN_UNUSED_9               30
-#define IO_DOMAIN_MAX_NB_DOMAINS         (IO_DOMAIN_UNUSED_9+1)
-
-
+#define IO_DOMAIN_GENERAL               0  /* (a)synchronous sensor + rescaling, electrical, chemical, color, .. remote data, compressed streams, JSON, SensorThings*/
+#define IO_DOMAIN_AUDIO_IN              1  /* microphone, line-in, I2S, PDM RX */
+#define IO_DOMAIN_AUDIO_OUT             2  /* line-out, earphone / speaker, PDM TX, I2S, */
+#define IO_DOMAIN_GPIO_IN               3  /* generic digital IO , control of relay, */
+#define IO_DOMAIN_GPIO_OUT              4  /* generic digital IO , control of relay, */
+#define IO_DOMAIN_MOTION                5  /* accelerometer, combined or not with pressure and gyroscope */
+#define IO_DOMAIN_2D_IN                 6  /* camera sensor */
+#define IO_DOMAIN_2D_OUT                7  /* display, led matrix, */
+#define IO_DOMAIN_ANALOG_IN             8  /* analog sensor with aging/sensitivity/THR control, example : light, pressure, proximity, humidity, color, voltage */
+#define IO_DOMAIN_ANALOG_OUT            9  /* D/A, position piezzo, PWM converter  */
+#define IO_DOMAIN_RTC                  10  /* ticks sent from a programmable timer */
+#define IO_DOMAIN_USER_INTERFACE_IN    11  /* button, slider, rotary button */
+#define IO_DOMAIN_USER_INTERFACE_OUT   12  /* LED, digits, display, */
+#define IO_DOMAIN_PLATFORM_3           13  /*  */                             
+#define IO_DOMAIN_PLATFORM_2           14  /* platform-specific #2, decoded with callbacks */                             
+#define IO_DOMAIN_PLATFORM_1           15  /* platform-specific #1, decoded with callbacks */                             
+#define IO_DOMAIN_MAX_NB_DOMAINS       32
+                                         
+                                         
 #define arc_read_address                1 
 #define arc_write_address               2 
 #define arc_data_amount                 3 
@@ -245,105 +205,9 @@ typedef uint32_t stream_time16;
 
 
  
-/*============================ STREAM DATA/TYPE =================================*/
-/* types fit in 6bits, arrays start with 0, stream_bitsize_of_raw() is identical */
-
-enum stream_raw_data 
-{   STREAM_DATA_ARRAY = 0,         /* 0 see stream_array: [0NNNTT00] 0, type, nb */
-
-    /* one bit per data */
-    STREAM_S1,                     /*   S, one signed bit, "0" = +1 */
-    STREAM_U1,                     /*   one bit unsigned, boolean */
-                                      
-    /* two bits per data */           
-    STREAM_S2,                     /*   SX  */
-    STREAM_U2,                     /*   XX  */
-    STREAM_Q1,                     /*   Sx ~stream_s2 with saturation management*/
-                                      
-    /* four bits per data */          
-    STREAM_S4,                     /* 6 Sxxx  */
-    STREAM_U4,                     /*   xxxx  */
-    STREAM_Q3,                     /*   Sxxx  */
-    STREAM_FP4_E2M1,               /*   Seem  micro-float [8 .. 64] */
-    STREAM_FP4_E3M0,               /*   Seee  [8 .. 512] */
-                                      
-    /* eight bits per data */         
-    STREAM_S8,                     /*11 Sxxxxxxx  */
-    STREAM_U8,                     /*   xxxxxxxx  */
-    STREAM_Q7,                     /*   Sxxxxxxx  arithmetic saturation */
-    STREAM_CHAR,                   /*   xxxxxxxx  */
-    STREAM_FP8_E4M3,               /*   Seeeemmm  NV tiny-float [0.02 .. 448] */
-    STREAM_FP8_E5M2,               /*   Seeeeemm  IEEE-754 [0.0001 .. 57344] */
-                                     
-    /* 2 bytes per data */            
-    STREAM_S16,                    /*   Sxxxxxxx.xxxxxxxx  */
-    STREAM_U16,                    /*   xxxxxxxx.xxxxxxxx  */
-    STREAM_Q15,                    /*19 Sxxxxxxx.xxxxxxxx  arithmetic saturation */
-    STREAM_FP16,                   /*   Seeeeemm.mmmmmmmm  half-precision float */
-    STREAM_BF16,                   /*   Seeeeeee.mmmmmmmm  bfloat */
-
-    /* 3 bytes per data */
-    STREAM_Q23,                    /*   Sxxxxxxx.xxxxxxxx.xxxxxxxx in a 24bits container ! */
-                                      
-    /* 4 bytes per data */            
-    STREAM_Q23_32,                 /*   SSSSSSSS.Sxxxxxxx.xxxxxxxx.xxxxxxxx  */
-    STREAM_S32,                    /*   one long word  */
-    STREAM_U32,                    /*   xxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx  */
-    STREAM_Q31,                    /*   Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx  */
-    STREAM_FP32,                   /*27 Seeeeeee.mmmmmmmm.mmmmmmmm.mmmmmmmm  float */
-    STREAM_CQ15,                   /*   Sxxxxxxx.xxxxxxxx Sxxxxxxx.xxxxxxxx (I Q) */
-    STREAM_CFP16,                  /*   Seeeeemm.mmmmmmmm Seeeeemm.mmmmmmmm (I Q)  */
-                                      
-    /* 8 bytes per data */            
-    STREAM_S64,                    /*   long long */
-    STREAM_U64,                    /*   unsigned  64 bits */
-    STREAM_Q63,                    /*   Sxxxxxxx.xxxxxx ....... xxxxx.xxxxxxxx  */
-    STREAM_CQ31,                   /*   Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx Sxxxxxxx.xxxxxxxx.. */
-    STREAM_FP64,                   /*   Seeeeeee.eeemmmmm.mmmmmmm ... double  */
-    STREAM_CFP32,                  /*   Seeeeeee.mmmmmmmm.mmmmmmmm.mmmmmmmm Seeeeeee.mmm.. (I Q)  */
-                                      
-    /* 16 bytes per data */           
-    STREAM_FP128,                  /*   Seeeeeee.eeeeeeee.mmmmmmm ... quadruple precision */
-    STREAM_CFP64,                  /*   fp64 fp64 (I Q)  */
-                                      
-    /* 32 bytes per data */           
-    STREAM_FP256,                  /*   Seeeeeee.eeeeeeee.eeeeemm ... octuple precision  */
-                                      
-    /* 2D formats  */                 
-    STREAM_YUV420P,                /*39 Luminance, Blue projection, Red projection, 6 bytes per 4 pixels, reordered */
-    STREAM_YUV422P,                /*   8 bytes per 4 pixels, or 16bpp, Y0 Cb Y1 Cr (1 Cr & Cb sample per 2x1 Y samples) */
-    STREAM_YUV444P,                /*   12 bytes per 4 pixels, or 24bpp, (1 Cr & Cb sample per 1x1 Y samples) */
-    STREAM_CYM24,                  /*   cyan yellow magenta */
-    STREAM_CYMK32,                 /*   cyan yellow magenta black */
-    STREAM_RGB8,                   /*   RGB  3:3:2,  8bpp, (msb)2B 3G 3R(lsb) */
-    STREAM_RGB16,                  /*   RGB  5:6:5, 16bpp, (msb)5R 6G 5B(lsb) */
-    STREAM_RGBA16,                 /*   RGBA 4:4:4:4 32bpp (msb)4R */
-    STREAM_RGB24,                  /*   BBGGRR 24bpp (msb)8B */
-    STREAM_RGBA32,                 /*   BBGGRRAA 32bpp (msb)8B */
-    STREAM_RGBA8888,               /*   AABBRRGG OpenGL/PNG format R=lsb A=MSB ("ABGR32" little endian) */
-    STREAM_BW1B,                   /*   Y, 1bpp, 0 is black, 1 is white */
-    STREAM_GREY2B,                 /*   Y, 2bpp, 0 is black, 3 is white, ordered from lsb to msb  */
-    STREAM_GREY4B,                 /*   Y, 4bpp, 0 is black, 15 is white, ordered from lsb to msb */
-    STREAM_GREY8B,                 /*   Grey 8b, 0 is black, 255 is white */
-    
-    STREAM_TIMER16,                /*54 Scripts data types */
-    STREAM_TIMER32,                /*    */
-    STREAM_TIMER64,                /*    */
-    STREAM_PTRPHY,                 /*    */
-    STREAM_PTR27B,                 /*58  */
-    STREAM_UNUSED_5,               /*59  */
-    STREAM_UNUSED_4,               /*60  */
-    STREAM_UNUSED_3,               /*61  */
-    STREAM_UNUSED_2,               /*62  */
-    STREAM_UNUSED_1,               /*63  */
-
-    LAST_RAW_TYPE  = 64         /* coded on 6bits RAW_FMT0_LSB */
-};
-
-
-
 //enum stream_scheduling_options
 //{
+#define STREAM_SCHD_RET_NO_ACTION           0    /* the decision is made by the graph */
 #define STREAM_SCHD_RET_END_EACH_SWC        1    /* return to caller after each SWC calls */
 #define STREAM_SCHD_RET_END_ALL_PARSED      2    /* return to caller once all SWC are parsed */
 #define STREAM_SCHD_RET_END_SWC_NODATA      3    /* return to caller when all SWC are starving */
@@ -384,15 +248,8 @@ typedef struct
     uint32_t *swc_header;           // current swc
     stream_handle_t swc_instance_addr;
     uint16_t arcID[MAX_NB_STREAM_PER_SWC];
-    uint8_t *pt8b_collision_arc;
+    uint8_t *pt8b_collision_arc;    // in mono-processor mono-thread there is only no collision
     uint32_t pack_command;          // preset, narc, tag, instanceID, command
-
-    uint8_t swc_memory_banks_offset;// offset in words
-    uint8_t swc_parameters_offset;
-
-    uint8_t nb_stream_instances;    // stream instances pointers (in words) = &(all_arcs[ -nb_stream_instances])
-    uint8_t script_arctx;           // arc buffer for the static area of the script
-    uint8_t memory_segment_swap;    // bit-field of the memory segments to swap (TO_SWAP_LW2S)
 
 /* */
 #define STREAM_COLD_BOOT 0u
@@ -459,8 +316,8 @@ typedef struct
 
     uint32_t *ioctrl;                    /* byte array of request fields */
 
-    /* word 2 IO streams to scan , max = 32  = 1 << (NB_IOS_GR1_MSB - NB_IOS_GR1_LSB + 1) */
-    #define MAX_GRAPH_NB_IO_STREAM 32
+    /* word 2 IO streams to scan , max = 128 */
+    #define MAX_GRAPH_NB_IO_STREAM  (1 << (NB_IOS_GR1_MSB - NB_IOS_GR1_LSB + 1))
     #define BOUNDARY_IOMASK_MSB U(31)  
     #define BOUNDARY_IOMASK_LSB U( 0)   /* 32 boundary ports in STREAM_FORMAT_IO to scan */ 
 
@@ -475,6 +332,18 @@ typedef struct
     #define   TRACE_ARC_PARINST_LSB U( 0) /* 11 (ARC0_LW1 / NB_ARCS_GR3 2K arcs) index of the arc used for debug trace / instance */
 
     uint32_t parameters;                /* _PARINST_ fields */
+
+    uint8_t swc_memory_banks_offset;    /* offset in words  */
+
+    uint8_t swc_parameters_offset;
+
+    uint8_t nb_stream_instances;    /* stream instances pointers (in words) = &(all_arcs[ -nb_stream_instances]) */
+
+    uint8_t script_arctx;           /* arc buffer for the static area of the script */
+
+    uint8_t memory_segment_swap;    /* bit-field of the memory segments to swap (TO_SWAP_LW2S) */
+
+    uint8_t error_log;              /* bit-field of logged errors */
 
 } arm_stream_instance_t;
 

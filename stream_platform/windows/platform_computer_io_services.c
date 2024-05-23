@@ -66,7 +66,7 @@ void al_service_time_functions (uint32_t service_command, uint8_t *pt8b, uint8_t
 
     switch (service_command)
     {
-        case AL_SERVICE_READ_TIME_SYSTICK:
+        case AL_SERVICE_READ_TIME64:
         {
             break;
         }
@@ -78,7 +78,9 @@ void al_service_time_functions (uint32_t service_command, uint8_t *pt8b, uint8_t
   @param[in]    none
   @return       none
 
-  @par          
+  @par          Usage:
+            al_service_mutual_exclusion (AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP, 
+                S->pt8b_collision_arc, (*data) &check, &process_ID, 0);
                 
   @remark       
  */
@@ -90,11 +92,16 @@ void al_service_mutual_exclusion(uint32_t service_command, uint8_t *pt8b, uint8_
     {
         case AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP:
         {
-            *pt8 = *data;
-            INSTRUCTION_SYNC_BARRIER;
+            /* attempt to reserve the node */
+            *pt8 = *data;    
 
-            /* no need to use LDREX, don't wait and escape if collision occurs */
-            DATA_MEMORY_BARRIER;
+            /* check collision with all the running processes
+              using the equivalent of lock() and unlock() 
+              Oyama Lock, "Towards more scalable mutual exclusion for multicore architectures"
+                by Jean-Pierre Lozi */
+            //  INSTRUCTION_SYNC_BARRIER;
+            //  /* check mutual-exclusion */
+            //  DATA_MEMORY_BARRIER;
 
             *data = (*pt8 == *flag);
             break;
@@ -193,13 +200,18 @@ void data_in_0 (uint32_t command, uint8_t *data, uint32_t size)
     switch (command)
     {
     default:
-    case STREAM_SET_PARAMETER:
+    /* Stream standard + list of { n, [byte stream of commands + data] }  
+        example : set calibration, gains, filters, sampling-rate ..
+    */
+    case STREAM_SET_PARAMETER:  
         break;
     case STREAM_RUN:
         break;
     case STREAM_STOP:
         break;
     case STREAM_SET_BUFFER:
+        break;
+    case STREAM_READ_PARAMETER:  /* setting done ? device is ready ? calibrated ? */
         break;
     }
 }

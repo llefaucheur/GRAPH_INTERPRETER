@@ -28,21 +28,19 @@
 
 #include "stream_tool_include.h"
 
-#define GRAPH_ALL_MANIFESTS "../../stream_platform/windows/manifest/all_io_manifests_computer.txt"
+#define GRAPH_ALL_MANIFESTS "../../stream_platform/windows/manifest/top_manifest_computer.txt"
 #define GRAPH_TXT           "../../stream_platform/windows/graph_0.txt"     /* almost-binary graph with soft addresses hand optimized mapping and multi-processor mapping */
 #define GRAPH_BIN           "../../stream_platform/windows/graph_0_bin.txt"   /* final binary graph file */
 
+#define GRAPH_HEADER        "../../stream_platform/windows/graph_header.h"    /* list of labels to do "set_parameter" from scripts (script compilation step) */
 
-char all_files[MAXINPUT];
-char ggraph [MAXINPUT];
-char listing [MAXINPUT];
-char output[MAXOUTPUT];
+#define GRAPH_DEBUG         "../../stream_platform/windows/graph_debug.txt"   /* comments made during graph conversion  */
 
-struct stream_platform_manifest platform;
-struct stream_graph_linkedlist graph;
+
 
 extern void arm_stream_read_manifests (struct stream_platform_manifest *platform, char *all_files);
 extern void arm_stream_read_graph(struct stream_platform_manifest* platform,struct stream_graph_linkedlist *graph, char* ggraph_txt);
+extern void arm_stream_memory_map(struct stream_platform_manifest* platform,struct stream_graph_linkedlist *graph);
 extern void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph, FILE *ptf_graph_bin);
 
 /**
@@ -57,17 +55,31 @@ extern void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, 
 
 void main(void)
 {
+    char *all_files, *ggraph;
+
+    struct stream_platform_manifest *platform;
+    struct stream_graph_linkedlist *graph;
+
+    if (0 == (all_files = calloc (MAXINPUT, 1))) exit(-1);
+    if (0 == (ggraph = calloc (MAXINPUT, 1))) exit(-1);
+    if (0 == (platform = calloc (sizeof(struct stream_platform_manifest), 1))) exit(-1);
+    if (0 == (graph = calloc (sizeof(struct stream_graph_linkedlist), 1))) exit(-1);
+
     /* 
         Read the file names : 
         platform manifest
         stream io manifests
         nodes manifests
     */
-    memset(&platform, 0, sizeof(struct stream_platform_manifest));
-    memset(&graph, 0, sizeof(struct stream_graph_linkedlist));
+    memset(platform, 0, sizeof(struct stream_platform_manifest));
+    memset(graph, 0, sizeof(struct stream_graph_linkedlist));
+
+
+    if (0 == (graph->ptf_debug  = fopen(GRAPH_DEBUG,  "wt"))) exit(-1);
+    if (0 == (graph->ptf_header = fopen(GRAPH_HEADER, "wt"))) exit(-1);
 
     read_input_file (GRAPH_ALL_MANIFESTS, all_files);
-    arm_stream_read_manifests(&platform, all_files);
+    arm_stream_read_manifests(platform, all_files);
     
 
     /*
@@ -90,8 +102,22 @@ void main(void)
     
 
     read_input_file (GRAPH_TXT, ggraph);
+    arm_stream_read_graph(platform, graph, ggraph);
 
-    arm_stream_read_graph(&platform, &graph, ggraph);
+    /*@@@  TODO
+     * check consistency : formats between nodes/arcs 
+     * to help the graph designer insert conversion nodes
+     * 
+     *   arm_stream_check_graph(platform, graph); 
+     * 
+     *@@@  TODO 
+     * generate the debug TXT file and header used to address nodes in the binary graph,
+     * header with a declaration arc ID and arc names
+     * 
+     *   arm_stream_print_graph(platform, graph); 
+     */
+
+    arm_stream_memory_map(platform, graph);
 
 
     /* 
@@ -105,9 +131,10 @@ void main(void)
 
         if (0 == (ptf_graph_bin = fopen(GRAPH_BIN, "wt"))) exit(-1);
 
-        arm_stream_graphTxt2Bin(&platform, &graph, ptf_graph_bin);
+        arm_stream_graphTxt2Bin(platform, graph, ptf_graph_bin);
+
         fclose(ptf_graph_bin); 
 
-     }
+    }
     exit (-3); 
 }
