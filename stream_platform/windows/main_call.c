@@ -41,11 +41,11 @@
  */
 void main_call(void)
 {
-    extern void init_stream_instance(arm_stream_instance_t *instance);
+    extern void platform_init_stream_instance(arm_stream_instance_t *instance);
     arm_stream_instance_t instance;
     //uint32_t data_in, fifo_freeArea;
 
-    init_stream_instance (&instance);
+    platform_init_stream_instance (&instance);
 
     /* reset the graph */
     arm_graph_interpreter (STREAM_RESET, &instance, 0, 0);

@@ -51,20 +51,23 @@
 
 extern uint8_t globalEndFile, FoundEndSection;
 
-extern void     jump2next_line (char** line);
-extern uint32_t quantized_FS (float FS);
-extern void     jump2next_valid_line (char** line);
-extern void     read_binary_param(char** pt_line, void* X, uint8_t* raw_type, uint32_t* nb_option);
-extern void     read_common_data_options(char** pt_line, struct options* pt);
-extern void     read_input_file(char* file_name, char* inputFile);
-extern int      fields_extract(char **pt_line, char *types,  ...);
-extern void     fields_list(char **pt_line, struct options *opt);
-extern void     fields_list_subtype(char **pt_line, struct options_subtype *opt);
-extern int      stream_bitsize_of_raw(uint8_t raw);
-extern int      search_word(char line[], char word[]);
-extern void     stream_tool_read_parameters(char **pt_line, struct stream_node_manifest *node);
-extern int      vid_malloc(uint32_t VID, uint64_t size, uint32_t alignemnt, uint32_t *pack27b, uint8_t *ptr, 
-                struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph);
+extern void jump2next_line (char** line);
+extern void jump2next_valid_line (char** line);
+extern void read_binary_param(char** pt_line, void* X, uint8_t* raw_type, uint32_t* nb_option);
+extern void read_common_data_options(char** pt_line, struct options* pt);
+extern void read_input_file(char* file_name, char* inputFile);
+extern int  fields_extract(char **pt_line, char *types,  ...);
+extern int  fields_options_extract(char **pt_line, struct options *o1);
+extern int  stream_bitsize_of_raw(uint8_t raw);
+extern int  search_word(char line[], char word[]);
+extern void stream_tool_read_parameters(char **pt_line, struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph, struct stream_node_manifest *node);
+extern int  vid_malloc(uint32_t VID, intPtr_t size, uint32_t alignment, uint32_t memtype,
+            uint32_t *pack27b, uint8_t *ptr, struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph);
+//extern void vid_malloc_booking (uint32_t VID, intPtr_t size, uint32_t alignment, uint32_t memtype, struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph);
+extern void search_platform_node(char *cstring, struct stream_node_manifest **platform_node, uint32_t *platform_swc_idx,
+            struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph);
+extern void search_graph_node(char *cstring, struct stream_node_manifest **graph_node, uint32_t *graph_swc_idx, struct stream_graph_linkedlist *graph);
+extern void compute_memreq(struct stream_node_manifest *node, struct formatStruct *all_format);
 
 #endif /* #ifndef cSTREAM_TOOL_INCLUDE_H */
 

@@ -85,18 +85,15 @@ uint32_t lcm(uint32_t a, uint32_t b) { return (a / gcd(a, b)) * b; }
   parse the membank
 
  */
-int vid_malloc(uint32_t VID, intPtr_t size, uint32_t alignemnt,     /* input */
+int vid_malloc(uint32_t VID, intPtr_t size, uint32_t alignment, uint32_t memtype,    /* input */
                 uint32_t *pack27b, uint8_t *ptr,                    /* results */
                 struct stream_platform_manifest *platform,          /* context */
                 struct stream_graph_linkedlist *graph) 
 { 
-    uint32_t imem, alignmask, aligninc, found, ibank;
-    intPtr_t workingmem, mem, tmp;
-    struct node_memory_bank *m;
+    uint32_t found, ibank;
+    uint64_t alignmask;
 
-    /* 
-        platform->membank[ibank].base32;    
-
+    /*  platform->membank[ibank].base32;    
         find the ibank associated to VID(input) = virtualID(processor_memory_bank)
         increment its ptalloc_static with the corresponding alignment
     */
@@ -112,7 +109,31 @@ int vid_malloc(uint32_t VID, intPtr_t size, uint32_t alignemnt,     /* input */
     if (found == 0) 
         exit(-5);
 
-    //platform->membank[ibank].
+    alignmask =  ~((1 << (7&alignment)) -1);
+    size = (size + 3) & alignmask;
+
+    switch (memtype)
+    {
+    default:
+    case MEM_TYPE_STATIC         :
+        platform->membank[ibank].ptalloc_static_booking += size;
+        break;
+    case MEM_TYPE_WORKING        :
+        if (size > platform->membank[ibank].max_working_booking)
+        {   platform->membank[ibank].max_working_booking = size;
+        }
+        break;
+    case MEM_TYPE_PERIODIC_BACKUP :
+        if (platform->membank[ibank].stat0work1ret2 == MEM_TYPE_PERIODIC_BACKUP)
+        {   platform->membank[ibank].ptalloc_static_booking += size;
+        }
+        break;
+    case MEM_TYPE_PSEUDO_WORKING:
+        break;
+    }
+ 
+// 
+    //platform->membank[ibank];
     //mem = (*mbank_VID1_Byte);
     //aligninc = m->alignmentBytes -1;
     //alignmask = ~aligninc;
@@ -127,12 +148,50 @@ int vid_malloc(uint32_t VID, intPtr_t size, uint32_t alignemnt,     /* input */
     ///* jump to the next memory segment */
     //(*mbank_VID1_Byte) =  (*mbank_VID1_Byte) + size;
 
-    //return 0;   // success
-
-    return -1;
-    exit(-6);
+    return 0;   // success
 } 
 
+//void vid_malloc_booking (
+//                uint32_t VID, intPtr_t size, uint32_t alignment, uint32_t memtype,
+//                struct stream_platform_manifest *platform,       
+//                struct stream_graph_linkedlist *graph) 
+//{ 
+//    uint64_t alignmask;
+//    uint32_t found, ibank;
+//
+//    for (found = ibank = 0; ibank < platform->nbMemoryBank_detailed; ibank++)
+//    {   if (platform->membank[ibank].virtualID == VID)
+//        {   found = 1;
+//            break;
+//        }
+//    }
+//
+//    if (found == 0) 
+//        exit(-5);
+//
+//    alignmask =  ~((1 << (7&alignment)) -1);
+//    size = (size + 3) & alignmask;
+//
+//    switch (memtype)
+//    {
+//    default:
+//    case MEM_TYPE_STATIC         :
+//        platform->membank[ibank].ptalloc_static_booking += size;
+//        break;
+//    case MEM_TYPE_WORKING        :
+//        if (size > platform->membank[ibank].max_working_booking)
+//        {   platform->membank[ibank].max_working_booking = size;
+//        }
+//        break;
+//    case MEM_TYPE_PERIODIC_BACKUP :
+//        if (platform->membank[ibank].memtype == MEM_TYPE_PERIODIC_BACKUP)
+//        {   platform->membank[ibank].ptalloc_static_booking += size;
+//        }
+//        break;
+//    case MEM_TYPE_PSEUDO_WORKING:
+//        break;
+//    }
+//} 
 
   
 /**
@@ -175,14 +234,14 @@ L_jump2next_valid_line:
     {   goto L_jump2next_valid_line;
     }
 
-    if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
-    {   FoundEndSection = 1;
-        goto L_jump2next_valid_line;
-    }
+    //if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
+    //{   globalEndFile = FOUND_END_OF_FILE;
+    //    goto L_jump2next_valid_line;
+    //}
 
     *pt_line = p;
 
-    if (0 == strncmp (*pt_line,GRAPH_END,strlen(GRAPH_END)))
+    if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
         globalEndFile = FOUND_END_OF_FILE;
     else
         globalEndFile = NOT_YET_END_OF_FILE;
@@ -234,7 +293,7 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
     ptstart++; 
     while (*ptstart == ' ') ptstart++;  // find the first non-white space character
 
-    if (0 == strcmp(stype, "u8") || 0 == strcmp(stype, "i8") || 0 == strcmp(stype, "h8"))
+    if (0 == strcmp(stype, "u8") || 0 == strcmp(stype, "i8") || 0 == strcmp(stype, "s8") || 0 == strcmp(stype, "h8"))
     {   ptu8 = (uint8_t*)X; *raw_type = STREAM_U8; 
         for (ifield = 0; ifield < nfield; ifield++)
         {   if (0 == strcmp(stype, "h8")) c = sscanf(ptstart, "%llx", &i);
@@ -244,7 +303,7 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
         }
     }
 
-    if (0 == strcmp(stype, "u16") || 0 == strcmp(stype, "i16") || 0 == strcmp(stype, "h16"))
+    if (0 == strcmp(stype, "u16") || 0 == strcmp(stype, "i16") ||  0 == strcmp(stype, "s16") || 0 == strcmp(stype, "h16"))
     {   ptu16 = (uint16_t*)X; *raw_type = STREAM_U16;
         for (ifield = 0; ifield < nfield; ifield++)
         {   if (0 == strcmp(stype, "h16")) c = sscanf(ptstart, "%llx", &i);
@@ -254,7 +313,7 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
         }
     }
 
-    if (0 == strcmp(stype, "u32") || 0 == strcmp(stype, "i32") || 0 == strcmp(stype, "h32"))
+    if (0 == strcmp(stype, "u32") || 0 == strcmp(stype, "i32") || 0 == strcmp(stype, "s32") || 0 == strcmp(stype, "h32"))
     {   ptu32 = (uint32_t*)X; *raw_type = STREAM_U32;
         for (ifield = 0; ifield < nfield; ifield++)
         {   if (0 == strcmp(stype, "h32")) c = sscanf(ptstart, "%llx", &i);
@@ -263,7 +322,7 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
         }
     }
 
-    if (0 == strcmp(stype, "u64") || 0 == strcmp(stype, "i64") || 0 == strcmp(stype, "h64"))
+    if (0 == strcmp(stype, "u64") || 0 == strcmp(stype, "i64") || 0 == strcmp(stype, "s64") || 0 == strcmp(stype, "h64"))
     {   ptu64 = (uint64_t*)X; *raw_type = STREAM_U64;
         for (ifield = 0; ifield < nfield; ifield++)
         {   if (0 == strcmp(stype, "h64")) c = sscanf(ptstart, "%llx", &i);
@@ -305,27 +364,27 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
     jump2next_valid_line (pt_line);
 }
 
-/* ---------------------------------------------------------------------- */
-uint32_t quantized_FS (float FS)
-{
-    ///* 20bits : mantissa [U18], exponent [U2], FS = (Mx2)/2^(8xE), 0<=>ASYNCHRONOUS/SLAVE */
-    ///* 20 range = (E=0,1,2,3) 262142/2^0 .. 2/2^24 [262kHz .. 3 months] */    
-    ///* 524kHz  ..  1/8.388.608 Hz  [~1MHz .. 3months] */    
-    //uint32_t E, M;
-    //float x;
-
-    //for (E = FMT_FS_MAX_EXPONENT; E >= 0; E--)
-    //{   for (M = 0; M <= FMT_FS_MAX_MANTISSA; M++)
-    //    {   x = (float)FMTQ2FS(E,M);
-    //        if (x >= FS)
-    //        {   
-    //            return (E<<FMT_FS_EXPSHIFT) | M;
-    //        }
-    //    }
-    //}
-    return 0;
-
-}
+///* ---------------------------------------------------------------------- */
+//uint32_t quantized_FS (float FS)
+//{
+//    ///* 20bits : mantissa [U18], exponent [U2], FS = (Mx2)/2^(8xE), 0<=>ASYNCHRONOUS/SLAVE */
+//    ///* 20 range = (E=0,1,2,3) 262142/2^0 .. 2/2^24 [262kHz .. 3 months] */    
+//    ///* 524kHz  ..  1/8.388.608 Hz  [~1MHz .. 3months] */    
+//    //uint32_t E, M;
+//    //float x;
+//
+//    //for (E = FMT_FS_MAX_EXPONENT; E >= 0; E--)
+//    //{   for (M = 0; M <= FMT_FS_MAX_MANTISSA; M++)
+//    //    {   x = (float)FMTQ2FS(E,M);
+//    //        if (x >= FS)
+//    //        {   
+//    //            return (E<<FMT_FS_EXPSHIFT) | M;
+//    //        }
+//    //    }
+//    //}
+//    return 0;
+//
+//}
 
 
 /**
@@ -383,6 +442,98 @@ int search_word(char line[], char word[])
 
     return -1;
 }
+
+
+/**
+  @brief            (main)
+  @param[in/out]    none
+  @return           int
+
+  @par              translates the graph intermediate format GraphTxt to GraphBin to be reused
+                    in CMSIS-Stream/stream_graph/*.txt
+  @remark
+ */
+
+/* ----------------------------------------------------------------------
+    options sets : { index  list } { index  list } 
+ 
+    when index == 0 it means "any", the list can be empty, the default value is not changed from reset   
+ 
+    when index > 0 the list gives the allowed values the scheduler can select
+        The Index tells the default "value" to take at reset time and to put in the graph 
+            the combination of index give the second word of stream_format_io[]
+         At reset : (*io_func)(STREAM_RESET, (uint8_t *)&stream_format_io_setting, 0);
+         For tuning : (*io_func)(STREAM_SET_IO_CONFIG, (uint8_t *)&stream_format_io_setting, 0);
+         Example 2  5 6 7 8 9    ; index 2, default = 6 (index starts at 1)
+ 
+    when index < 0 a list of triplets follows to describe a combination of data intervals :  A1 B1 C1  A2 B2 C2 ... 
+        A is starting value, B is the increment step, C is the included maximum value 
+        The absolute index value selects the default value in this range   
+
+    extract the search range to the next ';' or '\n'  search for '{' and '}' search the non-blank segments
+    number of sets from '{}' 
+    start with only considering {n X}
+     (when the list has one single element "X", this is the value to consider : {X} <=> {1 X} <=> X)
+*/
+
+int fields_options_extract(char **pt_line, struct options *opt)
+{
+    int i, iBrace, nBrace, option_index;
+    char *p;
+    int bracePositions[MAX_NBOPTIONS_SETS * 2]; // open and close braces
+    float A, B, C;
+
+    p = *pt_line;
+
+    for (iBrace = i = 0; i < NBCHAR_LINE; i++)
+    {   if (*p == ';' || *p == '\n')  break;
+        if (*p == '{')  
+        {   bracePositions[iBrace++] = i;
+        }
+        p++;
+    }
+
+    nBrace = iBrace;
+    if (nBrace == 0) return 1;  /* nothing */
+
+#define NON_BLKSPACE()  {int i; for(i=0;i<NBCHAR_LINE;i++){if(*p != ' ') break; p++;}}  /* now p points to the start of data */ 
+#define BLKSPACE() {int i; for(i=0;i<NBCHAR_LINE;i++){if(*p == '}') break; if(*p == ' ') break; p++;}} /* now p points to the end of data */ 
+
+    /* loop on option sets */
+    for (opt->nb_option = iBrace = 0; iBrace < nBrace; iBrace ++, opt->nb_option ++)
+    {
+        p = *pt_line;
+        p = p + bracePositions[iBrace++] + 1;       /* p { x   idx */ 
+
+        NON_BLKSPACE()  
+        sscanf(p, "%d", &option_index);  BLKSPACE() NON_BLKSPACE()   
+        opt->default_index[opt->nb_option] = option_index;
+
+        if (option_index < 0)   /* is it an option range ? */
+        {   
+            sscanf(p, "%f", &A);    BLKSPACE() NON_BLKSPACE()   
+            sscanf(p, "%f", &B);    BLKSPACE() NON_BLKSPACE()   
+            sscanf(p, "%f", &C);    BLKSPACE() NON_BLKSPACE()   
+            opt->optionRange[opt->nb_option][0] = A;
+            opt->optionRange[opt->nb_option][1] = B;
+            opt->optionRange[opt->nb_option][2] = C;
+        }
+
+        if (option_index > 0)       /* is it an option list ? */
+        {   do {   
+            sscanf(p, "%f", &A);    BLKSPACE() NON_BLKSPACE()   
+            
+            opt->optionList[opt->nb_option][opt->nbElementsInList[opt->nb_option]] = A;
+            opt->nbElementsInList[opt->nb_option] ++;
+            } while (*p != '}');
+        }
+    }
+
+    jump2next_valid_line (pt_line);
+    return 1;
+}
+
+
 
 /**
   @brief            (main)
@@ -492,7 +643,9 @@ int fields_extract(char **pt_line, char *types,  ...)
 
     *pt_line = ptstart;
     jump2next_valid_line (pt_line);
-
+    if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
+    {   globalEndFile = FOUND_END_OF_FILE;
+    }
     va_end(vl);
 
     return 1;
@@ -508,54 +661,54 @@ int fields_extract(char **pt_line, char *types,  ...)
                     
   @remark
  */
-
-void fields_list_subtype(char **pt_line, struct options_subtype *opt)
-{
-    char *ptstart, *pend;
-    int nfields;
-    float F;
-
-    ptstart = *pt_line;
-    nfields = 0;
-    sscanf (ptstart,"%d",&(opt->default_index));
-
-    while (1)
-    {   /*--- read the arithmetic type ---*/
-        pend = strchr (ptstart, ' ');   
-        while (pend[1] == ' ')          // find the next non white space
-        {   pend++;
-        }
-
-        if (pend[1] == ';')
-        {   break;
-        }
-        else
-        {   sscanf (pend,"%f",&F);
-            opt->options[nfields] = F;
-            ptstart = pend + 1; 
-        }
-
-        /*--- read the subtype_units ---*/
-        pend = strchr (ptstart, ' ');   
-        while (pend[1] == ' ')          // find the next non white space
-        {   pend++;
-        }
-
-        if (pend[1] == ';')
-        {   break;
-        }
-        else
-        {   sscanf (pend,"%f",&F);
-            opt->subtype_options[nfields] = F;
-            ptstart = pend + 1; 
-
-            nfields++;
-        }
-    }
-    *pt_line = pend;
-    jump2next_valid_line(pt_line); 
-    opt->nb_option = nfields;
-}
+//
+//void fields_list_subtype(char **pt_line, struct options_subtype *opt)
+//{
+//    char *ptstart, *pend;
+//    int nfields;
+//    float F;
+//
+//    ptstart = *pt_line;
+//    nfields = 0;
+//    sscanf (ptstart,"%d",&(opt->default_index));
+//
+//    while (1)
+//    {   /*--- read the arithmetic type ---*/
+//        pend = strchr (ptstart, ' ');   
+//        while (pend[1] == ' ')          // find the next non white space
+//        {   pend++;
+//        }
+//
+//        if (pend[1] == ';')
+//        {   break;
+//        }
+//        else
+//        {   sscanf (pend,"%f",&F);
+//            opt->options[nfields] = F;
+//            ptstart = pend + 1; 
+//        }
+//
+//        /*--- read the subtype_units ---*/
+//        pend = strchr (ptstart, ' ');   
+//        while (pend[1] == ' ')          // find the next non white space
+//        {   pend++;
+//        }
+//
+//        if (pend[1] == ';')
+//        {   break;
+//        }
+//        else
+//        {   sscanf (pend,"%f",&F);
+//            opt->subtype_options[nfields] = F;
+//            ptstart = pend + 1; 
+//
+//            nfields++;
+//        }
+//    }
+//    *pt_line = pend;
+//    jump2next_valid_line(pt_line); 
+//    opt->nb_option = nfields;
+//}
 
 
 /**
@@ -567,37 +720,37 @@ void fields_list_subtype(char **pt_line, struct options_subtype *opt)
                     in CMSIS-Stream/stream_graph/*.txt
   @remark
  */
-
-void fields_list(char **pt_line, struct options *opt)
-{
-    char *ptstart, *pend;
-    int nfields;
-    float F;
-
-    ptstart = *pt_line;
-    nfields = 0;
-    sscanf (ptstart,"%d",&(opt->default_index));
-
-    while (1)
-    {   pend = strchr (ptstart, ' ');   
-        while (pend[1] == ' ')          // find the next non white space
-        {   pend++;
-        }
-        if (pend[1] == ';')
-        {   break;
-        }
-        else
-        {   nfields++;
-        }
-
-        sscanf (pend,"%f",&F);
-        opt->options[nfields-1] = F;
-        ptstart = pend + 1; 
-    }
-    *pt_line = pend;
-    jump2next_valid_line(pt_line); 
-    opt->nb_option = nfields;
-}
+//
+//void fields_list(char **pt_line, struct options *opt)
+//{
+//    char *ptstart, *pend;
+//    int nfields;
+//    float F;
+//
+//    ptstart = *pt_line;
+//    nfields = 0;
+//    sscanf (ptstart,"%d",&(opt->default_index));
+//
+//    while (1)
+//    {   pend = strchr (ptstart, ' ');   
+//        while (pend[1] == ' ')          // find the next non white space
+//        {   pend++;
+//        }
+//        if (pend[1] == ';')
+//        {   break;
+//        }
+//        else
+//        {   nfields++;
+//        }
+//
+//        sscanf (pend,"%f",&F);
+//        opt->options[nfields-1] = F;
+//        ptstart = pend + 1; 
+//    }
+//    *pt_line = pend;
+//    jump2next_valid_line(pt_line); 
+//    opt->nb_option = nfields;
+//}
 
 /**
   @brief            read the file to a table of char
@@ -607,88 +760,88 @@ void fields_list(char **pt_line, struct options *opt)
   @par
   @remark
  */
-void read_binary_paramector(char** pt_line, char* types, ...)
-{
-//    char* ptstart, * ptstart0, S[200], * vaS;
-//    uint32_t ifield, I, * vaI, nchar, n, nfields;
-//    va_list vl;
-//    float F, * vaF;
-//#define COMMENTS 'c'
-//#define FLOAT 'f'
-//#define INTEGER 'i'
-//#define HEXADECIMAL 'h'
-//
-//    va_start(vl, types);
-//    ptstart = *pt_line;
-//    nfields = (uint32_t)strlen(types);
-//
-//    while (*(*pt_line) == ';')
-//    {
-//        jump2next_line(pt_line);
-//        ptstart = *pt_line;
-//    }
-//
-//    for (ifield = 0; ifield < nfields; ifield++)
-//    {
-//        if (types[ifield] == COMMENTS)
-//        {
-//            ptstart0 = strchr(ptstart, '\n');
-//        }
-//        else
-//        {
-//            ptstart0 = strchr(ptstart, ';');
-//        }
-//
-//        switch (types[ifield])
-//        {
-//        case COMMENTS:
-//            nchar = (uint32_t)((uint64_t)ptstart0 - (uint64_t)ptstart);
-//            vaS = va_arg(vl, char*);
-//            strncpy(vaS, ptstart, nchar);
-//            vaS[nchar] = 0;
-//            break;
-//
-//        case FLOAT:
-//            n = sscanf(ptstart, "%f", &F);
-//            vaF = va_arg(vl, float*);
-//            *vaF = F;
-//            break;
-//
-//        default:
-//        case INTEGER:
-//            n = sscanf(ptstart, "%d", &I);
-//            vaI = va_arg(vl, uint32_t*);
-//            *vaI = I;
-//            break;
-//
-//        case HEXADECIMAL:
-//            n = sscanf(ptstart, "%s", S);
-//            n = sscanf(&(S[1]), "%X", &I); /* remove the 'h' */
-//            vaI = va_arg(vl, uint32_t*);
-//            *vaI = I;
-//            break;
-//        }
-//
-//        ptstart = ptstart0 + 1;      /* skip the ';\n' separators */
-//    }
-//    *pt_line = ptstart;
-//    va_end(vl);
-}
+//void read_binary_paramector(char** pt_line, char* types, ...)
+//{
+////    char* ptstart, * ptstart0, S[200], * vaS;
+////    uint32_t ifield, I, * vaI, nchar, n, nfields;
+////    va_list vl;
+////    float F, * vaF;
+////#define COMMENTS 'c'
+////#define FLOAT 'f'
+////#define INTEGER 'i'
+////#define HEXADECIMAL 'h'
+////
+////    va_start(vl, types);
+////    ptstart = *pt_line;
+////    nfields = (uint32_t)strlen(types);
+////
+////    while (*(*pt_line) == ';')
+////    {
+////        jump2next_line(pt_line);
+////        ptstart = *pt_line;
+////    }
+////
+////    for (ifield = 0; ifield < nfields; ifield++)
+////    {
+////        if (types[ifield] == COMMENTS)
+////        {
+////            ptstart0 = strchr(ptstart, '\n');
+////        }
+////        else
+////        {
+////            ptstart0 = strchr(ptstart, ';');
+////        }
+////
+////        switch (types[ifield])
+////        {
+////        case COMMENTS:
+////            nchar = (uint32_t)((uint64_t)ptstart0 - (uint64_t)ptstart);
+////            vaS = va_arg(vl, char*);
+////            strncpy(vaS, ptstart, nchar);
+////            vaS[nchar] = 0;
+////            break;
+////
+////        case FLOAT:
+////            n = sscanf(ptstart, "%f", &F);
+////            vaF = va_arg(vl, float*);
+////            *vaF = F;
+////            break;
+////
+////        default:
+////        case INTEGER:
+////            n = sscanf(ptstart, "%d", &I);
+////            vaI = va_arg(vl, uint32_t*);
+////            *vaI = I;
+////            break;
+////
+////        case HEXADECIMAL:
+////            n = sscanf(ptstart, "%s", S);
+////            n = sscanf(&(S[1]), "%X", &I); /* remove the 'h' */
+////            vaI = va_arg(vl, uint32_t*);
+////            *vaI = I;
+////            break;
+////        }
+////
+////        ptstart = ptstart0 + 1;      /* skip the ';\n' separators */
+////    }
+////    *pt_line = ptstart;
+////    va_end(vl);
+//}
 
 
 /*  
     first letters of the lines in the input file 
 */
-#define _comments    'c'
-#define _offsets     'o'
-#define _header      'h'
-#define _format      'f'
-#define _stream_inst 'i'
-#define _linked_list 'l'
-#define _script      's'
-#define _arc         'a'
-#define _RAM         'r'
-#define _debug       'd'
+//#define _comments    'c'
+//#define _offsets     'o'
+//#define _header      'h'
+//#define _format      'f'
+//#define _stream_inst 'i'
+//#define _linked_list 'l'
+//#define _script      's'
+//#define _arc         'a'
+//#define _RAM         'r'
+//#define _debug       'd'
 
 
 

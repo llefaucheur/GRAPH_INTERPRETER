@@ -1,16 +1,11 @@
 ;===========================================================================================================================
 ;   TOP GRAPH
-
-
-graph
-
-top_header
                                 ; 0: location of the binary graph is all in ram  (default) 
                                 ; 1: keep the graph in Flash and copy in RAM the portion starting from the node linked-list
                                 ; 2: keep the graph in Flash and copy in RAM the portion starting from the arc descriptors
 graph_location  0               ; 3: the graph is already in RAM provided by the application
 
-                                ; LSB set means "call the debug script before each naonoAppsRT is called"
+                                ; LSB set means "call the debug script before each nanoAppsRT is called"
                                 ; bit 1 (2) set means "call the debug script after each naonoAppsRT is called"
                                 ; bit 2 (4) set means "call the debug script at the end of the loop"
                                 ; bit 3 (8) set means "call the debug script is called when starting the graph scheduling"
@@ -25,23 +20,57 @@ allowed_processors 1            ; bit-field of the processors alloed to execute 
 
 set_file_path 0 ./              ; index and its file path, used for sub graphs and scripts 
 
+graph_map_hwblock       0       ; index of the memory block VID indexes where to map the graph. Default VID's is 0 (internal RAM)
+
+;============================
+;   FORMATS 
+;
+format                  2           ; index used to start the declaration of a new format
+format_raw_data         17          ; raw data of this format  (17 : S16 is the default)
+format_frame_length     160         ; frame length in number of bytes (default :1)
+format_interleaving     0           ; 0 means interleaved data, 1 means deinterleaved data by packets of "frame size"
+format_nbchan           1           ; number of channels in the stream (default 1)
+format_time_stamp       0           ; time-stamp format 0:none, 1:absolute time-stamp, 2:relative time, 3:simple counter
+format_time_stamp_size  0           ; 0:16bits 1:32bits 2:64bits  (see "STREAM_TIME16D" for example)
+format_sdomain          0           ; subdomain type (for example see stream_unit_physical used for analog sensors)
+format_domain           2           ; IO_DOMAIN defined in the platform IO manifest (0 means "any")
+;                       general            (a)synchronous sensor + rescaling, .. remote data, compressed streams, JSON, SensorThings
+;                       audio_in           microphone, line-in, I2S, PDM RX 
+;                       audio_out          line-out, earphone / speaker, PDM TX, I2S, 
+;                       gpio_in            generic digital IO , control of relay, 
+;                       gpio_out           generic digital IO , control of relay, 
+;                       motion             accelerometer, combined or not with pressure and gyroscope 
+;                       2d_in              camera sensor 
+;                       2d_out             display, led matrix, 
+;                       analog_in          with aging control 
+;                       analog_out         D/A, position piezzo, PWM converter  
+;                       rtc                ticks sent from a programmable timer 
+;                       user_interface_in  button, slider, rotary button 
+;                       user_interface_out LED, digits, display, 
+;                       platform_3                                       
+;                       platform_2         platform-specific #2, decoded with callbacks
+;                       platform_1         platform-specific #1, decoded with callbacks
+;
+;   SPECIFIC OF DOMAINS
+;
+format_sampling_rate    16000.0     
+format_audio_mapping
+format_motion_mapping
+format_2d_height
+format_2d_width
+format_2d_border
+
+
 ;========================
 ;   MAIN IO 
 ;
 ; list of HW IOs from "stream_tools_files_manifests_PLATFORMNAME.txt" + IO arc patched with this IO.
-;   - ID        index used during the declarion of IO-arcs, allows easy redirection to other IOs 
-;   - FORMAT    stream format (Index of the above table)
-;   - HWID      ID of the interface given in "files_manifests_computer"
-;   - SETTING   setting word32 (SETTINGS_IOFMT2), the format depends on the IO domain
-    
-top_graph_interface
 
-;   ID FORMAT HWID  SETTING
-    0   0       0               ; format 0 FWIDX=0 io_platform_data_in_0.txt       
-    3   0       2   1234        ; format 0 FWIDX=2 io_platform_analog_sensor_0.txt 
-    4   0       7               ; format 0 FWIDX=7 io_platform_gpio_out_0.txt      
+stream_io                   2           ; index used to start the declaration of a new IO
+stream_io_format            0           ; index to the stream format (Index of the above table) (default #0)
+stream_io_hwid              0           ; ID of the interface given in "files_manifests_computer" (default #0)
+stream_io_setting1          0           ; setting word32 (SETTINGS_IOFMT2), the format depends on the IO domain (default #0)
 
-_end_
 
 ;============================
 ;   MAPPING (TBC)
@@ -53,7 +82,7 @@ _end_
 ;            length of the new memory bank
 ;   
 ;               ORIGINAL_ID  NEW_ID    START   LENGTH
-; memory_mapping      2        100        1024    32700
+; memory_mapping      2        100      1024    32700
 ;
 
 ;============================
@@ -62,55 +91,6 @@ _end_
 ;   ./subgraph_name/node_name #instanceID 
 ;    _end_
 ;
-
-
-
-;============================
-;   FORMATS 
-
-;   the data stream format used in the (sub)graph :
-;
-;       ID          : index later used in the graph
-;       FRAMESIZE   : frame size in Bytes for one deinterleaved channel, the arc buffer size is at least = framesize x nb channel 
-;       RAW         : raw arithmetic data format (see "stream_raw_data")
-;       INTERLEAVE  : 0 means interleaved data, 1 means deinterleaved data by packets of "frame size"
-;       NBCHAN      : number of channels in the stream
-;       TIMESTAMP   : time-stamp format 0:none, 1:absolute time-stamp, 2:relative time, 3:simple counter
-;       TIMEFORMAT  : time format  0:16bits 1:32bits 2:64bits  (see "STREAM_TIME16D" for example)
-;       DOMAIN      : IO_DOMAIN defined in the platform IO manifest (0 means "any")
-;       SDOMAIN     : subdomain type (for example see stream_unit_physical used for analog sensors)
-;
-;   Several fields are added depending on the domain:
-;
-;       IO_DOMAIN_GENERAL               0  (a)synchronous sensor + rescaling, .. remote data, compressed streams, JSON, SensorThings
-
-;       IO_DOMAIN_AUDIO_IN              1  microphone, line-in, I2S, PDM RX 
-;       IO_DOMAIN_AUDIO_OUT             2  line-out, earphone / speaker, PDM TX, I2S, 
-;           audio formats adds : sampling rate (FS1D_FMT2) and a bit-field of channel mapping (MAPPING_FMT3)
-;
-;       IO_DOMAIN_GPIO_IN               3  generic digital IO , control of relay, 
-;       IO_DOMAIN_GPIO_OUT              4  generic digital IO , control of relay, 
-;       IO_DOMAIN_MOTION                5  accelerometer, combined or not with pressure and gyroscope 
-;           motion format adds : channel mapping of IMU data
-;
-;       IO_DOMAIN_2D_IN                 6  camera sensor 
-;       IO_DOMAIN_2D_OUT                7  display, led matrix, 
-;           2D format adds : pixel height and width, border width
-;       IO_DOMAIN_ANALOG_IN             8  with aging control 
-;       IO_DOMAIN_ANALOG_OUT            9  D/A, position piezzo, PWM converter  
-;       IO_DOMAIN_RTC                  10  ticks sent from a programmable timer 
-;       IO_DOMAIN_USER_INTERFACE_IN    11  button, slider, rotary button 
-;       IO_DOMAIN_USER_INTERFACE_OUT   12  LED, digits, display, 
-;       IO_DOMAIN_PLATFORM_3           13                                
-;       IO_DOMAIN_PLATFORM_2           14  platform-specific #2, decoded with callbacks                              
-;       IO_DOMAIN_PLATFORM_1           15  platform-specific #1, decoded with callbacks                              
-;
-format
-     ID FRAMESIZE RAW NBCHAN INTERLEAVE TIMESTAMP TIMEFORMAT DOMAIN SDOMAIN    EXTENSIONS PER DOMAIN
-      0     8     17     1     0           0        0           0       0
-      1     8     17     1     0           0        0           0       0
-      2     12    17     1     0           0        0           1       0       16000.0  1  ; audio domain =  frame size + sampling rate + channel mapping
-_end_
 
 ;==============================
 ;   SUBGRAPHS
@@ -122,31 +102,30 @@ _end_
 ;
 subgraph 
     sub1                        ; subgraph name, used for name mangling
-    3   sub_graph_0.txt         ; path and file name
-    0   1   2   3   4           ; 5 streaming interfaces data_in_0, data_out_0 .. 
-    0   0   0                   ; 3 partitions here assigned to VID0 : fast-working slow-working slow-static
-_endgraph_
+    3 sub_graph_0.txt           ; path and file name
+    5 i16: 0 1 2 3 4            ; 5 streaming interfaces data_in_0, data_out_0 .. 
+    3 i16: 0 0 0                ; 3 partitions here assigned to VID0 : fast-working slow-working slow-static
 
 
 ;==============================
 ;   NODE IN GRAPHS 
 ;
-node 
-    <node_name> <instance_index> ; instance index in the (sub)graph, the compilation listing gives the physical index
+node <node_name> <instance_index> ; instance index in the (sub)graph, the compilation listing gives the physical index
 
 node_preset              1      ; parameter preset used at boot time, default = #0
 node_malloc_E            12     ; "E" parameter used in "Memory Size Bytes", default = #0
-node_map_hwblock         0  0   ; list of "nb_mem_block" VID indexes of "procmap_manifest_xxxx.txt" where to map the allocated memory
-                                ;   or indexes from "memory_mapping"
-                                ;   a value  1xxxyyy means "swap from VIDxxx to VIDyyy (fast memory) before run, restore after"
-                                ;   a value  2xxxyyy means "copy from VIDxxx to VIDyyy (fast memory) before run"
+node_map_hwblock         2  3   ; index of the memory block "node_mem" and the VID indexes from "procmap_manifest_xxxx.txt" 
+                                ;   where to map it. Default VID's is 0.
+node_map_copy            2  3   ; copy the indexed "node_mem" to VID 3 (faster memory) before run
+node_map_swap            2  3   ; swap the indexed "node_mem" to VID 3 (faster memory) before run, and restored after
+node_trace_id            0      ; IO port used to send the trace 
 node_map_proc            0      ; execute this nanoApp on this processor (0: any possible, default)
 node_map_arch            0      ; execute this nanoApp on this architecture (0: any possible, default)
 node_map_rtos            0      ; execute this nanoApp on this thread index (0: any possible, default)
 node_map_verbose         0      ; level of debug trace, default = #0
 node_script         <0..127>    ; index of the script to call before and after execution of this node
        
-        parameters              ; node parameters example (default : no parameter)
+        node_parameters         ; node parameters example (default : no parameter)
                                 ; Set_parameter : the array of parameters starts on 32bits-aligned addresses
                                 ; The programmer must arrange the data are aligned with respect to the way parameters are read in 
                                 ;   the nanoApp (using pointers to 8/16/32bits fields).
@@ -154,26 +133,21 @@ node_script         <0..127>    ; index of the script to call before and after e
             7  i8; 2 3 4 5 6 7 8 ; parameters
 include 1 filter_parameters.txt ; path + text file-name using parameter syntax 
         _end_    
-_end_
+
 
 ;==============================
 ;   SCRIPTING NODE IN GRAPHS (SCHEDULED LIKE OTHER NODES)
 ;
 ;   Checks if the data it needs is available and returns to the scheduler 
 ;   Its single arc (TX) is always empty
-node 
-    arm_stream_script   1       ; instance index of arm_stream_script
-
-    script_minimum    1         ; reduced number of registers configuration (default = 0)
-                                ;    minimum state memory = (2 registers + 1 pointer + 0 special) x 8 Bytes = 24 Bytes
-                                ;    standard state memory = (6 registers + 6 pointers + 3 special) x 8 Bytes = 120 Bytes
-    script_stack     12         ; size of the stack in word64 (default = 0)
-
+node arm_stream_script 1        ; instance index of arm_stream_script
+    
+    script_registers  2         ; numer of registers used in this script , default 2
+    script_pointers   2         ; numer of pointers used in this script , default 2
+    script_stack      12        ; size of the stack in word64 (default = 0)
     script_mem_shared 1         ; Is it a private RAM(0) or can it be shared with other scripts(1)
-
     script_mem_map    0         ; Memory mapping to VID #0 (default) 
                                 ; this declaration creates the transmit arc of the script-node pointing to the stack/buffer area
-    
     script_code
         2 h16; 2002 0001        ; movi int16 r0 1
         1 h16; e810             ; equ r1,r0
@@ -191,15 +165,15 @@ node
         ret  
    _end_
 
-   parameters <ID2>             ; node parameters and index to let the code addressing it
+   node_parameters <ID2>        ; node parameters and index to let the code addressing it
                                 ; Set_parameter : the array of parameters starts on 32bits-aligned addresses
                                 ; The programmer must arrange the data are aligned with respect to the way parameters are read in 
                                 ;   the nanoApp (using pointers to 8/16/32bits fields).
        1  i8; 0                 ; TAG= 0 "load all parameters"
        7  i8; 2 3 4 5 6 7 8     ; parameters
 
-   parameters <ID2>             ; 
-       include 1 binary_code.txt
+   node_parameters <ID2>        ; 
+       include 1 binary_code.txt ; path ID and file name
    _end_  
 
 _end_
@@ -207,9 +181,10 @@ _end_
 ;   COMMON SCRIPTS IN GRAPHS (AND SCRIPT ID IN THE NODE HEADER "SCRIPT_LW0")
 ;
 ;   script instance #0 is the "main script" of the subgraph
-script  name                    ; name of the script, to be mapped to an index in the graph compiler
+script  0                       ; index of the script, to be mapped to an index in the graph compiler
 
-    script_minimum      1       ;  
+    script_registers    2       ; same as arm_stream_script
+    script_pointers     2       ; 
     script_stack       12       ;   
     script_mem_shared   1       ; 
     script_mem_map      0       ; 
@@ -224,22 +199,17 @@ script  name                    ; name of the script, to be mapped to an index i
 
 ;====================================
 ;   ARCS IN GRAPHS
+                                ;----ARC CONNECTED TO GRAPH INTERFACE
+                                ;  in a subgraph the IDX interfaces are sequential 1,2,3.. and documented like function parameters
+                                ;  in the main graph the "top_graph_interface" have the indexes to use use in the first column 
 
-arc_section
-
-    ;----ARC CONNECTED TO GRAPH INTERFACE
-    ;  in a subgraph the IDX interfaces are sequential 1,2,3.. and documented like function parameters
-    ;  in the main graph the "top_graph_interface" have the indexes to use use in the first column 
-
-input_arc  1 node_name  2  0  0 ; input arc index #1 connected to "node_name" instance #2 and its arc index #0, Format #0
-..
-output_arc 2 node_name  3  1  0 ; output arc index #2 connected to "node_name" instance #3 and its arc index #1, Format #0
-..
-    ;----ARC CONNECTION BETWEEN TWO NANOAPPS
-
-arc    node1 1 2 0 node2 3 4 1  ; arc between node1 instance #1 arc index #2, producer format #0 to 
+                                ;      IO-ID    NAME INST IO FORMAT
+arc_input  1 node_name  2  0  0 ; input arc index #1 connected to "node_name" instance #2 and its arc index #0, Format #0
+arc_output 2 node_name  3  1  0 ; output arc index #2 connected to "node_name" instance #3 and its arc index #1, Format #0
+                                ;----ARC CONNECTION BETWEEN TWO NANOAPPS
+                                ;     NAME INST IO FMT    NAME INST IO FMT
+arc node1 1 2 0 node2 3 4 1     ; arc between node1 instance #1 arc index #2, producer format #0 to 
                                 ; node2 instance #3 and its arc index #4, consumer format #1
-..
     ;----ARC PARAMETERS
 arc_flow_error      1           ; #1 do something depending on domain when a flow error occurs, default #0 (no interpolation)
 arc_debug_cmd       1           ; debug action "ARC_INCREMENT_REG", default = #0 (no debug)

@@ -74,30 +74,24 @@ io_buffer_allocation    2.0 ;  default is 0, which means the buffer is declared 
                             ;   any RAM "0" or specific memory bank for speed reason or reserved for DMA processing, etc ..
 
 
-io_direction_rx0tx1   1     ;  direction of the stream  0:input 1:output from graph point of view
-
-io_raw_format       S16     ; options for the raw arithmetics computation format here  STREAM_S16 
-
-io_nb_channels  1 {1 1 2}   ; multichannel intleaved (0), deinterleaved by frame-size (1) + options for the number of channels 
-
-io_frame_length   {1 1 2 16 } ; options of possible frame_size in number of sample (can mono or multi-channel). 
-io_frame_duration {1 10 22.5} ; options of possible frame_size in [milliseconds].   The default frame length is 1 sample
-
-io_subtype_units VRMS       ; depending on the domain. Here Units_Vrms of the "general" domain (0 = any or underfined)
-io_subtype_multiple {DPS GAUSS}; example of multi domain : motion can have up to 4 data units for accelerometer, gyroscope, magnetometer, temperature
-
-io_power_mode     0            ; to set the device at boot time in stop / off (0)
-                            ; running mode(1) : digital conversion (BIAS always powered for analog peripherals )
-                            ; running mode(2) : digital conversion BIAS shut-down between conversions
-                            ; Sleep (3) Bias still powered but not digital conversions
-
-io_position meter 1.1 -2.2 0.01 ; unit and relative XYZ position with the platform reference point
-io_euler_angles  10 20 90       ; Euler angles with respect to the platform reference orientation, in degrees
-
-io_sampling_rate       {1 16000 44100 48000} ; sampling rate options (enumeration in Hz)  
-io_sampling_period_s   {1 1 60 120 }         ; sampling period options (enumeration in [second])   
-io_sampling_period_day {1 0.25 1 7 }         ; sampling period options (enumeration in [day])   
-io_sampling_rate_accuracy    0.1             ; in percentage
+io_direction_rx0tx1   1          ;  direction of the stream  0:input 1:output from graph point of view
+io_raw_format        S16         ; options for the raw arithmetics computation format here  STREAM_S16 
+io_interleaving      1           ; multichannel intleaved (0), deinterleaved by frame-size (1) 
+io_nb_channels       1           ; options for the number of channels 
+io_frame_length     {1 1 2 16 }  ; options of possible frame_size in number of sample (can mono or multi-channel). 
+io_frame_duration   {1 10 22.5}  ; options of possible frame_size in [milliseconds].   The default frame length is 1 sample
+io_subtype_units    VRMS         ; depending on the domain. Here Units_Vrms of the "general" domain (0 = any or underfined)
+io_subtype_multiple {DPS GAUSS}  ; example of multi domain : motion can have up to 4 data units for accelerometer, gyroscope, magnetometer, temperature
+io_power_mode     0              ; to set the device at boot time in stop / off (0)
+                                 ; running mode(1) : digital conversion (BIAS always powered for analog peripherals )
+                                 ; running mode(2) : digital conversion BIAS shut-down between conversions
+                                 ; Sleep (3) Bias still powered but not digital conversions
+io_position meter 1.1 -2.2 0.01  ; unit and relative XYZ position with the platform reference point
+io_euler_angles  10 20 90        ; Euler angles with respect to the platform reference orientation, in degrees
+io_sampling_rate          {1 16000 44100 48000} ; sampling rate options (enumeration in Hz)  
+io_sampling_period_s      {1 1 60 120 }         ; sampling period options (enumeration in [second])   
+io_sampling_period_day    {1 0.25 1 7 }         ; sampling period options (enumeration in [day])   
+io_sampling_rate_accuracy       0.1             ; in percentage
 
 io_time_stamp_format {1 1}      ; 0 no time-stamp, 1 absolute time, 2 relative time from last frame, 3 frame counter
 io_time_stamp_length {1 1}      ; 0/1/2/3 corresponding to  16/32/64/64 bits time formats (default : STREAM_TIME32)
@@ -127,13 +121,13 @@ io_analog_scale     90.1       ; 90.1 dBSPL is corresponding to full-scale with 
                                 ; audio_in  domain SPECIFIC (digital format) 
                                 ; Samples = Full_Scale_Digital x (interpa x analog_input + interpoff)
                                 ; analog_input = invinterpa x ((samples/Full_Scale_Digital) - interpoff)
-io_rescale_factor 12.24  -44.3 ; [1/a off] analog_input = invinterpa x ((samples/Full_Scale_Digital) - interpoff)
+io_rescale_factor   12.24  -44.3 ; [1/a off] analog_input = invinterpa x ((samples/Full_Scale_Digital) - interpoff)
 
 io_sampling_rate       {1 16000 44100 48000} ; sampling rate options (enumeration in Hz)  
 io_sampling_period_s   {1 1 60 120 }         ; sampling period options (enumeration in [second])   
 io_sampling_period_day {1 0.25 1 7 }         ; sampling period options (enumeration in [day])   
 
-io_nb_channels      1  {1 1 2}  ; multichannel intleaved (0), deinterleaved by frame-size (1) + options for the number of channels 
+io_nb_channels          {1 1 2} ; options for the number of channels 
 io_channel_mapping  1           ; mono (Front Left), 18 channels can be controlled :
                                 ;   Front Left                FL     bit0
                                 ;   Front Right               FR        1
@@ -172,8 +166,8 @@ io_fhigh_filter    {1  4000 8000     }   ; options for frequencies
 ;----------------------------------------------------------------------------------------------------------------------
 ; audio_out          
 
-io_subtype_units   87                  ; Units is [mV] 
-io_analog_scale    1400                ; 1400nV is corresponding to full-scale with the default setting
+io_subtype_units   87                    ; Units is [mV] 
+io_analog_scale    1400                  ; 1400nV is corresponding to full-scale with the default setting
 io_sampling_rate   {1 16000 44100 48000} ; sampling rate options (enumeration in Hz)  
 io_nb_channels     {   1    1 1 2    }      ; multichannel intleaved (0), deinterleaved by frame-size (1) + options for the number of channels 
 io_channel_mapping  1                    ; mono (Front Left), 18 channels can be controlled :
@@ -203,19 +197,19 @@ io_fhigh_filter    {1  4000 8000     }   ; options for frequencies
 
 ;----------------------------------------------------------------------------------------------------------------------
 ; motion             
-io_sampling_rate    1 16000 44100 48000   ; sampling rate options (enumeration in Hz)  
-io_sampling_period_s   1 0.01 0.02 0.04 ; sampling period options (enumeration in [second])   
+io_sampling_rate        1 16000 44100 48000   ; sampling rate options (enumeration in Hz)  
+io_sampling_period_s    1 0.01 0.02 0.04 ; sampling period options (enumeration in [second])   
 
-io_sampling_accuracy   0.8 ; sampling rate accuracy in percent
+io_sampling_accuracy    0.8             ; sampling rate accuracy in percent
     
-                            ; subtype_motion aXg0m0 1                            /* only accelerometer */
-                            ; subtype_motion a0gXm0 2                            /* only gyroscope */
-                            ; subtype_motion a0g0mX 3                            /* only magnetometer */
-                            ; subtype_motion aXgXm0 4                            /* A + G */
-                            ; subtype_motion aXg0mX 5                            /* A + M */
-                            ; subtype_motion a0gXmX 6                            /* G + M */
-                            ; subtype_motion aXgXmX 7                            /* A + G + M */
-io_motion_format   4       ; imu_channel_format
+                                        ; subtype_motion aXg0m0 1                            /* only accelerometer */
+                                        ; subtype_motion a0gXm0 2                            /* only gyroscope */
+                                        ; subtype_motion a0g0mX 3                            /* only magnetometer */
+                                        ; subtype_motion aXgXm0 4                            /* A + G */
+                                        ; subtype_motion aXg0mX 5                            /* A + M */
+                                        ; subtype_motion a0gXmX 6                            /* G + M */
+                                        ; subtype_motion aXgXmX 7                            /* A + G + M */
+io_motion_format   4                    ; imu_channel_format
 
 io_motion_sensitivity acc   1  2 4 8 16 ; sensitivity options of accelerometer 
 io_motion_sensitivity gyro  1  2 4 8 16 ; sensitivity options of gyroscope [dps]
@@ -224,7 +218,7 @@ io_motion_sensitivity mag   1  2 4 8 16 ; sensitivity options of magnetometer
 io_motion_averaging   acc   1  1 4 16 32; averaging in nb of samples
 io_motion_averaging   gyro  1  1 4 16 32; averaging in nb of samples
 
-io_high_pass   0 /1        ; remove clicks 
+io_high_pass   0 /1                     ; remove clicks 
 io_DC-canceller
 
 ;----------------------------------------------------------------------------------------------------------------------

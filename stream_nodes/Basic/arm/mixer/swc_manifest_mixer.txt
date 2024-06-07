@@ -11,12 +11,12 @@ node_use_arc_format  0      ; default 1 : the scheduler must push each arc forma
 ;----------------------------------------------------------------------------------------
 ;   MEMORY ALLOCATIONS
 
-node_nb_mem_block    1            
-;                A S N
-node_mem_alloc  32 0 1      ; size = 32Bytes data memory, Static, Fast memory block
+node_mem                0
+node_mem_alloc         32
 
 ;--------------------------------------------------------------------------------------------
 ;    ARC CONFIGURATION
 
-node_arc_channels 0 0 {1 1} ; 
-node_arc_channels 1 0 {1 1} ; 
+
+ 
+_end_

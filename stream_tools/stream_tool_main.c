@@ -107,7 +107,8 @@ void main(void)
     /*@@@  TODO
      * check consistency : formats between nodes/arcs 
      * to help the graph designer insert conversion nodes
-     * 
+     *  - ARCS : does { struct options raw_format_options } matches with { struct formatStruct format; }
+     *  - NODES : does { struct options raw_format_options } matches with { struct arcStruct arc[MAX_NB_STREAM_PER_SWC].format; }
      *   arm_stream_check_graph(platform, graph); 
      * 
      *@@@  TODO 
@@ -120,9 +121,10 @@ void main(void)
     arm_stream_memory_map(platform, graph);
 
 
-    /* 
-        check format compatibility and insert conversion nodes
-        remove formats declared twice @@@@ TODO
+    /*  @@@@ TODO
+
+        check format compatibility to tell the graph programmer to insert conversion nodes
+        remove formats declared twice 
 
         Convert the structure to the binary format
             used by the graph interpreter and scheduler

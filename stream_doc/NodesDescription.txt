@@ -297,8 +297,7 @@ _end_
 ;   presets:
 ;   #1 : bypass
 ;   #2 : LPF fc=fs/4
-;   #3 : DC-filter (use-case: audio, XYZ-gravity-compensation/estimation
-;   #11..42: delay-line of 1..32 samples
+;   #3 : DC-filter (use-case: audio, XYZ gravity compensation/estimation)
 ;
 ;   parameter of filter : 
 ;   - number of biquads in cascade (1 or 2)
@@ -313,11 +312,10 @@ _end_
 node
     arm_stream_filter 0         node subroutine name + instance ID
 
-    preset              1               ; parameter preset used at boot time, default = #0
-    map_hwblock         0  0            ; list of "nb_mem_block" VID indexes of "procmap_manifest_xxxx.txt" where to map the allocated memory
-                                        ;   a value  a value 1xxyy means "swap from VIDxx to VIDyy (fast memory) before run", default = #0
-    map_verbose         1               ; level #1 of debug trace
-
+    node_preset         1               ; parameter preset used at boot time, default = #0
+    node_map_hwblock    0  0            ; list of "nb_mem_block" VID indexes of "procmap_manifest_xxxx.txt" where to map the allocated memory
+                                        ;  default = #0
+    node_map_verbose    1               ; level #1 of debug trace
 
     parameters  optional_label
         1  i8;  0       0="load all parameters"

@@ -130,10 +130,13 @@
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\resampler\arm_stream_resampler_process.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\Image\arm\resampler2D\arm_stream_resampler2D.c">
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\analysis\arm_stream_analysis.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\Image\arm\resampler2D\arm_stream_resampler2D_process.c">
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\analysis\arm_stream_analysis_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_graph_control.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
   </ItemGroup>
@@ -213,7 +216,7 @@
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\resampler\arm_stream_resampler.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\stream_nodes\Image\arm\resampler2D\arm_stream_resampler2D.h">
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\analysis\arm_stream_analysis.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
   </ItemGroup>
@@ -229,9 +232,6 @@
     </Filter>
     <Filter Include="platform_manifest">
       <UniqueIdentifier>{97748a8a-4da7-4066-af7e-27a8abb8d503}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="node_manifests">
-      <UniqueIdentifier>{d85b37af-509f-4644-90ff-644e22c6188f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

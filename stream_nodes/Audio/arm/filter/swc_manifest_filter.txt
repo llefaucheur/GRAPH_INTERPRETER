@@ -5,23 +5,30 @@
     ARM                     ; developer name
     arm_stream_filter       ; node name
 
-node_use_arc_format  1      ; default 1 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
-node_mask_library    15     ; default 0 bit-field of dependencies to computing libraries
+node_use_arc_format  1 
+node_mask_library    15
 
 ;----------------------------------------------------------------------------------------
 ;   MEMORY ALLOCATIONS
 
-node_nb_mem_block    2    
-;                         A   B i       C j   D k   E   A S N R  
-node_mem_alloc_detail    76   0 0   0.001 0   0 0   0   4 0 0 0   ; node instance, 1ms buffer
-node_mem_alloc_detail     6   0 0   0.001 0   0 0   0   4 1 3 1   ; Working TCM MEM (for Z memory and coeffs)
+node_mem                0
+node_mem_alloc         76
+
+node_mem                1
+node_mem_alloc          6
+node_mem_type           1           ; working memory
+node_mem_speed          2           ; critical fast 
+
 
 ;--------------------------------------------------------------------------------------------
 ;    ARC CONFIGURATION
 
-node_arc_channels        0 0    {1 1 2}  ; arc, intleaved,  options for the number of channels
-node_arc_channels        1 0    {1 1 2}  ; arc, intleaved,  options for the number of channels
+node_arc            0
+node_arc_nb_channels      {1 1 2}   {  -1   1  1  2 }   ; arc, intleaved,  options for the number of channels
+node_arc_raw_format     {1 17 27}   ; arc, options for the raw arithmetics STREAM_S16, STREAM_FP32
 
-node_arc_raw_format      0 {1 S16 FP32}  ; arc, options for the raw arithmetics STREAM_S16, STREAM_FP32
-node_arc_raw_format      1 {1 S16 FP32}  ; arc, options for the raw arithmetics STREAM_S16, STREAM_FP32
+node_arc            1
+node_arc_nb_channels    {1 1 2}     ; arc, intleaved,  options for the number of channels
+node_arc_raw_format     {1 17 27}   ; arc, options for the raw arithmetics STREAM_S16, STREAM_FP32
 
+_end_

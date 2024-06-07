@@ -103,10 +103,10 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
             tmp32 = RD(memresults[0], FRAMESIZE_FMT0);
             ST(pinstance->channel_fmt, FRAMESIZE_FMT0_FMT, tmp32);
 
-            tmp32 = RD(memresults[0], INTERLEAV_FMT0);
+            tmp32 = RD(memresults[1], INTERLEAV_FMT1);
             ST(pinstance->channel_fmt, INTERLEAVING_FMT, tmp32);
 
-            tmp32 = RD(memresults[0], NCHANM1_FMT1);
+            tmp32 = RD(memresults[1], NCHANM1_FMT1);
             ST(pinstance->channel_fmt, NBCHANM1_AMPLI_FMT, tmp32);
             
             /* reset here */

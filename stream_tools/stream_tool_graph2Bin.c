@@ -55,29 +55,29 @@ struct stream_graph_linkedlist *G;
 
 void PRINTF(uint32_t d, char *c) 
 {
-    int32_t iRAM;
-    uint32_t i;
-    char cplus[MAXNBCHAR_LINE];
-    char line[MAXNBCHAR_LINE];
+    //int32_t iRAM;
+    //uint32_t i;
+    //char cplus[NBCHAR_LINE];
+    //char line[NBCHAR_LINE];
 
-    if (addrBytes/4 >= 0x74 && addrBytes <0x80)
-    {   i = 0;
-    }
+    //if (addrBytes/4 >= 0x74 && addrBytes <0x80)
+    //{   i = 0;
+    //}
 
-    strcpy(cplus, c);
+    //strcpy(cplus, c);
 
-    for (i = 0; i < G->idbg; i++)
-    {
-        if (addrBytes == G->dbg[i].address)
-        {   strcat(cplus, G->dbg[i].toprint);
-        }
-    }
+    //for (i = 0; i < G->idbg; i++)
+    //{
+    //    if (addrBytes == G->dbg[i].address)
+    //    {   strcat(cplus, G->dbg[i].toprint);
+    //    }
+    //}
 
-    iRAM = (int)addrBytes - (int)addrRAM;
-    if (iRAM < 0) iRAM = 0;
-    sprintf (line, "0x%08X, // %03X %03X %03X %s \n", (d), addrBytes, iRAM, iRAM/4, cplus);
-    fprintf(ptf_graph_dbg, "%s", line); 
-    addrBytes += 4;
+    //iRAM = (int)addrBytes - (int)addrRAM;
+    //if (iRAM < 0) iRAM = 0;
+    //sprintf (line, "0x%08X, // %03X %03X %03X %s \n", (d), addrBytes, iRAM, iRAM/4, cplus);
+    //fprintf(ptf_graph_dbg, "%s", line); 
+    //addrBytes += 4;
 }
 
 //
@@ -107,7 +107,7 @@ static uint32_t memory_banks[MAX_MEMORY_BANK_DBG], nb_memory_banks;
 
 void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph, FILE *ptf_graph_bin)
 {
-    uint32_t FMT0, FMT1, FMT2;
+    uint32_t FMT0, FMT1, FMT2, FMT3, ARCW0, ARCW1, ARCW2, ARCW3;
     static uint32_t SC1, SC2, LK1, LK2;
     static fpos_t pos_NWords, pos_end;
     static uint32_t nFMT, LENscript, LinkedList, LinkedList0, NbInstance, nIOs, NBarc, SizeDebug, dbgScript;
@@ -118,6 +118,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     //union {uint8_t indexes_fw_io_idx_u8[256]; 
     //       uint32_t indexes_fw_io_idx_u32[32]; } UIO;
     struct arcStruct *arcIO;
+    struct arcStruct *arc;
 
     addrBytes = 0;
     ptf_graph_dbg = ptf_graph_bin;
@@ -165,7 +166,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         PRINTF(FMT0, tmpstring);   // [2] size of LINKEDLIST
 
         FMT0 = 0; ST(FMT0, NB_ARCS_GR3, graph->nb_arcs);
-        ST(FMT0, SCRIPT_SCTRL_GR3, graph->script_sctrl);
+        ST(FMT0, SCRIPT_SCTRL_GR3, 0 /*graph->script_sctrl */);
         sprintf(tmpstring, "3 number of arcs and debug/trace registers"); 
         PRINTF(FMT0, tmpstring);   // [3] number of ARCS, number of DEBUG registers
 
@@ -189,20 +190,20 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     {   
         uint8_t arcBuffer_shared_with_IO;
         FMT0 = FMT1 = 0xFFFFFFFFL;
-        arcIO = &(graph->arcIO[fw_io_idx]);
+        arcIO = &(graph->arc[fw_io_idx]);
         sprintf(tmpstring, "");
 
-        if (arcIO->arcIDstream != 0xFFFF)
+        if (arcIO->idx_arc_in_graph != 0xFFFF)
         {
             ST(FMT0, QUICKSKIP_IOFMT, 0);
-            ST(FMT0,   IOARCID_IOFMT, arcIO->arcIDstream);
-            ST(FMT0,    rx0tx1_IOFMT, arcIO->sc.rx0tx1);
-            ST(FMT0,  SERVANT1_IOFMT, arcIO->si.commander0_servant1);
-            ST(FMT0, SET0COPY1_IOFMT, arcIO->si.set0_copy1);
-            arcBuffer_shared_with_IO = (0 != arcIO->si.graphalloc_X_bsp_0)? 1: 0;
+            ST(FMT0,   IOARCID_IOFMT, arcIO->idx_arc_in_graph);
+            ST(FMT0,    RX0TX1_IOFMT, arcIO->format.rx0tx1);
+            ST(FMT0,  SERVANT1_IOFMT, arcIO->format.commander0_servant1);
+            ST(FMT0, SET0COPY1_IOFMT, arcIO->format.set0_copy1);
+            arcBuffer_shared_with_IO = (0 != arcIO->format.graphalloc_X_bsp_0)? 1: 0;
             ST(FMT0, SHAREBUFF_IOFMT, arcBuffer_shared_with_IO);
-            FMT1 = arcIO->si.settings;
-            sprintf(tmpstring, "IO-Interface(%d) set0_copy1=%d arc(%d) direction_rx0tx1=%d", fw_io_idx, arcIO->si.set0_copy1, arcIO->arcIDstream, arcIO->sc.rx0tx1); 
+            FMT1 = arcIO->settings;
+            sprintf(tmpstring, "IO-Interface(%d) set0_copy1=%d arc(%d) direction_rx0tx1=%d", fw_io_idx, arcIO->format.set0_copy1, arcIO->idx_arc_in_graph, arcIO->format.rx0tx1); 
         }
         else
         {
@@ -224,53 +225,62 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         float f;
         struct formatStruct *format;
         
+        FMT0 = 0;
         format = &(graph->arcFormat[i]);
+        ST(FMT0, FRAMESIZE_FMT0, format->frame_length);
 
-        FMT0 = format->FMT0;
-        FMT1 = format->FMT1;
-        FMT2 = format->FMT2;
+        FMT1 = 0;
+        ST(FMT1, RAW_FMT1, format->raw_data);
+        ST(FMT1, SUBTYPE_FMT1, 0);  //@@@@@@@@
+        ST(FMT1, DOMAIN_FMT1,  0);
+        ST(FMT1, TSTPSIZE_FMT1,0);
+        ST(FMT1, TIMSTAMP_FMT1, 0);
+        ST(FMT1, INTERLEAV_FMT1, format->deinterleaved);
+        ST(FMT1, NCHANM1_FMT1, format->nchan -1);  
 
-        U.u32 = FMT1;
-        f = U.f32;
+        FMT2 = 0;
+        FMT3 = 0;
+  
         
-        sprintf(tmpstring, "Data and frame format %d   frame size %d   nb chan %d   sampling %6.2f", i,
-            RD(FMT0,  FRAMESIZE_FMT0),
-            RD(FMT1,  NCHANM1_FMT1) +1,
-            f);
+        //sprintf(tmpstring, "Data and frame format %d   frame size %d   nb chan %d   sampling %6.2f", i,
+        //    RD(FMT0,  FRAMESIZE_FMT0),
+        //    RD(FMT1,  NCHANM1_FMT1) +1,
+        //    f);
 
         PRINTF(FMT0, tmpstring);
         PRINTF(FMT1, "");
         PRINTF(FMT2, "");
+        PRINTF(FMT3, "");
 
     }
     
     /* 
         SCRIPTS in Flash     table of 2x W32      word0 : offset, word1:length + byteCode Format
     */
-    SC1 = addrBytes;
+    //SC1 = addrBytes;
    
-    for (j = i = 0; i < graph->nb_scripts; i++)
-    {   FMT0 = graph->script_indirect[j]; 
-        PRINTF(FMT0, "script offset");
-        FMT0 = 0; 
-        PRINTF(FMT0, "script length");
-    }
+    //for (j = i = 0; i < graph->nb_scripts; i++)
+    //{   FMT0 = graph->script_offset[j]; 
+    //    PRINTF(FMT0, "script offset");
+    //    FMT0 = 0; 
+    //    PRINTF(FMT0, "script length");
+    //}
 
-    i1 = graph->nb_byte_code;
-    i1 = (3+i1)>>2;             // round to W32
-    for (j = i = 0; i < i1; i++)
-    {   uint8_t *pt8 = &(graph->script_bytecode[j]);
-        FMT0 = pt8[0]; 
-        FMT1 = ((long)(pt8[1]))<<8; 
-        FMT0 |= FMT1; 
-        FMT1 = ((long)(pt8[2]))<<16;
-        FMT0 |= FMT1; 
-        FMT1 = ((long)(pt8[3]))<<24;
-        FMT0 |= FMT1; 
-        j = j+4;
-        PRINTF(FMT0, "byte codes");
-    }
-    SC2 = addrBytes;
+    //i1 = graph->nb_byte_code;
+    //i1 = (3+i1)>>2;             // round to W32
+    //for (j = i = 0; i < i1; i++)
+    //{   uint8_t *pt8 = &(graph->script_bytecode[j]);
+    //    FMT0 = pt8[0]; 
+    //    FMT1 = ((long)(pt8[1]))<<8; 
+    //    FMT0 |= FMT1; 
+    //    FMT1 = ((long)(pt8[2]))<<16;
+    //    FMT0 |= FMT1; 
+    //    FMT1 = ((long)(pt8[3]))<<24;
+    //    FMT0 |= FMT1; 
+    //    j = j+4;
+    //    PRINTF(FMT0, "byte codes");
+    //}
+    //SC2 = addrBytes;
         
     /* 
         LINKED-LIST of SWC
@@ -295,8 +305,8 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             ST(FMT0, ARC1_LW1, arc[iarc+1].arcID);
             ST(FMT0, ARC0_LW1, arc[iarc].arcID);
 
-            ST(FMT0, ARC0D_LW1, (arc[iarc  ].sc.rx0tx1 >0));    /* set the direction_rx0tx1 arc direction bit */
-            ST(FMT0, ARC1D_LW1, (arc[iarc+1].sc.rx0tx1 >0));    
+            ST(FMT0, ARC0D_LW1, (arc[iarc  ].format.rx0tx1 >0));    /* set the direction_rx0tx1 arc direction bit */
+            ST(FMT0, ARC1D_LW1, (arc[iarc+1].format.rx0tx1 >0));    
 
             ST(FMT0, DBGB1_LW1, arc[iarc+1].debug_page_DBGB0_LW1);  
             ST(FMT0, DBGB0_LW1, arc[iarc].debug_page_DBGB0_LW1);
@@ -316,7 +326,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
                     ST(FMT0, XDM11_LW2, xdm11); 
                 }
             }
-            //if (n->defaultParameterSizeW32 > 1) ST(FMT0, PARAMETER_LW2, 1);
+            //if (n->ParameterSizeW32 > 1) ST(FMT0, PARAMETER_LW2, 1);
             ST(FMT0, BASEIDXOFFLW2, n->memreq[imem].graph_basePACK);    // address 
             sprintf(tmpstring, "Reserved memory bank(%d)", imem); 
             PRINTF(FMT0, tmpstring);
@@ -327,7 +337,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         }
 
         /* word 4 - parameters */
-        for (j = 0; j < n->defaultParameterSizeW32; j++)
+        for (j = 0; j < n->ParameterSizeW32; j++)
         {   
             if (j==0) sprintf(tmpstring, "(%d) boot parameters", j); 
             else sprintf(tmpstring, "(%d)", j); 
@@ -342,6 +352,38 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     /*
         ARC descriptors (4 words each)
     */
+//        minFrameSize = (int)(0.5 + (IOSizeMulfac * minFrameSize));      /* buffer size rescaling, Byte accurate */
+//        /* check it is larger than what the IO-Interface needs */
+//
+//        arcIO = &(graph->arcIO[fw_io_idx]);
+//        if (minFrameSize < arcIO->si.graphalloc_X_bsp_0 * minFrameSize)   /* @@@ to check with a test graphTxt */
+//        {   minFrameSize = arcIO->si.graphalloc_X_bsp_0 * minFrameSize;
+//        }
+//
+//        arcBufferSizeByte = minFrameSize;               /* in Bytes */           
+//
+//        // @@@@ arc sequence starting with the one used for locking, the streaming arcs, then the metadata arcs 
+//        // @@@@ arc(tx) used for locking is ARC0_LW1
+//
+//        ST(arc->ARCW0, PRODUCFMT_ARCW0, ProdFMT);
+//        ST(arc->ARCW0,   DATAOFF_ARCW0, 0);
+//        ST(arc->ARCW0,   BASEIDX_ARCW0, 0);         /* fill the base address after all arcs are read */
+//
+//        arc->memVID = VID;
+//
+//        ST(arc->ARCW1, CONSUMFMT_ARCW1, ConsFMT);
+//        ST(arc->ARCW1,   MPFLUSH_ARCW1, FLUSH);
+//        ST(arc->ARCW1, DEBUG_REG_ARCW1, REG);
+//        ST(arc->ARCW1, BUFF_SIZE_ARCW1, minFrameSize);
+//
+//        ST(arc->ARCW2, COMPUTCMD_ARCW2, CMD);
+//        ST(arc->ARCW2, FLOWERROR_ARCW2, OVF);
+//        ST(arc->ARCW2,    EXTEND_ARCW2, EXTD);
+//        ST(arc->ARCW2,      READ_ARCW2, 0);
+//
+//        ST(arc->ARCW3, COLLISION_ARCW3, 0);
+//        ST(arc->ARCW3, ALIGNBLCK_ARCW3, 0);
+//        ST(arc->ARCW3,     WRITE_ARCW3, 0);
     for (i = 0; i < graph->nb_arcs; i++)
     {   
         sprintf(tmpstring, "Circular buffer ARC descriptor(%d) ", i); 
@@ -358,11 +400,28 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             }
         }
 
-        if (i2==0) 
-        {   sprintf(tmpstring, "Circular buffer ARC descriptor(%d) Producer %d Consumer %d", i,
-                RD(graph->arc[i].ARCW0, PRODUCFMT_ARCW0),
-                RD(graph->arc[i].ARCW1, CONSUMFMT_ARCW1)); 
-        }
+        arc = &(graph->arc[i]);
+
+        ST(ARCW0, PRODUCFMT_ARCW0, 0);
+        ST(ARCW0,   DATAOFF_ARCW0, 0);
+        ST(ARCW0,   BASEIDX_ARCW0, 0);         /* fill the base address after all arcs are read */
+
+
+        ST(ARCW1, CONSUMFMT_ARCW1, 0);
+        ST(ARCW1,   MPFLUSH_ARCW1, 0);
+        ST(ARCW1, DEBUG_REG_ARCW1, 0);
+        ST(ARCW1, BUFF_SIZE_ARCW1, arc->format.frame_length);
+
+        ST(ARCW2, COMPUTCMD_ARCW2, 0);
+        ST(ARCW2, FLOWERROR_ARCW2, 0);
+        ST(ARCW2,    EXTEND_ARCW2, 0);
+        ST(ARCW2,      READ_ARCW2, 0);
+
+        ST(ARCW3, COLLISION_ARCW3, 0);
+        ST(ARCW3, ALIGNBLCK_ARCW3, 0);
+        ST(ARCW3,     WRITE_ARCW3, 0);
+
+
 
         PRINTF(graph->arc[i].ARCW0, tmpstring);
         PRINTF(graph->arc[i].ARCW1, "");
@@ -385,7 +444,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     fprintf(ptf_graph_bin, "0x%08X, // number of words\n", addrBytes/4); // [-1] size of the graph in Words 
     addrBytes = 0;
     FMT0 = 0;
-    ST(FMT0, RAMSPLIT_GRAPH0, graph->PackedFormat);
+    ST(FMT0, RAMSPLIT_GR0, graph->PackedFormat);
     sprintf(tmpstring, "0 destination of the graph in RAM"); 
     PRINTF(FMT0, tmpstring);      // [0] 27b RAM address of part/all the graph going in RAM, 
 
@@ -400,7 +459,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     PRINTF(FMT0, tmpstring);   // [2] size of LINKEDLIST
 
     FMT0 = 0; ST(FMT0, NB_ARCS_GR3, graph->nb_arcs);
-    ST(FMT0, SCRIPT_SCTRL_GR3, graph->script_sctrl);
+    ST(FMT0, SCRIPT_SCTRL_GR3, 0 /* graph->script_sctrl*/);
     sprintf(tmpstring, "3 number of arcs and debug/trace registers"); 
     PRINTF(FMT0, tmpstring);   // [3] number of ARCS, number of DEBUG registers
 
@@ -416,6 +475,112 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     PRINTF(FMT0, "6 '''''");      //
 
     // fsetpos (ptf_graph_bin, &pos_end);  
+}
+
+
+
+
+/**=================================================================================================
+  @brief            (main) 
+  @param[in/out]    none
+  @return           int
+
+  @par              compute the graph memory map
+
+  reserve memory for 
+    1) arc descriptors for debug pages 
+    2) arc descriptors of scripts and streams
+    3) rescan the arc and malloc the buffers => transate in 27b addresses
+    4) malloc the node instances => transate in 27b addresses
+
+  @remark
+    ARC descriptors (4 words each) start after other data :
+        [0] byte array of  LSB(fw_io_idx) = ioctrl [graph_io_idx], MSB="on=going"
+            data to copy from Graph[GRAPH_HEADER_NBWORDS]   to S-> all_arcs[0], size = [NB16IOSTREAM_GR3 x 4]
+        [COLLISION_IDX_GR2] reserved for collision management (Dekker's algorithm) 
+        [ARC_DEBUG_IDX_GR2] debug registers (2 words each) DEBUG REGISTERS and vectors from ARC content 
+            analysis (DEBUG_REG_ARCW1)
+            32 memory banks of 16bytes + 64bytes in normal and critical fast memory when possible
+        [SERVICE_RAM_IDX_GR2] shared between all instances (maximum 5kB)
+
+ */
+
+void arm_stream_memory_map (struct stream_platform_manifest *platform, 
+                            struct stream_graph_linkedlist *graph)
+{
+    uint32_t first_arc = 1;
+    intPtr_t RamW32;
+    intPtr_t arcBufferSizeByte;
+    uint32_t pack27b, N, iscripts, iAllArcs, inode, sharedArc;
+    intPtr_t size;
+    uint8_t ptr8, dbgcmd, dbgreg, ovf, unf, first_script_sharedRAM, imemreq;
+    struct arcStruct *arc;
+    struct stream_node_manifest *node;
+
+    size = RamW32 = 0; 
+
+    /* ======= memory for FIFO descriptors ======= */
+    if (graph->nb_debug_pages > 0)                      /* are there debug data to save ? */
+    {                                                   /* arc0 is used to address the 16x64b debug registers pages */
+        size = 4 *(ARC_DBG_REGISTER_SIZE_W32 * graph->nb_debug_registers);
+        vid_malloc(VID_default, size, MEM_REQ_4BYTES_ALIGNMENT, MEM_TYPE_STATIC, &pack27b, &ptr8, platform, graph);
+    }
+    RamW32 += (size +3)>>2;
+
+    N = graph->nb_scripts + graph->nb_arcs;
+    size = SIZEOF_ARCDESC_W32 * N;                      /* reserve the descriptor area (all the arcs) */
+    vid_malloc(VID_default, size, MEM_REQ_4BYTES_ALIGNMENT, MEM_TYPE_STATIC, &pack27b, &ptr8, platform, graph);
+    RamW32 += (size +3)>>2;
+
+    /* ======= memory for FIFO buffers ======= */
+
+
+    /* ======= memory for scripts ======= */
+    N = graph->max_shared_stackW32; // + graph->max_nregs;
+    size = ((SCRIPT_REGSIZE +1) * N);                /* reserve the shared area of scripts */
+    vid_malloc(VID_default, size, MEM_REQ_4BYTES_ALIGNMENT, MEM_TYPE_STATIC, &pack27b, &ptr8, platform, graph);
+
+
+    iAllArcs = 0;
+    first_script_sharedRAM = 1;
+    //for (iscripts = 0; iscripts < graph->nb_scripts; iscripts++)
+    //{   uint32_t RegAndStackW32, stackdepthW32;
+    //    dbgcmd = dbgreg = ovf = unf = 0;
+
+    //    if (0 == graph->scriptRAMshared[iscripts] || first_script_sharedRAM)
+    //    {   if (first_script_sharedRAM && (0 != graph->scriptRAMshared[iscripts]))
+    //        {   first_script_sharedRAM = 0;
+    //            sharedArc = graph->nb_arcs;
+    //        }
+
+    //        RegAndStackW32 = graph->script_nregs[iscripts];
+    //        stackdepthW32 = graph->script_stackdepthW32[iscripts];
+    //        arcBufferSizeByte = RegAndStackW32 * (SCRIPT_REGSIZE +1);   /* register type = 1 byte*/
+    //        arcBufferSizeByte+= stackdepthW32 * (SCRIPT_REGSIZE +1);    /* stack element on 9 bytes too */
+    //        size = ((arcBufferSizeByte +3)>>2)<<2;         /* round to the closest W32 */
+    //        vid_malloc(VID_default, size, MEM_REQ_4BYTES_ALIGNMENT, &pack27b, &ptr8, platform, graph);
+
+    //        arc = &(graph->arc[iAllArcs]);
+    //        fill_arc(arc, pack27b, (uint32_t)size,   0, 0, 0,  dbgcmd, dbgreg, ovf, "");
+    //        iAllArcs ++;
+    //        /* second sharedRAM script : reuse the RAM of the first shared script */
+    //    }
+    //}
+
+    /* ======= memory for node instances ======= */
+    for (inode = 0; inode < graph->nb_arcs; inode++)
+    {   
+        node = &(graph->all_nodes[inode]);
+        for (imemreq = 0; imemreq < node->nbMemorySegment; imemreq++)
+        {
+            compute_memreq(node, graph->arcFormat);
+
+            size = node->memreq[imemreq].graph_memreq_size;
+            vid_malloc(node->memreq[imemreq].VID, size, MEM_REQ_4BYTES_ALIGNMENT, MEM_TYPE_STATIC, &(node->memreq[imemreq].graph_basePACK), 
+                    &ptr8, platform, graph);
+        }
+    }
+
 }
 
 

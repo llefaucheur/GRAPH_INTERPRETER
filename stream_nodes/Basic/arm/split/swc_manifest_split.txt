@@ -3,63 +3,7 @@
 ; ------------------------------------------------------------------------------------------------------------
 ;
     ARM                     ; developer name
-    arm_stream_split     ; node name
-
-    X 1 1 0  1 0 15 1       ; nb arc input, output, parameter, no jitter in buffer consumption 
-                            ; same data rate on all arcs, node uses format details, 
-                            ; dependencies to libraries, number of memory banks below
-
-; list of (architectures+FPU option) the SWC is compatible with
-    1                       ; number of architecture options below
-    0 2                     ; 0: arch (0=source code), 2: FPU option
-    101 001                 ; code version, version of the scheduler it is compatible with
-
-;----------------------------------------------------------------------------------------
-;   Memory Size Bytes = A(32b) + Delta(64b) + B x nb_channels_arc(i) + 
-;       C x samplingHz_arc(j) + D x frame_size_arc(k) + E x maxParameterSize
-;   A D64 B C D E, indexes i,j,k,  Alignment, Static/working/retention,  
-;       Normal/fast/critical,  Relocatable (STREAM_UPDATE_RELOCATABLE)
-;
-;    A   D   B   C   D   E    i j k   A S N R
-    32   4   0   0   0   0    0 0 0   4 0 0 0
-
-;-------------------
-; input_arc : "0"
-;-------------------            
-
-    0                       ; 0:input 1:output  
-    19                      ; raw format (Q15)                                     
-    0                       ; time-stamp (none)                                       
-    0                       ; deinterleaved (no)
-
-;   Lists of options, starting with the default index (0="any")
-
-    1   1                   ; index (>0) and options for nb-channel (index <0 for a range [min, step, max])
-    1                       ; frame length format(0:ms 1:samp)
-    1   1   2   4           ; index and frame_size options (index=0 means "any")
-    0   3                   ; samp. rate format (0:Hz 1:s 2:days)  accuracy in %, index  
-    2   8000 16000 44100    ; sampling rate options (in Hz)  
-                            
-;-------------------
-; output_arc : "1" 
-;-------------------            
-
-    1                       ; rx0tx1  
-    19                      ; raw format (Q15)
-    0                       ; time-stamp (none)                                       
-    0                       ; deinterleaved (no)
-
-    1   1                   ; index and list of nb channels options
-    1                       ; frame length format(0:ms 1:samp)
-    1   1   2   4           ; index and frame_size options
-    0   3                   ; samp. rate format (0:Hz 1:s 2:days)  accuracy in %, index 
-    2   8000 16000 44100    ; sampling rate options (in Hz)
-
-    1                       ; in-place processing to arc 1
-    _end_
+    arm_stream_split        ; node name
 
 
-; SHORT FORMAT
-;   ARM
-;   arm_stream_split
-;   S 1 1
+_end_

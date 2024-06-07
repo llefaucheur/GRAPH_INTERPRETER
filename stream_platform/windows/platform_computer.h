@@ -50,7 +50,7 @@
 
 
 /* max number of nodes installed at compilation time */
-#define NB_NODE_ENTRY_POINTS 21
+#define NB_NODE_ENTRY_POINTS 20
 
 /* max number of application callbacks used from SWC and scripts */
 #define MAX_NB_APP_CALLBACKS 8
@@ -135,9 +135,9 @@
 #define IO_PLATFORM_GPIO_OUT_1       8 
 #define IO_PLATFORM_DATA_OUT_0       9
 
-#define LAST_IO_FUNCTION_PLATFORM (IO_PLATFORM_DATA_OUT_0+1)  /* table of platform_io[fw_io_idx] */
+#define LAST_IO_FUNCTION_PLATFORM (IO_PLATFORM_DATA_OUT_0+1)  /* table of platform_io[io_al_idx] */
 
-#define MAX_IO_FUNCTION_PLATFORM 32     /* table of platform_io[fw_io_idx] MAX 32 IOs  later 255 */
+//#define MAX_IO_FUNCTION_PLATFORM 128     /* table of platform_io[io_al_idx] */
 
 /*===========================================================================
  in platform_computer.c : 

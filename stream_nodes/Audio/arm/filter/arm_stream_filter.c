@@ -182,7 +182,7 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
 
             pt16src = (uint16_t *)pt8bsrc;
             pt16dst = (uint16_t *)(&(pinstance->TCM->coefs[0]));
-            for (i = 0; i < numStages; i++)3
+            for (i = 0; i < numStages; i++)
             {   /* format:  {b10, 0, b11, b12, a11, a12, b20, 0, b21, b22, a21, a22, ...} */
                 *pt16dst++ = *pt16src++;    // b10
                 *pt16dst++ = 0;             // 0
@@ -266,6 +266,7 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
             break;
         }
 
+        case STREAM_READ_PARAMETER:
         case STREAM_UPDATE_RELOCATABLE:
         default : break;
     }

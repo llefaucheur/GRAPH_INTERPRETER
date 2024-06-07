@@ -28,7 +28,7 @@
 
     10  number of IO streams available      aligned with struct platform_io_control platform_io[] and platform_computer.h 
 
-    ;Path      Manifest         fw_io_idx ProcCtrl clock-domain     definition          (code from platform_computer.h)
+    ;Path      Manifest         IO_AL_idx ProcCtrl clock-domain     definition          (code from platform_computer.h)
     1   io_platform_data_in_0.txt       0     1        0            application processor  IO_PLATFORM_DATA_IN_0      
     1   io_platform_data_in_1.txt       1     1        0            application processor  IO_PLATFORM_DATA_IN_1      
     1   io_platform_analog_sensor_0.txt 2     1        0            ADC                    IO_PLATFORM_ANALOG_SENSOR_0
@@ -44,10 +44,10 @@
 ; ------------------------------------------------------------------------------------------------------------
 ; SOFTWARE COMPONENTS MANIFESTS 
 
-    19  nodes     path index + file name, in the same order of p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS]
+    20  nodes     path index + file name, in the same order of p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS]
 
     ;  p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
-    ;                                               /*  0 node disabled */
+    2                          swc_manifest_none.txt            /*  0 ID0 is reserved for by-passes              */
     2         Basic/arm/script/swc_manifest_graph_control.txt   /*  1 arm_stream_graph_control    scheduler control : lock, bypass, loop, if-then */
     2         Basic/arm/script/swc_manifest_script.txt          /*  2 arm_stream_script           byte-code interpreter */
     2         Basic/arm/router/swc_manifest_router.txt          /*  3 arm_stream_router           copy input arcs and subchannel and output arcs and subchannels   */     
@@ -66,6 +66,6 @@
     2          Basic/arm/split/swc_manifest_split.txt           /* 16 arm_stream_split            let a buffer be used by several nodes */
     2     image/arm/detector2D/swc_manifest_detector2D.txt      /* 17 arm_stream_detector2D       image activity detection */
     2       image/arm/filter2D/swc_manifest_filter2D.txt        /* 18 arm_stream_filter2D         convolution filter of the image */
-    2        Basic/arm/synchro/swc_manifest_analysis.txt        /* 19 arm_stream_analysis         energy, spectrum analysis  */
+    2       Basic/arm/analysis/swc_manifest_analysis.txt        /* 19 arm_stream_analysis         energy, spectrum analysis  */
 
 ; ------------------------------------------------------------------------------------------------------------

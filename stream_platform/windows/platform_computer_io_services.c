@@ -44,114 +44,8 @@
 
 #include "platform_computer.h"
 
-extern void arm_graph_interpreter_io_ack (uint8_t fw_io_idx, uint8_t *data,  uint32_t size);
-
-
-#define DATA_MEMORY_BARRIER
-#define INSTRUCTION_SYNC_BARRIER
-
-
-/**
-  @brief        time functions
-  @param[in]    none
-  @return       none
-
-  @par          
-
-  @remark       
- */
-void al_service_time_functions (uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
-{   
-    volatile uint8_t *pt8 = pt8b;
-
-    switch (service_command)
-    {
-        case AL_SERVICE_READ_TIME64:
-        {
-            break;
-        }
-    }
-}
-
-/**
-  @brief        
-  @param[in]    none
-  @return       none
-
-  @par          Usage:
-            al_service_mutual_exclusion (AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP, 
-                S->pt8b_collision_arc, (*data) &check, &process_ID, 0);
-                
-  @remark       
- */
-void al_service_mutual_exclusion(uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
-{   
-    volatile uint8_t *pt8 = pt8b;
-
-    switch (service_command)
-    {
-        case AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP:
-        {
-            /* attempt to reserve the node */
-            *pt8 = *data;    
-
-            /* check collision with all the running processes
-              using the equivalent of lock() and unlock() 
-              Oyama Lock, "Towards more scalable mutual exclusion for multicore architectures"
-                by Jean-Pierre Lozi */
-            //  INSTRUCTION_SYNC_BARRIER;
-            //  /* check mutual-exclusion */
-            //  DATA_MEMORY_BARRIER;
-
-            *data = (*pt8 == *flag);
-            break;
-        }
-
-        case AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP:
-        {   *(volatile uint8_t *)(pt8) = (*data); 
-            DATA_MEMORY_BARRIER; 
-            break;
-        }
-
-        default:
-        case AL_SERVICE_MUTUAL_EXCLUSION_RD_BYTE_MP:
-        {   DATA_MEMORY_BARRIER; 
-            (*data) = *(volatile uint8_t *)(pt8);
-            break;
-        }
-
-        case AL_SERVICE_MUTUAL_EXCLUSION_CLEAR_BIT_MP:
-        {   ((*pt8b) = U(*pt8b) & U(~(U(1) << U(n)))); 
-            DATA_MEMORY_BARRIER;
-            break;
-        }
-    }
-}
-
-void al_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n)
-{   
-    //arm_stream_instance_t *pinst;
-
-    /* max 16 groups of commands */
-	switch (RD(service_command, GROUP_AL_SRV))
-    {
-    case AL_SERVICE_READ_TIME:
-        al_service_time_functions(RD(service_command, FUNCTION_SSRV), ptr1, ptr2, ptr3, n);
-        break;
-    case AL_SERVICE_SLEEP_CONTROL:
-        break;
-    case AL_SERVICE_READ_MEMORY:
-        break;
-    case AL_SERVICE_SERIAL_COMMUNICATION:
-        break;
-    //enum stream_service_group
-    case AL_SERVICE_MUTUAL_EXCLUSION:
-        al_service_mutual_exclusion(RD(service_command, FUNCTION_SSRV), ptr1, ptr2, ptr3, n);
-        break;
-    case AL_SERVICE_CHANGE_IO_SETTING:
-        break;
-    }
-}
+extern void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_t size);
+extern uint8_t platform_io_al_idx_to_graph[];
 
 
 /* --------------------------------------------------------------------------------------- 
@@ -264,13 +158,13 @@ void analog_sensor_0 (uint32_t command, uint8_t *data, uint32_t size)
             cumulated_data = 2 * size;
 
             if (size != tmp)
-            {   arm_graph_interpreter_io_ack (IO_PLATFORM_ANALOG_SENSOR_0, data, 0);
+            {   arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], data, 0);
         #if DATA_FROM_FILES
                 fclose (ptf_in_stream_in_0_data);
         #endif
             }
             else
-            {   arm_graph_interpreter_io_ack (IO_PLATFORM_ANALOG_SENSOR_0, (uint8_t *)data16, cumulated_data);
+            {   arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data16, cumulated_data);
             }
         break;
 
@@ -381,7 +275,7 @@ void gpio_out_0 (uint32_t command, uint8_t *data, uint32_t size)
                  i=0;
             }
         #endif
-            arm_graph_interpreter_io_ack (IO_PLATFORM_GPIO_OUT_0, (uint8_t *)tx_buffer, FORMAT_CONSUMER_FRAME_SIZE);
+            arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_GPIO_OUT_0], (uint8_t *)tx_buffer, FORMAT_CONSUMER_FRAME_SIZE);
 
         break;
 
@@ -436,7 +330,7 @@ void data_out_0 (uint32_t command, uint8_t *data, uint32_t size)
             //fprintf(ptf_trace, "%s\n", data);
             fwrite(data, 1, size, ptf_trace);
             fflush(ptf_trace);
-            arm_graph_interpreter_io_ack(IO_PLATFORM_DATA_OUT_0, data,size);
+            arm_graph_interpreter_io_ack(platform_io_al_idx_to_graph[IO_PLATFORM_DATA_OUT_0], data,size);
         #else
             ptr_trace = 0;  // no trace 
         #endif

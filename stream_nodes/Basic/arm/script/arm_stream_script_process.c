@@ -373,7 +373,7 @@ void arm_stream_script_interpreter (
     F = 0;
 
     tmp8 = RD(descriptor[SCRIPT_PTR_SCRARCW0], NBREGS_SCRARCW0);    
-    SP = (REGSIZE +1) * tmp8;                       /* stack index is after registers */
+    SP = (SCRIPT_REGSIZE +1) * tmp8;                       /* stack index is after registers */
 
     typ8 = ram;                                     /* register types  */
     R = (regdata_t *)&(typ8[SP + RD(descriptor[WRIOCOLL_SCRARCW3], NSTACK_SCRARCW3)]); /* registers are after types[regs + stack] */

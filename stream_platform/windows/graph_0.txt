@@ -1,80 +1,38 @@
-;----------------------------------------------------------------------------------------
-;   Stream-based processing using a graph interpreter (LOW-END) :                                   
+;--------------------------------------------------------------------------
+;   Stream-based processing using a graph interpreter :                    
 ;   
 ;   The main script receives a code for the implementation of a use-case :
-;       - The adpcm decoder is pre-configured in the graph (presets)
-;       - adpcm content can result in mono/stereo resulting in a need for stream conversion
-;       - The modulator is activated after a delay of one second
-;       - The ADC detection flag is used by a second script to toggle a GPIO
-;       - The tone modulator is stopped at T0+2seconds
-;
-;   data_in_0               
-;   +----------+     +----------+        
-;   | APP      +---> |          |
-;   +----------+     | SUBGRAPH |
-;                    |          |
-;                    |          +--->  line_out_0
-;   +-----------+    |          |
-;   | CmdScript |    |          |
-;   +-----------+    |          +--->  gpio_out_0 
-;                    |          |
-;                    |          |
-;   analog_sensor_0  |          +--->  data_out_0
-;   +----------+     |          |
-;   | ADC      +---> |          |
-;   +----------+     +----------+       
-;                          
-;----------------------------------------------------------------------------------------
-
-graph
-
-top_header
-
-graph_location  0 
-
-set_file_path 0    ./                            
-set_file_path 1    ../../stream_graph/           
-set_file_path 2    ../../stream_test/            
-set_file_path 3    ../../stream_platform/windows/
-
-top_graph_interface
-;   ID FORMAT HWID  SETTING MEMORY
-    0   0      0                    ; io_platform_data_in_0.txt       
-    1   0      9                    ; io_platform_data_out_0.txt       
-    2   0      6                    ; io_platform_line_out_0.txt      
-    3   0      2                    ; io_platform_analog_sensor_0.txt 
-    4   0      7                    ; io_platform_gpio_out_0.txt      
-_end_
-
-format
-;     ID FRAMESIZE RAW NBCHAN INTERL TIMESTAMP TIMEFMT DOMAIN SDOMAIN    EXTENSIONS PER DOMAIN
-      0     8     17     1     0       0        0           0       0
-      1     8     17     1     0       0        0           0       0
-      2     12    17     1     0       0        0           1       0       16000.0  1  ; audio domain =  frame size + sampling rate + channel mapping
-_end_
-
-;
-;----------------------------------------------------------------------------------------
-node 
-    arm_stream_script   1     
-    script_stack        12  0        
-    script_code
-    2 h16; 2002 0001        movi int16 r0 1
-    1 h16; e810             equ r0,#0
-    1 h16; 0381             ccallsys 1
-    1 h16; C000             ret
-    _end_                   end of byte codes
-_end_
-
-;----------------------------------------------------------------------------------------
-; Subgraph #1
-;   path and filename
-;   list of indexes to the top_graph_interface (or to the indexes if we are already in a subgraph)
-;   list of VIDs used in the subgraph
-;
-subgraph 
-    sub1                    ; subgraph name, used for name mangling
-    3   sub_graph_0.txt     ; path and file name
-    0   1   2   3   4       ; 5 streaming interfaces data_in_0, data_out_0 .. 
-    0   0   0               ; 3 partitions here assigned to VID0 : fast-working slow-working slow-static
-_endgraph_
+;       - The ADC detection is used to toggle a GPIO
+; 
+;   +----------+     +--------+      +--------+     +--------+
+;   | ADC      +-----> filter1+------>detect  +-----> GPIO   | 
+;   +----------+     +--------+      +--------+     +--------+
+;                
+;--------------------------------------------------------------------------
+set_file_path           0    ./                            
+set_file_path           1    ../../stream_graph/           
+;--------------------------------------------------------------------------
+format                  0
+format_frame_length     8
+;--------------------------------------------------------------------------
+stream_io               0
+stream_io_hwid          0       ; io_platform_data_in_0.txt      
+stream_io               1
+stream_io_hwid          7       ; io_platform_gpio_out_0.txt     
+;--------------------------------------------------------------------------
+node arm_stream_filter  0 
+    node_preset         1                   Q15 filter
+    node_map_hwblock    1  5                TCM = VID5
+    node_parameters
+        1  u8;  0                           TAG = "all parameters"
+        1  u8;  2                           Two biquads
+        1  u8;  1                           postShift
+        5 s16; 9315, 14928,  9315, 25576, -11147, 
+        5 s16; 9315,  5736,  9315,  9328, -26591, 
+    _end_
+;--------------------------------------------------------------------------
+node arm_stream_detector 0     
+;--------------------------------------------------------------------------
+arc_input   0 arm_stream_filter     0 0 0  
+arc_output  1 arm_stream_detector   0 1 0  
+arc arm_stream_filter 0 1 0 arm_stream_detector 0 0 0     

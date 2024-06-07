@@ -158,6 +158,8 @@
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\filter\arm_stream_filter.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\amplifier\arm_stream_amplifier.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\amplifier\arm_stream_amplifier_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\analysis\arm_stream_analysis.c" />
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\analysis\arm_stream_analysis_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\converter\arm_stream_converter.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\converter\arm_stream_converter_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\demodulator\arm_stream_demodulator.c" />
@@ -174,14 +176,13 @@
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\rescaler\arm_stream_rescaler_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\router\arm_stream_router.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\router\arm_stream_router_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_graph_control.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\split\arm_stream_split.c" />
     <ClCompile Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D.c" />
     <ClCompile Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Image\arm\filter2D\arm_stream_filter2D.c" />
-    <ClCompile Include="..\..\..\stream_nodes\Image\arm\resampler2D\arm_stream_resampler2D.c" />
-    <ClCompile Include="..\..\..\stream_nodes\Image\arm\resampler2D\arm_stream_resampler2D_process.c" />
     <ClCompile Include="..\..\..\stream_platform\windows\main.c" />
     <ClCompile Include="..\..\..\stream_platform\windows\main_call.c" />
     <ClCompile Include="..\..\..\stream_platform\windows\platform_computer.c" />
@@ -199,6 +200,7 @@
     <ClInclude Include="..\..\..\stream_nodes\Audio\arm\detector\arm_stream_detector.h" />
     <ClInclude Include="..\..\..\stream_nodes\Audio\arm\filter\arm_stream_filter.h" />
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\amplifier\arm_stream_amplifier.h" />
+    <ClInclude Include="..\..\..\stream_nodes\Basic\arm\analysis\arm_stream_analysis.h" />
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\converter\arm_stream_converter.h" />
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\demodulator\arm_stream_demodulator.h" />
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\mixer\arm_stream_mixer.h" />
@@ -212,7 +214,6 @@
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\split\arm_stream_split.h" />
     <ClInclude Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D.h" />
     <ClInclude Include="..\..\..\stream_nodes\Image\arm\filter2D\arm_stream_filter2D.h" />
-    <ClInclude Include="..\..\..\stream_nodes\Image\arm\resampler2D\arm_stream_resampler2D.h" />
     <ClInclude Include="..\..\..\stream_platform\windows\graph_0_define.h" />
     <ClInclude Include="..\..\..\stream_platform\windows\platform_computer.h" />
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />

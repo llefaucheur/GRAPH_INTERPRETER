@@ -85,14 +85,14 @@ void arm_stream_converter (int32_t command, stream_handle_t instance, stream_xdm
             arm_stream_converter_instance *pinstance = (arm_stream_converter_instance *) *memresults;
 
             /* read the stream format information */
-            pinstance->input.raw_fmt = RD(memresults[2], RAW_FMT0);
+            pinstance->input.raw_fmt = RD(memresults[2], RAW_FMT1);
             pinstance->input.nchan_fmt = RD(memresults[2], NCHANM1_FMT1) +1;
-            pinstance->input.interleaving_fmt = RD(memresults[2], INTERLEAV_FMT0);
+            pinstance->input.interleaving_fmt = RD(memresults[2], INTERLEAV_FMT1);
             pinstance->input.framesize_fmt = RD(memresults[2], FRAMESIZE_FMT0);
 
-            pinstance->output.raw_fmt = RD(memresults[2], RAW_FMT0);
+            pinstance->output.raw_fmt = RD(memresults[2], RAW_FMT1);
             pinstance->output.nchan_fmt = RD(memresults[2], NCHANM1_FMT1) +1;
-            pinstance->output.interleaving_fmt = RD(memresults[2], INTERLEAV_FMT0);
+            pinstance->output.interleaving_fmt = RD(memresults[2], INTERLEAV_FMT1);
             pinstance->output.framesize_fmt = RD(memresults[2], FRAMESIZE_FMT0);
 
             break;

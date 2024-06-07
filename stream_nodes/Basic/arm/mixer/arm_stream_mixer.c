@@ -174,10 +174,10 @@ void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuff
                 tmp32 = RD(memresults[0], FRAMESIZE_FMT0);
                 ST(pinstance->channel_fmt[iarc], FRAMESIZE_FMT0_FMT, tmp32);
 
-                tmp32 = RD(memresults[0], INTERLEAV_FMT0);
+                tmp32 = RD(memresults[1], INTERLEAV_FMT1);
                 ST(pinstance->channel_fmt[iarc], INTERLEAVING_FMT, tmp32);
 
-                tmp32 = RD(memresults[0], NCHANM1_FMT1);
+                tmp32 = RD(memresults[1], NCHANM1_FMT1);
                 ST(pinstance->channel_fmt[iarc], NBCHANM1_MIXER_FMT, tmp32);
             }
             break;

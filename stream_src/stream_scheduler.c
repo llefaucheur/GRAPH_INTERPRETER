@@ -136,12 +136,6 @@ static intPtr_t pack2linaddr_int(const intPtr_t *long_offset, uint32_t x)
     return dbg3;   // PACK2LINADDR(long_offset,x);
 }
 
-void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data)
-{
-    return (void *) (pack2linaddr_int(long_offset, data));
-}
-
-
 
 /**
   @brief         Tool box : Arc descriptor fields extraction, returns an integer
@@ -704,13 +698,13 @@ void load_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1)
  */
 void check_graph_boundaries(arm_stream_instance_t *S)
 {
-    uint8_t fw_io_idx;
+    uint8_t graph_io_idx;
     uint8_t need_data_move;
     uint32_t size;
     uint8_t *buffer;
     uint32_t *arc;
     uint32_t *pio, *pio_base;
-    uint32_t *ioctrl;
+    uint8_t *ioctrl;
     uint32_t io_mask = S->iomask;
     uint32_t nio;
     const p_io_function_ctrl *io_func;
@@ -718,25 +712,25 @@ void check_graph_boundaries(arm_stream_instance_t *S)
     pio_base = S->pio;
     nio = RD((S->graph)[1],NB_IOS_GR1);
 
-    for (fw_io_idx = 0; fw_io_idx < nio; fw_io_idx++)
+    for (graph_io_idx = 0; graph_io_idx < nio; graph_io_idx++)
     {
         /* jump to next graph port */
-        pio = &(pio_base[fw_io_idx * STREAM_IOFMT_SIZE_W32]);
+        pio = &(pio_base[graph_io_idx * STREAM_IOFMT_SIZE_W32]);
 
         /* ports where the peripheral is commander are not checked (commander_servant_IOMEM) */
         /* does this port needs to be managed by the Stream instance ? */
         if (0 != TEST_BIT(*pio, QUICKSKIP_IOFMT_LSB))
             continue;
 
-        /* to change when NB_IOS_GR1 allows 128 IOs */ 
-        if (0 == U(io_mask & (1L << fw_io_idx)))
+        /* to change when NB_IOS_GR1 allows 32 IOs active from the 128 IOs available on the platform */ 
+        if (0 == U(io_mask & (1L << graph_io_idx)))
             continue;
         
         /* a previous request is in process or if the IO is commander on the interface, then no 
             need to ask again */
-        ioctrl = &(S->ioctrl[fw_io_idx]);
+        ioctrl = &(S->ioctrl[graph_io_idx]);
 
-        if ((0u != TEST_BIT(ioctrl[fw_io_idx], ONGOING_IOCRTL_LSB)) || 
+        if ((0u != TEST_BIT(ioctrl[graph_io_idx], ONGOING_IOCTRL_LSB)) ||
             (IO_IS_COMMANDER0 == TEST_BIT(*pio, SERVANT1_IOFMT_LSB)))
         {   continue;
         }
@@ -747,10 +741,10 @@ void check_graph_boundaries(arm_stream_instance_t *S)
         }
 
         size = 0;
-        ST(*ioctrl, ONGOING_IOSIZE, size);
+        //ST(*ioctrl, ONGOING_IOSIZE, size);
 
         /* if this is an input stream : check the buffer is empty  */
-        if (RX0_TO_GRAPH == RD(*pio, ARC_RX0TX1_CLEAR))
+        if (RX0_TO_GRAPH == TEST_BIT(*pio, RX0TX1_IOFMT_LSB))
         {   need_data_move = arc_ready_for_write(S, arc, &size);
             buffer = arc_extract_info_pt(S, arc, arc_write_address);
             if (size == 0)
@@ -786,10 +780,10 @@ void check_graph_boundaries(arm_stream_instance_t *S)
                  characters on a display, ..).
                 Tell data transfer on-going (REQMADE_IO_LSB)
             */
-            SET_BIT(*ioctrl, ONGOING_IOCRTL_LSB);
-            ST(*ioctrl, ONGOING_IOSIZE, size);
+            SET_BIT(*ioctrl, ONGOING_IOCTRL_LSB);
 
-            io_func = &(S->platform_io[fw_io_idx]);
+            /* fw function index is in the control field, while platform_io[] has all the possible functions */
+            io_func = &(S->platform_io[RD(ioctrl[graph_io_idx], IOALIDX_IOCTRL)]);
 
             /* the main application do not give control to data requests skip this IO */
             if (*io_func == 0)
@@ -798,7 +792,7 @@ void check_graph_boundaries(arm_stream_instance_t *S)
             (*io_func)(STREAM_RUN, buffer, size);
 
             /* if this is an input stream : check the buffer needs alignment by the consumer */
-            if (RX0_TO_GRAPH == RD(*pio, ARC_RX0TX1_CLEAR))
+            if (RX0_TO_GRAPH == TEST_BIT(*pio, RX0TX1_IOFMT_LSB))
             {   //set_alignment_bit (S, arc);
 
                 /* does data realignement must be done ? : realign and clear the bit */

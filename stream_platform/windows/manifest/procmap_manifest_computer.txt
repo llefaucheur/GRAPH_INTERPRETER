@@ -9,7 +9,7 @@
 ;   - ID        base offset ID reference above
 ;   - VID       virtual ID used in the graph for manual mapping, must stay below 99 for swap controls (see NodeTemplate.txt)
 ;   - S         0=any/1=normal/2=fast/3=critical-Fast, 
-;   - W         static0/working1/retention2,
+;   - W         static0/working1/retention2
 ;   - P         shared0/private1,
 ;   - H         DMAmemHW1
 ;   - D         Data0/Prog1/Both2 
