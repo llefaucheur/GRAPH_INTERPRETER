@@ -16,22 +16,24 @@ format                  0
 format_frame_length     8
 ;--------------------------------------------------------------------------
 stream_io               0
-stream_io_hwid          0       ; io_platform_data_in_0.txt      
+stream_io_hwid          2       ; io_platform_analog_sensor_0.txt
 stream_io               1
 stream_io_hwid          7       ; io_platform_gpio_out_0.txt     
 ;--------------------------------------------------------------------------
 node arm_stream_filter  0 
     node_preset         1                   Q15 filter
     node_map_hwblock    1  5                TCM = VID5
-    node_parameters
-        1  u8;  0                           TAG = "all parameters"
+    node_parameters     0                   TAG = "all parameters"
         1  u8;  2                           Two biquads
-        1  u8;  1                           postShift
-        5 s16; 9315, 14928,  9315, 25576, -11147, 
-        5 s16; 9315,  5736,  9315,  9328, -26591, 
+        1  u8;  0                           postShift
+        5 s16; 9315 14928  9315 0 -0 
+        5 s16; 9315  5736  9315  0 -0 
+        ;5 s16; 9315 14928  9315 25576 -11147 
+        ;5 s16; 9315  5736  9315  9328 -26591 
     _end_
 ;--------------------------------------------------------------------------
 node arm_stream_detector 0     
+    node_preset         3                   detector setting for test       
 ;--------------------------------------------------------------------------
 arc_input   0 arm_stream_filter     0 0 0  
 arc_output  1 arm_stream_detector   0 1 0  

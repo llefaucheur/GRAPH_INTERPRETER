@@ -77,7 +77,6 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
     arm_stream_instance_t *S = platform_io_callback_parameter;
     uint32_t *arc;
     uint32_t *pio;
-    uint8_t *ioctrl;
 
     uint32_t read;
     uint32_t write;
@@ -89,13 +88,11 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
 
     pio = S->pio;
     pio = &(pio[STREAM_IOFMT_SIZE_W32 * graph_io_idx]);
-    ioctrl = &(S->ioctrl[graph_io_idx]);
-
     arc = S->all_arcs;
     arc = &(arc[SIZEOF_ARCDESC_W32 * RD(*pio, IOARCID_IOFMT)]);
 
     base = RD(arc[0], BASEIDXOFFARCW0);
-    long_base = (uint8_t *)pack2linaddr_ptr(S->long_offset, base);
+    long_base = (uint8_t *)pack2linaddr_ptr(S->long_offset, base, LINADDR_UNIT_BYTE);
     fifosize = RD(arc[1], BUFF_SIZE_ARCW1);
     read = RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
@@ -137,7 +134,7 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
                 consumer_frame_size = RD(S->all_formats[i], FRAMESIZE_FMT0);
 
                 if (write - read >= consumer_frame_size)
-                {   CLEAR_BIT(ioctrl[graph_io_idx], ONGOING_IOCTRL_LSB);
+                {   CLEAR_BIT(*pio, ONGOING_IOFMT_LSB);
                 }
             }
 
@@ -158,7 +155,7 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
             ST(arc[1], BUFF_SIZE_ARCW1, data_size); /* FIFO size aligned with the buffer size */
             ST(arc[2], READ_ARCW2, 0);
             ST(arc[3], WRITE_ARCW3, data_size); /* automatic rewind after read */
-            CLEAR_BIT(ioctrl[graph_io_idx], ONGOING_IOCTRL_LSB);
+            CLEAR_BIT(*pio, ONGOING_IOFMT_LSB);
         }
     }
     else 
@@ -202,7 +199,7 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
                 i = RD(arc[1],CONSUMFMT_ARCW1) * STREAM_FORMAT_SIZE_W32;
                 consumer_frame_size = RD(S->all_formats[i], FRAMESIZE_FMT0);
                 if (write - read < consumer_frame_size)
-                {   CLEAR_BIT(ioctrl[graph_io_idx], ONGOING_IOCTRL_LSB);
+                {   CLEAR_BIT(*pio, ONGOING_IOFMT_LSB);
                 }
             }
         } 
@@ -212,7 +209,7 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
             ST(arc[0], BASEIDXOFFARCW0, lin2pack(S, data));
             ST(arc[2], READ_ARCW2, 0);
             ST(arc[3], WRITE_ARCW3, 0);
-            CLEAR_BIT(ioctrl[graph_io_idx], ONGOING_IOCTRL_LSB);
+            CLEAR_BIT(*pio, ONGOING_IOFMT_LSB);
         }
     }
 }

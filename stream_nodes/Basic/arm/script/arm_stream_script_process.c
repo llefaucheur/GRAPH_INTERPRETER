@@ -59,11 +59,22 @@
         Instance static = 
             3 bits addressing for 6 x Float + 2 Stack 
             3 bits for pointers AD0 .. AD5 + SP01
-            3 bits for Special regs : 0:(MaxInc, Inc, Address Loop for LDR/STR), 1(BitFieldPos, Length), 
-                                      2:BanzLoop, 3,4,5:_unused   6:7:SP01
+            3 bits for Special regs mapped on one 64bits register 
+                (MaxInc, Inc, Address Loop for LDR/STR), 
+                BitFieldPos, Length
+                BanzLoop  
+                        <---- MSB word ----------------><---- LSB word ---------------->
+                        FEDCBA9876543210FEDCBA987654321|FEDCBA9876543210FEDCBA9876543210
+            Special reg0                                                    StopBit+StartBit
+            Special reg1                                             Flag  LoopCnt                                                       
+            Special reg2                                        DTYPE
+            Special reg3                MIN / MAX for cicular addressing                           
+            Special reg4  INC 0/+1/-1  *(ddd) increment_rrr 0 1 -1 inc -inc inc_modulo -inc_modulo
+            Special reg5 _________
 
-            minimum state memory = (2 registers + 1 pointer + 0 special) x 8 Bytes = 24 Bytes + stack
-            standard state memory = (6 registers + 6 pointers + 3 special) x 8 Bytes = 120 Bytes + stack
+
+            minimum state memory = (0 register + 0 pointer + 1 special) x 8 Bytes = 8 Bytes + stack 
+            standard state memory= (6 registers+ 6 pointers+ 1 special) x 8 Bytes = 104 Bytes + stack (6=default)
 
             registers format :                                                       DTYPE
                         <---- MSB word ----------------><---- LSB word ---------------->
@@ -73,25 +84,23 @@
             fp32        <------------------------------>____________________________0010
             TIME16      ________________<-------------->____________________________0011
             TIME32      <------------------------------>____________________________0100
-            27bits offset format pointer + 4bit data DTYPE
-                        DTYPE<------ 27bits address---->____________________________0101
-
-            64bits physical address pointer :
-                        <----------------- 64 bits to logical shift right ----------1000
-            TIME64      <----------------- 64 bits to shift right ------------------1001    
-            fp64        <----------------- 64 bits 4bits of mantissa removed--------1010
-            int64-4bits <----------------- 64 bits to arithmetic shift right -------1011 
-            char /0     ________________________<------>____________________________1100
-                        ............................................................1101
-                        ............................................................1110
-                        ............................................................1111
-
+            27b + DTYPE DTYPE<------ 27bits address---->____________________________0101
+            Pointer     <----------------- 64 bits to logical shift right ----------0110
+            TIME64      <----------------- 64 bits to shift right ------------------0111    
+            fp64        <----------------- 64 bits 4bits of mantissa removed--------1000
+            int64-4bits <----------------- 64 bits to arithmetic shift right -------1001 
+            char /0     ________________________<------>____________________________1010
+                                                                                    1011
+                                                                                    1100
+                                                                                    1101
+                                                                                    1110
+                                                                                    1111
         Instance memory area (from const.h)
             TX ARC descriptor: locks execution, 
-                base address = instance, registers
+                base address = instance, nb registers + nb ptr/2
                 length = code length + byte code format
-                read index = start of stack index
-                write index = start of parameters index + synchronization byte
+                read index = start of stack & start of parameters in the other direction
+                write index = synchronization byte
 
             stack and registers are preserved between calls 
             the conditional flag is set at reset to allow specific initialization
@@ -118,7 +127,7 @@
            3 NE0    does rrr != 0
            4 GT0    does rrr > 0
            5 GE0    does rrr >= 0
-           6 PUSH   vvv regs
+           6 PUSH   vvv regs        (CPAR   ad(ddd) -> reg(rrr)  )
            7 POP    vvv
            8 DUP    duplicate stack
            9 DELS   remove S0 or up to S1
@@ -126,7 +135,7 @@
           11 RETR   subroutine return, restore all 
           12 JMPA   jump to computed address rrr
           13 CALA   call computed address rrr
-          14 
+          14 CONV   rrr converter to DTYPE (special)
           15 
 
     FEDCBA9876543210
@@ -149,11 +158,11 @@
           15 CPAR   ad(ddd) -> reg(rrr)  
           16 CPRA   ad(ddd) <- reg(rrr)  
           17 CPRS   special(ddd) <- reg(rrr)  
-          18 PSHP   *(ddd) increment_rrr                                   
-          19 POPP   *(ddd) increment_rrr                                              
-          20 CNVI   convert (float)rrr to integer => ddd                                       
-          21 CNVF   convert (int)rrr to float => ddd      
-          22
+          18 CPSR   reg(rrr) <- special(ddd)
+          19 PSHP   *(ddd) increment_rrr 0 1 -1 inc -inc inc_modulo -inc_modulo
+          20 POPP   *(ddd) increment_rrr                                                    
+          21 CNVR   rrr converted to DTYPE (special) => ddd
+          22 
           23
           24
           25
@@ -181,17 +190,17 @@
           13 BCLR  ddd = uuu & ~(1 << vvv)  
           14 ADD   ddd = uuu + vvv                    
           15 SUB   ddd = uuu - vvv 
-          16 RSUB  ddd = vvv - uuu
-          17 MUL   ddd = uuu x vvv                    
-          18 DIV   ddd = uuu / vvv                    
-          19 RDIV  ddd = vvv / uuu
-          20 MAX   ddd = max (uuu, vvv) sets F when uuu>vvv
-          21 MIN   ddd = min (uuu, vvv) sets F when uuu<vvv
-          22 AMAX  ddd = max (abs(uuu), abs(vvv)) sets F when abs(vvv)>abs(uuu)
-          23 AMIN  ddd = min (abs(uuu), abs(RYvvv sets F when abs(vvv)<abs(uuu)
-          24 SQRA  ddd = uuu + (vvv * vvv) 
-          25 LDR   uuu = *(vvv) increment_ddd
-          26 STR   *(vvv) increment_ddd = uuu
+          16 MUL   ddd = uuu x vvv                    
+          17 DIV   ddd = uuu / vvv                    
+          18 RDIV  ddd = vvv / uuu
+          19 MAX   ddd = max (uuu, vvv) sets F when uuu>vvv
+          20 MIN   ddd = min (uuu, vvv) sets F when uuu<vvv
+          21 AMAX  ddd = max (abs(uuu), abs(vvv)) sets F when abs(vvv)>abs(uuu)
+          22 AMIN  ddd = min (abs(uuu), abs(RYvvv sets F when abs(vvv)<abs(uuu)
+          23 SQRA  ddd = uuu + (vvv * vvv) 
+          24 LDR   ddd = *(uuu_adr) increment_vvv using the type of ddd
+          25 STR   *(ddd_adr) increment_vvv = uuu using the type of uuu
+          26 
           27 
           28 
           29 
@@ -205,17 +214,17 @@
     C1000xxxxkkkkkkk  K7 JMP
          xxxx
              
-           0 LABEL K7       to address byte-code and parameter constants
-           1 JMP label_K7
-           2 BANZ Label_K7
-           3 JMP signed_K7  signed instruction offset
-           4 CALL Label_K7
-           5 CALLSYS {K7}   system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW)
-           6 CALLSCRPT {K7} common scripts and node control
-           7 CALLAPP {K7}   0K6=64 local callbacks 1K6= 64 global callbacks
-           8 RETK1 return and keep registers in bitfield K7 
-           9 RETK2 return and keep registers, Special, address
-          10 PSHA Label_K7  push the address of Label K7 on the stack
+           0 LABEL      K7       to address byte-code and parameter constants
+           1 JMP        label_K7
+           2 BANZ       Label_K7
+           3 JMP        signed_K7  signed instruction offset
+           4 CALL       Label_K7
+           5 CALLSYS    {K7}   system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW)
+           6 CALLSCRPT  {K7} common scripts and node control
+           7 CALLAPP    {K7}   0K6=64 local callbacks 1K6= 64 global callbacks
+           8 RETK1      return and keep registers in bitfield K7 
+           9 RETK2      return and keep registers, Special, address
+          10 PUSHLABEL  Label_K7  push the address of Label K7 on the stack
           11 
           12 
           13 
@@ -226,28 +235,28 @@
     FEDCBA9876543210    movi, bit-test
    (C1000xxxxkkkkkkk  K7 JMP)
     C1xxxxxuuukkkkkk  K6 + R 
-           4 BITS uuu = uuu | (1 << K6)
-           5 BITC uuu = uuu & ~(1 << K6)
-           6 ADDK uuu = uuu + K6        (inc)
-           7 SUBK uuu = uuu - K6        (dec)
-           8 RSBK uuu = K6 - uuu
-           9 DIVK uuu = uuu / K6
-          10 RDVK uuu = K6 / uuu
-          11 MULK uuu = uuu x Signed_K6 (+/- 31)
-          12 BIT0 does uuu & (1 << K6) = 0  
-          13 BIT1 does uuu & (1 << K6) != 0
-          14 ASHL uuu = uuu << K6
-          15 ASHK uuu = uuu >> K6
-          16 LSHK uuu = uuu >> K6 logical
-          17 WRSP *SP[K6] = uuu
-          18 RDSP uuu = *SP[K6]
-          19 MOVI uuu = #signed_k6  (SET 1 / CLR)
-          20 MVIS spc = #signed_k6  (set/clear flag, loop, mask)
-          21 MOVI uuu = #DTYPE following
-          22 MOVA adr = #DTYPE address /16 /32 /64 bits x 2 (integer / float)
-          23 MOVI spc = #DTYPE to special regs
-          24 BITF read : mask SP0, shift and save in uuu
-          24 BITF write : shift uuu + mask to SP0
+           4 BITSET  uuu = uuu | (1 << K6)
+           5 BITCLR  uuu = uuu & ~(1 << K6)
+           6 ADDK    uuu = uuu + K6        (inc)
+           7 SUBK    uuu = uuu - K6        (dec)
+           8 RSUBK   uuu = K6 - uuu
+           9 DIVK    uuu = uuu / K6
+          10 RDVK    uuu = K6 / uuu
+          11 MULK    uuu = uuu x Signed_K6 (+/- 31)
+          12 TSTBIT0 does uuu & (1 << K6) = 0  
+          13 TSTBIT1 does uuu & (1 << K6) != 0
+          14 ASHIFTK uuu = uuu << K6(signed)
+          15 LSHIFTK uuu = uuu << K6 logical
+          16 WRSP    *SP[K6] = uuu
+          17 RDSP    uuu = *SP[K6]
+          18 MOVI    uuu = #signed_k6  (SET / CLR)
+          19 MVIS    spc = #signed_k6  (set/clear flag, loop, mask)
+          20 MOVI    uuu = #DTYPE following
+          21 MOVA    adr = #DTYPE address /16 /32 /64 bits x 2 (integer / float)
+          22 MOVI    spc = #DTYPE to special regs
+          23 BITF    read : (special) bit-range, save in uuu
+          24 BITF    write : shift uuu + mask to SP0
+          24 
           25 
           26
           27
@@ -367,7 +376,7 @@ void arm_stream_script_interpreter (
     regdata_t *R, *stack;
     uint32_t time, timeMax, PC;
     extern void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n);
-    extern void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data);
+    extern void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data, uint32_t unit);
 
     PC = 0;
     F = 0;
@@ -425,9 +434,9 @@ void arm_stream_script_interpreter (
             /* 0000 0011 Clll.llll (C)CALLSYS un/conditional system call (0..127) */
             case 3:
                 arm_stream_services( (uint32_t)((stack[SP-1]).i32), 
-                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-2]).i32), 
-                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-3]).i32), 
-                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-4]).i32), 
+                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-2]).i32, LINADDR_UNIT_BYTE), 
+                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-3]).i32, LINADDR_UNIT_BYTE), 
+                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-4]).i32, LINADDR_UNIT_BYTE), 
                     (uint32_t)((stack[SP-5]).i32));
                     SP = SP-5;
                 break;

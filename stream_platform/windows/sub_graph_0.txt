@@ -85,8 +85,7 @@ node arm_stream_filter 0
     node_map_hwblock  1  5                  ; TCM = VID5
     node_map_swap     1  3                  ; SRAM1
 
-    node_parameters
-        1  u8;  0                           TAG = "all parameters"
+    node_parameters   0                           TAG = "all parameters"
         1  u8;  2                           Two biquads
         1  u8;  1                           postShift
         5 s16; 9315, 14928,  9315, 25576, -11147, 
@@ -104,9 +103,8 @@ _end_
 node arm_stream_filter 1                     ; second instance, default VID
 
     node_preset       1                     ; Q15 filter
-    node_parameters
-        1  u8;  0                           TAG = "all parameters"
-        1  u8;  2                           Two biquads
+    node_parameters  0                           TAG = "all parameters"
+            1  u8;  2                           Two biquads
         1  u8;  1                           postShift
         5 s16; 9315, 14928,  9315, 25576, -11147, 
         5 s16; 9315,  5736,  9315,  9328, -26591, 

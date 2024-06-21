@@ -75,8 +75,10 @@ void main(void)
     memset(graph, 0, sizeof(struct stream_graph_linkedlist));
 
 
-    if (0 == (graph->ptf_debug  = fopen(GRAPH_DEBUG,  "wt"))) exit(-1);
+    if (0 == (graph->ptf_graph_bin  = fopen(GRAPH_BIN,  "wt"))) exit(-1);
     if (0 == (graph->ptf_header = fopen(GRAPH_HEADER, "wt"))) exit(-1);
+    if (0 == (graph->ptf_debug = fopen(GRAPH_DEBUG, "wt"))) exit(-1);
+
 
     read_input_file (GRAPH_ALL_MANIFESTS, all_files);
     arm_stream_read_manifests(platform, all_files);
@@ -105,27 +107,21 @@ void main(void)
     arm_stream_read_graph(platform, graph, ggraph);
 
     /*@@@  TODO
-     * check consistency : formats between nodes/arcs 
-     * to help the graph designer insert conversion nodes
-     *  - ARCS : does { struct options raw_format_options } matches with { struct formatStruct format; }
-     *  - NODES : does { struct options raw_format_options } matches with { struct arcStruct arc[MAX_NB_STREAM_PER_SWC].format; }
-     *   arm_stream_check_graph(platform, graph); 
-     * 
-     *@@@  TODO 
-     * generate the debug TXT file and header used to address nodes in the binary graph,
-     * header with a declaration arc ID and arc names
-     * 
-     *   arm_stream_print_graph(platform, graph); 
-     */
-
-    arm_stream_memory_map(platform, graph);
-
-
-    /*  @@@@ TODO
-
+       check consistency : formats between nodes/arcs 
+       to help the graph designer insert conversion nodes
+        - ARCS : does { struct options raw_format_options } matches with { struct formatStruct format; }
+        - NODES : does { struct options raw_format_options } matches with { struct arcStruct arc[MAX_NB_STREAM_PER_SWC].format; }
+         arm_stream_check_graph(platform, graph); 
+       
+      @@@  TODO 
+       generate the debug TXT file and header used to address nodes in the binary graph,
+       header with a declaration arc ID and arc names
+       
+         arm_stream_print_graph(platform, graph); 
+      
         check format compatibility to tell the graph programmer to insert conversion nodes
         remove formats declared twice 
-
+      
         Convert the structure to the binary format
             used by the graph interpreter and scheduler
     */

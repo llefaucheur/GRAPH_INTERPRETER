@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\..\stream_graph;..\..\..\stream_nodes;..\..\..\stream_src;..\..\..\stream_libraries\CMSIS-DSP\Include;..\..\..\stream_al;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\stream_platform\windows;..\..\..\stream_graph;..\..\..\stream_nodes;..\..\..\stream_src;..\..\..\stream_libraries\CMSIS-DSP\Include;..\..\..\stream_al;$(IncludePath)</IncludePath>
     <SourcePath>C:\Work\GITHUB_LLF\CMSIS-Stream\stream_al;C:\Work\GITHUB_LLF\CMSIS-Stream\stream_src;$(SourcePath)</SourcePath>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
@@ -219,6 +219,8 @@
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\..\stream_src\stream_extern.h" />
     <ClInclude Include="..\..\..\stream_src\stream_types.h" />
+    <ClInclude Include="..\graph_header.h" />
+    <ClInclude Include="..\platform.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\stream_platform\windows\graph_0.txt" />

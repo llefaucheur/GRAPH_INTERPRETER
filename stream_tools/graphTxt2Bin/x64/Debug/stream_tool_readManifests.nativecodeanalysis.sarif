@@ -1,0 +1,2551 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0-rtm.5.json",
+  "runs": [
+    {
+      "results": [
+        {
+          "ruleId": "C6031",
+          "message": {
+            "text": "Return value ignored: 'sscanf'."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                },
+                "region": {
+                  "startLine": 560,
+                  "startColumn": 5,
+                  "endLine": 560,
+                  "endColumn": 28
+                }
+              },
+              "logicalLocations": [
+                {
+                  "decoratedName": "arm_stream_read_manifests",
+                  "kind": "function"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "C6031",
+          "message": {
+            "text": "Return value ignored: 'sscanf'."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                },
+                "region": {
+                  "startLine": 564,
+                  "startColumn": 9,
+                  "endLine": 564,
+                  "endColumn": 37
+                }
+              },
+              "logicalLocations": [
+                {
+                  "decoratedName": "arm_stream_read_manifests",
+                  "kind": "function"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "C6031",
+          "message": {
+            "text": "Return value ignored: 'sscanf'."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                },
+                "region": {
+                  "startLine": 569,
+                  "startColumn": 5,
+                  "endLine": 569,
+                  "endColumn": 38
+                }
+              },
+              "logicalLocations": [
+                {
+                  "decoratedName": "arm_stream_read_manifests",
+                  "kind": "function"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "C6031",
+          "message": {
+            "text": "Return value ignored: 'sscanf'."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                },
+                "region": {
+                  "startLine": 584,
+                  "startColumn": 5,
+                  "endLine": 584,
+                  "endColumn": 28
+                }
+              },
+              "logicalLocations": [
+                {
+                  "decoratedName": "arm_stream_read_manifests",
+                  "kind": "function"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "C6031",
+          "message": {
+            "text": "Return value ignored: 'sscanf'."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                },
+                "region": {
+                  "startLine": 592,
+                  "startColumn": 9,
+                  "endLine": 592,
+                  "endColumn": 102
+                }
+              },
+              "logicalLocations": [
+                {
+                  "decoratedName": "arm_stream_read_manifests",
+                  "kind": "function"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "C6031",
+          "message": {
+            "text": "Return value ignored: 'sscanf'."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                },
+                "region": {
+                  "startLine": 609,
+                  "startColumn": 5,
+                  "endLine": 609,
+                  "endColumn": 28
+                }
+              },
+              "logicalLocations": [
+                {
+                  "decoratedName": "arm_stream_read_manifests",
+                  "kind": "function"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "C6031",
+          "message": {
+            "text": "Return value ignored: 'sscanf'."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                },
+                "region": {
+                  "startLine": 623,
+                  "startColumn": 9,
+                  "endLine": 623,
+                  "endColumn": 43
+                }
+              },
+              "logicalLocations": [
+                {
+                  "decoratedName": "arm_stream_read_manifests",
+                  "kind": "function"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "C6054",
+          "message": {
+            "text": "String 'graph_platform_manifest_name' might not be zero-terminated."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                },
+                "region": {
+                  "startLine": 572,
+                  "startColumn": 5,
+                  "endLine": 572,
+                  "endColumn": 23
+                }
+              },
+              "logicalLocations": [
+                {
+                  "decoratedName": "arm_stream_read_manifests",
+                  "kind": "function"
+                }
+              ]
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 543,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 544,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 545,
+                            "startColumn": 10
+                          }
+                        },
+                        "message": {
+                          "text": "This expression may not zero-terminate 'graph_platform_manifest_name'"
+                        }
+                      },
+                      "kinds": [
+                        "declaration"
+                      ],
+                      "importance": "essential"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 14
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 24
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 31
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 42
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 547,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 548,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 549,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 13
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 23
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 30
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 41
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 68
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 553,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 558,
+                            "startColumn": 13
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 559,
+                            "startColumn": 25
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 560,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 561,
+                            "startColumn": 19
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 562,
+                            "startColumn": 17
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 562,
+                            "startColumn": 28
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 568,
+                            "startColumn": 25
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 569,
+                            "startColumn": 11
+                          }
+                        },
+                        "message": {
+                          "text": "'graph_platform_manifest_name' is an Output from 'sscanf' (declared at c:\\program files (x86)\\windows kits\\10\\include\\10.0.18362.0\\ucrt\\stdio.h:2263)"
+                        }
+                      },
+                      "kinds": [
+                        "declaration"
+                      ],
+                      "importance": "important"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 571,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 572,
+                            "startColumn": 11
+                          }
+                        },
+                        "message": {
+                          "text": "'graph_platform_manifest_name' is an Input to 'strcat' (declared at c:\\program files (x86)\\windows kits\\10\\include\\10.0.18362.0\\ucrt\\string.h:90)"
+                        }
+                      },
+                      "kinds": [
+                        "usage"
+                      ],
+                      "importance": "important"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 572,
+                            "startColumn": 11
+                          }
+                        },
+                        "message": {
+                          "text": "'graph_platform_manifest_name' is required to be zero-terminated by a SAL annotation on 'strcat'"
+                        }
+                      },
+                      "kinds": [
+                        "usage"
+                      ],
+                      "importance": "essential"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "C6387",
+          "message": {
+            "text": "'inputFile' could be '0':  this does not adhere to the specification for the function 'memset'. "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                },
+                "region": {
+                  "startLine": 574,
+                  "startColumn": 36,
+                  "endLine": 574,
+                  "endColumn": 57
+                }
+              },
+              "logicalLocations": [
+                {
+                  "decoratedName": "arm_stream_read_manifests",
+                  "kind": "function"
+                }
+              ]
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 543,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 544,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 545,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 14
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 24
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 31
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 42
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 547,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 548,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 549,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 13
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 23
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 30
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 41
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 68
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 553,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 558,
+                            "startColumn": 13
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 559,
+                            "startColumn": 25
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 560,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 561,
+                            "startColumn": 19
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 562,
+                            "startColumn": 17
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 562,
+                            "startColumn": 28
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 568,
+                            "startColumn": 25
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 569,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 571,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 572,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 574,
+                            "startColumn": 15
+                          }
+                        },
+                        "message": {
+                          "text": "'inputFile' may be NULL"
+                        }
+                      },
+                      "kinds": [
+                        "declaration"
+                      ],
+                      "importance": "essential"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 574,
+                            "startColumn": 42
+                          }
+                        },
+                        "message": {
+                          "text": "'inputFile' is an In/Out argument to 'memset' (declared at c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\vcruntime_string.h:63)"
+                        }
+                      },
+                      "kinds": [
+                        "declaration"
+                      ],
+                      "importance": "important"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 574,
+                            "startColumn": 42
+                          }
+                        },
+                        "message": {
+                          "text": "'inputFile' should not be NULL, because this is not consistent with the SAL annotation on 'memset'"
+                        }
+                      },
+                      "kinds": [
+                        "usage"
+                      ],
+                      "importance": "essential"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "C6054",
+          "message": {
+            "text": "String 'IO_name' might not be zero-terminated."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                },
+                "region": {
+                  "startLine": 594,
+                  "startColumn": 9,
+                  "endLine": 594,
+                  "endColumn": 27
+                }
+              },
+              "logicalLocations": [
+                {
+                  "decoratedName": "arm_stream_read_manifests",
+                  "kind": "function"
+                }
+              ]
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 543,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 544,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 545,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 14
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 24
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 31
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 42
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 547,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 548,
+                            "startColumn": 10
+                          }
+                        },
+                        "message": {
+                          "text": "This expression may not zero-terminate 'IO_name'"
+                        }
+                      },
+                      "kinds": [
+                        "declaration"
+                      ],
+                      "importance": "essential"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 549,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 13
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 23
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 30
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 41
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 68
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 553,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 558,
+                            "startColumn": 13
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 559,
+                            "startColumn": 25
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 560,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 561,
+                            "startColumn": 19
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 562,
+                            "startColumn": 17
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 562,
+                            "startColumn": 28
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 568,
+                            "startColumn": 25
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 569,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 571,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 572,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 574,
+                            "startColumn": 15
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 574,
+                            "startColumn": 42
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 575,
+                            "startColumn": 20
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 577,
+                            "startColumn": 35
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 583,
+                            "startColumn": 25
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 584,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 586,
+                            "startColumn": 30
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 588,
+                            "startColumn": 18
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 588,
+                            "startColumn": 31
+                          }
+                        },
+                        "message": {
+                          "text": "Enter this loop, (assume 'istream<nb_stream')"
+                        }
+                      },
+                      "kinds": [
+                        "branch"
+                      ],
+                      "importance": "important"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 590,
+                            "startColumn": 29
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 592,
+                            "startColumn": 16
+                          }
+                        },
+                        "message": {
+                          "text": "'IO_name' is an Output from 'sscanf' (declared at c:\\program files (x86)\\windows kits\\10\\include\\10.0.18362.0\\ucrt\\stdio.h:2263)"
+                        }
+                      },
+                      "kinds": [
+                        "declaration"
+                      ],
+                      "importance": "important"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 593,
+                            "startColumn": 15
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 594,
+                            "startColumn": 15
+                          }
+                        },
+                        "message": {
+                          "text": "'IO_name' is an Input to 'strcat' (declared at c:\\program files (x86)\\windows kits\\10\\include\\10.0.18362.0\\ucrt\\string.h:90)"
+                        }
+                      },
+                      "kinds": [
+                        "usage"
+                      ],
+                      "importance": "important"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 594,
+                            "startColumn": 15
+                          }
+                        },
+                        "message": {
+                          "text": "'IO_name' is required to be zero-terminated by a SAL annotation on 'strcat'"
+                        }
+                      },
+                      "kinds": [
+                        "usage"
+                      ],
+                      "importance": "essential"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "C6054",
+          "message": {
+            "text": "String 'node_name' might not be zero-terminated."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                },
+                "region": {
+                  "startLine": 625,
+                  "startColumn": 9,
+                  "endLine": 625,
+                  "endColumn": 27
+                }
+              },
+              "logicalLocations": [
+                {
+                  "decoratedName": "arm_stream_read_manifests",
+                  "kind": "function"
+                }
+              ]
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 543,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 544,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 545,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 14
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 24
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 31
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 546,
+                            "startColumn": 42
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 547,
+                            "startColumn": 10
+                          }
+                        },
+                        "message": {
+                          "text": "This expression may not zero-terminate 'node_name'"
+                        }
+                      },
+                      "kinds": [
+                        "declaration"
+                      ],
+                      "importance": "essential"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 548,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 549,
+                            "startColumn": 10
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 13
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 23
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 30
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 41
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 550,
+                            "startColumn": 68
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 553,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 558,
+                            "startColumn": 13
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 559,
+                            "startColumn": 25
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 560,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 561,
+                            "startColumn": 19
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 562,
+                            "startColumn": 17
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 562,
+                            "startColumn": 28
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 568,
+                            "startColumn": 25
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 569,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 571,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 572,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 574,
+                            "startColumn": 15
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 574,
+                            "startColumn": 42
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 575,
+                            "startColumn": 20
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 577,
+                            "startColumn": 35
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 583,
+                            "startColumn": 25
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 584,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 586,
+                            "startColumn": 30
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 588,
+                            "startColumn": 18
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 588,
+                            "startColumn": 31
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 608,
+                            "startColumn": 25
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 609,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 610,
+                            "startColumn": 19
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 612,
+                            "startColumn": 18
+                          }
+                        },
+                        "message": {
+                          "text": "Skip this branch, (assume 'nb_nodes>100' is false)"
+                        }
+                      },
+                      "kinds": [
+                        "branch"
+                      ],
+                      "importance": "important"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 618,
+                            "startColumn": 11
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 619,
+                            "startColumn": 24
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 620,
+                            "startColumn": 16
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 620,
+                            "startColumn": 27
+                          }
+                        },
+                        "message": {
+                          "text": "Enter this loop, (assume 'inode<nb_nodes+1')"
+                        }
+                      },
+                      "kinds": [
+                        "branch"
+                      ],
+                      "importance": "important"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 622,
+                            "startColumn": 29
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 623,
+                            "startColumn": 16
+                          }
+                        },
+                        "message": {
+                          "text": "'node_name' is an Output from 'sscanf' (declared at c:\\program files (x86)\\windows kits\\10\\include\\10.0.18362.0\\ucrt\\stdio.h:2263)"
+                        }
+                      },
+                      "kinds": [
+                        "declaration"
+                      ],
+                      "importance": "important"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 624,
+                            "startColumn": 15
+                          }
+                        }
+                      },
+                      "importance": "unimportant"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 625,
+                            "startColumn": 15
+                          }
+                        },
+                        "message": {
+                          "text": "'node_name' is an Input to 'strcat' (declared at c:\\program files (x86)\\windows kits\\10\\include\\10.0.18362.0\\ucrt\\string.h:90)"
+                        }
+                      },
+                      "kinds": [
+                        "usage"
+                      ],
+                      "importance": "important"
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+                          },
+                          "region": {
+                            "startLine": 625,
+                            "startColumn": 15
+                          }
+                        },
+                        "message": {
+                          "text": "'node_name' is required to be zero-terminated by a SAL annotation on 'strcat'"
+                        }
+                      },
+                      "kinds": [
+                        "usage"
+                      ],
+                      "importance": "essential"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "PREfast",
+          "fullName": "PREfast Code Analysis",
+          "version": "14.29.30154.0",
+          "informationUri": "https://aka.ms/cpp/ca"
+        }
+      },
+      "invocations": [
+        {
+          "commandLine": "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX86\\x64\\c1.dll\" -ACf{1F7B090C-16DB-4822-966A-A93D26ED4681} -ACpmspft140.dll -Alint -D_PREFAST_ -D_AST_FE_ -Analyze -zm0x0087C1B0 -il C:\\Users\\laulef01\\AppData\\Local\\Temp\\_CL_2a0d087aast -typedil -f ..\\stream_tool_readManifests.c -Ze -D_MSC_EXTENSIONS -Zp16 -pc \\:/ -D_MSC_VER=1929 -D_MSC_FULL_VER=192930154 -D_MSC_BUILD=0 -D_M_AMD64=100 -ZILP448 -D_M_X64=100 -D_WIN64 -D_WIN32 -nologo -W 3 -diagnostics:column -D_GUARDOVERFLOW_CRT_ALLOCATORS=1 -Ot -DCODE_ANALYSIS -D_DEBUG -D_CONSOLE -D_UNICODE -DUNICODE -D__MSVC_RUNTIME_CHECKS -RTCs -RTCu -D_DEBUG -D_MT -D_DLL -GS -D_M_FP_PRECISE -Fox64\\Debug\\stream_tool_readManifests.obj -Fdx64\\Debug\\vc142.pdb -external:W 3 -Gd -analyze:projectdirectory C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_tools\\graphTxt2Bin -analyze:rulesetdirectory ;C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\Team Tools\\Static Analysis Tools\\\\Rule Sets; -analyze:ruleset C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\Team Tools\\Static Analysis Tools\\Rule Sets\\NativeRecommendedRules.ruleset -analyze:quiet -analyze:plugin C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX86\\x86\\EspXEngine.dll -FC -errorreport:prompt -I C:\\Work\\GITHUB_LLF\\STREAM\\stream_al -I C:\\Work\\GITHUB_LLF\\STREAM\\stream_src -I C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\include -I C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\atlmfc\\include -I C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\VS\\include -I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\ucrt -I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\um -I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\shared -I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\winrt -I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\cppwinrt -I C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_tools\\graphTxt2Bin\\Include\\um -external:I C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\include -I C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\include -external:I C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\atlmfc\\include -I C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\atlmfc\\include -external:I C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\VS\\include -I C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\VS\\include -external:I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\ucrt -I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\ucrt -external:I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\um -I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\um -external:I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\shared -I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\shared -external:I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\winrt -I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\winrt -external:I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\cppwinrt -I C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\cppwinrt -external:I C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_tools\\graphTxt2Bin\\Include\\um -I C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_tools\\graphTxt2Bin\\Include\\um",
+          "executionSuccessful": true
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_read_graph.c"
+          },
+          "roles": [
+            "analysisTarget",
+            "resultFile"
+          ],
+          "hashes": {
+            "md5": "42a1e3fc46f266cbc7d9a5dc37d5b25c"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///c:/work/github_llf/graph_interpreter/stream_tools/stream_tool_include.h"
+          },
+          "hashes": {
+            "md5": "c8885aea91144ea5f42f83934aa2aae4"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///c:/work/github_llf/graph_interpreter/stream_src/stream_const.h"
+          },
+          "hashes": {
+            "md5": "518a84c8f3c7d9aee56c177f345178e8"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///c:/work/github_llf/graph_interpreter/stream_src/stream_types.h"
+          },
+          "hashes": {
+            "md5": "415cabfee6a27ace0f7c8939db4cd1c3"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///c:/work/github_llf/graph_interpreter/stream_tools/stream_tool_define.h"
+          },
+          "hashes": {
+            "md5": "e5d487b6f05a9f17eef5ad107836ec51"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///c:/work/github_llf/graph_interpreter/stream_tools/stream_tool.h"
+          },
+          "hashes": {
+            "md5": "23a47acb02f05d56c34bd527375f2562"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///C:/Work/GITHUB_LLF/GRAPH_INTERPRETER/stream_tools/stream_tool_readManifests.c"
+          },
+          "roles": [
+            "analysisTarget",
+            "resultFile"
+          ],
+          "hashes": {
+            "md5": "c28e96c6dceb8291a3e520729afa6c0e"
+          }
+        }
+      ]
+    }
+  ]
+}

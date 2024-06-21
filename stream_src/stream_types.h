@@ -35,22 +35,9 @@
 
 #include <stdint.h>
 
-
 #include "stream_const.h"
 
-
-/* 
-    if 64 bits architectures are reading the graph:
-    #define intPtr_t uint64_t
-    #define MAX_ADD_OFFSET 0x7FFFFFFFFFFFFFFFL
-*/
-#ifdef PLATFORM_ARCH_32BIT
-#define intPtr_t uint32_t 
-#define sintPtr_t int32_t 
-#else
-#define intPtr_t uint64_t 
-#define sintPtr_t int64_t 
-#endif
+#include "platform.h"
 
 
 struct HW_params
@@ -169,15 +156,15 @@ typedef struct
     uint16_t arcID[MAX_NB_STREAM_PER_SWC];
     uint8_t *pt8b_collision_arc;    // collision
     uint32_t pack_command;          // preset, narc, tag, instanceID, command
-    uint8_t *ioctrl;                /* byte array of request fields */
+    //uint8_t *ioctrl;                /* byte array of request fields */
     uint32_t iomask;                /* _IOMASK_ fields */
 
     uint32_t scheduler_control;     // PACK_STREAM_PARAM(..);
     uint32_t whoami_ports;          /* _PARCH_ fields */
+    //uint16_t script_arctx;           /* arc buffer for the static area of the script */
     uint8_t swc_memory_banks_offset; /* offset in words  */
     uint8_t swc_parameters_offset;
     uint8_t nb_stream_instances;    /* stream instances pointers (in words) = &(all_arcs[ -nb_stream_instances]) */
-    uint8_t script_arctx;           /* arc buffer for the static area of the script */
     uint8_t memory_segment_swap;    /* bit-field of the memory segments to swap (TO_SWAP_LW2S) */
     uint8_t error_log;              /* bit-field of logged errors */
 

@@ -127,14 +127,12 @@ void arm_stream_detector_process (arm_detector_instance *pinstance,
         {   
             extern FILE *ptf_trace;
             long x, SD=15-10; 
-            x = input_data<<SD;         fwrite(&x, 1, 4, ptf_trace);    //1
-            x = DBGZ3<<SD;              fwrite(&x, 1, 4, ptf_trace);    //2
-            x = Z8<<SD;                 fwrite(&x, 1, 4, ptf_trace);    //3
-            x = ACCVAD;                 fwrite(&x, 1, 4, ptf_trace);    //4
-            x = FLAG;                   fwrite(&x, 1, 4, ptf_trace);    //5
-            x = 0; 
-            if (DOWNCOUNTER > 0) x=0x7fffffff; 
-                                        fwrite(&x, 1, 4, ptf_trace);    //6
+            x = input_data<<SD;                         fwrite(&x, 1, 4, ptf_trace);    //1
+            x = DBGZ3<<SD;                              fwrite(&x, 1, 4, ptf_trace);    //2
+            x = Z8<<SD;                                 fwrite(&x, 1, 4, ptf_trace);    //3
+            x = ACCVAD;                                 fwrite(&x, 1, 4, ptf_trace);    //4
+            x = FLAG;                                   fwrite(&x, 1, 4, ptf_trace);    //5
+            x = 0; if (DOWNCOUNTER > 0) x=0x7fffffff;   fwrite(&x, 1, 4, ptf_trace);    //6
         }
 #endif     
         isamp++;

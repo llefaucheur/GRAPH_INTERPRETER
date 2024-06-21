@@ -79,8 +79,6 @@ node
 
     script_mem_shared   1               ; Is it a private RAM(0) or can it be shared with other scripts(1)
 
-    script_mem_map       0              ; Memory mapping to VID #0 (default) 
-
     script_assembler                    ; start of assembler language (@@@ TBD)
         PSHC INT8 1
         GTR
@@ -120,12 +118,8 @@ _end_
 ;
 node 
     arm_stream_router i
-    S 0                     simple format
-    X 0 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
-
-    parameters <optional label for scripts>
-        1  i8; 0            0=load all parameters
+    parameters     0             ; TAG   "load all parameters"
+        
         2  i8; 2 2          nb input/output arcs
         4 i16; 0 0 2 0      move arc0,chan0, to arc2,chan0
         4 i16; 0 1 2 1      move arc0,chan1, to arc2,chan1
@@ -156,12 +150,8 @@ _end_
 ;   Parameters : domains of operations to correctly interpret the Word2 of the FORMAT (SETTINGS_IOFMT2)
 ;   
 arm_stream_converter (i)
-    S 0                     simple format
-    X 0 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
 
-    parameters <optional label for scripts>
-        1  i8; 0            0=load all parameters
+    parameters     0             ; TAG   "load all parameters"
         2  i8; 4 5          index of the input and output formats
     _end_
 _end_
@@ -189,12 +179,9 @@ _end_
 ;
 node 
     arm_stream_amplifier (i)
-    arm_stream_router
-    S 0                     simple format
-    X 0 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
 
-    parameters <optional label for scripts>
+
+    parameters     0             ; TAG   "load all parameters"
         1  i8;  1           load only rising/falling coefficient slope
         1 h16;  805         gain -100dB .. +36dB (+/- 1%)
         1  i8;  0           muted state
@@ -259,13 +246,10 @@ _end_
 ;
 node 
     arm_stream_mixer (i)
-    S 0                     simple format
-    X 0 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
 
 ;   Example: 4 input one mono, one stereo, output is stereo
-    parameters <optional label for scripts>
-        1  i8; 0                load all parameters
+    parameters     0             ; TAG   "load all parameters"
+        
 
         2  i8; 6 6              rising/falling slope on all arcs
         1 h32; 807              -12dB output gain in FP_8m4e format; 
@@ -303,12 +287,6 @@ _end_
 ;   - number of biquads in cascade (1 or 2)
 ;   - coefficients in FP32
 ;
-;   Simple format : S + Preset + Use-case 
-;   Extended : X + Preset, pre/post process script, arch, proc, priority, verbose level
-;       followed by the list of VID virtual memory banks defined in "platform_manifest_computer.txt"
-;             of each memory bank defined in swc_manifest_filter.txt
-;             + one segment for the code (0=default VID segment: Flash/no Swap)
-;
 node
     arm_stream_filter 0         node subroutine name + instance ID
 
@@ -317,8 +295,7 @@ node
                                         ;  default = #0
     node_map_verbose    1               ; level #1 of debug trace
 
-    parameters  optional_label
-        1  i8;  0       0="load all parameters"
+    parameters     0             ; TAG   "load all parameters"
         1  u8;  2       Two biquads
         1  i8;  0       postShift
         5 f32; 0.284277f 0.455582f 0.284277f 0.780535f -0.340176f  b0/b1/b2/-a1/-a2  ellip(4, 1, 40, 3600/8000, 'low')
@@ -351,12 +328,6 @@ _end_
 ;   1 read the current signal peak
 ;   2 read the signal to noise ratio
 ;
-;   Simple format : S + Preset 
-;   Extended : X + Preset, pre/post process script, arch, proc, priority, verbose level
-;       followed by the list of VID virtual memory banks defined in "platform_manifest_computer.txt"
-;             of each memory bank defined in swc_manifest_filter.txt
-;             + one segment for the code (0=default VID segment: Flash/no Swap)
-;
 node 
     arm_stream_detector 0       node name  + instance ID
 
@@ -364,8 +335,7 @@ node
     map_verbose         1               ; level #1 of debug trace = #0
 
 
-    parameters <optional label for scripts>
-        2  i8; 0          0="load all parameters"
+    parameters 0                   ; TAG   "load all parameters"
         8; i8; 1 2 3 4 5 6 7 8  the 8 bytes of "struct detector_parameters"
     _end_    
 _end_
@@ -383,12 +353,9 @@ _end_
 ;
 node 
     arm_stream_rescaler (i)
-    S 0                     simple format
-    X 0 2 0   0 0 0 4       preset 
-    0 0                     list of VIDs
 
-    parameters <optional label for scripts>
-        1  i8;  0           load all parameters
+    parameters     0             ; TAG   "load all parameters"
+        
 ;               input   output
         2; f32; -1  1
         2; f32;  0  0       ; this table creates the abs(x) conversion
@@ -417,12 +384,9 @@ _end_
 ;
 node 
     arm_stream_compressor 0
-    S 1                     simple format
-    X 1 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
 
-    parameters <optional label for scripts>
-        1  i8; 0            0=load all parameters
+    parameters     0             ; TAG   "load all parameters"
+        
         4; i32; 0 0 0 0     provision for extra parameters in other codecs
     _end_
 _end_
@@ -461,12 +425,9 @@ _end_
 ;
 node 
     arm_stream_decompressor (i)
-    S 1                     simple format
-    X 1 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
 
-    parameters <optional label for scripts>
-        1  i8; 0            0=load all parameters
+    parameters     0             ; TAG   "load all parameters"
+        
         1  i8; 1            state = off (generates zeros) / on with ramp-up
         4; i32; 0 0 0 0     provision for extra parameters in other codecs
     _end_
@@ -500,12 +461,9 @@ _end_
 ;
 node 
     arm_stream_modulator (i)
-    S 0                     simple format
-    X 0 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
 
-    parameters <optional label for scripts>
-        1  i8; 0            0=load all parameters
+    parameters     0             ; TAG   "load all parameters"
+        
         1  u8;  1       sinewave
         2 h16;  FFFF 0  full-scale, no offset
         1 f32;  1200    1200Hz
@@ -534,12 +492,8 @@ _end_
 ;
 node 
     arm_stream_demodulator (i)
-    S 0                     simple format
-    X 0 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
-
-    parameters <optional label for scripts>
-        1  i8; 0            0=load all parameters
+    parameters     0             ; TAG   "load all parameters"
+        
         2  i8; 2 2          nb input/output arcs
         4 i16; 0 0 2 0      move arc0,chan0, to arc2,chan0
     _end_
@@ -567,12 +521,9 @@ _end_
 ;
 node 
     arm_stream_resampler (i)
-    S 0                     simple format
-    X 0 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
 
-    parameters <optional label for scripts>
-        1  i8; 0            0=load all parameters
+    parameters     0             ; TAG   "load all parameters"
+        
         2  i8; 2 2          nb input/output arcs
         4 i16; 0 0 2 0      move arc0,chan0, to arc2,chan0
     _end_
@@ -588,12 +539,9 @@ _end_
 ;
 node 
     arm_stream_qos (i)
-    S 0                     simple format
-    X 0 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
 
-    parameters <optional label for scripts>
-        1  i8; 0            0=load all parameters
+    parameters     0             ; TAG   "load all parameters"
+        
         2  i8; 2 2          nb input/output arcs
         4 i16; 0 0 2 0      move arc0,chan0, to arc2,chan0
         4 i16; 0 1 2 1      move arc0,chan1, to arc2,chan1
@@ -616,12 +564,8 @@ _end_
 ;
 node 
     arm_stream_split (i)
-    S 0                     simple format
-    X 0 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
-
-    parameters <optional label for scripts>
-        1  i8; 0            0=load all parameters
+    parameters     0             ; TAG   "load all parameters"
+        
         2  i8; 2 2          nb input/output arcs
         4 i16; 0 0 2 0      move arc0,chan0, to arc2,chan0
         4 i16; 0 1 2 1      move arc0,chan1, to arc2,chan1
@@ -655,12 +599,9 @@ _end_
 ;
 node 
     arm_stream_detector2D (i)
-    S 0                     simple format
-    X 0 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
 
-    parameters <optional label for scripts>
-        1  i8; 0            0=load all parameters
+    parameters     0             ; TAG   "load all parameters"
+        
         2  i8; 2 2          nb input/output arcs
         4 i16; 0 0 2 0      move arc0,chan0, to arc2,chan0
         4 i16; 0 1 2 1      move arc0,chan1, to arc2,chan1
@@ -687,12 +628,9 @@ _end_
 ;
 node
     arm_stream_filter2D   (i)
-    S 0                     simple format
-    X 0 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
 
-    parameters <optional label for scripts>
-        1  i8; 0            0=load all parameters
+    parameters     0             ; TAG   "load all parameters"
+        
         2  i8; 2 2          nb input/output arcs
         4 i16; 0 0 2 0      move arc0,chan0, to arc2,chan0
         4 i16; 0 1 2 1      move arc0,chan1, to arc2,chan1
@@ -722,12 +660,9 @@ _end_
 ;   #5 : gyroscope rotation drifts on XYZ 
 ;
     arm_stream_analysis (i)
-    S 0                     simple format = preset 
-    X 0 2 0   0 0 0 4       preset VAD 
-    0 0                     list of VIDs
 
-    parameters <optional label for scripts>
-        1  i8; 0            0=load all parameters
+    parameters     0             ; TAG   "load all parameters"
+        
     _end_
 _end_
 

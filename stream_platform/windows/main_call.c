@@ -43,8 +43,8 @@ void main_call(void)
 {
     extern void platform_init_stream_instance(arm_stream_instance_t *instance);
     arm_stream_instance_t instance;
-    //uint32_t data_in, fifo_freeArea;
 
+    /* copy the graph, initializes the interpreter instance */
     platform_init_stream_instance (&instance);
 
     /* reset the graph */

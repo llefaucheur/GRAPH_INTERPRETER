@@ -99,7 +99,7 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
             /* reset the instance */
             clear_size =  (SCRIPT_REGSIZE + 1) * RD(arc_desc[SCRIPT_PTR_SCRARCW0], NBREGS_SCRARCW0);
             clear_size += (SCRIPT_REGSIZE + 1) * RD(arc_desc[WRIOCOLL_SCRARCW3], NSTACK_SCRARCW3);
-            src = (uint8_t *)pack2linaddr_ptr(S->long_offset, RD(arc_desc[SCRIPT_PTR_SCRARCW0], BASEIDXOFFSCRARCW0));
+            src = (uint8_t *)pack2linaddr_ptr(S->long_offset, RD(arc_desc[SCRIPT_PTR_SCRARCW0], BASEIDXOFFSCRARCW0), LINADDR_UNIT_BYTE);
             MEMSET(src, 0, clear_size);
 
             arm_stream_script_interpreter (S, arc_desc, byte_code, src);

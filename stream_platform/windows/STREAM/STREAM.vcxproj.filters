@@ -219,6 +219,12 @@
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\analysis\arm_stream_analysis.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
+    <ClInclude Include="..\graph_header.h">
+      <Filter>platform_manifest</Filter>
+    </ClInclude>
+    <ClInclude Include="..\platform.h">
+      <Filter>platform_manifest</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="stream_src">

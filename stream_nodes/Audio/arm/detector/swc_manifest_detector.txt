@@ -12,7 +12,11 @@ node_use_arc_format  0      ; default 1 : the scheduler must push each arc forma
 ;----------------------------------------------------------------------------------------
 ;   MEMORY ALLOCATIONS
 
-node_mem               0
-node_mem_alloc         32
+node_mem                0
+node_mem_alloc         50   ; filter static
+
+node_mem                1
+node_mem_alloc         30
+node_mem_type           2   ; backup memory (Z7..)
 
 _end_

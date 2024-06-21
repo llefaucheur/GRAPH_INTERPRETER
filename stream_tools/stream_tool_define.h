@@ -38,7 +38,7 @@
 
 #define MAXINPUT 100000
 #define MAXOUTPUT 100000
-#define MAXBINARYGRAPHW32 100000
+#define MAXBINARYGRAPHW32 10000
 #define MAXDBGTRACEGRAPH 10000
 
 #define SUBGMAXDEPTH 5          /* subgraphs calling subgraphs */
@@ -61,7 +61,7 @@
 
 #define MAX_PROC_MEMBANK 256     /* number of physical memory banks of the processor, for the graph processing */
 
-#define VID_default 1
+#define VID_default 0
 
 #define MAX_POSSIBLE_NB_MEMORY_OFFSET 8 /* long_offset[] size */
 
@@ -158,7 +158,7 @@
 #define node_arc_parameter              "node_arc_parameter"
 #define node_steady_stream              "node_steady_stream"
 #define node_same_data_rate             "node_same_data_rate"
-#define node_use_dtcm                   "node_use_dtcm"
+#define node_use_mpdtcm                 "node_use_mpdtcm"
 #define node_use_arc_format             "node_use_arc_format"
 #define node_mask_library               "node_mask_library"
 #define node_subtype_units              "node_subtype_units"
@@ -172,7 +172,7 @@
 #define node_mem_sampling_rate          "node_mem_sampling_rate"
 #define node_mem_frame_size             "node_mem_frame_size"
 #define node_mem_alignement             "node_mem_alignement"
-#define node_mem_type              "node_mem_type"
+#define node_mem_type                   "node_mem_type"
 #define node_mem_speed                  "node_mem_speed"
 #define node_mem_relocatable            "node_mem_relocatable"
 #define node_mem_data0prog1             "node_mem_data0prog1"
@@ -225,6 +225,7 @@
 
 /*----------------------------------------------------------------------- GRAPH NODES ------------- */
 #define node_new                        "node"
+#define node_lock_arcs                  "node_lock_arcs"
 #define node_preset                     "node_preset"
 #define node_malloc_E                   "node_malloc_E"
 #define node_map_hwblock                "node_map_hwblock"

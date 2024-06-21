@@ -54,14 +54,15 @@ extern uint8_t platform_io_al_idx_to_graph[];
     const p_io_function_ctrl platform_io [LAST_IO_FUNCTION_PLATFORM] =
     {
         (void *)&data_in_0,        // 0
-        (void *)&analog_sensor_0,  // 1
-        (void *)&motion_in_0,      // 2
-        (void *)&audio_in_0,       // 3
-        (void *)&d2_in_0,          // 4
-        (void *)&line_out_0,       // 5
-        (void *)&gpio_out_0,       // 6
-        (void *)&gpio_out_1,       // 7
-        (void *)&data_out_0,       // 8
+        (void *)&data_in_1,        // 1
+        (void *)&analog_sensor_0,  // 2
+        (void *)&motion_in_0,      // 3
+        (void *)&audio_in_0,       // 4
+        (void *)&d2_in_0,          // 5
+        (void *)&line_out_0,       // 6
+        (void *)&gpio_out_0,       // 7
+        (void *)&gpio_out_1,       // 8
+        (void *)&data_out_0,       // 9
     };
 */
 
@@ -93,26 +94,43 @@ void data_in_0 (uint32_t command, uint8_t *data, uint32_t size)
 {
     switch (command)
     {
+    case STREAM_RUN:            /* data moves */
+        break;
+    case STREAM_SET_PARAMETER:  /* presets reloaded */
+        break;
+    case STREAM_SET_BUFFER:     /* if memory allocation is made in the graph */
+        break;
     default:
-    /* Stream standard + list of { n, [byte stream of commands + data] }  
-        example : set calibration, gains, filters, sampling-rate ..
-    */
-    case STREAM_SET_PARAMETER:  
+    case STREAM_STOP:           /* stop data moves */
         break;
-    case STREAM_RUN:
-        break;
-    case STREAM_STOP:
-        break;
-    case STREAM_SET_BUFFER:
-        break;
-    case STREAM_READ_PARAMETER:  /* setting done ? device is ready ? calibrated ? */
+    case STREAM_READ_PARAMETER: /* setting done ? device is ready ? calibrated ? */
         break;
     }
 }
 
+
+void data_in_1 (uint32_t command, uint8_t *data, uint32_t size) 
+{
+    switch (command)
+    {
+    case STREAM_RUN:            /* data moves */
+        break;
+    case STREAM_SET_PARAMETER:  /* presets reloaded */
+        break;
+    case STREAM_SET_BUFFER:     /* if memory allocation is made in the graph */
+        break;
+    default:
+    case STREAM_STOP:           /* stop data moves */
+        break;
+    case STREAM_READ_PARAMETER: /* setting done ? device is ready ? calibrated ? */
+        break;
+    }
+}
+
+
 void analog_sensor_0 (uint32_t command, uint8_t *data, uint32_t size) 
 {   int32_t tmp, stream_format_io_setting;
-    uint32_t cumulated_data = 0;
+    uint32_t cumulated_data = 0, i;
     int16_t *data16 = rx_buffer;
     switch (command)
     {
@@ -148,6 +166,10 @@ void analog_sensor_0 (uint32_t command, uint8_t *data, uint32_t size)
             //if (j > 0) tmp = size; else tmp = 0;
         #if DATA_FROM_FILES
             tmp = fread(data16, 2, size, ptf_in_stream_in_0_data);
+
+            //for (i = 0; i < size; i++) 
+            //{   data16[i] = (int16_t)0x1000; 
+            //}
         #else
             memcpy(data16, &(ptf_in_stream_in_0_data[ptr_in_stream_in_0_data]), 2 * size);
             ptr_in_stream_in_0_data += size;
@@ -187,14 +209,16 @@ void motion_in_0 (uint32_t command, uint8_t *data, uint32_t size)
 {
     switch (command)
     {
+    case STREAM_RUN:            /* data moves */
+        break;
+    case STREAM_SET_PARAMETER:  /* presets reloaded */
+        break;
+    case STREAM_SET_BUFFER:     /* if memory allocation is made in the graph */
+        break;
     default:
-    case STREAM_SET_PARAMETER:
+    case STREAM_STOP:           /* stop data moves */
         break;
-    case STREAM_RUN:
-        break;
-    case STREAM_STOP:
-        break;
-    case STREAM_SET_BUFFER:
+    case STREAM_READ_PARAMETER: /* setting done ? device is ready ? calibrated ? */
         break;
     }
 }
@@ -202,14 +226,16 @@ void audio_in_0 (uint32_t command, uint8_t *data, uint32_t size)
 {
     switch (command)
     {
+    case STREAM_RUN:            /* data moves */
+        break;
+    case STREAM_SET_PARAMETER:  /* presets reloaded */
+        break;
+    case STREAM_SET_BUFFER:     /* if memory allocation is made in the graph */
+        break;
     default:
-    case STREAM_SET_PARAMETER:
+    case STREAM_STOP:           /* stop data moves */
         break;
-    case STREAM_RUN:
-        break;
-    case STREAM_STOP:
-        break;
-    case STREAM_SET_BUFFER:
+    case STREAM_READ_PARAMETER: /* setting done ? device is ready ? calibrated ? */
         break;
     }
 }
@@ -217,14 +243,16 @@ void d2_in_0 (uint32_t command, uint8_t *data, uint32_t size)
 {
     switch (command)
     {
+    case STREAM_RUN:            /* data moves */
+        break;
+    case STREAM_SET_PARAMETER:  /* presets reloaded */
+        break;
+    case STREAM_SET_BUFFER:     /* if memory allocation is made in the graph */
+        break;
     default:
-    case STREAM_SET_PARAMETER:
+    case STREAM_STOP:           /* stop data moves */
         break;
-    case STREAM_RUN:
-        break;
-    case STREAM_STOP:
-        break;
-    case STREAM_SET_BUFFER:
+    case STREAM_READ_PARAMETER: /* setting done ? device is ready ? calibrated ? */
         break;
     }
 }
@@ -232,14 +260,16 @@ void line_out_0 (uint32_t command, uint8_t *data, uint32_t size)
 {
     switch (command)
     {
+    case STREAM_RUN:            /* data moves */
+        break;
+    case STREAM_SET_PARAMETER:  /* presets reloaded */
+        break;
+    case STREAM_SET_BUFFER:     /* if memory allocation is made in the graph */
+        break;
     default:
-    case STREAM_SET_PARAMETER:
+    case STREAM_STOP:           /* stop data moves */
         break;
-    case STREAM_RUN:
-        break;
-    case STREAM_STOP:
-        break;
-    case STREAM_SET_BUFFER:
+    case STREAM_READ_PARAMETER: /* setting done ? device is ready ? calibrated ? */
         break;
     }
 }
@@ -299,17 +329,20 @@ void gpio_out_1 (uint32_t command, uint8_t *data, uint32_t size)
 {
     switch (command)
     {
+    case STREAM_RUN:            /* data moves */
+        break;
+    case STREAM_SET_PARAMETER:  /* presets reloaded */
+        break;
+    case STREAM_SET_BUFFER:     /* if memory allocation is made in the graph */
+        break;
     default:
-    case STREAM_SET_PARAMETER:
+    case STREAM_STOP:           /* stop data moves */
         break;
-    case STREAM_RUN:
-        break;
-    case STREAM_STOP:
-        break;
-    case STREAM_SET_BUFFER:
+    case STREAM_READ_PARAMETER: /* setting done ? device is ready ? calibrated ? */
         break;
     }
 }
+
 void data_out_0 (uint32_t command, uint8_t *data, uint32_t size) 
 {
     switch (command)

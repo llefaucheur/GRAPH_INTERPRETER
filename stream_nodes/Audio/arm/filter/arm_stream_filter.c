@@ -136,8 +136,10 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
             uint8_t preset = RD(command, PRESET_CMD);
             uint16_t *pt16dst;
 
+            /* read memory banks */
             memreq = (intPtr_t *)instance;
-            pinstance = (arm_filter_instance *) (*memreq++);
+            pinstance = (arm_filter_instance *) (*memreq++);        /* main instance */
+            pinstance->TCM = (arm_filter_memory *) (*memreq);       /* second bank = fast memory */
 
             /* here reset */
             pt8b = (uint8_t *) (pinstance->TCM->state);
@@ -192,36 +194,40 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
                 *pt16dst++ = *pt16src++;    // a12
             }
 
-            //arm_biquad_cascade_df1_init_q15(
-            //    &(pinstance->TCM->biquad_casd_df1_inst_q15),
-            //    numStages,
-            //    (const q15_t *)&(pinstance->TCM->coefs[0]),
-            //    (q15_t *)&(pinstance->TCM->state),
-            //    postShift);
+            arm_biquad_cascade_df1_init_q15(
+                &(pinstance->TCM->biquad_casd_df1_inst_q15),
+                numStages,
+                (const q15_t *)&(pinstance->TCM->coefs[0]),
+                (q15_t *)&(pinstance->TCM->state),
+                postShift);
 
 
             /* optimized kernels INIT */
-            pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_INIT_WAIT_COMP,0,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
+            //pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_INIT_WAIT_COMP,0,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
 
-            pinstance->services(
-                pinstance->iir_service,
-                (uint8_t *)&(pinstance->TCM->biquad_casd_df1_inst_q15),
-                (uint8_t *)&(pinstance->TCM->coefs[0]),
-                (uint8_t *)&(pinstance->TCM->state),
-                postShift | numStages
-                );
+            //pinstance->services(
+            //    pinstance->iir_service,
+            //    (uint8_t *)&(pinstance->TCM->biquad_casd_df1_inst_q15),
+            //    (uint8_t *)&(pinstance->TCM->coefs[0]),
+            //    (uint8_t *)&(pinstance->TCM->state),
+            //    postShift | numStages
+            //    );
 
             /* optimized kernels RUN */
-            pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_CHECK_COPROCESSOR,0,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
-            pinstance->services( pinstance->iir_service, &i, 0, 0, 0 );
-            if (i > 0) 
-            {   pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_CHECK_END_COMP, 
-                    STREAM_SERVICE_NO_INIT,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
-            }
-            else /* there is no coprocessor to check end of compute completion */
-            {   pinstance->iir_service = PACK_SERVICE(0, 
-                    STREAM_SERVICE_NO_INIT,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
-            }
+            //pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_CHECK_COPROCESSOR,0,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
+            //pinstance->services( pinstance->iir_service, &i, 0, 0, 0 );
+            //if (i > 0) 
+            //{   pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_CHECK_END_COMP, 
+            //        STREAM_SERVICE_NO_INIT,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
+            //}
+            //else /* there is no coprocessor to check end of compute completion */
+            //{   pinstance->iir_service = PACK_SERVICE(0, 
+            //        STREAM_SERVICE_NO_INIT,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
+            //}
+
+            pinstance->iir_service = PACK_SERVICE(NOCONTROL_SSRV, NOOPTION_SSRV,
+                STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
+            
             break;
         }
 
@@ -246,7 +252,6 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
             pt_pt++;        outBuf = (int16_t *)(pt_pt->address); 
 
             nb_data = stream_xdmbuffer_size / sizeof(int16_t);
-            ST(pinstance->iir_service, FUNCTION_SSRV, STREAM_SERVICE_CASCADE_DF1_Q15);
 
             pinstance->services(
                 pinstance->iir_service,
@@ -271,6 +276,7 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
         default : break;
     }
 }
+
 #ifdef __cplusplus
 }
 #endif

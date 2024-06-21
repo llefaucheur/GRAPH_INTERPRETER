@@ -66,7 +66,7 @@ format_2d_border
 ;
 ; list of HW IOs from "stream_tools_files_manifests_PLATFORMNAME.txt" + IO arc patched with this IO.
 
-stream_io                   2           ; index used to start the declaration of a new IO
+stream_io                   2           ; index used in the graph , starts the declaration of a new IO 
 stream_io_format            0           ; index to the stream format (Index of the above table) (default #0)
 stream_io_hwid              0           ; ID of the interface given in "files_manifests_computer" (default #0)
 stream_io_setting1          0           ; setting word32 (SETTINGS_IOFMT2), the format depends on the IO domain (default #0)
@@ -123,13 +123,12 @@ node_map_proc            0      ; execute this nanoApp on this processor (0: any
 node_map_arch            0      ; execute this nanoApp on this architecture (0: any possible, default)
 node_map_rtos            0      ; execute this nanoApp on this thread index (0: any possible, default)
 node_map_verbose         0      ; level of debug trace, default = #0
-node_script         <0..127>    ; index of the script to call before and after execution of this node
+node_script         <0..127>    ; index of the script to call before and after execution of this node, wait in case of collision.
        
-        node_parameters         ; node parameters example (default : no parameter)
+        node_parameters  0      ; node parameters example (default : no parameter) TAG= 0 "load all parameters"
                                 ; Set_parameter : the array of parameters starts on 32bits-aligned addresses
                                 ; The programmer must arrange the data are aligned with respect to the way parameters are read in 
                                 ;   the nanoApp (using pointers to 8/16/32bits fields).
-            1  i8; 0            ; TAG= 0 "load all parameters"
             7  i8; 2 3 4 5 6 7 8 ; parameters
 include 1 filter_parameters.txt ; path + text file-name using parameter syntax 
         _end_    
@@ -142,13 +141,13 @@ include 1 filter_parameters.txt ; path + text file-name using parameter syntax
 ;   Its single arc (TX) is always empty
 node arm_stream_script 1        ; instance index of arm_stream_script
     
-    script_registers  2         ; numer of registers used in this script , default 2
-    script_pointers   2         ; numer of pointers used in this script , default 2
-    script_stack      12        ; size of the stack in word64 (default = 0)
-    script_mem_shared 1         ; Is it a private RAM(0) or can it be shared with other scripts(1)
-    script_mem_map    0         ; Memory mapping to VID #0 (default) 
-                                ; this declaration creates the transmit arc of the script-node pointing to the stack/buffer area
-    script_code
+    script_registers   2        ; number of registers (default is max = 6)
+    script_pointers    2        ; number of pointer (default is max = 6)
+    script_stack      12        ; size of the stack in word64 (default = 6)
+    script_mem_shared  1        ; Is it a private RAM(0) or can it be shared with other scripts(1)
+    script_mem_map     0        ; Memory mapping to VID #0 (default) this declaration creates the transmit arc of the script-node pointing to the stack/buffer area
+                                ; 
+    script_code 0               ; code of the binary format (0 : default, or native architecture)
         2 h16; 2002 0001        ; movi int16 r0 1
         1 h16; e810             ; equ r1,r0
         1 h16; 0381             ; ccallsys 1
@@ -182,22 +181,11 @@ _end_
 ;
 ;   script instance #0 is the "main script" of the subgraph
 script  0                       ; index of the script, to be mapped to an index in the graph compiler
-
-    script_registers    2       ; same as arm_stream_script
-    script_pointers     2       ; 
-    script_stack       12       ;   
-    script_mem_shared   1       ; 
-    script_mem_map      0       ; 
-                              
    script_code                  ; start of byte-codes of the script
        2 h16; 2002 0001         ;
-       1 f64; 3.14159265359     ; 
-       1 h16; e810              ;
-       1 i8 ; 0                 ; parameters embedded in the code and addressed with Labels
-       7 i8 ; 2 3 4 5 6 7 8     ; 
    _end_                        ;
 
-;====================================
+;==============================
 ;   ARCS IN GRAPHS
                                 ;----ARC CONNECTED TO GRAPH INTERFACE
                                 ;  in a subgraph the IDX interfaces are sequential 1,2,3.. and documented like function parameters
@@ -208,7 +196,8 @@ arc_input  1 node_name  2  0  0 ; input arc index #1 connected to "node_name" in
 arc_output 2 node_name  3  1  0 ; output arc index #2 connected to "node_name" instance #3 and its arc index #1, Format #0
                                 ;----ARC CONNECTION BETWEEN TWO NANOAPPS
                                 ;     NAME INST IO FMT    NAME INST IO FMT
-arc node1 1 2 0 node2 3 4 1     ; arc between node1 instance #1 arc index #2, producer format #0 to 
+arc node1 1 2 0 node2 3 4 1     ; arc   node1 instance node_index1 format_index1      node2 node_index2 format_index2  
+                                ; arc between node1 instance #1 arc index #2, producer format #0 to 
                                 ; node2 instance #3 and its arc index #4, consumer format #1
     ;----ARC PARAMETERS
 arc_flow_error      1           ; #1 do something depending on domain when a flow error occurs, default #0 (no interpolation)
@@ -220,4 +209,4 @@ arc_extend_addr     1           ; address range extension-mode of the arc descri
 arc_map_hwblock     0           ; mapping VID index from "procmap_manifest_xxxx.txt" to map the buffer, default = #0 (VID0)
 arc_jitter_ctrl     1.5         ; factor to apply to the minimum size between the producer and the consumer, default = 1.0 (no jitter)
 
-;====================================
+;=============================

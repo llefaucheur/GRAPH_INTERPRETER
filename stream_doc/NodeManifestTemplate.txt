@@ -5,16 +5,17 @@
     arm_stream_detector             ; node name
 
 node_nb_arcs         1 1            ; nb arc input, output, default values "1 1"
+node_lock_arcs       1              ; 0/1 the first/second arc is used to lock the node (default 1)
 node_arc_parameter   0              ; SWC with extra-large amount of parameters (NN models) will declare it with extra arcs
 node_steady_stream   1              ; (0) the data flow is variable (or constant, default value :1) on all input and output arcs
 node_same_data_rate  1              ; (0) the arcs have different data rates, (1) all arcs have the same data rate 
-node_use_dtcm        1              ; default 0 (no MP DTCM_LW2), 1: fast memory pointer placed after the arc format
-node_use_arc_format  0              ; default 1 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
+node_use_mpdtcm      1              ; default 0, 1: dtcm pointer is shared in multiprocessing environements 
+node_use_arc_format  0              ; default 0.  "1": the scheduler loads the 4 words of each arc format at reset
 node_mask_library    15             ; default 0 bit-field of dependencies to computing libraries
 node_subtype_units   VRMS           ; triggers the need for rescaling and data conversion
 node_architecture    0              ; arch compatible with (default: 0 = source code) to merge and sort for ARCHID_LW0
 node_fpu_used        0              ; fpu option used (default 0: none, no FPU assembly or intrinsic)
-node_use_unlock_key  1              ; a key-exchange protocol is initiated at reset  time
+node_use_unlock_key  1              ; a key-exchange protocol is initiated at reset time
 node_node_version    101            ; version of the computing node
 node_stream_version  001            ; version of the stream scheduler it is compatible with
 
@@ -28,12 +29,18 @@ node_stream_version  001            ; version of the stream scheduler it is comp
 ;   + D x frame_size of arc(k)      ; .. as proportional to the frame size used for the arc index k (default 0)
 ;   + E x parameter from the graph  ; optional field "malloc_E" during the node declaration in the graph, for
 ;                                   ;   example the number of pixels in raw for a scratch area (default 0)
+;   The memory block index 0 is the one of the node instance, followed by other blocks 
+;   The graph holds the address (shared with the node) and size (for memory the memory protection) of each block
+;   The address is in "27bits" data format (3 bits for the physical memory offset + 24 linear), size is in Bytes
+;   The translation of 27bits to physical address is made by the graph interpreter instance before the node call
 ;
 node_mem                2           ; start the declaration of a new memory block with index 2
 node_mem_alloc          32          ; size = 32Bytes data memory, Static, Fast memory block
 node_mem_nbchan         4 0         ; add in Bytes : 4 x nb of channels of arc 0 
 node_mem_sampling_rate  0.1 1       ; add in Bytes : 0.1 x sampling rate of arc 1
 node_mem_frame_size     1 0         ; add in Bytes : 1 x frame size of arc 0 
+node_mem_graph_info     0           ; add in Bytes : 0 x parameter malloc_E from graph
+
 node_mem_alignement     4           ; 4 bytes (default)
 node_mem_type           0           ; MEM_TYPE_STATIC          0 (LSB) memory content is preserved (default )
                                     ; MEM_TYPE_WORKING         1 scratch memory content is not preserved between two calls 
@@ -50,7 +57,7 @@ node_mem_data0prog1     0           ; selection data / program
 ;    ARC CONFIGURATION
 
 node_arc                    2               ; start the declaration of a new arc with index 2
-node_arc_rx0tx1             0               ; followed by 0:input 1:output, default = 0 0  and 1 1
+node_arc_rx0tx1             0               ; followed by 0:input 1:output, default = 0 and 1
 node_arc_sampling_rate      {1 16000 44100} ; sampling rate options (enumeration in Hz), default "any"  
 node_arc_interleaving       0               ; multichannel intleaved (0, default), deinterleaved by frame-size (1) 
 node_arc_nb_channels        {1 1 2}         ; options for the number of channels (default 1)

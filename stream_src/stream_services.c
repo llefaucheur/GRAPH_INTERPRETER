@@ -428,6 +428,13 @@ void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_
             switch (RD(command, FUNCTION_SSRV))
             {
             /* ------------------------- */
+            /*
+                void arm_biquad_cascade_df1_fast_q15(
+                  const arm_biquad_casd_df1_inst_q15 * S,
+                  const q15_t * pSrc,
+                        q15_t * pDst,
+                        uint32_t blockSize)            
+            */
             case STREAM_SERVICE_CASCADE_DF1_Q15:          /* IIR filters */
                 arm_biquad_cascade_df1_fast_q15(
                     (const arm_biquad_casd_df1_inst_q15 *) ptr3,

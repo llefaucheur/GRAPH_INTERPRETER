@@ -199,10 +199,12 @@ void read_platform_digital_manifest(char* inputFile, struct stream_platform_mani
     nb_io_stream = 0;
 
     jump2next_valid_line(&pt_line);
-    fields_extract(&pt_line, "III", 
+    fields_extract(&pt_line, "IIII", 
         &(platform->nb_architectures), 
         &(platform->nb_processors), 
-        &(platform->nbMemoryBank_detailed));
+        &(platform->nbMemoryBank_detailed),
+        &(platform->nbOffset)
+        );
 
     /*  memory mapping managed using several memory bank */
     for (ibank = 0; ibank <platform->nbMemoryBank_detailed; ibank ++)
@@ -235,29 +237,6 @@ void read_platform_digital_manifest(char* inputFile, struct stream_platform_mani
 }
 
 
-/**
-  @brief            read the node manifest fields
-  @param[in/out]    none
-  @return           none
-  @par
-  @remark
- */
-void arc_fields_extract(char* pt_line, struct arcStruct *pta)
-{
-    //fields_extract(&pt_line, "I", &(pta->sc.rx0tx1)); 
-    //fields_extract(&pt_line, "I", &(pta->sc.timestamp)); 
-    //fields_extract(&pt_line, "I", &(pta->sc.deinterleaved)); 
-    //
-    //fields_list_subtype(&pt_line, &(pta->raw_format_options)); 
-    //fields_list(&pt_line, &(pta->nb_channels_option)); 
-
-    //fields_extract(&pt_line, "i", &(pta->sc.framelength_format)); 
-    //fields_list(&pt_line, &(pta->frame_length_option)); 
-
-    //fields_extract(&pt_line, "if", &(pta->sampling_rate_option), &(pta->sc.percentFSaccuracy)); 
-    //fields_list(&pt_line, &(pta->sampling_rate_option)); 
-}
-
 
 /** 
   @brief            read the platform manifest fields
@@ -267,10 +246,9 @@ void arc_fields_extract(char* pt_line, struct arcStruct *pta)
   @remark
  */
 
-
 #define COMPARE(x) 0==strncmp(pt_line, x, strlen(x))
 
-void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *io_stream)
+void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *arc)
 {
     char* pt_line, cstring[NBCHAR_LINE];
     int32_t nb_io_stream;
@@ -279,19 +257,121 @@ void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *io_stre
     nb_io_stream = 0;
 
     jump2next_valid_line(&pt_line);
-    fields_extract(&pt_line, "c", (io_stream->IO_name));
+    fields_extract(&pt_line, "c", (arc->IO_name));
     fields_extract(&pt_line, "c", cstring);
-    decode_domain(&(io_stream->format.domain), cstring);
+    decode_domain(&(arc->format.domain), cstring);
 
-    while (globalEndFile != FOUND_END_OF_FILE)
+    /* default IO values */
+    arc->commander0_servant1 = 1;
+    arc->format.nchan = 1;
+    arc->format.framelength_format = 1;   /* frame length format (0:in milliseconds 1:in samples) */
+    arc->format.frame_length = 1;         
+
+    while (globalEndFile != FOUND_END_OF_FILE && *pt_line != '\0')
     {
         if (COMPARE(io_commander0_servant1))
-        {   fields_extract(&pt_line, "CI", &(io_stream->format.commander0_servant1)); 
+        {   fields_extract(&pt_line, "CI", cstring, &(arc->commander0_servant1)); 
         }
         if (COMPARE(io_buffer_allocation))
-        {   fields_extract(&pt_line, "CI", &(io_stream->format.graphalloc_X_bsp_0)); 
+        {   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
         }
 
+        if (COMPARE(io_direction_rx0tx1))
+        {   fields_extract(&pt_line, "CI", cstring, &(arc->rx0tx1));
+        }
+        if (COMPARE(io_raw_format))
+        {   fields_extract(&pt_line, "CI", cstring, &(arc->format.raw_data)); 
+        }
+        if (COMPARE(io_interleaving))
+        {   fields_extract(&pt_line, "CI", cstring, &(arc->format.deinterleaved)); 
+        }
+        if (COMPARE(io_nb_channels))
+        {   fields_extract(&pt_line, "CI", cstring, &(arc->format.nchan)); 
+        }
+        if (COMPARE(io_frame_length))
+        {   fields_extract(&pt_line, "CF", cstring, &(arc->format.frame_length)); 
+        }
+        //if (COMPARE(io_frame_duration))
+        //{   fields_extract(&pt_line, "CF", cstring, &(arc->format.frame_length)); 
+        //}
+        //if (COMPARE(io_subtype_units))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_subtype_multiple))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_power_mode))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_position))
+        //{   fields_extract(&pt_line, "CI",cstring,  &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_euler_angles))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_sampling_rate))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_sampling_period_s))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_sampling_period_day))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_sampling_rate_accuracy))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_time_stamp_format))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+
+        /* --------------  DOMAIN SPECIFIC --------------- */
+        //if (COMPARE(io_subtype_units))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_analog_scale))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_rescale_factor))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_channel_mapping))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_analog_gain))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_digital_gain))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_hp_filter))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_agc))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_router))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+
+
+
+        //if (COMPARE(io_motion_format))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_motion_sensitivity))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+        //if (COMPARE(io_motion_averaging))
+        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //}
+
+
+
+
+        //if (COMPARE(io_WhiteBalanceColorTemp))
+        //{   
+        //}
         jump2next_valid_line(&pt_line);
     }
 }
@@ -307,8 +387,7 @@ void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *io_stre
 void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
 {
     char* pt_line, ctmp[NBCHAR_LINE];
-    int32_t i, idx_mem, idx_arc;
-    float f;
+    uint32_t i, idx_mem, idx_arc;
  
     pt_line = inputFile;
     idx_mem = 0;
@@ -319,7 +398,8 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
 
     /* fill the default values, different of 0 */
     for (i = 0; i < MAX_NB_MEM_REQ_PER_NODE; i++) node->memreq[i].alignmentBytes = 4;
-    node->nb_arcs = 2;
+    node->nbInputArc = node->nbOutputArc = node->steady_stream = node->same_data_rate = 
+        node->arc[1].rx0tx1 = node->locking_arc = 1;
 
     while (globalEndFile != FOUND_END_OF_FILE)
     {
@@ -327,52 +407,55 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         {   fields_extract(&pt_line, "CII", ctmp, &(node->nbInputArc), &(node->nbOutputArc));  
         }
         if (COMPARE(node_arc_parameter))              
-        {   fields_extract(&pt_line, "CI", ctmp, &i); 
+        {   fields_extract(&pt_line, "CI", ctmp, &(node->nbParamArc)); 
         }
-        if (COMPARE(node_steady_stream))              
-        {   fields_extract(&pt_line, "CI", ctmp, &i); 
+        if (COMPARE(node_steady_stream))              // 0) the data flow is variable (or constant, default value :1) on all input and output arcs
+        {   fields_extract(&pt_line, "CI", ctmp, &(node->steady_stream)); 
         }
-        if (COMPARE(node_same_data_rate))             
-        {   fields_extract(&pt_line, "CI", ctmp, &i); 
+        if (COMPARE(node_same_data_rate))             // (0) the arcs have different data rates, (1) all arcs have the same data rate 
+        {   fields_extract(&pt_line, "CI", ctmp, &(node->same_data_rate)); 
         }
-        if (COMPARE(node_use_dtcm))                
-        {   fields_extract(&pt_line, "CI", ctmp, &i);  
+        if (COMPARE(node_use_mpdtcm))                
+        {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
         if (COMPARE(node_use_arc_format))
-        {   fields_extract(&pt_line, "CI", ctmp, &i);  
+        {   fields_extract(&pt_line, "CI", ctmp, &(node->use_arc_format));  // TBC
         }
         if (COMPARE(node_mask_library))
-        {   fields_extract(&pt_line, "CI", ctmp, &i);  
+        {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
         if (COMPARE(node_subtype_units))
-        {   fields_extract(&pt_line, "CI", ctmp, &i);  
+        {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
         if (COMPARE(node_architecture))
-        {   fields_extract(&pt_line, "CI", ctmp, &i);  
+        {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
         if (COMPARE(node_fpu_used))
-        {   fields_extract(&pt_line, "CI", ctmp, &i);  
+        {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
         if (COMPARE(node_node_version))
-        {   fields_extract(&pt_line, "CI", ctmp, &i);  
+        {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
         if (COMPARE(node_stream_version))
-        {   fields_extract(&pt_line, "CI", ctmp, &i);  
+        {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
         if (COMPARE(node_mem))              // node_mem  block ID
         {   fields_extract(&pt_line, "CI", ctmp, &idx_mem);  
+            if (idx_mem +1 > node->nbMemorySegment) // memory segment counts from 0
+            {   node->nbMemorySegment = idx_mem +1;
+            }
         }
         if (COMPARE(node_mem_alloc))        // node_mem_alloc    A=32 
         {   fields_extract(&pt_line, "CI", ctmp, &(node->memreq[idx_mem].size0)); 
         }
         if (COMPARE(node_mem_nbchan))       
-        {   fields_extract(&pt_line, "CI", ctmp, &i); 
+        {   fields_extract(&pt_line, "CII", ctmp, &(node->memreq[idx_mem].sizeNchan), &(node->memreq[idx_mem].iarcChannelI)); 
         }
         if (COMPARE(node_mem_sampling_rate))
-        {   fields_extract(&pt_line, "CIF", ctmp, &i, &f); 
+        {   fields_extract(&pt_line, "CFI", ctmp,  &(node->memreq[idx_mem].sizeFS),  &(node->memreq[idx_mem].iarcSamplingJ)); 
         }
         if (COMPARE(node_mem_frame_size))   
-        {   fields_extract(&pt_line, "CI", ctmp, &i);; 
+        {   fields_extract(&pt_line, "CII", ctmp,  &(node->memreq[idx_mem].sizeFrame),  &(node->memreq[idx_mem].iarcFrameK));
         }
         if (COMPARE(node_mem_type))
         {   fields_extract(&pt_line, "CI", ctmp, &(node->memreq[idx_mem].stat0work1ret2));
@@ -381,23 +464,23 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         {   fields_extract(&pt_line, "CI", ctmp, &(node->memreq[idx_mem].speed));
         }
         if (COMPARE(node_mem_relocatable))
-        {   fields_extract(&pt_line, "CI", ctmp, &i);
+        {   fields_extract(&pt_line, "CI", ctmp, &i);// TBC
         }
         if (COMPARE(node_mem_data0prog1))
-        {   fields_extract(&pt_line, "CI", ctmp, &i); 
+        {   fields_extract(&pt_line, "CI", ctmp, &i); // TBC
         }
         
         if (COMPARE(node_new_arc))
         {   fields_extract(&pt_line, "CI", ctmp, &idx_arc);  
         }
         if (COMPARE(node_arc_rx0tx1))
-        {   fields_extract(&pt_line, "CI", ctmp, &i);  
+        {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
         if (COMPARE(node_arc_sampling_rate))
         {   fields_options_extract(&pt_line, &(node->arc[idx_arc].sampling_rate_option));  
         }
         if (COMPARE(node_arc_interleaving))
-        {   fields_extract(&pt_line, "CI", ctmp, &i);  
+        {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
         if (COMPARE(node_arc_nb_channels)) 
         {   fields_options_extract(&pt_line, &(node->arc[idx_arc].nb_channels_option)); 
@@ -421,7 +504,7 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         {   fields_extract(&pt_line, "CF", ctmp, &(node->arc[idx_arc].sampling_accuracy));  
         }
         if (COMPARE(node_arc_inPlaceProcessing))
-        {   fields_extract(&pt_line, "CI", ctmp, &i);  
+        {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
         /* ----------------------------------------------------------------------
             example               INT FLOAT
@@ -429,104 +512,6 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
            -XXX  {opt} {opt}        O        option F1 option F2
         */
     }
-
-
-   // char *pt_line, *pt_line2;
-   // uint32_t iarch, iarc, ibank, NARCS, iscripts = 0, extended_syntax, short_syntax, raw;
-   // struct arcStruct *pta;
-   // char shortFormat[2];
-
-   // pt_line = inputFile;
-   // jump2next_valid_line (&pt_line);
-
-   ///* -------------------------- HEADER -------------------------------------- */
-
-   // 
-   // if (fields_extract(&pt_line, "CIII", shortFormat,  &(node->nbInputArc), &(node->nbOutputArc), &raw) < 0) exit(-4);
-   // extended_syntax = shortFormat[0] != 'S' && shortFormat[0] != 's';
-   // short_syntax = shortFormat[0] == 'S' || shortFormat[0] == 's';
-   // if (extended_syntax)   /* is it a long format ? */
-   // {   pt_line = pt_line2;
-   //     fields_extract(&pt_line, "Ciiiiiii", shortFormat, &(node->nbInputArc), &(node->nbOutputArc), &(node->nbParameArc), 
-
-   //         /* 0: arc R/W managed in the SWC  1: all arcs are using the same frame size (see "xdm11") 3:DTCM used (DTCM_LW2) */
-   //         &(node->RWinSWC),           /* XDM11 read/write index is managed in SWC, for variable buffer consumption */
-
-   //         /* arc buffer formats are used by the component */
-   //         &(node->formatUsed),        
-
-   //         /* dependency to Stream conpute libraries */
-   //         &(node->masklib),
-   //         
-   //         /* number of memory banks */
-   //         &(node->nbMemorySegment));         
-   // }
-
-   // if (short_syntax)   /* is it a short format ? */
-   // {   node->nbParameArc = 0;
-   //     node->RWinSWC = 0;
-   //     node->formatUsed = 0;        
-   //     node->deliveryMode = 0;     
-   //     node->masklib = 0;   
-   //     node->nbArch = 1;
-   //     node->nbMemorySegment = 0;
-   // }
-   // node->nbInputOutputArc = node->nbInputArc + node->nbOutputArc;
-
-   // if (short_syntax)
-   // {   NARCS = node->nbInputArc +  node->nbOutputArc;
-   //     pta = &(node->arc[0]);
-   //     // fields_extract(&pt_line, "i", &raw); 
-   //     fields_list_subtype(&pt_line, &(pta->raw_type_options));    // all raw format options
-
-   //     for (iarc = 0; iarc < NARCS; iarc++)
-   //     {   
-   //         struct arcStruct *arc_pta = &(node->arc[iarc]);
-   //         fields_extract(&pt_line, "i", &(pta->sc.rx0tx1)); 
-   //         arc_pta->raw_type_options.options[0] =  pta->raw_type_options.options[0];
-   //     }    
-
-   // }
-   // else
-   // {   fields_extract(&pt_line, "i", &(node->nbArch));
-   //     for (iarch = 0; iarch < node->nbArch; iarch++)
-   //     {   fields_extract(&pt_line, "ii", &(node->arch), &(node->fpu));  
-   //     }
-
-   //     /* code version sub-version */
-   //     fields_extract(&pt_line, "ii", &(node->codeVersion), &(node->schedulerVersion));  
-
-
-   //     for (ibank =0; ibank < node->nbMemorySegment; ibank++)
-   //     {
-   //         fields_extract(&pt_line, "iiffffiiiiiii", 
-   //             &(node->memreq[ibank].sizeNchan),       /* 'B' */
-   //             &(node->memreq[ibank].sizeFS),          /* 'C' */
-   //             &(node->memreq[ibank].sizeFrame),       /* 'D' */
-
-   //             &(node->memreq[ibank].sizeParameter),   /* 'E' */
-   //             &(node->memreq[ibank].sizeFromGraph),   /* 'F' */
-
-   //             &(node->memreq[ibank].iarcChannelI),
-   //             &(node->memreq[ibank].iarcSamplingJ),
-   //             &(node->memreq[ibank].iarcFrameK),
-
-   //     }
-   // 
-   //     NARCS = node->nbInputArc +  node->nbOutputArc + node->nbParameArc;
-   //     for (iarc = 0; iarc < NARCS; iarc++)
-   //     {
-   //         pta = &(node->arc[iarc]);
-
-   //         arc_fields_extract(pt_line, pta); 
-
-   //         /* TX ARC : check the arc ID is the one of RX arc : in-place processing */
-   //         if (pta->sc.rx0tx1 != 0)
-   //         {   fields_extract(&pt_line, "i", &(pta->sc.arcIDbufferOverlay));
-   //             pta->sc.inPlaceProcessing = (iarc != pta->sc.inPlaceProcessing);
-   //         }
-   //     }
-   // }
 }
 
 /**
@@ -593,12 +578,13 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
         strcpy(file_name, paths[ipath]);
         strcat(file_name, IO_name);
 
-        platform->io_stream[fw_io_idx].format.clockDomain = clockDomain;
-        platform->io_stream[fw_io_idx].format.processorBitFieldAffinity = processorBitFieldAffinity;
+        platform->arc[fw_io_idx].clockDomain = clockDomain;
+        platform->arc[fw_io_idx].processorBitFieldAffinity = processorBitFieldAffinity;
 
         memset(inputFile, 0, MAXINPUT);
         read_input_file(file_name, inputFile);
-        read_platform_io_stream_manifest(inputFile, &(platform->io_stream[fw_io_idx]));
+        read_platform_io_stream_manifest(inputFile, &(platform->arc[fw_io_idx]));
+        platform->arc[fw_io_idx].fw_io_idx = fw_io_idx;
     }
 
 
@@ -617,7 +603,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
 #define _INTERFACE_NODE_ID 0
     strcpy(platform->all_nodes[_INTERFACE_NODE_ID].nodeName, _INTERFACE_NODE);      /* node[0] = IO interface */
     platform->nb_nodes = nb_nodes;
-    for (inode = 1; inode < nb_nodes+1; inode++)
+    for (inode = 0; inode < nb_nodes; inode++)
     {
         jump2next_valid_line(&pt_line);
         sscanf (pt_line, "%d %s", &ipath, node_name); /* read the node's manifest name */
@@ -627,6 +613,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
         memset(inputFile, 0, MAXINPUT);
         read_input_file(file_name, inputFile);
         read_node_manifest(inputFile, &(platform->all_nodes[inode]));
+        platform->all_nodes[inode].platform_swc_idx = inode;
     }
 }
 

@@ -4,4 +4,8 @@
                                                                        
     io_platform_gpio_out_1 ; name for the tools                            
     gpio_out               ; domain name,   no specific field
+
+    io_direction_rx0tx1 1
+
+
     _end_

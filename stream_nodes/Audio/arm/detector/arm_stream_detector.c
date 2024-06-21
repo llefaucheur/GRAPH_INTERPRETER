@@ -37,6 +37,11 @@
 #include "arm_stream_detector.h"
 
 
+#define PRINTF 1 // debug
+
+#if PRINTF
+#include <stdio.h>
+#endif
 /*
 ;----------------------------------------------------------------------------------------
 ;7.	arm_stream_detector
@@ -74,11 +79,11 @@ const detector_parameters detector_preset [NB_PRESET] =
 {   /*  log2counter, log2decfMASK, 
         high_pass_shifter, low_pass_shifter, low_pass_z7_z8,  
         vad_rise, vad_fall, THR */
-    {MINIF(1,12), 8,   2, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #1 no HPF, fast for button debouncing */
-    {MINIF(1,12), 8,   2, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #2 VAD with HPF pre-filtering, tuned for Fs <20kHz */
-    {MINIF(1,12), 8,   2, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #3 VAD with HPF pre-filtering, tuned for Fs >20kHz */
-    {MINIF(1,12), 8,   2, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #4 IMU detector : HPF, slow time constants */
-    {MINIF(1,12), 8,   2, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #5 IMU detector : HPF, fast time constants */
+    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #1 no HPF, fast for button debouncing */
+    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #2 VAD with HPF pre-filtering, tuned for Fs <20kHz */
+    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #3 VAD with HPF pre-filtering, tuned for Fs >20kHz */
+    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #4 IMU detector : HPF, slow time constants */
+    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #5 IMU detector : HPF, fast time constants */
 };
 
 
@@ -106,7 +111,6 @@ void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmb
         {   stream_al_services *stream_entry = (stream_al_services *)(uint64_t)data;
             intPtr_t *memresults = (intPtr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
-            uint8_t *pt8bdst, i, n;
 
             arm_detector_instance *pinstance = (arm_detector_instance *) *memresults++;
             pinstance->backup =  (arm_backup_memory *)*memresults++;
@@ -119,12 +123,9 @@ void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmb
             if (STREAM_COLD_BOOT == RD(command, PRESET_CMD))
             {
                 /* here COLD reset */
-                pt8bdst = (uint8_t *) pinstance;
-                n = sizeof(arm_detector_instance);
-                for (i = 0; i < n; i++)
-                {   pt8bdst[i] = 0;
-                }
-                pinstance->z1 = pinstance->z6 = pinstance->backup->z8 = F2Q31(0.00001);
+                pinstance->z1 = F2Q31(0.00001);
+                pinstance->z6 = F2Q31(0.00001);
+                pinstance->backup->z8 = F2Q31(0.00001);
                 pinstance->backup->z7 = F2Q31(0.001);
 
             }
@@ -147,6 +148,10 @@ void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmb
             pinstance->services = (stream_al_services *)(uint64_t)data;
             pinstance->decf = decfMASK; 
 
+            {  extern FILE *ptf_trace;
+        #define FILE_TRACE "..\\stream_test\\trace.raw"
+            ptf_trace = fopen(FILE_TRACE, "wb");
+            }
             break;
         }  
         

@@ -3,7 +3,7 @@
 ; ------------------------------------------------------------------------------------------------------------
 ;
 
-    1 1 9  number of architectures, number of processors, number of memory banks
+    1 1 9 4 number of architectures, number of processors, number of memory banks, number of offsets
 
 ;   memory banks:
 ;   - ID        base offset ID reference above

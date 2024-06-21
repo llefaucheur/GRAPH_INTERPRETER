@@ -44,10 +44,10 @@
 
 #include "platform_computer.h"
 
+extern void platform_init_copy_graph(arm_stream_instance_t *S);
+extern void platform_init_io(arm_stream_instance_t *S);
 
 extern const uint8_t platform_audio_out_bit_fields[];
-
-uint8_t platform_io_al_idx_to_graph[LAST_IO_FUNCTION_PLATFORM];
 
 #define L S->long_offset
 #define G S->graph
@@ -110,19 +110,33 @@ p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
 };
 
 
+/*
+    ==============
+    Base addresses 
+    ==============
+        1 1 9 4 number of architectures, number of processors, number of memory banks, number of offsets
+ */
+
 static uint32_t MEXT[SIZE_MBANK_DMEM_EXT];
-static uint32_t TCM1[SIZE_MBANK_DMEMFAST]; 
+static uint32_t BACKUPMEM1[SIZE_MBANK_BACKUPMEM1]; 
+static uint32_t TCM2[SIZE_MBANK_TCM2]; 
+static uint32_t FLASH3[SIZE_MBANK_FLASH3]; 
+
 const intPtr_t long_offset[MAX_NB_MEMORY_OFFSET] = 
 {   (const intPtr_t) &(MEXT[0]),
-    (const intPtr_t) &(TCM1[0]),
+    (const intPtr_t) &(BACKUPMEM1[0]),
+    (const intPtr_t) &(TCM2[0]),
+    (const intPtr_t) &(FLASH3[0]),
 };
 
 
-uint8_t platform_iocontrol[LAST_IO_FUNCTION_PLATFORM];      /* bytes/flags of on-going activity */
+//uint8_t platform_iocontrol[LAST_IO_FUNCTION_PLATFORM]; /* bytes/flags of on-going activity merged in one */
+
+uint8_t platform_io_al_idx_to_graph[LAST_IO_FUNCTION_PLATFORM]; /* translation of physical indexes to graph indexes */
 arm_stream_instance_t * platform_io_callback_parameter;
 
-
 extern p_io_function_ctrl data_in_0;      
+extern p_io_function_ctrl data_in_1;      
 extern p_io_function_ctrl analog_sensor_0;
 extern p_io_function_ctrl motion_in_0;    
 extern p_io_function_ctrl audio_in_0;     
@@ -135,22 +149,31 @@ extern p_io_function_ctrl data_out_0;
 /*
     files_manifests_computer.txt :
 
-     stream_in_0.txt        0    data from the application
-     analog_sensor_0.txt    1    ADC 
-     gpio_out_0.txt         2    PWM
-     line_out_0.txt         3    audio out stereo
+    ;Path      Manifest         IO_AL_idx ProcCtrl clock-domain     definition          (code from platform_computer.h)
+    1   io_platform_data_in_0.txt       0     1        0            application processor  IO_PLATFORM_DATA_IN_0      
+    1   io_platform_data_in_1.txt       1     1        0            application processor  IO_PLATFORM_DATA_IN_1      
+    1   io_platform_analog_sensor_0.txt 2     1        0            ADC                    IO_PLATFORM_ANALOG_SENSOR_0
+    1   io_platform_motion_in_0.txt     3     1        0            accelero=gyro          IO_PLATFORM_MOTION_IN_0    
+    1   io_platform_audio_in_0.txt      4     1        0            microphone             IO_PLATFORM_AUDIO_IN_0     
+    1   io_platform_2d_in_0.txt         5     1        0            camera                 IO_PLATFORM_2D_IN_0        
+    1   io_platform_line_out_0.txt      6     1        0            audio out stereo       IO_PLATFORM_LINE_OUT_0     
+    1   io_platform_gpio_out_0.txt      7     1        0            GPIO/LED               IO_PLATFORM_GPIO_OUT_0     
+    1   io_platform_gpio_out_1.txt      8     1        0            GPIO/PWM               IO_PLATFORM_GPIO_OUT_1     
+    1   io_platform_data_out_0.txt      9     1        0            application processor  IO_PLATFORM_DATA_OUT_0  
+
 */
 const p_io_function_ctrl platform_io [LAST_IO_FUNCTION_PLATFORM] =
 {
     (void *)&data_in_0,        // 0  ..windows/platform_manifest/io_platform_data_in_0.txt      
-    (void *)&analog_sensor_0,  // 1  ..windows/platform_manifest/io_platform_analog_sensor_0.txt
-    (void *)&motion_in_0,      // 2  ..windows/platform_manifest/io_platform_motion_in_0.txt    
-    (void *)&audio_in_0,       // 3  ..windows/platform_manifest/io_platform_audio_in_0.txt     
-    (void *)&d2_in_0,          // 4  ..windows/platform_manifest/io_platform_d2_in_0.txt        
-    (void *)&line_out_0,       // 5  ..windows/platform_manifest/io_platform_line_out_0.txt     
-    (void *)&gpio_out_0,       // 6  ..windows/platform_manifest/io_platform_gpio_out_0.txt     
-    (void *)&gpio_out_1,       // 7  ..windows/platform_manifest/io_platform_gpio_out_1.txt     
-    (void *)&data_out_0,       // 8  ..windows/platform_manifest/io_platform_data_out_0.txt     
+    (void *)&data_in_1,        // 1  ..windows/platform_manifest/io_platform_data_in_1.txt      
+    (void *)&analog_sensor_0,  // 2  ..windows/platform_manifest/io_platform_analog_sensor_0.txt
+    (void *)&motion_in_0,      // 3  ..windows/platform_manifest/io_platform_motion_in_0.txt    
+    (void *)&audio_in_0,       // 4  ..windows/platform_manifest/io_platform_audio_in_0.txt     
+    (void *)&d2_in_0,          // 5  ..windows/platform_manifest/io_platform_d2_in_0.txt        
+    (void *)&line_out_0,       // 6  ..windows/platform_manifest/io_platform_line_out_0.txt     
+    (void *)&gpio_out_0,       // 7  ..windows/platform_manifest/io_platform_gpio_out_0.txt     
+    (void *)&gpio_out_1,       // 8  ..windows/platform_manifest/io_platform_gpio_out_1.txt     
+    (void *)&data_out_0,       // 9  ..windows/platform_manifest/io_platform_data_out_0.txt     
 };
 
 
@@ -242,12 +265,12 @@ uint32_t lin2pack (arm_stream_instance_t *S, uint8_t *buffer)
 }
 
 /*----------------------------------------------------------*/
-static intPtr_t pack2linaddr_int(const intPtr_t *long_offset, uint32_t x)
+static intPtr_t pack2linaddr_int(const intPtr_t *long_offset, uint32_t x, uint32_t unit)
 {
     intPtr_t dbg1, dbg2, dbg3;
 
     dbg1 = long_offset[RD(x,DATAOFF_ARCW0)];    
-    dbg2 = (intPtr_t)(BASEINWORD32 * (intPtr_t)RD((x),BASEIDX_ARCW0));
+    dbg2 = (intPtr_t)(unit * (intPtr_t)RD((x),BASEIDX_ARCW0));
 
     if (RD(x,BAS_SIGN_ARCW0)) 
         dbg3 = dbg1 + ~(dbg2) +1;   // dbg1-dbg2 using unsigned integers
@@ -264,9 +287,9 @@ static intPtr_t pack2linaddr_int(const intPtr_t *long_offset, uint32_t x)
     return dbg3;   // PACK2LINADDR(long_offset,x);
 }
 
-void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data)
+void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data, uint32_t unit)
 {
-    return (void *) (pack2linaddr_int(long_offset, data));
+    return (void *) (pack2linaddr_int(long_offset, data, unit));
 }
 
 /**
@@ -280,24 +303,20 @@ void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data)
   @remark
  */
 
-void platform_init_stream_instance(arm_stream_instance_t *instance)
+void platform_init_stream_instance(arm_stream_instance_t *S)
 {
-
 extern p_stream_node node_entry_point_table[];
-extern void platform_specific_long_offset(intPtr_t long_offset[]);
 extern const uint32_t graph_input[];
 extern const p_stream_al_services application_callbacks[];
-
+    uint32_t PIOoffsetWords;
 
 #define STREAM_CURRENT_INSTANCE 0
 #define STREAM_NB_INSTANCE 1
 
-    /* reset instance */
-    memset (instance, 0, sizeof(arm_stream_instance_t));
+    S->graph = (uint32_t *) &(graph_input[1]);
+    S->long_offset = long_offset;
 
-    instance->graph = (uint32_t *) &(graph_input[1]);
-
-    instance->scheduler_control = PACK_STREAM_PARAM(
+    S->scheduler_control = PACK_STREAM_PARAM(
             STREAM_MAIN_INSTANCE,
             STREAM_NB_INSTANCE,
             STREAM_COLD_BOOT,
@@ -305,18 +324,79 @@ extern const p_stream_al_services application_callbacks[];
             STREAM_SCHD_RET_END_ALL_PARSED
             );
 
-    ST(instance->whoami_ports, ARCHID_PARCH, ARCH_ID);  /* 3 fields used for SWC locking */
-    ST(instance->whoami_ports, PROCID_PARCH, PROC_ID);
-    ST(instance->whoami_ports, PRIORITY_PARCH, STREAM_INSTANCE_LOWLATENCYTASKS);
-    
-    instance->iomask = 0x03FF;                      /* 10 IOs */
-    instance->ioctrl= &(platform_iocontrol[0]);     /* list of bytes holding the status of the on-going data moves (MP) */
+    ST(S->whoami_ports, ARCHID_PARCH, ARCH_ID);  /* 3 fields used for SWC locking */
+    ST(S->whoami_ports, PROCID_PARCH, PROC_ID);
+    ST(S->whoami_ports, PRIORITY_PARCH, STREAM_INSTANCE_LOWLATENCYTASKS);
+    ST(S->whoami_ports, SWC_W32OFF_PARCH, 0);   /* index in the linked list */
+    S->al_services = al_service;
+    S->application_callbacks = application_callbacks;
+    S->node_entry_point_table = &(node_entry_point_table[0]);
+    S->platform_io = platform_io;
 
-    instance->al_services = al_service;
-    instance->application_callbacks = application_callbacks;
-    instance->platform_io = platform_io;
-    instance->node_entry_point_table = node_entry_point_table;
-    instance->long_offset = long_offset;
+    platform_init_copy_graph (S);
+
+    S->iomask = (1 << (RD((S->graph)[1], NB_IOS_GR1))) -1;      // IOs are enabled                                    
+
+    PIOoffsetWords = GRAPH_HEADER_NBWORDS                       // Header
+                   + RD((S->graph)[1], NB_IOS_GR1);             // PIO settings
+    S->script_offsets = &(S->graph[PIOoffsetWords]);
+
+    PIOoffsetWords += RD((S->graph)[1], SCRIPTSSZW32_GR1);       // Scripts
+    S->linked_list = &(S->graph[PIOoffsetWords]);
+    S->linked_list_ptr = S->linked_list;
+
+    PIOoffsetWords += RD((S->graph)[2], LINKEDLISTSZW32_GR2);   // linked list
+    S->pio = &(S->graph[PIOoffsetWords]);
+
+    PIOoffsetWords += RD((S->graph)[2], ARC_DEBUG_IDX_GR2) + RD((S->graph)[1], NB_IOS_GR1);
+    S->all_formats = &(S->graph[PIOoffsetWords]);
+
+    PIOoffsetWords += RD((S->graph)[1], NBFORMATS_GR1) * STREAM_FORMAT_SIZE_W32;
+    S->all_arcs = &(S->graph[PIOoffsetWords]);
+
+    /* @@@ TODO  check scheduler_control S->scheduler_control .BOOT_SCTRL to clear 
+        the backup memory area STREAM_COLD_BOOT / STREAM_WARM_BOOT
+     */
+    /* if the application sets the debug option then don't use the one from the graph
+        and the application sets the scheduler return option in platform_init_stream_instance() 
+     */
+    if (STREAM_SCHD_NO_SCRIPT == RD(S->scheduler_control, SCRIPT_SCTRL))
+    {   uint32_t debug_script_option;
+        debug_script_option = RD((S->graph)[3], SCRIPT_SCTRL_GR3);
+        ST(S->scheduler_control, SCRIPT_SCTRL, debug_script_option);
+    }
+
+    /* does the graph is deciding the return-from-scheduler option */
+    if (STREAM_SCHD_RET_NO_ACTION == RD(S->scheduler_control, RETURN_SCTRL))
+    {   uint32_t return_script_option;
+        return_script_option = RD((S->graph)[3], RETURN_SCTRL_GR3);
+
+        /* the return option is undefined : return when no more data is available */
+        if (return_script_option == 0) 
+        {   return_script_option = STREAM_SCHD_RET_END_SWC_NODATA;
+        }
+        ST(S->scheduler_control, RETURN_SCTRL, return_script_option);
+    }
+
+    S->linked_list_ptr = S->linked_list;
+
+    ST(S->scheduler_control, INSTANCE_SCTRL, 1); /* this instance is active */ 
+
+
+    //if (RD(S->scheduler_control, MAININST_SCTRL)) 
+    //{   /* all other process can be released from wait state */
+    //    platform_al (PLATFORM_MP_BOOT_DONE,0,0,0); 
+
+    platform_init_io (S);
+
+    //} else
+    //{   /* wait until the graph is copied in RAM */
+    //    uint8_t wait; 
+    //    do {
+    //        platform_al (PLATFORM_MP_BOOT_WAIT, &wait, 0,0);
+    //    } while (0u != wait);
+    //}
+
 }
 
 
@@ -360,116 +440,66 @@ extern const p_stream_al_services application_callbacks[];
 void platform_init_copy_graph(arm_stream_instance_t *S)
 {
     uint8_t RAMsplit;
-    uint32_t graph_words_in_ram, graph_size_word32, offsetWords;
-    uint32_t *graph_src, *graph0;
-    uint32_t *graph_dst;
+    uint32_t graph_words_copy_in_ram, PIOoffsetWords;
+    uint32_t *graph_src, *graph_dst;
 
     /* 
-        start copying the graph in RAM 
-        initialize the current Graph interpreter instance (->node_entry_points, ->graph)
-        initialize the IO boundaries of the graph
-     realign "graph0" */
-    graph_size_word32 = S->graph[-1];
-    graph0 = S->graph;
+        Graph is read from Flash and a small part is copied in RAM
+        to save RAM (for example Cortex-M0 with 2kB of internal SRAM)
 
-    /* default : 
-        COPY_CONF_GR0_COPY_ALL_IN_RAM    graph0 in flash -> GRAPH_RAM_OFFSET_PTR()
-        COPY_CONF_GR0_ALREADY_IN_RAM     graph0 in RAM   -> GRAPH_RAM_OFFSET_PTR()  
+                   RAMsplit Option 0      1      2:already in RAM at graph0 address
+        IO settings                RAM    Flash  
+        SCRIPTS                    RAM    Flash  
+        LINKED-LIST                RAM    Flash   RAM allows SWC to be desactivated
+        PIO                        RAM    RAM    
+        FORMAT x3 words            RAM    RAM
+        ARC descriptors 4 words    RAM    RAM    
+        Debug registers, Buffers   RAM    RAM    
      */
-    RAMsplit = (uint8_t)RD((graph0[0]),RAMSPLIT_GR0);
-    graph_words_in_ram = graph_size_word32;
-    graph_src = graph0;
-    graph_dst = S->graph = (uint32_t *)GRAPH_RAM_OFFSET_PTR(L,graph0);
 
-    /* Graph is read from Flash and a small part is copied in RAM
-       to save RAM (for example Cortex-M0 with 2kB of internal SRAM)
 
-                   RAMsplit Option 0/3    1     2 
-        IO x2 words                RAM   Flash Flash  
-        FORMAT x3 words            RAM   Flash Flash  
-        SCRIPTS                    RAM   Flash Flash  
-        LINKED-LIST                RAM   RAM   Flash   RAM allows SWC to be desactivated
-        ARC descriptors 4 words    RAM   RAM   RAM    
-        Debug registers, Buffers   RAM   RAM   RAM    
-    */
+    graph_dst = (uint32_t *)GRAPH_RAM_OFFSET_PTR(L,(S->graph));
+    PIOoffsetWords = GRAPH_HEADER_NBWORDS                       // Header
+                   + RD((S->graph)[1], NB_IOS_GR1)              // PIO settings
+                   + RD((S->graph)[1], SCRIPTSSZW32_GR1)        // Scripts
+                   + RD((S->graph)[2], LINKEDLISTSZW32_GR2);    // linked list
 
-    offsetWords = GRAPH_HEADER_NBWORDS;
-    offsetWords += (4 * RD((S->graph)[3], NB16IOSTREAM_GR3));   /* IO bit-fields */
+    RAMsplit = (uint8_t)RD(((S->graph)[0]),RAMSPLIT_GR0);
 
     switch (RAMsplit)
-    {  
-    /*
-        Graph is already in RAM, No data move, initialize the instance 
-    */
-    default:
-    case COPY_CONF_GR0_COPY_ALL_IN_RAM:
-    case COPY_CONF_GR0_ALREADY_IN_RAM:
-        S->pio = &(graph_dst[offsetWords]);   /* pio / io_al_idx */
-
-        offsetWords += (RD(graph0[1], NB_IOS_GR1) * STREAM_IOFMT_SIZE_W32);
-        S->all_formats = &(graph_dst[offsetWords]);
-
-        offsetWords += (RD(graph0[1], NBFORMATS_GR1) * STREAM_FORMAT_SIZE_W32);
-        S->script_offsets = &(graph_dst[offsetWords]);
-
-        offsetWords += (RD(graph0[1], SCRIPTS_SIZE_GR1));
-        S->linked_list = &(graph_dst[offsetWords]);
-
-        offsetWords += (RD(graph0[2], LINKEDLIST_SIZE_GR2));
-        S->all_arcs = &(graph_dst[offsetWords]);
-        break;
-
-    case COPY_CONF_GR0_FROM_ARC_DESCS:   /* option 2 */
-        S->pio = &(graph0[offsetWords]); 
-
-        offsetWords += (RD(graph0[1], NB_IOS_GR1) * STREAM_IOFMT_SIZE_W32);
-        S->all_formats = &(graph0[offsetWords]);
-
-        offsetWords += (RD(graph0[1], NBFORMATS_GR1) * STREAM_FORMAT_SIZE_W32);
-        S->script_offsets = &(graph0[offsetWords]);
-
-        S->graph = graph0;                  /* graph base address is in Flash */
-        graph_dst = (uint32_t *)GRAPH_RAM_OFFSET_PTR(L,G);
-
-        offsetWords += (RD(graph0[1], SCRIPTS_SIZE_GR1));
-        S->linked_list = &(graph0[offsetWords]);/*  */
-
-        offsetWords += (RD(graph0[2], LINKEDLIST_SIZE_GR2));
-        graph_src = &(graph0[offsetWords]);     /* linked list in Flash */
-        S->all_arcs = graph_dst;                /* arc in RAM */
-        graph_words_in_ram -= offsetWords;      /* copy from arcs */
-        
-        break;
-    } /* switch (RAMsplit) */
+    {   default :
+            graph_src = &((S->graph)[0]);
+            graph_words_copy_in_ram = 0;
+            break;
+        case COPY_CONF_GR0_COPY_ALL_IN_RAM: 
+            graph_src = &((S->graph)[0]);
+            graph_words_copy_in_ram = S->graph[-1]; 
+            S->graph = graph_dst;                       // take the new address after copy 
+            break;
+        case COPY_CONF_GR0_FROM_PIO: 
+            graph_src = &((S->graph)[PIOoffsetWords]);
+            graph_words_copy_in_ram = S->graph[-1] - PIOoffsetWords; 
+            break; 
+    }
 
     /* finalize the copy by telling the other processors */   
     {   uint32_t i; 
-        for (i=0;i<graph_words_in_ram;i++)
+        for (i=0;i<graph_words_copy_in_ram;i++)
         {   graph_dst[i]=graph_src[i];
         }
     }    
 
 
-    /*          depends on the platform
-        platform AL decide to set the RAM Sshared 
-        set MPU_RASR[18] = 1 
-     */
-
-
     /* copy the graph data to uint8_t platform_io_al_idx_to_graph[LAST_IO_FUNCTION_PLATFORM]; 
         to ease the translation from graph index to graph_io_idx used in arm_graph_interpreter_io_ack()
     */
-    {   int i_graph_io_idx, n;
-        uint8_t *graph_io, *graph_io_RAM, io_byte;
-
-        n = 16 * RD(graph0[3], NB16IOSTREAM_GR3);           /* 16 IO bytes */
-        graph_io = (uint8_t *) &(graph0[GRAPH_HEADER_NBWORDS]); /* list of IO bytes */
-        graph_io_RAM = (uint8_t *)(S->all_arcs);            /* S-> all_arcs[0] */
-
-        for (i_graph_io_idx = 0; i_graph_io_idx < n; i_graph_io_idx++)
-        {   io_byte = *graph_io++;
-            platform_io_al_idx_to_graph[RD(io_byte, IOALIDX_IOCTRL)] = i_graph_io_idx;
-            *graph_io_RAM++ = io_byte;
+    {   uint32_t i_graph_io_idx, tmpi, tmpn;
+        tmpn = RD((S->graph)[1], NB_IOS_GR1);
+        for (i_graph_io_idx = 0; i_graph_io_idx < tmpn; i_graph_io_idx++)
+        {   
+            tmpi = (S->graph)[PIOoffsetWords + i_graph_io_idx];
+            tmpi = RD(tmpi, FWIOIDX_IOFMT);
+            platform_io_al_idx_to_graph[tmpi] = i_graph_io_idx;
         }
     }
 }
@@ -491,7 +521,6 @@ void platform_init_io(arm_stream_instance_t *S)
     uint32_t *pio, *pio_base;
     uint32_t stream_format_io_setting;
     uint32_t io_mask;
-    uint8_t *ioctrl;
     uint32_t iarc; 
     uint32_t *all_arcs; 
     const p_io_function_ctrl *io_func;
@@ -537,15 +566,9 @@ void platform_init_io(arm_stream_instance_t *S)
         if (0 == (io_mask & (1U << graph_io_idx))) 
             continue; 
 
-        /* no init for the unset IO */
-        if (0 != TEST_BIT(*pio, QUICKSKIP_IOFMT_LSB))
-            continue;
-
-        ioctrl = &(S->ioctrl[graph_io_idx]);
-
         /* default value settings */
-        stream_format_io_setting = pio[1];
-        io_func = &(S->platform_io[RD(ioctrl[graph_io_idx], IOALIDX_IOCTRL)]);
+        stream_format_io_setting = S->graph[GRAPH_HEADER_NBWORDS + graph_io_idx];
+        io_func = &(S->platform_io[RD(*pio, FWIOIDX_IOFMT)]);
         if (*io_func == 0) 
         {   continue;
         }
@@ -554,14 +577,14 @@ void platform_init_io(arm_stream_instance_t *S)
         /* 
             IO-Interface expects the buffer to be declared by the graph 
         */
-        if (0 == TEST_BIT(*pio, SHAREBUFF_IOFMT_LSB))
+        if (0 != TEST_BIT(*pio, FROMIOBUFF_IOFMT_LSB))
         {
             iarc = RD(*pio, IOARCID_IOFMT);
             iarc = SIZEOF_ARCDESC_W32 * iarc;
-            address = (uint8_t *)pack2linaddr_ptr(S->long_offset, all_arcs[iarc + BUF_PTR_ARCW0]);
+            address = (uint8_t *)pack2linaddr_ptr(S->long_offset, all_arcs[iarc + BUF_PTR_ARCW0], LINADDR_UNIT_BYTE);
             size = (uint32_t)RD(all_arcs[iarc + BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
 
-            io_func = &(S->platform_io[RD(ioctrl[graph_io_idx], IOALIDX_IOCTRL)]);
+            io_func = &(S->platform_io[RD(*pio, FWIOIDX_IOFMT)]);
             (*io_func)(STREAM_SET_BUFFER, address, size);
         }
     } 

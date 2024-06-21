@@ -29,25 +29,9 @@
 
 #define PLATFORM_COMPUTER 1
 
+#include "platform.h"
 #include "stream_const.h"      
 #include "stream_types.h"
-
-/*============================ SWITCHES =====================================*/
-//#define PLATFORM_ARCH_32BIT
-////#define PLATFORM_ARCH_64BIT
-//
-///* 
-//    if 64 bits architectures are reading the graph:
-//    #define intPtr_t uint64_t
-//    #define MAX_ADD_OFFSET 0x7FFFFFFFFFFFFFFFL
-//*/
-//#ifdef PLATFORM_ARCH_32BIT
-//#define intPtr_t uint32_t 
-//#else
-//#define intPtr_t uint64_t 
-//#endif
-
-
 
 /* max number of nodes installed at compilation time */
 #define NB_NODE_ENTRY_POINTS 20
@@ -105,7 +89,9 @@
 #define MBANK_GRAPH     0               /* graph base address (shared) */
 #define MBANK_DMEMFAST  1               /* not shared DTCM Cortex-M/LLRAM Cortex-R, swapped between SWC calls if static */
 #define SIZE_MBANK_DMEM_EXT   0x100     /* external (buffers) */
-#define SIZE_MBANK_DMEMFAST   0x20      /* TCM (fast RAM) */
+#define SIZE_MBANK_BACKUPMEM1   0x20    /* OFFSET 1 */
+#define SIZE_MBANK_TCM2         0x20    /* TCM (fast RAM) */
+#define SIZE_MBANK_FLASH3       0x20    /* FLASH (fast RAM) */
 
 
 #ifdef _MSC_VER 
@@ -145,7 +131,7 @@
         long_offset[MBANK_GRAPH]    = (const intPtr_t)&(MEXT[10]); 
         long_offset[MBANK_DMEMFAST] = (const intPtr_t)&(TCM1[10]); 
 */
-#define MAX_NB_MEMORY_OFFSET 3 /* 2 memory banks offsets + 1 for DTCM used for  */
+#define MAX_NB_MEMORY_OFFSET 4
 #define CRITICAL_FAST_SEGMENT_IDX (MAX_NB_MEMORY_OFFSET-1)
 
 

@@ -37,12 +37,6 @@
 #include "stream_types.h"
 #include "stream_extern.h"
 #include <string.h>         /* memcpy */
-SECTION_START 
-
-
-extern void platform_init_copy_graph(arm_stream_instance_t *stream_instance);
-extern void platform_init_io(arm_stream_instance_t *stream_instance);
-
 
 /*
    Main entry point, used by the application and scripts
@@ -74,54 +68,9 @@ void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint8_t
     {
         /* usage: arm_stream(STREAM_RESET, &instance,graph_input, 0); */
 	    case STREAM_RESET: 
-	    {   platform_init_copy_graph (S);
-            /* @@@ TODO  check scheduler_control S->scheduler_control .BOOT_SCTRL to clear 
-                the backup memory area STREAM_COLD_BOOT / STREAM_WARM_BOOT
-             */
-            /* if the application sets the debug option then don't use the one from the graph
-                and the application sets the scheduler return option in platform_init_stream_instance() 
-             */
-            if (STREAM_SCHD_NO_SCRIPT == RD(S->scheduler_control, SCRIPT_SCTRL))
-            {   uint32_t debug_script_option;
-                debug_script_option = RD((S->graph)[3], SCRIPT_SCTRL_GR3);
-                ST(S->scheduler_control, SCRIPT_SCTRL, debug_script_option);
-            }
-
-            /* does the graph is deciding the return-from-scheduler option */
-            if (STREAM_SCHD_RET_NO_ACTION == RD(S->scheduler_control, RETURN_SCTRL))
-            {   uint32_t return_script_option;
-                return_script_option = RD((S->graph)[3], RETURN_SCTRL_GR3);
-
-                /* the return option is undefined : return when no more data is available */
-                if (return_script_option == 0) 
-                {   return_script_option = STREAM_SCHD_RET_END_SWC_NODATA;
-                }
-                ST(S->scheduler_control, RETURN_SCTRL, return_script_option);
-            }
-
-            S->linked_list_ptr = S->linked_list;
-
-            ST(S->scheduler_control, INSTANCE_SCTRL, 1); /* this instance is active */ 
-
-            arm_stream_services(STREAM_SERVICE_INTERNAL_RESET, (uint8_t *)&(S), 0, 0, 0); 
-
+	    {   
+            //arm_stream_services(STREAM_SERVICE_INTERNAL_RESET, (uint8_t *)&(S), 0, 0, 0); 
             stream_scan_graph (S, STREAM_RESET, 0);
-
-            //if (RD(S->scheduler_control, MAININST_SCTRL)) 
-            //{   /* all other process can be released from wait state */
-            //    platform_al (PLATFORM_MP_BOOT_DONE,0,0,0); 
-
-            platform_init_io (S);
-
-            //} else
-            //{   /* wait until the graph is copied in RAM */
-            //    uint8_t wait; 
-            //    do {
-            //        platform_al (PLATFORM_MP_BOOT_WAIT, &wait, 0,0);
-            //    } while (0u != wait);
-            //}
-    
-
             break;
         }
 
@@ -176,7 +125,6 @@ void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint8_t
 
 /*--------------------------------------------------------------------------- */
 
-SECTION_STOP 
 #ifdef __cplusplus
 
 }

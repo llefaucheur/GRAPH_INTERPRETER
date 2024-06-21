@@ -54,25 +54,19 @@ int stream_bitsize_of_raw(uint8_t raw)
     }
 }
 
-/**
-  @brief            LCM / GCD of two integers
-  @param[in/out]    none
-  @return           int
 
-  @par             
-  @remark
+/**
+  @brief            compute the memory consumption of a script => ARC buffer size in Bytes
  */
 
-// Recursive function to return gcd of a and b 
-uint32_t gcd(uint32_t a, uint32_t b) 
-{ 
-    if (b == 0) 
-        return a; 
-    return gcd(b, a % b); 
-} 
-  
-// Function to return LCM of two numbers 
-uint32_t lcm(uint32_t a, uint32_t b) { return (a / gcd(a, b)) * b; } 
+void script_memory_consumption(struct stream_script *script)
+{
+    /* minimum state memory = (0 register + 0 pointer + 1 special) x 8 Bytes = 8 Bytes + stack  */
+    script->nbw32_allocated = SCRIPT_REGSIZE;   /* special registers */
+    script->nbw32_allocated += script->nb_reg * SCRIPT_REGSIZE;
+    script->nbw32_allocated += script->nb_ptr * SCRIPT_REGSIZE;
+    script->nbw32_allocated += script->nb_stack * SCRIPT_REGSIZE;
+}
 
 
 /**
@@ -85,13 +79,15 @@ uint32_t lcm(uint32_t a, uint32_t b) { return (a / gcd(a, b)) * b; }
   parse the membank
 
  */
-int vid_malloc(uint32_t VID, intPtr_t size, uint32_t alignment, uint32_t memtype,    /* input */
-                uint32_t *pack27b, uint8_t *ptr,                    /* results */
-                struct stream_platform_manifest *platform,          /* context */
+int vid_malloc (uint32_t VID, intPtr_t size, uint32_t alignment, 
+                uint32_t *pack27b, int working,       
+                char *comments, 
+                struct stream_platform_manifest *platform,       
                 struct stream_graph_linkedlist *graph) 
 { 
-    uint32_t found, ibank;
+    uint32_t found, ibank, offset, offsetID;
     uint64_t alignmask;
+    char tmpstring[NBCHAR_LINE];
 
     /*  platform->membank[ibank].base32;    
         find the ibank associated to VID(input) = virtualID(processor_memory_bank)
@@ -102,6 +98,8 @@ int vid_malloc(uint32_t VID, intPtr_t size, uint32_t alignment, uint32_t memtype
     {
         if (platform->membank[ibank].virtualID == VID)
         {   found = 1;
+            offsetID = platform->membank[ibank].offsetID;
+            offset = (uint32_t)(platform->membank[ibank].ptalloc_static);
             break;
         }
     }
@@ -109,90 +107,39 @@ int vid_malloc(uint32_t VID, intPtr_t size, uint32_t alignment, uint32_t memtype
     if (found == 0) 
         exit(-5);
 
+    sprintf(tmpstring, " OFF %d BASE 0x%04X PT 0x%04X MAXW 0x%04X SIZE %04X", 
+        offsetID, offset, platform->membank[ibank].ptalloc_static, platform->membank[ibank].max_working_booking, size);
+
     alignmask =  ~((1 << (7&alignment)) -1);
     size = (size + 3) & alignmask;
+     
+    *pack27b = 0;
+    ST(*pack27b, DATAOFF_ARCW0, offsetID);
+    ST(*pack27b, BASEIDX_ARCW0, offset);
 
-    switch (memtype)
-    {
-    default:
-    case MEM_TYPE_STATIC         :
-        platform->membank[ibank].ptalloc_static_booking += size;
-        break;
-    case MEM_TYPE_WORKING        :
-        if (size > platform->membank[ibank].max_working_booking)
-        {   platform->membank[ibank].max_working_booking = size;
+    if (working == MEM_TYPE_WORKING)
+    {   if (size > platform->membank[ibank].max_working_booking)
+    {   {   platform->membank[ibank].max_working_booking = size;
         }
-        break;
-    case MEM_TYPE_PERIODIC_BACKUP :
-        if (platform->membank[ibank].stat0work1ret2 == MEM_TYPE_PERIODIC_BACKUP)
-        {   platform->membank[ibank].ptalloc_static_booking += size;
-        }
-        break;
-    case MEM_TYPE_PSEUDO_WORKING:
-        break;
     }
- 
-// 
-    //platform->membank[ibank];
-    //mem = (*mbank_VID1_Byte);
-    //aligninc = m->alignmentBytes -1;
-    //alignmask = ~aligninc;
-    //mem = mem + aligninc;
-    //mem = mem & alignmask;
-    //
-    //sprintf(DBG,"%s static memory bank(%d) address=0x%X",node->nodeName,(int)imem,(int)mem);  
-    //DBGG((uint32_t)mem, DBG);
-    //
-    //m->graph_basePACK = (uint32_t)mem >> 2; /* memory in W32 */
-    //
-    ///* jump to the next memory segment */
-    //(*mbank_VID1_Byte) =  (*mbank_VID1_Byte) + size;
+    } else // MEM_TYPE_STATIC, MEM_TYPE_PERIODIC_BACKUP
+    {   platform->membank[ibank].ptalloc_static += size;
+    }
+    
+    if (platform->membank[ibank].ptalloc_static +
+        platform->membank[ibank].max_working_booking > 
+        platform->membank[ibank].size)
+    {   /* check overflow */
+        exit(-7);
+    }
+
+    strcpy(platform->membank[ibank].comments, comments);
+    strcat(platform->membank[ibank].comments, tmpstring);
+
+    fprintf(graph->ptf_header,"                        // %s \n",platform->membank[ibank].comments);
 
     return 0;   // success
 } 
-
-//void vid_malloc_booking (
-//                uint32_t VID, intPtr_t size, uint32_t alignment, uint32_t memtype,
-//                struct stream_platform_manifest *platform,       
-//                struct stream_graph_linkedlist *graph) 
-//{ 
-//    uint64_t alignmask;
-//    uint32_t found, ibank;
-//
-//    for (found = ibank = 0; ibank < platform->nbMemoryBank_detailed; ibank++)
-//    {   if (platform->membank[ibank].virtualID == VID)
-//        {   found = 1;
-//            break;
-//        }
-//    }
-//
-//    if (found == 0) 
-//        exit(-5);
-//
-//    alignmask =  ~((1 << (7&alignment)) -1);
-//    size = (size + 3) & alignmask;
-//
-//    switch (memtype)
-//    {
-//    default:
-//    case MEM_TYPE_STATIC         :
-//        platform->membank[ibank].ptalloc_static_booking += size;
-//        break;
-//    case MEM_TYPE_WORKING        :
-//        if (size > platform->membank[ibank].max_working_booking)
-//        {   platform->membank[ibank].max_working_booking = size;
-//        }
-//        break;
-//    case MEM_TYPE_PERIODIC_BACKUP :
-//        if (platform->membank[ibank].memtype == MEM_TYPE_PERIODIC_BACKUP)
-//        {   platform->membank[ibank].ptalloc_static_booking += size;
-//        }
-//        break;
-//    case MEM_TYPE_PSEUDO_WORKING:
-//        break;
-//    }
-//} 
-
   
 /**
   @brief            read the file to a table of char
@@ -234,11 +181,6 @@ L_jump2next_valid_line:
     {   goto L_jump2next_valid_line;
     }
 
-    //if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
-    //{   globalEndFile = FOUND_END_OF_FILE;
-    //    goto L_jump2next_valid_line;
-    //}
-
     *pt_line = p;
 
     if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
@@ -255,7 +197,6 @@ L_jump2next_valid_line:
 
   @par             
   @remark
-        2  u8;  0 255                       new preset + tag (all)
         1 u16;  22                          byte length of the parameters from next line
         1  u8;  2                           Two biquads
         1  u8;  0                           postShift
@@ -363,29 +304,6 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
 
     jump2next_valid_line (pt_line);
 }
-
-///* ---------------------------------------------------------------------- */
-//uint32_t quantized_FS (float FS)
-//{
-//    ///* 20bits : mantissa [U18], exponent [U2], FS = (Mx2)/2^(8xE), 0<=>ASYNCHRONOUS/SLAVE */
-//    ///* 20 range = (E=0,1,2,3) 262142/2^0 .. 2/2^24 [262kHz .. 3 months] */    
-//    ///* 524kHz  ..  1/8.388.608 Hz  [~1MHz .. 3months] */    
-//    //uint32_t E, M;
-//    //float x;
-//
-//    //for (E = FMT_FS_MAX_EXPONENT; E >= 0; E--)
-//    //{   for (M = 0; M <= FMT_FS_MAX_MANTISSA; M++)
-//    //    {   x = (float)FMTQ2FS(E,M);
-//    //        if (x >= FS)
-//    //        {   
-//    //            return (E<<FMT_FS_EXPSHIFT) | M;
-//    //        }
-//    //    }
-//    //}
-//    return 0;
-//
-//}
-
 
 /**
   @brief            read the file to a table of char
@@ -578,12 +496,6 @@ int fields_extract(char **pt_line, char *types,  ...)
 
     for (ifield = 0; ifield < nfields; ifield++)
     {
-        while (*ptstart0 != ' ')            // find the next non-white space
-        {   if (*ptstart0 == '\n')
-                break;
-            ptstart0++;
-        }
-
         while (*ptstart0 == ' ')            // find the next non-white space
         {   ptstart0++;
             if (*ptstart0 == '\n')
@@ -594,50 +506,51 @@ int fields_extract(char **pt_line, char *types,  ...)
         {
             case Characters:
             case CHARACTERS:
-                //nchar = (int)((uint64_t)ptstart0 - (uint64_t)ptstart);
-                //vaS = va_arg (vl,char *);
-                //strncpy(vaS, ptstart, nchar);
-                //vaS[nchar] = 0;
-                n = sscanf (ptstart,"%s",&S);
+                n = sscanf (ptstart0,"%s",&S);
                 vaS = va_arg (vl,char *);
                 nchar = (int)strlen(S);
-                strncpy(vaS, ptstart, nchar);
+                strncpy(vaS, ptstart0, nchar);
                 vaS[nchar] = 0;
                 break;
 
             case Float:
             case FLOAT:
-                n = sscanf (ptstart,"%f",&F);
+                n = sscanf (ptstart0,"%f",&F);
                 vaF = va_arg (vl,float *);
                 *vaF = F;
                 break;
 
             default:
             case Integer:
-                n = sscanf (ptstart,"%d",&I);
+                n = sscanf (ptstart0,"%d",&I);
                 vaI = va_arg (vl,int *);
                 *vaI = I;
                 break;
             case INTEGER:
-                n = sscanf (ptstart,"%ld",&IL);
+                n = sscanf (ptstart0,"%ld",&IL);
                 vaIL = va_arg (vl,long *);
                 *vaIL = IL;
                 break;
 
             case Hexadecimal:
-                n = sscanf (ptstart,"%s",S);
+                n = sscanf (ptstart0,"%s",S);
                 n = sscanf(&(S[1]),"%X",&I); /* remove the 'h' */
                 vaI = va_arg (vl,int *);
                 *vaI = I;
                 break;
             case HEXADECIMAL:
-                n = sscanf (ptstart,"%s",S);
+                n = sscanf (ptstart0,"%s",S);
                 n = sscanf(&(S[1]),"%lX",&IL); 
                 vaIL = va_arg (vl,long *);
                 *vaIL = IL;
                 break;
         }
 
+        while (*ptstart0 != ' ')            // find the next non-white space
+        {   if (*ptstart0 == '\n')
+                break;
+            ptstart0++;
+        }
         ptstart = ptstart0;
     }
 
@@ -650,200 +563,6 @@ int fields_extract(char **pt_line, char *types,  ...)
 
     return 1;
 }
-
-
-/**
-  @brief            read pairs of informations : RAW data type + subtype_units (SUBTYPE_FMT1)
-  @param[in/out]    none
-  @return           int
-
-  @par              
-                    
-  @remark
- */
-//
-//void fields_list_subtype(char **pt_line, struct options_subtype *opt)
-//{
-//    char *ptstart, *pend;
-//    int nfields;
-//    float F;
-//
-//    ptstart = *pt_line;
-//    nfields = 0;
-//    sscanf (ptstart,"%d",&(opt->default_index));
-//
-//    while (1)
-//    {   /*--- read the arithmetic type ---*/
-//        pend = strchr (ptstart, ' ');   
-//        while (pend[1] == ' ')          // find the next non white space
-//        {   pend++;
-//        }
-//
-//        if (pend[1] == ';')
-//        {   break;
-//        }
-//        else
-//        {   sscanf (pend,"%f",&F);
-//            opt->options[nfields] = F;
-//            ptstart = pend + 1; 
-//        }
-//
-//        /*--- read the subtype_units ---*/
-//        pend = strchr (ptstart, ' ');   
-//        while (pend[1] == ' ')          // find the next non white space
-//        {   pend++;
-//        }
-//
-//        if (pend[1] == ';')
-//        {   break;
-//        }
-//        else
-//        {   sscanf (pend,"%f",&F);
-//            opt->subtype_options[nfields] = F;
-//            ptstart = pend + 1; 
-//
-//            nfields++;
-//        }
-//    }
-//    *pt_line = pend;
-//    jump2next_valid_line(pt_line); 
-//    opt->nb_option = nfields;
-//}
-
-
-/**
-  @brief            (main)
-  @param[in/out]    none
-  @return           int
-
-  @par              translates the graph intermediate format GraphTxt to GraphBin to be reused
-                    in CMSIS-Stream/stream_graph/*.txt
-  @remark
- */
-//
-//void fields_list(char **pt_line, struct options *opt)
-//{
-//    char *ptstart, *pend;
-//    int nfields;
-//    float F;
-//
-//    ptstart = *pt_line;
-//    nfields = 0;
-//    sscanf (ptstart,"%d",&(opt->default_index));
-//
-//    while (1)
-//    {   pend = strchr (ptstart, ' ');   
-//        while (pend[1] == ' ')          // find the next non white space
-//        {   pend++;
-//        }
-//        if (pend[1] == ';')
-//        {   break;
-//        }
-//        else
-//        {   nfields++;
-//        }
-//
-//        sscanf (pend,"%f",&F);
-//        opt->options[nfields-1] = F;
-//        ptstart = pend + 1; 
-//    }
-//    *pt_line = pend;
-//    jump2next_valid_line(pt_line); 
-//    opt->nb_option = nfields;
-//}
-
-/**
-  @brief            read the file to a table of char
-  @param[in/out]    none
-  @return           int
-
-  @par
-  @remark
- */
-//void read_binary_paramector(char** pt_line, char* types, ...)
-//{
-////    char* ptstart, * ptstart0, S[200], * vaS;
-////    uint32_t ifield, I, * vaI, nchar, n, nfields;
-////    va_list vl;
-////    float F, * vaF;
-////#define COMMENTS 'c'
-////#define FLOAT 'f'
-////#define INTEGER 'i'
-////#define HEXADECIMAL 'h'
-////
-////    va_start(vl, types);
-////    ptstart = *pt_line;
-////    nfields = (uint32_t)strlen(types);
-////
-////    while (*(*pt_line) == ';')
-////    {
-////        jump2next_line(pt_line);
-////        ptstart = *pt_line;
-////    }
-////
-////    for (ifield = 0; ifield < nfields; ifield++)
-////    {
-////        if (types[ifield] == COMMENTS)
-////        {
-////            ptstart0 = strchr(ptstart, '\n');
-////        }
-////        else
-////        {
-////            ptstart0 = strchr(ptstart, ';');
-////        }
-////
-////        switch (types[ifield])
-////        {
-////        case COMMENTS:
-////            nchar = (uint32_t)((uint64_t)ptstart0 - (uint64_t)ptstart);
-////            vaS = va_arg(vl, char*);
-////            strncpy(vaS, ptstart, nchar);
-////            vaS[nchar] = 0;
-////            break;
-////
-////        case FLOAT:
-////            n = sscanf(ptstart, "%f", &F);
-////            vaF = va_arg(vl, float*);
-////            *vaF = F;
-////            break;
-////
-////        default:
-////        case INTEGER:
-////            n = sscanf(ptstart, "%d", &I);
-////            vaI = va_arg(vl, uint32_t*);
-////            *vaI = I;
-////            break;
-////
-////        case HEXADECIMAL:
-////            n = sscanf(ptstart, "%s", S);
-////            n = sscanf(&(S[1]), "%X", &I); /* remove the 'h' */
-////            vaI = va_arg(vl, uint32_t*);
-////            *vaI = I;
-////            break;
-////        }
-////
-////        ptstart = ptstart0 + 1;      /* skip the ';\n' separators */
-////    }
-////    *pt_line = ptstart;
-////    va_end(vl);
-//}
-
-
-/*  
-    first letters of the lines in the input file 
-*/
-//#define _comments    'c'
-//#define _offsets     'o'
-//#define _header      'h'
-//#define _format      'f'
-//#define _stream_inst 'i'
-//#define _linked_list 'l'
-//#define _script      's'
-//#define _arc         'a'
-//#define _RAM         'r'
-//#define _debug       'd'
-
-
 
 #ifdef __cplusplus
 }
