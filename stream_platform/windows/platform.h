@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        xxx.c
- * Description:  
+ * Title:        platform.h
+ * Description:  top-level platform informations
  *
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
@@ -28,6 +28,28 @@
 #define PLATFORM_H
 
 #define PLATFORM_COMPUTER 1
+
+#define PLATFORM_MSPM0L1306 0
+#define PLATFORM_MSPM0G3507 0
+#define PLATFORM_MSPM0C1104 0
+#define PLATFORM_LPC55S69EVK 0
+#define PLATFORM_LPCX860MAX 0
+#define PLATFORM_LPCX804B 0
+#define PLATFORM_LPCX55S69A1 0
+#define PLATFORM_WIOTERMINAL 0
+#define PLATFORM_GROVEVISIONAIV2 0
+#define PLATFORM_EFM32PG32 0
+#define PLATFORM_RP2040 0
+#define PLATFORM_RP2350 0
+#define PLATFORM_STM32U083DK 0
+#define PLATFORM_STM32C0116DK 0
+#define PLATFORM_STEVAL_MKBOXPRO 0
+#define PLATFORM_STM32L475EIOT01 0
+#define PLATFORM_STEVALMKBOXPRO 0
+#define PLATFORM_ARDUNANO32SENSEV2 0
+#define PLATFORM_ARDURP2040 0
+#define PLATFORM_ARDU_UNOR4W 0
+#define PLATFORM_ARDU_ZERO 0
 
 /*============================ SWITCHES =====================================*/
 #define PLATFORM_ARCH_32BIT

@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        xxx.c
- * Description:  
+ * Title:        platform_computer_io_services.c
+ * Description:  abstraction layer to BSP and streams from the application
  *
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
@@ -66,22 +66,24 @@ extern uint8_t platform_io_al_idx_to_graph[];
     };
 */
 
-#if DATA_FROM_FILES
-FILE *ptf_trace;
-FILE *ptf_in_stream_in_0_data;
-FILE *ptf_in_gpio_out_data;
-#else
-const int16_t ptf_in_stream_in_0_data[] = { 
-    #include "..//stream_test//sine_noise_offset.txt"
-};
-uint16_t ptf_in_gpio_out_data[sizeof(ptf_in_stream_in_0_data)/sizeof(int16_t)];
-uint16_t ptf_trace[6*sizeof(ptf_in_stream_in_0_data)/sizeof(int16_t)];
 
-uint32_t ptr_in_stream_in_0_data;
-uint32_t ptr_in_gpio_out_data;
-uint32_t ptr_trace;
+
+
+#if DATA_FROM_FILES
+    FILE *ptf_trace;
+    FILE *ptf_in_stream_in_0_data;
+    FILE *ptf_in_gpio_out_data;
+#else
+    const int16_t ptf_in_stream_in_0_data[] = { 
+        #include "..//stream_test//sine_noise_offset.txt"
+    };
+    uint16_t ptf_in_gpio_out_data[sizeof(ptf_in_stream_in_0_data)/sizeof(int16_t)];
+    uint16_t ptf_trace[6*sizeof(ptf_in_stream_in_0_data)/sizeof(int16_t)];
+
+    uint32_t ptr_in_stream_in_0_data;
+    uint32_t ptr_in_gpio_out_data;
+    uint32_t ptr_trace;
 #endif
-uint32_t frame_size_audio_render;
 
 
 /* the IO manifest declares graphalloc_X_bsp_0 = 0 : the buffers are declared in BSP */
@@ -130,7 +132,7 @@ void data_in_1 (uint32_t command, uint8_t *data, uint32_t size)
 
 void analog_sensor_0 (uint32_t command, uint8_t *data, uint32_t size) 
 {   int32_t tmp, stream_format_io_setting;
-    uint32_t cumulated_data = 0, i;
+    uint32_t cumulated_data = 0;
     int16_t *data16 = rx_buffer;
     switch (command)
     {
@@ -379,44 +381,6 @@ void data_out_0 (uint32_t command, uint8_t *data, uint32_t size)
     }
 }
 
-
-/* 
-    See platform_sensor.h for the bit-field meaning per domain
-*/
-const uint8_t platform_audio_out_bit_fields[] = { 3,4,2,3,4,2,1,2,1,2,1,2,1 };
-
-/**
-  @brief        Extract setting fields
-  @param[in]    *bit_field list of the bit-fields used for this IO domain
-  @param[in]    settings   the specific setting of this IO interface
-  @param[in]    line       the setting to have access to
-  @param[in]    index      the selected index 
-  @return       int32      the extracted field
-
-  @par          Each IO interface is associated to a "domain" of operation. Each domain
-                is set with default values at reset, or a list of proposed options. 
-
-  @remark       
- */
-int32_t extract_sensor_field (const uint8_t *platform_bit_fields, 
-                              const int32_t *settings,
-                              uint8_t setting_line,
-                              uint8_t index)
-{
-    uint8_t i, j, i_field, nb_fields;
-
-    i_field = 0;
-
-    for (i = 0; i < setting_line; i++)
-    {   nb_fields = settings[i_field];
-        for (j = 0; j < nb_fields; j++)
-        {
-            /* TBC */
-        }
-        i_field = i_field + nb_fields;
-    }
-    return 3;
-}
 
 /*
  * -----------------------------------------------------------------------

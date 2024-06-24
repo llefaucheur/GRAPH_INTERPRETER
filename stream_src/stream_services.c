@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        xxx.c
- * Description:  
+ * Title:        stream_services.c
+ * Description:  computing services offered to computing nodes 
  *
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
@@ -34,18 +34,6 @@
 #include "stream_extern.h"
 #include "dsp/filtering_functions.h"
 
-SECTION_START
-
-/* 
-    services
-    - FFT : parameters tell if tweedle factors need to be moved in TCM
-    - IIR : if the number of samples to filter is small, then take the hypothesis the caller
-            made the good choices for the memory mapping of memory and coefficients
-            else check the address are in TCM, apply a swap to a Stream scratch are execute
-            the filtering from TCM, restore / swap
-    - Matrices / dotProduct : strategy to define
-
-*/
 
 
 /* ------------------------------------------------------------------------------------------------------------
@@ -126,64 +114,41 @@ uint8_t itoab(char *s, int32_t n, int base)
  */
 static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t* ptr3, uint32_t n)
 {
-
     switch (command)
-    {
-    case STREAM_SERVICE_INTERNAL_NODE_REGISTER: /* called during STREAM_NODE_DECLARATION to register the SWC callback */
-    {
-#ifndef _MSC_VER 
-        //rtn_addr = __builtin_return_address(0); // check the lr matches with the node 
-#endif
-        break;
-    }
+    {   case STREAM_SERVICE_INTERNAL_NODE_REGISTER: /* called during STREAM_NODE_DECLARATION to register the SWC callback */
+        {   
+            #ifndef _MSC_VER 
+            //rtn_addr = __builtin_return_address(0); // check the lr matches with the node 
+            #endif
+            break;
+        }
 
-    /* ----------------------------------------------------------------------------------
-        arm_stream_services(PACK_SERVICE(instance index, STREAM_SERVICE_INTERNAL_DEBUG_TRACE), *int8_t, 0, nb bytes);
-            the Stream instance index
-        arm_stream_services(DEBUG_TRACE_STAMPS, disable_0 / enable_1 time stamps);
+        /* ----------------------------------------------------------------------------------
+            arm_stream_services(PACK_SERVICE(instance index, STREAM_SERVICE_INTERNAL_DEBUG_TRACE), *int8_t, 0, nb bytes);
+                the Stream instance index
+            arm_stream_services(DEBUG_TRACE_STAMPS, disable_0 / enable_1 time stamps);
 
-        used to share the SWC version numbers, authors, .., real-time trace data
-     */
-    case STREAM_SERVICE_INTERNAL_DEBUG_TRACE:
-    {
-        //uint8_t arcid;
-        //uint32_t* arc;
-        //uint32_t free_area;
-        //uint32_t debugBufferLength = RD(command, SWC_TAG_CMD);
+            used to share the SWC version numbers, authors, .., real-time trace data
+         */
+        case STREAM_SERVICE_INTERNAL_DEBUG_TRACE:
+        {   break;
+        }
 
-        ///* extraction of the arc index used for the traces of this Stream instance */
-        //arcid = RD(stream_instance->parameters, TRACE_ARC_PARINST);
-        //arc = &(stream_instance->all_arcs[arcid * SIZEOF_ARCDESC_W32]);
-        //free_area = RD(arc[1], BUFF_SIZE_ARCW1) - RD(arc[3], WRITE_ARCW3);
-        //if (free_area < debugBufferLength)
-        //{
-        //    platform_al(PLATFORM_ERROR, 0, 0, 0); /* overflow issue */
-        //    debugBufferLength = free_area;
-        //}
-        *ptr1 = *ptr1; //for debug
-        //arc_data_operations((arm_stream_instance_t*)&stream_instance, arc, data_move_to_arc, ptr1, debugBufferLength);
-        break;
-    }
+        /* toggle a flag to insert/remove the time-stamps on each data pushed in the debug trace */
+        case STREAM_SERVICE_INTERNAL_DEBUG_TRACE_STAMPS:
+        {   break;
+        }
 
-    /* toggle a flag to insert/remove the time-stamps on each data pushed in the debug trace */
-    case STREAM_SERVICE_INTERNAL_DEBUG_TRACE_STAMPS:
-    {   break;
-    }
+        /* stream format of an OUTPUT arc is changed on-the-fly : 
+            update bit-fields of nchan, FS, units, interleaving, audio mapping, RAW format */
+        case STREAM_SERVICE_INTERNAL_FORMAT_UPDATE:
+        {   /* checks the index of the SWC arc and update the format for the format converter or the next consumer */ 
+            break;
+        }
 
-
-    /* stream format of an OUTPUT arc is changed on-the-fly : 
-        update bit-fields of nchan, FS, units, interleaving, audio mapping, RAW format */
-    case STREAM_SERVICE_INTERNAL_FORMAT_UPDATE:
-    {   /* checks the index of the SWC arc and update the format for the format converter or the next consumer */ 
-        break;
-    }
-
-    /* return the list of services available to let the SWC decide between its library or the accelerated ones
-       by MVE architecture or specific acceleration schemes like coprocessors and custom instructions */
-    //case STREAM_SERVICE_AVAILABLE:
-    //{   break;
-    //}
-
+        case STREAM_SERVICE_INTERNAL_KEYEXCHANGE : /* at reset time : key exchanges to deobfuscate node's firmware (TBD) */
+        {   break;
+        }
     }
 }
 
@@ -249,17 +214,15 @@ static void arm_stream_services_conversion (uint32_t command, uint8_t* ptr1, uin
  */
 void arm_stream_services_stdlib (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
-#if STREAM_SERVICE_EXTSTDLIB
+#if STREAM_SERVICE_STDLIB
 	switch (RD(command, FUNCTION_SSRV))
     {
     case STREAM_FREE:
     case STREAM_MALLOC: /* (STREAM_MALLOC + OPTION_SSRV(align, static/w/retention, speed), **ptr1, 0, 0, n) */
-
     case STREAM_RAND:   /* (STREAM_RAND + OPTION_SSRV(seed), *ptr1, 0, 0, n) */
     case STREAM_SRAND:
     case STREAM_ATOF:
     case STREAM_ATOI:
-
     case STREAM_MEMSET:
     case STREAM_STRCHR:
     case STREAM_STRLEN:
@@ -268,6 +231,8 @@ void arm_stream_services_stdlib (uint32_t command, uint8_t* ptr1, uint8_t* ptr2,
     case STREAM_STRNCPY:
     case STREAM_STRSTR:
     case STREAM_STRTOK:
+        break;
+    }
 #endif
 }
 
@@ -288,6 +253,13 @@ void arm_stream_services_math (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, u
     /* 
         Permanent APIs whatever "STREAM_SERVICE_EXTMATH" are 
     //STREAM_SIN_Q15 STREAM_COS_Q15 STREAM_LOG10_Q15, STREAM_SQRT_Q15,
+    */
+    /* From Android CHRE  https://source.android.com/docs/core/interaction/contexthub
+    String/array utilities: memcmp, memcpy, memmove, memset, strlen
+    Math library: Commonly used single-precision floating-point functions:
+    Basic operations: ceilf, fabsf, floorf, fmaxf, fminf, fmodf, roundf, lroundf, remainderf
+    Exponential/power functions: expf, log2f, powf, sqrtf
+    Trigonometric/hyperbolic functions: sinf, cosf, tanf, asinf, acosf, atan2f, tanhf
     */
 #if STREAM_SERVICE_EXTMATH
     //STREAM_SIN_FP32,  STREAM_COS_FP32, STREAM_ASIN_FP32, STREAM_ACOS_FP32, 
@@ -354,6 +326,21 @@ void arm_stream_command_interpreter (uint32_t command, uint8_t* ptr1, uint8_t* p
 {
 }
 
+
+
+
+
+/* 
+    services
+    - FFT : parameters tell if tweedle factors need to be moved in TCM
+    - IIR : if the number of samples to filter is small, then take the hypothesis the caller
+            made the good choices for the memory mapping of memory and coefficients
+            else check the address are in TCM, apply a swap to a Stream scratch are execute
+            the filtering from TCM, restore / swap
+    - Matrices / dotProduct : strategy to define
+
+*/
+
 /**
   @brief        Service entry point for nodes
 
@@ -376,6 +363,11 @@ void arm_stream_command_interpreter (uint32_t command, uint8_t* ptr1, uint8_t* p
                    using accelerators and custom instructions. 
                 For example a SWC delivered in binary for Armv7-M architecture profile will 
                     automatically scale in DSP performance when executed on Armv8.1-M through services.
+
+                Compute services can be called from any place in the code
+                Sensitive services (data moves, key exchanges, spinlock access, ..) must be called from 
+                    the same placed registered at reset time with STREAM_SERVICE_INTERNAL_SECURE_ADDRESS
+
   @remark
  */
 
@@ -424,30 +416,16 @@ void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_
                 - Raw datatype conversion (int/float)
                 - Matrix operations
             */
-
             switch (RD(command, FUNCTION_SSRV))
             {
-            /* ------------------------- */
-            /*
-                void arm_biquad_cascade_df1_fast_q15(
-                  const arm_biquad_casd_df1_inst_q15 * S,
-                  const q15_t * pSrc,
-                        q15_t * pDst,
-                        uint32_t blockSize)            
-            */
-            case STREAM_SERVICE_CASCADE_DF1_Q15:          /* IIR filters */
+            case STREAM_SERVICE_CASCADE_DF1_Q15:          /* IIR filters arm_biquad_cascade_df1_fast_q15*/
                 arm_biquad_cascade_df1_fast_q15(
                     (const arm_biquad_casd_df1_inst_q15 *) ptr3,
                     (const q15_t *) ptr1,
                     (q15_t *) ptr2,
                     (uint32_t)n);
                 break;
-            case STREAM_SERVICE_CASCADE_DF1_F32:          /* IIR filters */
-                //arm_biquad_cascade_df1_f32(
-                //    (const arm_biquad_casd_df1_inst_f32 *) ptr3,
-                //    (const float32_t *) ptr1,
-                //    (float32_t *) ptr2,
-                //    (uint32_t)n);
+            case STREAM_SERVICE_CASCADE_DF1_F32:          /* IIR filters arm_biquad_cascade_df1_f32*/
                 break;
             /* ------------------------- */
             case 0:              
@@ -492,7 +470,6 @@ void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_
         arm_stream_services_mm_image(command, ptr1, ptr2, ptr3, n);
         break;
 
-
         /*----------------------------------------------------------------------------
            arm_graph_interpreter interface is used for "special" services       
            examples : 
@@ -517,7 +494,6 @@ void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_
             Terminated by arm_stream_services(FREE_INSTANCE, ssrc_instance_id);  free STREAM internal memory
         */
 
-
         default:
             break;
     }
@@ -526,27 +502,86 @@ void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_
 
 /*
  * --- 4K platform signatures -------------------------------------------------------
-
+//fwd_print_coef_col( floor((2^16) * rand(4096/16,1)), 1, 16 ); */
+/*
 extern const uint16_t platform_private_key_4Kbits [256] = {
-     52178,  6469, 17162, 21978, 44546,  8949, 47266,  6997, 42844, 32386, 51055, 46860, 59225, 58387, 21899, 45792,
-     12963,  2002, 48763, 32769, 31452, 59291, 39968, 40479, 56324, 52788, 37795, 11988, 15724, 58098,  1879, 32106,
-...
+ 63789, 40809,  4164, 24478, 10895, 15157,  3421, 59097, 51989, 24445, 54529, 49403, 40754, 25827, 23545,  5823,
+ 22392, 35957, 30182, 42300, 33654, 53374,  6368, 30389, 38654, 12266, 40064,  3404, 37730, 55203, 32750, 28771,
+  9768,  1853, 49589, 52173, 19238,  7550, 24582, 54322, 55166, 43597, 62923, 61808,  7385, 42486, 31509,  4359,
+ 58836, 32586, 50548,  3955, 17200, 42668,  8755, 41847, 25227, 50180, 42789, 25001, 19662, 22291, 60222, 29901,
+ 28999, 29765, 61950, 14360, 57829,  1302, 22397, 50202, 22465, 40554, 29689,   666, 39261, 39424, 42560, 22460,
+ 32328, 45991, 58183,  3608,  6446, 42584, 50074, 64746,  8213, 23886, 44317, 24625, 56587, 19134,  8747, 44082,
+ 13276, 56919, 49227, 27484,    15,  9795, 17946, 57175, 39403, 21049, 18631, 28528, 59228, 60627, 33114, 41129,
+ 47137,  1567, 37678,  3049, 27691, 30653,  1482,  4264, 60552, 35005, 24038, 23851,  9920,  9804, 22990, 22017,
+ 51382, 31898, 30461,  8601, 58090, 44207, 54733, 43023, 64481, 64211, 16394, 40931, 47726, 32648, 55694, 12512,
+  8135,   182, 10023, 35006, 33464, 25245, 20355,   233, 53427, 41839, 29382, 15996, 52650, 53999, 55849, 30621,
+ 63615, 55131,  5147, 15571, 53580, 26596, 30560, 62359, 63242, 50153, 37652, 60026, 32468, 10879, 21364, 19427,
+ 36588,  4422,  4520, 10930, 62091, 53155, 46560, 63586, 65432, 64713,  9836, 62814, 34764,  4855, 20435, 58665,
+ 54707,   153, 41956, 52637, 16064,  4202, 17245,  6731, 31701, 27452, 24988, 58115, 27561, 18602,  3157, 14363,
+ 15674,  1917, 46026,   500, 40037, 26744, 16314, 42759, 20989,  6794, 35098, 10804, 57897, 43676, 55557, 49981,
+ 52888, 41481, 46558, 45132, 21033, 34842, 57225,  3574, 32794, 28361, 59263, 41299, 64424, 38351, 55091, 30724,
+ 35731, 11737, 41580, 63108, 34997, 31431, 52013,  6076, 57724,   253, 33523, 44463, 37076, 31356, 21005, 39425,
+
 };
 
 extern const uint16_t platform_public_key_4Kbits [256] = {
-      4167, 26514, 29384, 23974, 50036, 41149, 50592, 61135, 63749, 12585,  9101, 45630,  6148, 34432, 34756, 56435,
-     31775, 25785, 44002, 48578, 34082, 22787,  9830, 38410, 17180,  2913, 49475, 15911, 28993, 45075, 23542, 48256,
-...
+ 59844, 44729, 62045,  6493, 33490,  7217, 35734, 45140,  9661, 50958, 26152, 58870, 20122,  4001, 14383,  5428,
+ 62285,  1072,  7514,   813, 14170,   748, 42103, 33881, 16091, 12697,  5955, 24146,   510, 39498, 31382, 20192,
+ 48787, 55007, 17198, 33701, 29279, 22361, 54993, 64388, 41055, 11880,  8062, 38008, 21530, 17575, 36060, 11830,
+ 44465,  3649,  2231, 18777,  5071, 59019, 55483, 25932, 11089, 28210, 27277, 47760, 26638, 62377, 59767, 62351,
+ 22675, 19021, 58110, 13764,  8577, 34112, 59340, 26380, 14140,  5160, 61149, 39509, 24739, 43576, 51916, 21855,
+ 45394, 13357, 62830, 46650, 10938, 29017, 41483, 60946, 34690, 41056, 44618, 60502, 10016, 26589, 20478, 45475,
+ 58372, 32156, 52810, 21393, 36036, 25479, 58774, 44310, 54289,  7214, 18299, 50307, 14159,  2232, 28609, 61398,
+ 17176, 37338, 23563,  1758, 32795, 54199, 16972,  3007, 16152, 43301, 21588, 43220,   852, 47059, 25632,  2195,
+ 26608, 46943, 60380, 64488, 64449, 58740, 56734, 52491, 36371, 27451,  8331, 42901, 56620, 17996, 55060,  4637,
+ 24824, 17574, 10021, 41353, 20733, 62856, 32681, 48405,   835, 39672, 37778, 52912, 42923, 57555, 59137,  9976,
+ 12620, 51837,  3978, 25547, 19658, 48115,  6829, 51942, 51296, 34891, 16603,  4650, 41012,  1617,  4066,  8494,
+ 29531, 44062, 56106, 32666,  3197, 20567, 42049, 51536, 18949, 32628, 53636, 39002, 35155, 21684, 26980, 52035,
+ 22492, 30317, 24105, 44536, 37209, 42714, 32185, 26113, 31292,  4363, 26937, 63510, 51165, 47776, 50177, 49583,
+ 55264, 50472, 64137,  7298, 25957, 32247, 16914,  2422, 63857, 47607,  9697,  9692, 46191, 24968,  5007, 26924,
+  9371, 52358, 60964,   309, 42601, 44468, 16621, 55258, 19264,  1760,  6114, 52290, 46622, 51341, 40889, 54094,
+  2295, 26573, 16362, 31516, 57726, 18394, 39265,  1718, 10171, 54651, 12772, 54380, 22156, 43982,  3431, 48123,
 };
-
->> fwd_print_coef_col( floor((2^32) * rand(1024,1)), 1, 8 );
-  2902803550,  1069229832,  2043483706,  1714015047,  2574567675,  3438219098,   451266936,  3528067359,
-  3612438280,  1522592725,  1847134276,  2457748728,  3010019298,  3188883324,  3255087641,  1671295313,
-... 
-
 */
 
-SECTION_STOP
+//fwd_print_coef_col( floor((2^32) * rand(4096/32,1)), 1, 8 );
+/* extern const uint32_t platform_private_key_4Kbits [128] = {
+  2452526671,  1812651256,  3097342766,   314126654,  2554912484,  3702164590,  1927585877,  2802798550,
+  1303407119,  2608934723,  1197876299,  3434094102,  3419520323,  4097772047,  1908417888,  1962296738,
+  2576194992,  3619033209,   134004925,   804319133,  4052707085,  4071294585,  1945553145,  3482499289,
+  3989505788,  2889298721,  1599154964,  1742449724,  1884734392,  2914776122,  1997461852,  4094238426,
+  1523416233,  1456083514,  3847689602,  2342622301,  3218149061,   536343486,  1946628721,   321046393,
+  2849026241,  3022160789,  3946862637,  2834987259,  2963978059,  3666714983,  2009622596,  1969150944,
+  3462191122,  3542348306,   817916835,   110265590,   244018397,   613903642,   736237871,  2687982868,
+   126766851,  2028651632,  2913889510,   493014868,  1013886833,  1241591732,   741982634,  1390307210,
+  3440741675,  1286916938,  3331287114,  2374132639,  2382382803,  3138106201,  3322693311,  3869108853,
+   593423417,  3410533956,   813524247,   124444025,   547123825,   574390398,   551091375,  4016910224,
+  1173514151,  4048776575,  2740835533,  3747491340,  1576567553,  1014479457,   804525706,  2343545747,
+  1095716831,  1313502393,    66780808,  2523242149,  4134156465,  3650067967,    34103316,  2723118955,
+  1543143675,   489882317,  2322795306,  1788516222,  2220921135,  3805868774,   641650540,  1866921449,
+   253569750,  1636511633,  3102553242,   408533977,  2865560937,  1273030687,  2570807496,   652199330,
+  1874225401,    54470065,   983646066,  1132495488,  2196382847,   923782560,  1486530232,  3211849949,
+  1776482024,   239455428,  1675158111,  2037893006,  3544725485,  1304139207,  3529561772,  2429576083,
+};
+  extern const uint32_t platform_public_key_4Kbits [128] = {
+   233567265,  1116752402,  2530180486,  2060440189,   853197903,  1026551567,  3350905477,  2651325914,
+   619028480,  3075763606,  1724456980,  1985930031,  3037753086,  1723186174,    61784824,   320578255,
+  2538618481,  1915561943,  3979805183,   407563859,  1612411398,  2345047264,   479654964,  3884640012,
+  2719903998,  3888713398,  2708204253,    61109983,  1359261744,   480481162,  2703523561,   260745093,
+  2894786147,  2050585262,  1312309229,  2217633272,  3036663210,  3494432564,  1356386492,  1337032687,
+  1481664379,  2861757725,  3698274489,  3271816983,  3761693748,  3741927968,   742129130,  3651684197,
+  4121400693,  3308013829,  3758162314,   289538676,  2777951414,  1391984256,  2750269047,  3778501906,
+  1604761596,  3293112734,   721926701,  2232200518,  2694901321,  3066235932,  1315961252,  1132527511,
+  3934205106,  2641552048,   400183835,  2695938954,   824754078,  3337037933,  3713001398,  1432722113,
+   581598698,  3287656411,  1368435565,  1083961746,   859313912,   296395058,  2370438557,  1734357715,
+  3221722832,  2092437210,  1652643813,   263747543,   917797964,  2335918313,  1763705179,  3869607504,
+   241761720,  1904857713,  2309887215,   575785894,  2323350636,  3682368347,   850478099,   668336001,
+   263615505,  2839291162,    79897738,  1250277592,  4182541487,  3284105744,  1046614510,  2929666174,
+   592080613,  2705020512,  3680850077,  3864604414,  1496230894,  2088686375,  2918505406,  3024180495,
+  1979481950,  1564537603,  1203729972,   327295549,  1909649709,   711703124,  1712613800,  3953881054,
+  2196164463,  3926211412,   394853260,  4265062187,   414179256,  1344958243,  3373160417,  2587289407,
+}; */
+
 #ifdef __cplusplus
 }
 #endif

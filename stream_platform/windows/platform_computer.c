@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        xxx.c
- * Description:  
+ * Title:        platform_computer.c
+ * Description:  platform-specific declarations (memory, nodes)
  *
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
@@ -29,7 +29,7 @@
 #endif
 
 /*-----------------------------------------------------------------------*/
-#define DATA_FROM_FILES 0
+#define DATA_FROM_FILES 1
 
 #define _CRT_SECURE_NO_DEPRECATE 1
 #if DATA_FROM_FILES
@@ -62,8 +62,8 @@ extern const uint8_t platform_audio_out_bit_fields[];
     Full node descriptions given in ./stream_tools/TEMPLATE_GRAPH.txt
 */
 
-extern p_stream_node arm_stream_graph_control;   /*  1*/
-extern p_stream_node arm_stream_script;          /*  2*/
+extern p_stream_node arm_stream_script;          /*  1  #define arm_stream_script_index 1 */
+extern p_stream_node arm_stream_graph_control;   /*  2*/
 extern p_stream_node arm_stream_router;          /*  3*/
 extern p_stream_node arm_stream_converter;       /*  4*/
 extern p_stream_node arm_stream_amplifier;       /*  5*/
@@ -88,8 +88,8 @@ p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
 {
     /*--------- ARM ---------*/
     /*  0*/ (void *)0,                          /* node disabled */
-    /*  1*/ (void *)&arm_stream_graph_control,  /* scheduler control : lock, bypass, loop, if-then */
-    /*  2*/ (void *)&arm_stream_script,         /* byte-code interpreter, index "arm_stream_script_INDEX" */
+    /*  1*/ (void *)&arm_stream_script,         /* byte-code interpreter, index "arm_stream_script_INDEX" */
+    /*  2*/ (void *)&arm_stream_graph_control,  /* scheduler control : lock, bypass, loop, if-then */
     /*  3*/ (void *)&arm_stream_router,         /* copy input arcs and subchannel and output arcs and subchannels   */     
     /*  4*/ (void *)&arm_stream_converter,      /* raw data format converter */
     /*  5*/ (void *)&arm_stream_amplifier,      /* amplifier mute and un-mute with ramp and delay control */
@@ -264,7 +264,17 @@ uint32_t lin2pack (arm_stream_instance_t *S, uint8_t *buffer)
     return (uint32_t)(distance | ((uint64_t)i << (uint8_t)DATAOFF_ARCW0_LSB));
 }
 
-/*----------------------------------------------------------*/
+/**
+  @brief        unpack a 27-bits address to physical address
+  @param[in]    offset     table of long offsets of idx_memory_base_offset
+  @param[in]    data       packed address
+  @return       inPtr_t    address in the format of the processor
+
+  @par          A graph gives the address of buffers as indexes ("packed address") in a 
+                way independent of the memory mapping of the processor interpreting the graph.
+                The scheduler of each Stream instance sends a physical address to the Nodes
+                and translates here the indexes to physical address using a table of offsets.
+ */
 static intPtr_t pack2linaddr_int(const intPtr_t *long_offset, uint32_t x, uint32_t unit)
 {
     intPtr_t dbg1, dbg2, dbg3;
@@ -277,14 +287,7 @@ static intPtr_t pack2linaddr_int(const intPtr_t *long_offset, uint32_t x, uint32
      else
         dbg3 = dbg1 + dbg2;
 
-
-//#define PACK2LINADDR(o,x) (o[RD(x,DATAOFF_ARCW0)] + 
-//        (RD(x,BAS_SIGN_ARCW0))? 
-//            (1 + ~(((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32)):
-//            ( ((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32))
-
-
-    return dbg3;   // PACK2LINADDR(long_offset,x);
+    return dbg3;  
 }
 
 void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data, uint32_t unit)
@@ -382,13 +385,14 @@ extern const p_stream_al_services application_callbacks[];
 
     ST(S->scheduler_control, INSTANCE_SCTRL, 1); /* this instance is active */ 
 
-
+    //@@@ TODO for multiprocessing 
     //if (RD(S->scheduler_control, MAININST_SCTRL)) 
     //{   /* all other process can be released from wait state */
     //    platform_al (PLATFORM_MP_BOOT_DONE,0,0,0); 
 
     platform_init_io (S);
 
+    //@@@ TODO for multiprocessing 
     //} else
     //{   /* wait until the graph is copied in RAM */
     //    uint8_t wait; 
@@ -396,20 +400,11 @@ extern const p_stream_al_services application_callbacks[];
     //        platform_al (PLATFORM_MP_BOOT_WAIT, &wait, 0,0);
     //    } while (0u != wait);
     //}
-
 }
 
-
-
-/**
-  @brief           
-  @param[in/out]    
-  @return           
-  @par              
-  @remark
- */
-
  
+
+
 /**
   @brief        Graph copy in RAM (STREAM_RESET phase)
   @param[in]    instance   global data of this instance
@@ -434,9 +429,6 @@ extern const p_stream_al_services application_callbacks[];
                 to let them initialize the node instances in parallel.
   @remark
  */
-/*---------------------------------------------------------------------------
- * Application execution
- *---------------------------------------------------------------------------*/
 void platform_init_copy_graph(arm_stream_instance_t *S)
 {
     uint8_t RAMsplit;
@@ -489,9 +481,8 @@ void platform_init_copy_graph(arm_stream_instance_t *S)
         }
     }    
 
-
     /* copy the graph data to uint8_t platform_io_al_idx_to_graph[LAST_IO_FUNCTION_PLATFORM]; 
-        to ease the translation from graph index to graph_io_idx used in arm_graph_interpreter_io_ack()
+        to ease the translation from graph index to graph_io_idx used in arm_graph_interpreter_io_ack() 
     */
     {   uint32_t i_graph_io_idx, tmpi, tmpn;
         tmpn = RD((S->graph)[1], NB_IOS_GR1);
@@ -542,8 +533,7 @@ void platform_init_io(arm_stream_instance_t *S)
         //} while (wait == 0);
     }
 
-    /*-------------------------------------------*/
-    /* 
+    /*------------------------------------------- 
         initialization of the graph IO ports 
     */     
     io_mask = S->iomask;
@@ -590,14 +580,8 @@ void platform_init_io(arm_stream_instance_t *S)
     } 
 }
 
-
-
-#define DATA_MEMORY_BARRIER
-#define INSTRUCTION_SYNC_BARRIER
-
-
 /**
-  @brief        time functions
+  @brief        provision for time functions
   @param[in]    none
   @return       none
 
@@ -606,20 +590,19 @@ void platform_init_io(arm_stream_instance_t *S)
   @remark       
  */
 void al_service_time_functions (uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
-{   
-    volatile uint8_t *pt8 = pt8b;
+{   volatile uint8_t *pt8 = pt8b;
 
     switch (service_command)
-    {
-        case AL_SERVICE_READ_TIME64:
-        {
-            break;
+    {   case AL_SERVICE_READ_TIME64:
+        case AL_SERVICE_READ_TIME32:
+        case AL_SERVICE_READ_TIME16:
+        {   break;
         }
     }
 }
 
 /**
-  @brief        
+  @brief        multiprocessing mutual exclusion services 
   @param[in]    none
   @return       none
 
@@ -640,14 +623,10 @@ void al_service_mutual_exclusion(uint32_t service_command, uint8_t *pt8b, uint8_
             /* attempt to reserve the node */
             *pt8 = *data;    
 
-            /* check collision with all the running processes
-              using the equivalent of lock() and unlock() 
-              Oyama Lock, "Towards more scalable mutual exclusion for multicore architectures"
-                by Jean-Pierre Lozi */
+            /* check collision with all the running processes using the equivalent of lock() and unlock() 
+              Oyama Lock, "Towards more scalable mutual exclusion for multicore architectures" by Jean-Pierre Lozi */
             //  INSTRUCTION_SYNC_BARRIER;
-            //  /* check mutual-exclusion */
             //  DATA_MEMORY_BARRIER;
-
             *data = (*pt8 == *flag);
             break;
         }
@@ -673,10 +652,18 @@ void al_service_mutual_exclusion(uint32_t service_command, uint8_t *pt8b, uint8_
     }
 }
 
+
+/**
+  @brief        Platform abstraction layer (time, spinlock, IOs)
+  @param[in]    none
+  @return       none
+
+  @par          Usage:
+                
+  @remark       
+ */
 void al_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n)
 {   
-    //arm_stream_instance_t *pinst;
-
     /* max 16 groups of commands */
 	switch (RD(service_command, GROUP_AL_SRV))
     {
@@ -698,39 +685,6 @@ void al_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_
     }
 }
 
-
-#if MULTIPROCESSING != 0
-#if 0
-/**
-  @brief        Memory banks initialization
-  @param[in]    none
-  @return       none
-
-  @par          Loads the global variable of the platform holding the base addresses 
-                to the physical memory banks described in the "platform manifest"
-
-  @remark       
- */
-uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
-{   volatile uint8_t *pt8;
-    pt8 = pt8b;
-
-    *pt8 = code;
-    INSTRUCTION_SYNC_BARRIER;
-
-    /* no need to use LDREX, don't wait and escape if collision occurs */
-    DATA_MEMORY_BARRIER;
-
-    return (*pt8 == code);
-}
-
-#else
-
-uint32_t WR_BYTE_AND_CHECK_MP_(uint8_t *pt8b, uint8_t code)
-{   return 1u;
-}
-#endif
-#endif
 
 
 

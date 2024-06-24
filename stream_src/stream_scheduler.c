@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        xxx.c
- * Description:  
+ * Title:        stream_scheduler.c
+ * Description:  graph scheduler
  *
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
@@ -34,14 +34,11 @@
 #include "stream_types.h"
 #include "stream_extern.h"
 
-SECTION_START
-
-static long DEBUG_CNT;
-
 
 static void read_header (arm_stream_instance_t *S);
 static void reset_component (arm_stream_instance_t *S);
 static uint8_t lock_this_component (arm_stream_instance_t *S);
+static uint8_t unlock_this_component (arm_stream_instance_t *S);
 static void set_new_parameters (arm_stream_instance_t *S, uint32_t *ptr_param32b);
 static void run_node (arm_stream_instance_t *S);
 static uint8_t arc_ready_for_write(arm_stream_instance_t *S, uint32_t *arc, uint32_t *frame_size);
@@ -89,6 +86,27 @@ static void stream_calls_swc (arm_stream_instance_t *S,
 }
 
 
+/**
+  @brief        debug script 
+  @param[in]    offset     table of long offsets of idx_memory_base_offset
+  @param[in]    data       packed address
+  @return       inPtr_t    address in the format of the processor
+
+  @par          execution depends on "S->script_option" scheduler configuration :
+    STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC  script is called before each SWC called 
+    STREAM_SCHD_SCRIPT_AFTER_EACH_SWC   script is called after each SWC called 
+    STREAM_SCHD_SCRIPT_END_PARSING      script is called at the end of the loop 
+    STREAM_SCHD_SCRIPT_START            script is called when starting 
+    STREAM_SCHD_SCRIPT_END              script is called before return 
+
+ */
+
+/*----------------------------------------------------------*/
+static void script_processing(uint32_t script_index)
+{
+    // call to arm_stream_script, under definition
+}
+
 
 /**
   @brief        unpack a 27-bits address to physical address
@@ -100,17 +118,6 @@ static void stream_calls_swc (arm_stream_instance_t *S,
                 way independent of the memory mapping of the processor interpreting the graph.
                 The scheduler of each Stream instance sends a physical address to the Nodes
                 and translates here the indexes to physical address using a table of offsets.
-                There are eight memory banks ("offsets") :
-                    MBANK_DMEM_EXT  external shared memory
-                    MBANK_DMEM      internal shared memory
-                    MBANK_DMEMPRIV  not shared memory space 
-                    MBANK_DMEMFAST  DTCM Cortex-M or LLRAM Cortex-R, swapped between SWC calls if static 
-                    MBANK_BACKUP    backup/retention SRAM 
-                    MBANK_HWIODMEM  memory space for I/O and DMA buffers 
-                    MBANK_PMEM      program RAM 
-                    MBANK_FLASH     shared internal Flash
-
-  @remark       pack2linaddr will be replaced by the macro PACK2LINADDR
  */
 
 /*----------------------------------------------------------*/
@@ -126,14 +133,7 @@ static intPtr_t pack2linaddr_int(const intPtr_t *long_offset, uint32_t x, uint32
      else
         dbg3 = dbg1 + dbg2;
 
-
-//#define PACK2LINADDR(o,x) (o[RD(x,DATAOFF_ARCW0)] + 
-//        (RD(x,BAS_SIGN_ARCW0))? 
-//            (1 + ~(((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32)):
-//            ( ((intPtr_t)RD((x),BASEIDX_ARCW0))<<LOG2BASEINWORD32))
-
-
-    return dbg3;   // PACK2LINADDR(long_offset,x);
+    return dbg3; 
 }
 
 
@@ -186,7 +186,6 @@ static intPtr_t arc_extract_info_int (arm_stream_instance_t *S, uint32_t *arc, u
                  arc_extract_info_ptr returns the read/write addresses in the buffer
   @remark
  */
-
 
 static uint8_t * arc_extract_info_pt (arm_stream_instance_t *S, uint32_t *arc, uint8_t tag)
 {
@@ -560,9 +559,7 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
                 if (RD(arc[2], COMPUTCMD_ARCW2) != 0u)
                 { /* @@@ TODO : implement the data monitoring 
                     arm_arc_monitor(*, n, RD(,COMPUTCMD_ARCW2), RD(,DEBUG_REG_ARCW1))
-                   */
-
-                   /* @@@ TODO : implement the pointer loop to base if there is not enough free-space
+                    implement the pointer loop to base if there is not enough free-space
                     for the next dump 
                    */
                 }
@@ -589,9 +586,7 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
                 if (RD(arc[2], COMPUTCMD_ARCW2) != 0u)
                 { /* @@@ TODO : implement the data monitoring 
                     arm_arc_monitor(*, n, RD(,COMPUTCMD_ARCW2), RD(,DEBUG_REG_ARCW1))
-                   */
-
-                   /* @@@ TODO : implement the pointer loop to base if there is not enough data
+                    implement the pointer loop to base if there is not enough data
                     for the next read (continuous play of a test pattern) 
                    */
                 }
@@ -612,7 +607,6 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
                 ST(arc[2], READ_ARCW2, read);
 
                 /* does data realignement must be done ? : realign and clear the bit */
-                //if (0u != TEST_BIT (arc[3], ALIGNBLCK_ARCW3_LSB))
                 fmt = RD(arc,PRODUCFMT_ARCW0) * STREAM_FORMAT_SIZE_W32;
                 producer_frame_size = RD(S->all_formats[fmt], FRAMESIZE_FMT0);
                 if (write > fifosize - producer_frame_size)
@@ -755,14 +749,6 @@ void check_graph_boundaries(arm_stream_instance_t *S)
             }
         }
         
-        /* skip if the buffer is not empty when the IO is programmed for "set buffer" */
-        //{   if (IO_COMMAND_SET_BUFFER == RD(*pio, SET0COPY1_IOFMT))
-        //    {   if (0 != arc_extract_info_int(S, arc, arc_data_amount))
-        //        {   continue;
-        //        }
-        //    }
-        //}
-
         if (0u != need_data_move)
         {   /*  TODO 
                 When the IO is slave and stream_io_domain=PLATFORM_ANALOG_SENSOR_XX 
@@ -854,8 +840,10 @@ static uint32_t check_hwsw_compatibility(arm_stream_instance_t *S)
 
 
 void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data) 
-{
-    //if (script_option & STREAM_SCHD_SCRIPT_START) { script_processing (S->script_offsets);}
+{   
+    static long DEBUG_CNT;
+
+    if (script_option & STREAM_SCHD_SCRIPT_START) { script_processing (S->main_script);}
 
     /* continue from the last position, index in W32 */
     S->linked_list_ptr = &((S->linked_list)[RD(S->whoami_ports, SWC_W32OFF_PARCH)]);
@@ -943,13 +931,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
             {   run_node (S);
             }
     
-            //  SWC can be unlocked : WR_BYTE_MP_(S->pt8b_collision_arc, 0u);   
-            {   //const p_stream_al_services *al_func;
-                //uint8_t tmp = 0;
-                //al_func = &(S->al_services[AL_SERVICE_MUTUAL_EXCLUSION]);
-                //(*al_func)(AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP, S->pt8b_collision_arc, &tmp, 0, 0);
-            }
-
+            unlock_this_component(S);
 
             if (return_option == STREAM_SCHD_RET_END_EACH_SWC)
             {   break;
@@ -962,13 +944,11 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
         {   CLEAR_BIT(S->scheduler_control, STILDATA_SCTRL_LSB); 
             break;
         }
-        //if (script_option & STREAM_SCHD_SCRIPT_END_PARSING) {script_processing (S->script_offsets); }
+
+        if (script_option & STREAM_SCHD_SCRIPT_END_PARSING) {script_processing (S->main_script); }
 
     } while ((return_option == STREAM_SCHD_RET_END_SWC_NODATA) && 
                 (0u != TEST_BIT(S->scheduler_control, STILDATA_SCTRL_LSB)));
-
-
-    //if (script_option & STREAM_SCHD_SCRIPT_END) {script_processing (S->script_offsets);}
 }
 
 
@@ -1076,8 +1056,6 @@ static void read_header (arm_stream_instance_t *S)
   @remark
  */
 
-
-
 static uint8_t lock_this_component (arm_stream_instance_t *S)
 {
     //uint8_t tmp;
@@ -1100,6 +1078,17 @@ static uint8_t lock_this_component (arm_stream_instance_t *S)
     //{   return 0;   /* a collision occured, don't wait, jump to next nanoAppRT */
     //}
     /* ------------------SWC is now locked for me ! --------------------*/            
+
+    return 1;
+}
+
+static uint8_t unlock_this_component (arm_stream_instance_t *S)
+{
+    const p_stream_al_services *al_func = &(S->al_services[0]);
+    uint8_t tmp = 0;
+
+    (*al_func)(PACK_SERVICE(0,0,AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP,AL_SERVICE_MUTUAL_EXCLUSION), 
+        S->pt8b_collision_arc, &tmp, 0, 0);
 
     return 1;
 }
@@ -1228,6 +1217,7 @@ static void run_node (arm_stream_instance_t *S)
 {
     stream_xdmbuffer_t xdm_data[MAX_NB_STREAM_PER_SWC];
     uint32_t check;
+    uint8_t loop_counter;
   
     /* push all the ARCs on the stack and check arcs buffer are ready */
     if (0 == arc_index_update(S, xdm_data, 0))
@@ -1244,7 +1234,7 @@ static void run_node (arm_stream_instance_t *S)
     {   load_memory_segments (S, 0);
     }
 
-    // @@@ TODO : repeat the SWC execution 'MAX_SWC_REPEAT' times 
+    loop_counter = MAX_SWC_REPEAT;
     do 
     {
         /* call the SWC, returns the information "0 == SWC needs to be called again" 
@@ -1253,7 +1243,7 @@ static void run_node (arm_stream_instance_t *S)
         stream_calls_swc (S,
             S->swc_instance_addr, xdm_data,  &check);
     } 
-    while (check == TASKS_NOT_COMPLETED);
+    while ((check == TASKS_NOT_COMPLETED) && ((--loop_counter) > 0));
     
     /*  output FIFO write pointer is incremented AND a check is made for data 
         re-alignment to base adresses (to avoid address looping)
@@ -1266,10 +1256,10 @@ static void run_node (arm_stream_instance_t *S)
     {   load_memory_segments (S, 1);
     }    
 
-    //if (script_option & STREAM_SCHD_SCRIPT_AFTER_EACH_SWC) {script_processing (S->script_offsets);}
+    if (script_option & STREAM_SCHD_SCRIPT_AFTER_EACH_SWC) {script_processing (S->main_script);}
 }
 
-SECTION_STOP 
+ 
 
 #ifdef __cplusplus
 }

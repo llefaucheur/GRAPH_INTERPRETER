@@ -1,6 +1,6 @@
 ;===========================================================================================================================
 ;   TOP GRAPH
-                                ; 0: location of the binary graph is all in ram  (default) 
+                                ; 0: destination of the binary graph is in RAM (default) 
                                 ; 1: keep the graph in Flash and copy in RAM the portion starting from the node linked-list
                                 ; 2: keep the graph in Flash and copy in RAM the portion starting from the arc descriptors
 graph_location  0               ; 3: the graph is already in RAM provided by the application
@@ -69,8 +69,8 @@ format_2d_border
 stream_io                   2           ; index used in the graph , starts the declaration of a new IO 
 stream_io_format            0           ; index to the stream format (Index of the above table) (default #0)
 stream_io_hwid              0           ; ID of the interface given in "files_manifests_computer" (default #0)
-stream_io_setting1          0           ; setting word32 (SETTINGS_IOFMT2), the format depends on the IO domain (default #0)
-
+stream_io_setting           0           ; setting word32 (SETTINGS_IOFMT2), the format depends on the IO domain (default #0)
+stream_io_cb_setting        0           ; use a callback (stream_al_services application_callbacks[]) for the setting 
 
 ;============================
 ;   MAPPING (TBC)

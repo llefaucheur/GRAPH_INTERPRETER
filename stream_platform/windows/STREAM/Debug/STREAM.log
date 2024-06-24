@@ -1,0 +1,54 @@
+﻿  arm_stream_detector2D.c
+  arm_stream_detector2D_process.c
+  arm_stream_detector.c
+  arm_stream_detector_process.c
+  arm_stream_compressor.c
+  arm_stream_compressor_process.c
+  arm_stream_decompressor.c
+  arm_stream_decompressor_process.c
+  arm_stream_filter.c
+  arm_stream_amplifier.c
+  arm_stream_amplifier_process.c
+  arm_stream_analysis.c
+  arm_stream_analysis_process.c
+  arm_stream_converter.c
+  arm_stream_converter_process.c
+  arm_stream_demodulator.c
+  arm_stream_demodulator_process.c
+  arm_stream_mixer.c
+  arm_stream_mixer_process.c
+  arm_stream_modulator.c
+  Running Code Analysis for C/C++...
+  Generating Code...
+  Compiling...
+  arm_stream_modulator_process.c
+  arm_stream_qos.c
+  arm_stream_qos_process.c
+  arm_stream_resampler.c
+  arm_stream_resampler_process.c
+  arm_stream_rescaler.c
+  arm_stream_rescaler_process.c
+  arm_stream_router.c
+  arm_stream_router_process.c
+  arm_stream_graph_control.c
+  arm_stream_script.c
+  arm_stream_script_process.c
+  arm_stream_split.c
+  arm_stream_filter2D.c
+  main_call.c
+  platform_computer.c
+  platform_computer_io_services.c
+  stream_graph_interpreter.c
+  stream_io.c
+  stream_scheduler.c
+  Running Code Analysis for C/C++...
+  Generating Code...
+  Compiling...
+  stream_services.c
+  Running Code Analysis for C/C++...
+  Generating Code...
+  STREAM.vcxproj -> C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\windows\STREAM\Debug\STREAM.exe
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_libraries\CMSIS-DSP\Include\dsp\none.h(503): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_libraries\CMSIS-DSP\Include\dsp\none.h(503): warning C26451: Arithmetic overflow: Using operator '*' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '*' to avoid overflow (io.2).
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_libraries\CMSIS-DSP\Include\dsp\none.h(518): warning C26451: Arithmetic overflow: Using operator '+' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '+' to avoid overflow (io.2).
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_libraries\CMSIS-DSP\Include\dsp\none.h(518): warning C26451: Arithmetic overflow: Using operator '*' on a 4 byte value and then casting the result to a 8 byte value. Cast the value to the wider type before calling operator '*' to avoid overflow (io.2).

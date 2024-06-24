@@ -32,9 +32,10 @@
     <Text Include="..\..\stream_doc\IoManifestTemplate.txt" />
     <Text Include="..\..\stream_doc\NodesDescription.txt" />
     <Text Include="..\..\stream_doc\NodeManifestTemplate.txt" />
+    <Text Include="..\..\stream_nodes\AI\arm\detector2D\swc_manifest_detector2D.txt" />
+    <Text Include="..\..\stream_nodes\AI\arm\detector\swc_manifest_detector.txt" />
     <Text Include="..\..\stream_nodes\Audio\arm\compressor\swc_manifest_compressor.txt" />
     <Text Include="..\..\stream_nodes\Audio\arm\decompressor\swc_manifest_decompressor.txt" />
-    <Text Include="..\..\stream_nodes\Audio\arm\detector\swc_manifest_detector.txt" />
     <Text Include="..\..\stream_nodes\Audio\arm\filter\swc_manifest_filter.txt" />
     <Text Include="..\..\stream_nodes\Basic\arm\amplifier\swc_manifest_amplifier.txt" />
     <Text Include="..\..\stream_nodes\Basic\arm\converter\swc_manifest_converter.txt" />
@@ -48,7 +49,6 @@
     <Text Include="..\..\stream_nodes\Basic\arm\script\swc_manifest_graph_control.txt" />
     <Text Include="..\..\stream_nodes\Basic\arm\script\swc_manifest_script.txt" />
     <Text Include="..\..\stream_nodes\Basic\arm\split\swc_manifest_split.txt" />
-    <Text Include="..\..\stream_nodes\Image\arm\detector2D\swc_manifest_detector2D.txt" />
     <Text Include="..\..\stream_nodes\Image\arm\filter2D\swc_manifest_filter2D.txt" />
     <Text Include="..\..\stream_nodes\Image\elm\TJpgDec\swc_manifest_TjpgDec.txt" />
     <Text Include="..\..\stream_nodes\swc_manifest_none.txt" />

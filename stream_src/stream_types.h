@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        xxx.c
+ * Title:        stream_types.h
  * Description:  
  *
  * $Date:        15 February 2023
@@ -34,20 +34,13 @@
 
 
 #include <stdint.h>
-
 #include "stream_const.h"
-
 #include "platform.h"
 
 
-struct HW_params
-{
-    uint32_t iomask;
-    uint8_t *ioctrl;
-    uint8_t procID;
-    uint8_t archID;
-    PADDING_BYTES(2);
-};
+/* ------------------------------------------------------------------------------------------
+    stream buffers
+*/
 
 struct stream_xdmbuffer
 {   
@@ -58,6 +51,11 @@ struct stream_xdmbuffer
 typedef struct stream_xdmbuffer stream_xdmbuffer_t;
 
 typedef uint32_t stream_service_command;
+
+
+/* ------------------------------------------------------------------------------------------
+    floating-point emulation
+*/
 
 #if STREAM_FLOAT_ALLOWED==1
 typedef float sfloat;
@@ -88,36 +86,20 @@ typedef uint32_t sfloat;
 typedef uint64_t sdouble;
 #endif
 
-/*
+
+/* ------------------------------------------------------------------------------------------
     opaque access to the static area of the node 
 */
 typedef void *stream_handle_t;  
 
-/*==================================================== SWC  ======================================================================*/
-/* 
- *  parameters 
- *    command
- *    *instance pointer
- *    stream_xdmbuffer_t data pointers 
- *    "state" 
- *  the SWC updates the (*,n) fields before returning
- * 
- * The availabilty of data is managed from the scheduler/application to avoid the event scheme of CHRE
- *    When a SWC/nanoAppRT is called this is for real 
- *    https://cs.android.com/android/platform/superproject/+/master:system/chre/pal/include/chre/pal/sensor.h
- *    https://github.com/FromLiQg/chre-wasm/blob/wasm/doc/nanoapp_developer_guide.md
- * 
- * We have one entry-point per nanoAppRT instead of 3 for Android
- *    Android’s context hub enables the use of nanoapps which have 3 entry points seen in chre_api/chre/nanoapp.h:
- *  - nanoappStart function used to notify the nanoapp that it is now active.
- *  - nanoappHandleEvent function used to notify the nanoapp tha an event of interest took place.
- *  - nanoappEnd function used to notify the nanoapp that it is now deactivated.
- * 
- * 
- *  case STREAM_SET_PARAMETER:
- *  case STREAM_RUN:
- *  case STREAM_STOP:
- *  case STREAM_SET_BUFFER:
+/* ------------------------------------------------------------------------------------------
+   APIs : nodes, services, IO controls  
+  
+    parameters : 
+      command STREAM_SET_PARAMETER STREAM_RUN STREAM_STOP STREAM_SET_BUFFER
+      *instance pointer
+      stream_xdmbuffer_t data pointers 
+      "state" 
  */
 
 typedef void    (stream_al_services) (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n); 
@@ -130,12 +112,12 @@ typedef void    (io_function_ctrl) (uint32_t command, uint8_t *data, uint32_t le
 typedef void (*p_io_function_ctrl) (uint32_t command, uint8_t *data, uint32_t length);  
 
 
-/*
-    stream instance memory
+/* ------------------------------------------------------------------------------------------
+    Stream instance memory
 */
 typedef struct  
 {  
-    const intPtr_t *long_offset;          /* pointer to "intPtr_t long_offset[MAX_NB_MEMORY_OFFSET];" */
+    const intPtr_t *long_offset;        // pointer to "intPtr_t long_offset[MAX_NB_MEMORY_OFFSET];" 
     uint32_t *graph;
     uint32_t *pio;
     uint32_t *all_formats;   
@@ -149,24 +131,23 @@ typedef struct
     const p_stream_al_services * al_services;
 
     p_stream_node address_swc;
-    uint32_t *linked_list_ptr;      // current position of the linked-list read pointer
+    uint32_t *linked_list_ptr;          // current position of the linked-list read pointer
 
-    uint32_t *swc_header;           // current swc
+    uint32_t *swc_header;               // current swc
     stream_handle_t swc_instance_addr;
     uint16_t arcID[MAX_NB_STREAM_PER_SWC];
-    uint8_t *pt8b_collision_arc;    // collision
-    uint32_t pack_command;          // preset, narc, tag, instanceID, command
-    //uint8_t *ioctrl;                /* byte array of request fields */
-    uint32_t iomask;                /* _IOMASK_ fields */
+    uint8_t *pt8b_collision_arc;        // collision
+    uint32_t pack_command;              // preset, narc, tag, instanceID, command
+    uint32_t iomask;                    // _IOMASK_ fields 
 
-    uint32_t scheduler_control;     // PACK_STREAM_PARAM(..);
-    uint32_t whoami_ports;          /* _PARCH_ fields */
-    //uint16_t script_arctx;           /* arc buffer for the static area of the script */
-    uint8_t swc_memory_banks_offset; /* offset in words  */
-    uint8_t swc_parameters_offset;
-    uint8_t nb_stream_instances;    /* stream instances pointers (in words) = &(all_arcs[ -nb_stream_instances]) */
-    uint8_t memory_segment_swap;    /* bit-field of the memory segments to swap (TO_SWAP_LW2S) */
-    uint8_t error_log;              /* bit-field of logged errors */
+    uint32_t scheduler_control;         // PACK_STREAM_PARAM(..);
+    uint32_t whoami_ports;              // _PARCH_ fields 
+    uint8_t swc_memory_banks_offset;    // offset in words  
+    uint8_t swc_parameters_offset;      // 
+    uint8_t main_script;                // debug script
+    uint8_t nb_stream_instances;        // stream instances pointers (in words) = &(all_arcs[ -nb_stream_instances]) 
+    uint8_t memory_segment_swap;        // bit-field of the memory segments to swap (TO_SWAP_LW2S) 
+    uint8_t error_log;                  // bit-field of logged errors 
 
 } arm_stream_instance_t;
 

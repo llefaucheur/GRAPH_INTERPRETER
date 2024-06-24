@@ -2,8 +2,8 @@
 ; List of nodes
 ;----------------------------------------------------------------------------------------
 ;
-  1 arm_stream_graph_control,  /* scheduler control : lock, bypass, loop, if-then */
-  2 arm_stream_script,         /* byte-code interpreter, index "arm_stream_script_INDEX" */
+  1 arm_stream_script,         /* byte-code interpreter, index "arm_stream_script_INDEX" */
+  2 arm_stream_graph_control,  /* scheduler control : lock, bypass, loop, if-then */
   3 arm_stream_router,         /* copy input arcs and subchannel and output arcs and subchannels   */     
   4 arm_stream_converter,      /* raw data format converter */
   5 arm_stream_amplifier,      /* amplifier mute and un-mute with ramp and delay control */
@@ -24,7 +24,59 @@
 
  
 ;----------------------------------------------------------------------------------------
-;1. arm_stream_graph_control
+; 1     arm_stream_script
+;----------------------------------------------------------------------------------------
+; scripts are special nodes, the byte code in indexed in the SCRIPTS section of the graph
+; data RAM is placed in a shared arc for all script (instance reg+stack parameters)
+; constants are placed after the byte-codes
+; The default memory configuration is "shared": the TX_FIFO descriptors associated with 
+;   the script are sharing the same memory buffer (BASEIDXOFFSCRARCW0). To have 
+;   individual static memory associated to a script the "private memory flag" must be set.
+;
+;
+;   Checks if the data it needs is available and returns to the scheduler 
+;   Its single arc (TX) is always empty
+node arm_stream_script 1        ; instance index of arm_stream_script
+    
+    script_registers   2        ; number of registers (default is max = 6)
+    script_pointers    2        ; number of pointer (default is max = 6)
+    script_stack      12        ; size of the stack in word64 (default = 6)
+    script_mem_shared  1        ; Is it a private RAM(0) or can it be shared with other scripts(1)
+    script_mem_map     0        ; Memory mapping to VID #0 (default) this declaration creates the transmit arc of the script-node pointing to the stack/buffer area
+                                ; 
+    script_code 0               ; code of the binary format (0 : default, or native architecture)
+        2 h16; 2002 0001        ; movi int16 r0 1
+        1 h16; e810             ; equ r1,r0
+        1 h16; 0381             ; ccallsys 1
+        1 h16; C000             ; ret
+    _end_                     
+
+    script_assembler            ; start of assembler language (@@@ TBD)
+        pshc int8 1
+        gtr
+        cjmp #1 
+        pshc int16 
+        cals readparam 
+        labl #1
+        ret  
+   _end_
+
+   node_parameters <ID2>        ; node parameters and index to let the code addressing it
+                                ; Set_parameter : the array of parameters starts on 32bits-aligned addresses
+                                ; The programmer must arrange the data are aligned with respect to the way parameters are read in 
+                                ;   the nanoApp (using pointers to 8/16/32bits fields).
+       1  i8; 0                 ; TAG= 0 "load all parameters"
+       7  i8; 2 3 4 5 6 7 8     ; parameters
+
+   node_parameters <ID2>        ; 
+       include 1 binary_code.txt ; path ID and file name
+   _end_  
+
+_end_
+
+
+;----------------------------------------------------------------------------------------
+;2. arm_stream_graph_control
 ;----------------------------------------------------------------------------------------
 ;   mix of scheduler controls : lock, bypass, loop, if-then, UART remote controler
 ;   
@@ -57,52 +109,6 @@ node
 
     _end_               end of byte codes
 _end_
-
-;----------------------------------------------------------------------------------------
-; 2     arm_stream_script
-;----------------------------------------------------------------------------------------
-; scripts are special nodes, the byte code in indexed in the SCRIPTS section of the graph
-; data RAM is placed in a shared arc for all script (instance reg+stack parameters)
-; constants are placed after the byte-codes
-; The default memory configuration is "shared": the TX_FIFO descriptors associated with 
-;   the script are sharing the same memory buffer (BASEIDXOFFSCRARCW0). To have 
-;   individual static memory associated to a script the "private memory flag" must be set.
-;
-node
-    arm_stream_script   0               ; instance index 0
-
-    script_stack        12              ; size of the stack in word64 (default = 0)
-
-    script_minimum      1               ; reduced number of registers configuration (default = 0)
-                                        ;    minimum state memory = (2 registers + 1 pointer + 0 special) x 8 Bytes = 24 Bytes
-                                        ;    standard state memory = (6 registers + 6 pointers + 3 special) x 8 Bytes = 120 Bytes
-
-    script_mem_shared   1               ; Is it a private RAM(0) or can it be shared with other scripts(1)
-
-    script_assembler                    ; start of assembler language (@@@ TBD)
-        PSHC INT8 1
-        GTR
-        CJMP #1 
-        PSHC INT16 
-        CALS READPARAM 
-        LABL #1
-        RET  
-    _end_
-
-    _end_               end of byte codes
-
-    parameters   14                     ; preloaded parameters, label 14, for router nanoApp
-        2  i8; 1 2      ; preset=1  load only the second index (Tag=2)
-        4 i16; 0 0 2 0  ; move arc0,chan0, to arc2,chan0
-        4 i16; 0 0 2 0  ; move arc0,chan0, to arc2,chan0
-    _end_    
-    parameters   98                    ; preloaded parameters, label 98, for router nanoApp
-        2  i8; 1 2      ; preset=1  load only the second index (Tag=2)
-        4 i16; 0 0 2 0  ; move arc0,chan0, to arc2,chan0
-        4 i16; 0 0 2 0  ; move arc0,chan0, to arc2,chan0
-    _end_    
-_end_
-
 
 ;
 ;----------------------------------------------------------------------------------------

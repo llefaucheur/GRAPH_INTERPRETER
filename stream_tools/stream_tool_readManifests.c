@@ -433,6 +433,9 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         if (COMPARE(node_fpu_used))
         {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
+        if (COMPARE(node_use_unlock_key))
+        {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
+        }
         if (COMPARE(node_node_version))
         {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }

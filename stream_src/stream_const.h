@@ -142,6 +142,8 @@
 /*  AL SERVICE GROUP : TIME ------------------------------- */
 #define AL_SERVICE_READ_TIME 0
     #define AL_SERVICE_READ_TIME64 1
+    #define AL_SERVICE_READ_TIME32 2
+    #define AL_SERVICE_READ_TIME16 3
 
 /*  AL SERVICE GROUP : SLEEP CONTROL ---------------------- */
 #define AL_SERVICE_SLEEP_CONTROL 1
@@ -278,7 +280,7 @@
 #define STREAM_SCHD_RET_END_SWC_NODATA      3    /* return to caller when all SWC are starving */
                                               
 #define STREAM_SCHD_NO_SCRIPT               0 
-#define STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC  1    /* script is called after each SWC called */
+#define STREAM_SCHD_SCRIPT_BEFORE_EACH_SWC  1    /* script is called before each SWC called */
 #define STREAM_SCHD_SCRIPT_AFTER_EACH_SWC   2    /* script is called after each SWC called */
 #define STREAM_SCHD_SCRIPT_END_PARSING      4    /* script is called at the end of the loop */
 #define STREAM_SCHD_SCRIPT_START            8    /* script is called when starting */
@@ -287,6 +289,12 @@
 //};
 #define STREAM_COLD_BOOT 0u
 #define STREAM_WARM_BOOT 1u         /* Reset + restore memory banks from retention */
+
+/* number of SWC calls in sequence */
+#define MAX_SWC_REPEAT 4u
+
+#define TASKS_COMPLETED 0
+#define TASKS_NOT_COMPLETED 1
 
 #define STREAM_INSTANCE_ANY_PRIORITY    0u      /* PRIORITY_SCTRL_LSB */
 #define STREAM_INSTANCE_LOWLATENCYTASKS 1u
@@ -421,170 +429,171 @@
    ==========================================================================================
 */
 
-    /* IO_DOMAIN_GENERAL           : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2  */
-        #define STREAM_SUBT_GENERAL          0
-        #define STREAM_SUBT_GENERAL_COMP195X 1  /* compressed byte stream following RFC1950 / RFC1951 ("deflate") */
-        #define STREAM_SUBT_GENERAL_DPCM     2  /* compressed byte stream */
-        #define STREAM_SUBT_GENERAL_JSON     3  /* JSON */
-        #define STREAM_SUBT_GENERAL_XFORMAT  4  /* SensorThings MultiDatastream extension */
+/* IO_DOMAIN_GENERAL           : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2  */
+    #define STREAM_SUBT_GENERAL          0
+    #define STREAM_SUBT_GENERAL_COMP195X 1  /* compressed byte stream following RFC1950 / RFC1951 ("deflate") */
+    #define STREAM_SUBT_GENERAL_DPCM     2  /* compressed byte stream */
+    #define STREAM_SUBT_GENERAL_JSON     3  /* JSON */
+    #define STREAM_SUBT_GENERAL_XFORMAT  4  /* SensorThings MultiDatastream extension */
 
-    /* IO_DOMAIN_AUDIO_IN          : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
-        #define STREAM_SUBT_AUDIO_IN        0   /* no subtype_units : integer/ADC format  */
-        #define STREAM_SUBT_AUDIO_MPG       0   /* compressed byte stream */
+/* IO_DOMAIN_AUDIO_IN          : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+    #define STREAM_SUBT_AUDIO_IN        0   /* no subtype_units : integer/ADC format  */
+    #define STREAM_SUBT_AUDIO_MPG       0   /* compressed byte stream */
 
-    /* IO_DOMAIN_AUDIO_OUT         : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
-        #define STREAM_SUBT_AUDIO_OUT       0   /* no subtype_units : integer/DAC format  */
+/* IO_DOMAIN_AUDIO_OUT         : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+    #define STREAM_SUBT_AUDIO_OUT       0   /* no subtype_units : integer/DAC format  */
 
-    /* IO_DOMAIN_GPIO_IN           : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
-    /* IO_DOMAIN_GPIO_OUT          : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+/* IO_DOMAIN_GPIO_IN           : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+/* IO_DOMAIN_GPIO_OUT          : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
 
-            #define STREAM_SUBT_GPIO_IN     0   /* no subtype_units  */
-            #define STREAM_SUBT_GPIO_OUT    0   /* no subtype_units  */
+   #define STREAM_SUBT_GPIO_IN     0   /* no subtype_units  */
+   #define STREAM_SUBT_GPIO_OUT    0   /* no subtype_units  */
 
-    /* IO_DOMAIN_MOTION_IN         : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
-            #define STREAM_SUBT_MOTION_A     1
-            #define STREAM_SUBT_MOTION_G     2
-            #define STREAM_SUBT_MOTION_B     3
-            #define STREAM_SUBT_MOTION_AG    4
-            #define STREAM_SUBT_MOTION_AB    5
-            #define STREAM_SUBT_MOTION_GB    6
-            #define STREAM_SUBT_MOTION_AGB   7
+/* IO_DOMAIN_MOTION_IN         : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+   #define STREAM_SUBT_MOTION_A     1
+   #define STREAM_SUBT_MOTION_G     2
+   #define STREAM_SUBT_MOTION_B     3
+   #define STREAM_SUBT_MOTION_AG    4
+   #define STREAM_SUBT_MOTION_AB    5
+   #define STREAM_SUBT_MOTION_GB    6
+   #define STREAM_SUBT_MOTION_AGB   7
 
-    /* IO_DOMAIN_2D_IN             : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
-    /* IO_DOMAIN_2D_OUT            : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
-            #define STREAM_SUBT_2D_YUV420P   1  /* Luminance, Blue projection, Red projection, 6 bytes per 4 pixels, reordered */
-            #define STREAM_SUBT_2D_YUV422P   2  /* 8 bytes per 4 pixels, or 16bpp, Y0 Cb Y1 Cr (1 Cr & Cb sample per 2x1 Y samples) */
-            #define STREAM_SUBT_2D_YUV444P   3  /* 12 bytes per 4 pixels, or 24bpp, (1 Cr & Cb sample per 1x1 Y samples) */
-            #define STREAM_SUBT_2D_CYM24     4  /* cyan yellow magenta */
-            #define STREAM_SUBT_2D_CYMK32    5  /* cyan yellow magenta black */
-            #define STREAM_SUBT_2D_RGB8      6  /* RGB  3:3:2,  8bpp, (msb)2B 3G 3R(lsb) */
-            #define STREAM_SUBT_2D_RGB16     7  /* RGB  5:6:5, 16bpp, (msb)5R 6G 5B(lsb) */
-            #define STREAM_SUBT_2D_RGBA16    8  /* RGBA 4:4:4:4 32bpp (msb)4R */
-            #define STREAM_SUBT_2D_RGB24     9  /* BBGGRR 24bpp (msb)8B */
-            #define STREAM_SUBT_2D_RGBA32   10  /* BBGGRRAA 32bpp (msb)8B */
-            #define STREAM_SUBT_2D_RGBA8888 11  /* AABBRRGG OpenGL/PNG format R=lsb A=MSB ("ABGR32" little endian) */
-            #define STREAM_SUBT_2D_BW1B     12  /* Y, 1bpp, 0 is black, 1 is white */
-            #define STREAM_SUBT_2D_GREY2B   13  /* Y, 2bpp, 0 is black, 3 is white, ordered from lsb to msb  */
-            #define STREAM_SUBT_2D_GREY4B   14  /* Y, 4bpp, 0 is black, 15 is white, ordered from lsb to msb */
-            #define STREAM_SUBT_2D_GREY8B   15  /* Grey 8b, 0 is black, 255 is white */
+/* IO_DOMAIN_2D_IN             : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+/* IO_DOMAIN_2D_OUT            : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+   #define STREAM_SUBT_2D_YUV420P   1  /* Luminance, Blue projection, Red projection, 6 bytes per 4 pixels, reordered */
+   #define STREAM_SUBT_2D_YUV422P   2  /* 8 bytes per 4 pixels, or 16bpp, Y0 Cb Y1 Cr (1 Cr & Cb sample per 2x1 Y samples) */
+   #define STREAM_SUBT_2D_YUV444P   3  /* 12 bytes per 4 pixels, or 24bpp, (1 Cr & Cb sample per 1x1 Y samples) */
+   #define STREAM_SUBT_2D_CYM24     4  /* cyan yellow magenta */
+   #define STREAM_SUBT_2D_CYMK32    5  /* cyan yellow magenta black */
+   #define STREAM_SUBT_2D_RGB8      6  /* RGB  3:3:2,  8bpp, (msb)2B 3G 3R(lsb) */
+   #define STREAM_SUBT_2D_RGB16     7  /* RGB  5:6:5, 16bpp, (msb)5R 6G 5B(lsb) */
+   #define STREAM_SUBT_2D_RGBA16    8  /* RGBA 4:4:4:4 32bpp (msb)4R */
+   #define STREAM_SUBT_2D_RGB24     9  /* BBGGRR 24bpp (msb)8B */
+   #define STREAM_SUBT_2D_RGBA32   10  /* BBGGRRAA 32bpp (msb)8B */
+   #define STREAM_SUBT_2D_RGBA8888 11  /* AABBRRGG OpenGL/PNG format R=lsb A=MSB ("ABGR32" little endian) */
+   #define STREAM_SUBT_2D_BW1B     12  /* Y, 1bpp, 0 is black, 1 is white */
+   #define STREAM_SUBT_2D_GREY2B   13  /* Y, 2bpp, 0 is black, 3 is white, ordered from lsb to msb  */
+   #define STREAM_SUBT_2D_GREY4B   14  /* Y, 4bpp, 0 is black, 15 is white, ordered from lsb to msb */
+   #define STREAM_SUBT_2D_GREY8B   15  /* Grey 8b, 0 is black, 255 is white */
 
 
-    /* IO_DOMAIN_ANALOG_IN     : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
-    /* IO_DOMAIN_ANALOG_OUT : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
-            #define STREAM_SUBT_ANA_ANY             0 /*        any                        */        
-            #define STREAM_SUBT_ANA_METER           1 /* m         meter                   */
-            #define STREAM_SUBT_ANA_KGRAM           2 /* kg        kilogram                */
-            #define STREAM_SUBT_ANA_GRAM            3 /* g         gram*                   */
-            #define STREAM_SUBT_ANA_SECOND          4 /* s         second                  */
-            #define STREAM_SUBT_ANA_AMPERE          5 /* A         ampere                  */
-            #define STREAM_SUBT_ANA_KELVIB          6 /* K         kelvin                  */
-            #define STREAM_SUBT_ANA_CANDELA         7 /* cd        candela                 */
-            #define STREAM_SUBT_ANA_MOLE            8 /* mol       mole                    */
-            #define STREAM_SUBT_ANA_HERTZ           9 /* Hz        hertz                   */
-            #define STREAM_SUBT_ANA_RADIAN         10 /* rad       radian                  */
-            #define STREAM_SUBT_ANA_STERADIAN      11 /* sr        steradian               */
-            #define STREAM_SUBT_ANA_NEWTON         12 /* N         newton                  */
-            #define STREAM_SUBT_ANA_PASCAL         13 /* Pa        pascal                  */
-            #define STREAM_SUBT_ANA_JOULE          14 /* J         joule                   */
-            #define STREAM_SUBT_ANA_WATT           15 /* W         watt                    */
-            #define STREAM_SUBT_ANA_COULOMB        16 /* C         coulomb                 */
-            #define STREAM_SUBT_ANA_VOLT           17 /* V         volt                    */
-            #define STREAM_SUBT_ANA_FARAD          18 /* F         farad                   */
-            #define STREAM_SUBT_ANA_OHM            19 /* Ohm       ohm                     */
-            #define STREAM_SUBT_ANA_SIEMENS        20 /* S         siemens                 */
-            #define STREAM_SUBT_ANA_WEBER          21 /* Wb        weber                   */
-            #define STREAM_SUBT_ANA_TESLA          22 /* T         tesla                   */
-            #define STREAM_SUBT_ANA_HENRY          23 /* H         henry                   */
-            #define STREAM_SUBT_ANA_CELSIUSDEG     24 /* Cel       degrees Celsius         */
-            #define STREAM_SUBT_ANA_LUMEN          25 /* lm        lumen                   */
-            #define STREAM_SUBT_ANA_LUX            26 /* lx        lux                     */
-            #define STREAM_SUBT_ANA_BQ             27 /* Bq        becquerel               */
-            #define STREAM_SUBT_ANA_GRAY           28 /* Gy        gray                    */
-            #define STREAM_SUBT_ANA_SIVERT         29 /* Sv        sievert                 */
-            #define STREAM_SUBT_ANA_KATAL          30 /* kat       katal                   */
-            #define STREAM_SUBT_ANA_METERSQUARE    31 /* m2        square meter (area)     */
-            #define STREAM_SUBT_ANA_CUBICMETER     32 /* m3        cubic meter (volume)    */
-            #define STREAM_SUBT_ANA_LITER          33 /* l         liter (volume)                               */
-            #define STREAM_SUBT_ANA_M_PER_S        34 /* m/s       meter per second (velocity)                  */
-            #define STREAM_SUBT_ANA_M_PER_S2       35 /* m/s2      meter per square second (acceleration)       */
-            #define STREAM_SUBT_ANA_M3_PER_S       36 /* m3/s      cubic meter per second (flow rate)           */
-            #define STREAM_SUBT_ANA_L_PER_S        37 /* l/s       liter per second (flow rate)*                */
-            #define STREAM_SUBT_ANA_W_PER_M2       38 /* W/m2      watt per square meter (irradiance)           */
-            #define STREAM_SUBT_ANA_CD_PER_M2      39 /* cd/m2     candela per square meter (luminance)         */
-            #define STREAM_SUBT_ANA_BIT            40 /* bit       bit (information content)                    */
-            #define STREAM_SUBT_ANA_BIT_PER_S      41 /* bit/s     bit per second (data rate)                   */
-            #define STREAM_SUBT_ANA_LATITUDE       42 /* lat       degrees latitude[1]                          */
-            #define STREAM_SUBT_ANA_LONGITUDE      43 /* lon       degrees longitude[1]                         */
-            #define STREAM_SUBT_ANA_PH             44 /* pH        pH value (acidity; logarithmic quantity)     */
-            #define STREAM_SUBT_ANA_DB             45 /* dB        decibel (logarithmic quantity)               */
-            #define STREAM_SUBT_ANA_DBW            46 /* dBW       decibel relative to 1 W (power level)        */
-            #define STREAM_SUBT_ANA_BSPL           47 /* Bspl      bel (sound pressure level; log quantity)     */
-            #define STREAM_SUBT_ANA_COUNT          48 /* count     1 (counter value)                            */
-            #define STREAM_SUBT_ANA_PER            49 /* /         1 (ratio e.g., value of a switch; [2])       */
-            #define STREAM_SUBT_ANA_PERCENT        50 /* %         1 (ratio e.g., value of a switch; [2])*      */
-            #define STREAM_SUBT_ANA_PERCENTRH      51 /* %RH       Percentage (Relative Humidity)               */
-            #define STREAM_SUBT_ANA_PERCENTEL      52 /* %EL       Percentage (remaining battery energy level)  */
-            #define STREAM_SUBT_ANA_ENERGYLEVEL    53 /* EL        seconds (remaining battery energy level)     */
-            #define STREAM_SUBT_ANA_1_PER_S        54 /* 1/s       1 per second (event rate)                    */
-            #define STREAM_SUBT_ANA_1_PER_MIN      55 /* 1/min     1 per minute (event rate, "rpm")*            */
-            #define STREAM_SUBT_ANA_BEAT_PER_MIN   56 /* beat/min  1 per minute (heart rate in beats per minute)*/
-            #define STREAM_SUBT_ANA_BEATS          57 /* beats     1 (Cumulative number of heart beats)*        */
-            #define STREAM_SUBT_ANA_SIEMPERMETER   58 /* S/m       Siemens per meter (conductivity)             */
-            #define STREAM_SUBT_ANA_BYTE           59 /* B         Byte (information content)                   */
-            #define STREAM_SUBT_ANA_VOLTAMPERE     60 /* VA        volt-ampere (Apparent Power)                 */
-            #define STREAM_SUBT_ANA_VOLTAMPERESEC  61 /* VAs       volt-ampere second (Apparent Energy)         */
-            #define STREAM_SUBT_ANA_VAREACTIVE     62 /* var       volt-ampere reactive (Reactive Power)        */
-            #define STREAM_SUBT_ANA_VAREACTIVESEC  63 /* vars      volt-ampere-reactive second (Reactive Energy)*/
-            #define STREAM_SUBT_ANA_JOULE_PER_M    64 /* J/m       joule per meter (Energy per distance)        */
-            #define STREAM_SUBT_ANA_KG_PER_M3      65 /* kg/m3     kg/m3 (mass density, mass concentration)     */
-            #define STREAM_SUBT_ANA_DEGREE         66 /* deg       degree (angle)*                              */
-            #define STREAM_SUBT_ANA_NTU            67 /* NTU       Nephelometric Turbidity Unit                 */
+/* IO_DOMAIN_ANALOG_IN     : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+/* IO_DOMAIN_ANALOG_OUT : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+   #define STREAM_SUBT_ANA_ANY             0 /*        any                        */        
+   #define STREAM_SUBT_ANA_METER           1 /* m         meter                   */
+   #define STREAM_SUBT_ANA_KGRAM           2 /* kg        kilogram                */
+   #define STREAM_SUBT_ANA_GRAM            3 /* g         gram*                   */
+   #define STREAM_SUBT_ANA_SECOND          4 /* s         second                  */
+   #define STREAM_SUBT_ANA_AMPERE          5 /* A         ampere                  */
+   #define STREAM_SUBT_ANA_KELVIB          6 /* K         kelvin                  */
+   #define STREAM_SUBT_ANA_CANDELA         7 /* cd        candela                 */
+   #define STREAM_SUBT_ANA_MOLE            8 /* mol       mole                    */
+   #define STREAM_SUBT_ANA_HERTZ           9 /* Hz        hertz                   */
+   #define STREAM_SUBT_ANA_RADIAN         10 /* rad       radian                  */
+   #define STREAM_SUBT_ANA_STERADIAN      11 /* sr        steradian               */
+   #define STREAM_SUBT_ANA_NEWTON         12 /* N         newton                  */
+   #define STREAM_SUBT_ANA_PASCAL         13 /* Pa        pascal                  */
+   #define STREAM_SUBT_ANA_JOULE          14 /* J         joule                   */
+   #define STREAM_SUBT_ANA_WATT           15 /* W         watt                    */
+   #define STREAM_SUBT_ANA_COULOMB        16 /* C         coulomb                 */
+   #define STREAM_SUBT_ANA_VOLT           17 /* V         volt                    */
+   #define STREAM_SUBT_ANA_FARAD          18 /* F         farad                   */
+   #define STREAM_SUBT_ANA_OHM            19 /* Ohm       ohm                     */
+   #define STREAM_SUBT_ANA_SIEMENS        20 /* S         siemens                 */
+   #define STREAM_SUBT_ANA_WEBER          21 /* Wb        weber                   */
+   #define STREAM_SUBT_ANA_TESLA          22 /* T         tesla                   */
+   #define STREAM_SUBT_ANA_HENRY          23 /* H         henry                   */
+   #define STREAM_SUBT_ANA_CELSIUSDEG     24 /* Cel       degrees Celsius         */
+   #define STREAM_SUBT_ANA_LUMEN          25 /* lm        lumen                   */
+   #define STREAM_SUBT_ANA_LUX            26 /* lx        lux                     */
+   #define STREAM_SUBT_ANA_BQ             27 /* Bq        becquerel               */
+   #define STREAM_SUBT_ANA_GRAY           28 /* Gy        gray                    */
+   #define STREAM_SUBT_ANA_SIVERT         29 /* Sv        sievert                 */
+   #define STREAM_SUBT_ANA_KATAL          30 /* kat       katal                   */
+   #define STREAM_SUBT_ANA_METERSQUARE    31 /* m2        square meter (area)     */
+   #define STREAM_SUBT_ANA_CUBICMETER     32 /* m3        cubic meter (volume)    */
+   #define STREAM_SUBT_ANA_LITER          33 /* l         liter (volume)                               */
+   #define STREAM_SUBT_ANA_M_PER_S        34 /* m/s       meter per second (velocity)                  */
+   #define STREAM_SUBT_ANA_M_PER_S2       35 /* m/s2      meter per square second (acceleration)       */
+   #define STREAM_SUBT_ANA_M3_PER_S       36 /* m3/s      cubic meter per second (flow rate)           */
+   #define STREAM_SUBT_ANA_L_PER_S        37 /* l/s       liter per second (flow rate)*                */
+   #define STREAM_SUBT_ANA_W_PER_M2       38 /* W/m2      watt per square meter (irradiance)           */
+   #define STREAM_SUBT_ANA_CD_PER_M2      39 /* cd/m2     candela per square meter (luminance)         */
+   #define STREAM_SUBT_ANA_BIT            40 /* bit       bit (information content)                    */
+   #define STREAM_SUBT_ANA_BIT_PER_S      41 /* bit/s     bit per second (data rate)                   */
+   #define STREAM_SUBT_ANA_LATITUDE       42 /* lat       degrees latitude[1]                          */
+   #define STREAM_SUBT_ANA_LONGITUDE      43 /* lon       degrees longitude[1]                         */
+   #define STREAM_SUBT_ANA_PH             44 /* pH        pH value (acidity; logarithmic quantity)     */
+   #define STREAM_SUBT_ANA_DB             45 /* dB        decibel (logarithmic quantity)               */
+   #define STREAM_SUBT_ANA_DBW            46 /* dBW       decibel relative to 1 W (power level)        */
+   #define STREAM_SUBT_ANA_BSPL           47 /* Bspl      bel (sound pressure level; log quantity)     */
+   #define STREAM_SUBT_ANA_COUNT          48 /* count     1 (counter value)                            */
+   #define STREAM_SUBT_ANA_PER            49 /* /         1 (ratio e.g., value of a switch; [2])       */
+   #define STREAM_SUBT_ANA_PERCENT        50 /* %         1 (ratio e.g., value of a switch; [2])*      */
+   #define STREAM_SUBT_ANA_PERCENTRH      51 /* %RH       Percentage (Relative Humidity)               */
+   #define STREAM_SUBT_ANA_PERCENTEL      52 /* %EL       Percentage (remaining battery energy level)  */
+   #define STREAM_SUBT_ANA_ENERGYLEVEL    53 /* EL        seconds (remaining battery energy level)     */
+   #define STREAM_SUBT_ANA_1_PER_S        54 /* 1/s       1 per second (event rate)                    */
+   #define STREAM_SUBT_ANA_1_PER_MIN      55 /* 1/min     1 per minute (event rate, "rpm")*            */
+   #define STREAM_SUBT_ANA_BEAT_PER_MIN   56 /* beat/min  1 per minute (heart rate in beats per minute)*/
+   #define STREAM_SUBT_ANA_BEATS          57 /* beats     1 (Cumulative number of heart beats)*        */
+   #define STREAM_SUBT_ANA_SIEMPERMETER   58 /* S/m       Siemens per meter (conductivity)             */
+   #define STREAM_SUBT_ANA_BYTE           59 /* B         Byte (information content)                   */
+   #define STREAM_SUBT_ANA_VOLTAMPERE     60 /* VA        volt-ampere (Apparent Power)                 */
+   #define STREAM_SUBT_ANA_VOLTAMPERESEC  61 /* VAs       volt-ampere second (Apparent Energy)         */
+   #define STREAM_SUBT_ANA_VAREACTIVE     62 /* var       volt-ampere reactive (Reactive Power)        */
+   #define STREAM_SUBT_ANA_VAREACTIVESEC  63 /* vars      volt-ampere-reactive second (Reactive Energy)*/
+   #define STREAM_SUBT_ANA_JOULE_PER_M    64 /* J/m       joule per meter (Energy per distance)        */
+   #define STREAM_SUBT_ANA_KG_PER_M3      65 /* kg/m3     kg/m3 (mass density, mass concentration)     */
+   #define STREAM_SUBT_ANA_DEGREE         66 /* deg       degree (angle)*                              */
+   #define STREAM_SUBT_ANA_NTU            67 /* NTU       Nephelometric Turbidity Unit                 */
 
-            // Secondary Unit (rfc8798)           Description          SenML Unit     Scale     Offset 
-            #define STREAM_SUBT_ANA_MS             68 /* millisecond                  s      1/1000    0       1ms = 1s x [1/1000] */
-            #define STREAM_SUBT_ANA_MIN            69 /* minute                       s      60        0        */
-            #define STREAM_SUBT_ANA_H              70 /* hour                         s      3600      0        */
-            #define STREAM_SUBT_ANA_MHZ            71 /* megahertz                    Hz     1000000   0        */
-            #define STREAM_SUBT_ANA_KW             72 /* kilowatt                     W      1000      0        */
-            #define STREAM_SUBT_ANA_KVA            73 /* kilovolt-ampere              VA     1000      0        */
-            #define STREAM_SUBT_ANA_KVAR           74 /* kilovar                      var    1000      0        */
-            #define STREAM_SUBT_ANA_AH             75 /* ampere-hour                  C      3600      0        */
-            #define STREAM_SUBT_ANA_WH             76 /* watt-hour                    J      3600      0        */
-            #define STREAM_SUBT_ANA_KWH            77 /* kilowatt-hour                J      3600000   0        */
-            #define STREAM_SUBT_ANA_VARH           78 /* var-hour                     vars   3600      0        */
-            #define STREAM_SUBT_ANA_KVARH          79 /* kilovar-hour                 vars   3600000   0        */
-            #define STREAM_SUBT_ANA_KVAH           80 /* kilovolt-ampere-hour         VAs    3600000   0        */
-            #define STREAM_SUBT_ANA_WH_PER_KM      81 /* watt-hour per kilometer      J/m    3.6       0        */
-            #define STREAM_SUBT_ANA_KIB            82 /* kibibyte                     B      1024      0        */
-            #define STREAM_SUBT_ANA_GB             83 /* gigabyte                     B      1e9       0        */
-            #define STREAM_SUBT_ANA_MBIT_PER_S     84 /* megabit per second           bit/s  1000000   0        */
-            #define STREAM_SUBT_ANA_B_PER_S        85 /* byteper second               bit/s  8         0        */
-            #define STREAM_SUBT_ANA_MB_PER_S       86 /* megabyte per second          bit/s  8000000   0        */
-            #define STREAM_SUBT_ANA_MV             87 /* millivolt                    V      1/1000    0        */
-            #define STREAM_SUBT_ANA_MA             88 /* milliampere                  A      1/1000    0        */
-            #define STREAM_SUBT_ANA_DBM            89 /* decibel rel. to 1 milliwatt  dBW    1       -30     0 dBm = -30 dBW       */
-            #define STREAM_SUBT_ANA_UG_PER_M3      90 /* microgram per cubic meter    kg/m3  1e-9      0        */
-            #define STREAM_SUBT_ANA_MM_PER_H       91 /* millimeter per hour          m/s    1/3600000 0        */
-            #define STREAM_SUBT_ANA_M_PER_H        92 /* meterper hour                m/s    1/3600    0        */
-            #define STREAM_SUBT_ANA_PPM            93 /* partsper million             /      1e-6      0        */
-            #define STREAM_SUBT_ANA_PER_100        94 /* percent                      /      1/100     0        */
-            #define STREAM_SUBT_ANA_PER_1000       95 /* permille                     /      1/1000    0        */
-            #define STREAM_SUBT_ANA_HPA            96 /* hectopascal                  Pa     100       0        */
-            #define STREAM_SUBT_ANA_MM             97 /* millimeter                   m      1/1000    0        */
-            #define STREAM_SUBT_ANA_CM             98 /* centimeter                   m      1/100     0        */
-            #define STREAM_SUBT_ANA_KM             99 /* kilometer                    m      1000      0        */
-            #define STREAM_SUBT_ANA_KM_PER_H      100 /* kilometer per hour           m/s    1/3.6     0        */
-                                                                                                          
-            #define STREAM_SUBT_ANA_GRAVITY       101 /* earth gravity                m/s2   9.81      0       1g = m/s2 x 9.81     */
-            #define STREAM_SUBT_ANA_DPS           102 /* degrees per second           1/s    360       0     1dps = 1/s x 1/360     */   
-            #define STREAM_SUBT_ANA_GAUSS         103 /* Gauss                        Tesla  10-4      0       1G = Tesla x 1/10000 */
-            #define STREAM_SUBT_ANA_VRMS          104 /* Volt rms                     Volt   0.707     0    1Vrms = 1Volt (peak) x 0.707 */
-            #define STREAM_SUBT_ANA_MVPGAUSS      105 /* Hall effect, mV/Gauss        millivolt 1      0    1mV/Gauss                    */
+   // Secondary Unit (rfc8798)           Description          SenML Unit     Scale     Offset 
+   #define STREAM_SUBT_ANA_MS             68 /* millisecond                  s      1/1000    0       1ms = 1s x [1/1000] */
+   #define STREAM_SUBT_ANA_MIN            69 /* minute                       s      60        0        */
+   #define STREAM_SUBT_ANA_H              70 /* hour                         s      3600      0        */
+   #define STREAM_SUBT_ANA_MHZ            71 /* megahertz                    Hz     1000000   0        */
+   #define STREAM_SUBT_ANA_KW             72 /* kilowatt                     W      1000      0        */
+   #define STREAM_SUBT_ANA_KVA            73 /* kilovolt-ampere              VA     1000      0        */
+   #define STREAM_SUBT_ANA_KVAR           74 /* kilovar                      var    1000      0        */
+   #define STREAM_SUBT_ANA_AH             75 /* ampere-hour                  C      3600      0        */
+   #define STREAM_SUBT_ANA_WH             76 /* watt-hour                    J      3600      0        */
+   #define STREAM_SUBT_ANA_KWH            77 /* kilowatt-hour                J      3600000   0        */
+   #define STREAM_SUBT_ANA_VARH           78 /* var-hour                     vars   3600      0        */
+   #define STREAM_SUBT_ANA_KVARH          79 /* kilovar-hour                 vars   3600000   0        */
+   #define STREAM_SUBT_ANA_KVAH           80 /* kilovolt-ampere-hour         VAs    3600000   0        */
+   #define STREAM_SUBT_ANA_WH_PER_KM      81 /* watt-hour per kilometer      J/m    3.6       0        */
+   #define STREAM_SUBT_ANA_KIB            82 /* kibibyte                     B      1024      0        */
+   #define STREAM_SUBT_ANA_GB             83 /* gigabyte                     B      1e9       0        */
+   #define STREAM_SUBT_ANA_MBIT_PER_S     84 /* megabit per second           bit/s  1000000   0        */
+   #define STREAM_SUBT_ANA_B_PER_S        85 /* byteper second               bit/s  8         0        */
+   #define STREAM_SUBT_ANA_MB_PER_S       86 /* megabyte per second          bit/s  8000000   0        */
+   #define STREAM_SUBT_ANA_MV             87 /* millivolt                    V      1/1000    0        */
+   #define STREAM_SUBT_ANA_MA             88 /* milliampere                  A      1/1000    0        */
+   #define STREAM_SUBT_ANA_DBM            89 /* decibel rel. to 1 milliwatt  dBW    1       -30     0 dBm = -30 dBW       */
+   #define STREAM_SUBT_ANA_UG_PER_M3      90 /* microgram per cubic meter    kg/m3  1e-9      0        */
+   #define STREAM_SUBT_ANA_MM_PER_H       91 /* millimeter per hour          m/s    1/3600000 0        */
+   #define STREAM_SUBT_ANA_M_PER_H        92 /* meterper hour                m/s    1/3600    0        */
+   #define STREAM_SUBT_ANA_PPM            93 /* partsper million             /      1e-6      0        */
+   #define STREAM_SUBT_ANA_PER_100        94 /* percent                      /      1/100     0        */
+   #define STREAM_SUBT_ANA_PER_1000       95 /* permille                     /      1/1000    0        */
+   #define STREAM_SUBT_ANA_HPA            96 /* hectopascal                  Pa     100       0        */
+   #define STREAM_SUBT_ANA_MM             97 /* millimeter                   m      1/1000    0        */
+   #define STREAM_SUBT_ANA_CM             98 /* centimeter                   m      1/100     0        */
+   #define STREAM_SUBT_ANA_KM             99 /* kilometer                    m      1000      0        */
+   #define STREAM_SUBT_ANA_KM_PER_H      100 /* kilometer per hour           m/s    1/3.6     0        */
+                                                                                                 
+   #define STREAM_SUBT_ANA_GRAVITY       101 /* earth gravity                m/s2   9.81      0       1g = m/s2 x 9.81     */
+   #define STREAM_SUBT_ANA_DPS           102 /* degrees per second           1/s    360       0     1dps = 1/s x 1/360     */   
+   #define STREAM_SUBT_ANA_GAUSS         103 /* Gauss                        Tesla  10-4      0       1G = Tesla x 1/10000 */
+   #define STREAM_SUBT_ANA_VRMS          104 /* Volt rms                     Volt   0.707     0    1Vrms = 1Volt (peak) x 0.707 */
+   #define STREAM_SUBT_ANA_MVPGAUSS      105 /* Hall effect, mV/Gauss        millivolt 1      0    1mV/Gauss                    */
 
-    /* IO_DOMAIN_RTC               : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+/* IO_DOMAIN_RTC               : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
 
-    /* IO_DOMAIN_USER_INTERFACE_IN    11 : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
-    /* IO_DOMAIN_USER_INTERFACE_OUT   12 : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+/* IO_DOMAIN_USER_INTERFACE_IN    11 : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
+
+/* IO_DOMAIN_USER_INTERFACE_OUT   12 : subtypes and tuning  SUBTYPE_FMT1 and SETTINGS_IOFMT2 */
 
 
 /* 
@@ -758,25 +767,11 @@
 #define       NSTACK_SCRARCW3_MSB U(15) /* 16   max size of the FIFO/stack in W32 */
 #define       NSTACK_SCRARCW3_LSB U( 0) /*      */
 
-/* 
-   ================================= GRAPH LINKED LIST =======================================
-*/ 
 #define U(x) ((uint32_t)(x)) /* for MISRA-2012 compliance to Rule 10.4 */
 
-/* number of SWC calls in sequence */
-#define MAX_SWC_REPEAT 4u
 
-#define TASKS_COMPLETED 0
-#define TASKS_NOT_COMPLETED 1
-
-//#define STREAM_INSTANCE_ANY_PRIORITY    0u      /* PRIORITY_SCTRL_LSB */
-//#define STREAM_INSTANCE_LOWLATENCYTASKS 1u
-//#define STREAM_INSTANCE_MIDLATENCYTASKS 2u
-//#define STREAM_INSTANCE_BACKGROUNDTASKS 3u
-
-
-#define arm_stream_script_index 1      /* arm_stream_script() is the first one in the list node_entry_point_table[] */
 /* ======================================   SWC   ============================================ */ 
+#define arm_stream_script_index 1      /* arm_stream_script() is the first one in the list node_entry_point_table[] */
 
         /* word 0 - main Header */
 
@@ -864,7 +859,9 @@
 #define LW2S_COPY 2
 
 #define   ________LW2S_MSB U(31) /*      */
-#define   ________LW2S_LSB U(30) /*  2   provision for 8 memory segments */
+#define   ________LW2S_LSB U(30) /*  2   provision for 7 memory segments */
+#define KEY_LW2S_MSB U(31) /*      */
+#define KEY_LW2S_LSB U(30) /*  2   provision for 7 memory segments */
 #define   TO_SWAP_LW2S_MSB U(29) /*      */
 #define   TO_SWAP_LW2S_LSB U(24) /*  6   one bit per MAX_NB_MEM_REQ_PER_NODE segment to consider for swapping */
 #define      SWAP_LW2S_MSB U(23) /*      0= normal memory segment, 2 = copy before execute */
@@ -875,27 +872,27 @@
 #define SWAPBUFID_LW2S_LSB  ARC0_LW1_LSB /* 12  ARC0, (11 + 1) up to 2K FIFO */
 
 
-        /* word 3+n - parameters 
-          SWC header can be in RAM (to patch the parameter area, cancel the component..)
+  /* word 3+n - parameters 
+    SWC header can be in RAM (to patch the parameter area, cancel the component..)
 
-        BOOTPARAMS (if W32LENGTH_LW3>0 )
+  BOOTPARAMS (if W32LENGTH_LW3>0 )
 
-        PARAM_TAG : 4  index to parameter (0='all parameters')
-        PRESET    : 4  preset index (SWC delivery)
-        TRACEID   : 8  
-        W32LENGTH :16  nb of WORD32 to skip at run time, 0 means NO PARAMETER, max=256kB
+  PARAM_TAG : 4  index to parameter (0='all parameters')
+  PRESET    : 4  preset index (SWC delivery)
+  TRACEID   : 8  
+  W32LENGTH :16  nb of WORD32 to skip at run time, 0 means NO PARAMETER, max=256kB
 
-        Example with 
-        1  u8:  0                           trace ID
-        1  h8;  01                          TAG = "all parameters"_0 + preset_1
-    ; parameters 
-        1  u8;  2                           Two biquads
-        1  u8;  0                           postShift
-        5 h16; 5678 2E5B 71DD 2166 70B0     b0/b1/b2/a1/a2 
-        5 h16; 5678 2E5B 71DD 2166 70B0     second biquad
+  Example with 
+  1  u8:  0                           trace ID
+  1  h8;  01                          TAG = "all parameters"_0 + preset_1
+                parameters 
+  1  u8;  2                           Two biquads
+  1  u8;  0                           postShift
+  5 h16; 5678 2E5B 71DD 2166 70B0     b0/b1/b2/a1/a2 
+  5 h16; 5678 2E5B 71DD 2166 70B0     second biquad
 
-        SWC can declare an extra input arc to receive a huge set of parameters (when >256kB), for example a 
-        NN model. This is a fake arc and the read pointer is never incremented during the execution of the node.
+  SWC can declare an extra input arc to receive a huge set of parameters (when >256kB), for example a 
+  NN model. This is a fake arc and the read pointer is never incremented during the execution of the node.
 */
 //#define MAX_TMP_PARAMETERS 30   /* temporary buffer (words32) of parameters to send to the Node */
 
@@ -937,15 +934,11 @@
     #define STREAM_READ_PARAMETER   3   /* used from script */
     #define STREAM_RUN              4   /* arm_graph_interpreter(STREAM_RUN, instance, *in_out) */
     #define STREAM_STOP             5   /* arm_graph_interpreter(STREAM_STOP, instance, 0)  swc calls free() if it used stdlib's malloc */
-    #define STREAM_SET_BUFFER       6   /* arm_graph_interpreter(STREAM_SET_BUFFER, IO buffer, size) */
-    #define STREAM_FIFO_STATUS      7   /* arm_graph_interpreter(STREAM_FIFO_STATUS + (FIFO_ID<<SWC_TAG_CMD), instance, returned information, 0) */
-/* FROM THE SCRIPTS and SCHEDULER TO THE IO CONFIGURATION SETTING */    
-    #define STREAM_DATA_START       8   /* initiates a new data transfer wakeup the IO : 
-                                            p_io_function_ctrl(STREAM_DATA_START + (FIFO_ID<<SWC_TAG_CMD), instance, *data, data size) */
-    #define STREAM_UPDATE_RELOCATABLE 9 /* update the nanoAppRT pointers to relocatable memory segments */
-
+    #define STREAM_UPDATE_RELOCATABLE 6 /* update the nanoAppRT pointers to relocatable memory segments */
     #define STREAM_SET_IO_CONFIG STREAM_SET_PARAMETER /* 
             reconfigure the IO : p_io_function_ctrl(STREAM_SET_IO_CONFIG + (FIFO_ID<<SWC_TAG_CMD), 0, new_configuration_index) */
+    #define STREAM_SET_BUFFER       7   /* platform_IO(STREAM_SET_BUFFER, *data, size)  */
+
 
 /*  FROM THE GRAPH SCHEDULER TO THE NANOAPPS   SWC_COMMANDS  */
     #define  _UNUSED2_CMD_MSB U(31)       
@@ -964,11 +957,6 @@
     #define   COMMAND_CMD_LSB U( 0) /* 4 command */
 
     #define PACK_COMMAND(SWCTAG,PRESET,NARC,EXT,CMD) (((SWCTAG)<<SWC_TAG_CMD_LSB)|((PRESET)<<PRESET_CMD_LSB)|((NARC)<<NARC_CMD_LSB)|((EXT)<<COMMDEXT_CMD_LSB)|(CMD))
-
-    #define STREAM_FIFO_STATUS_PACK(FIFO) (STREAM_FIFO_STATUS + ((FIFO)<<SWC_TAG_CMD_LSB))
-    #define STREAM_DATA_START_PACK(FIFO) (STREAM_DATA_START + ((FIFO)<<SWC_TAG_CMD_LSB))
-    #define STREAM_DATA_START_UNPACK_FIFO(COMMAND) ((COMMAND)>>SWC_TAG_CMD_LSB)
-
 
 /*================================================================================================================*/    
 /*
@@ -1024,79 +1012,94 @@
 #define STREAM_SERVICE_MM_IMAGE     8   /* Y */
 
 //{
-    /* 0/STREAM_SERVICE_INTERNAL ------------------------------------------------ */
+/* 0/STREAM_SERVICE_INTERNAL ------------------------------------------------ */
 
-    #define STREAM_SERVICE_INTERNAL_RESET 1u
-    #define STREAM_SERVICE_INTERNAL_NODE_REGISTER 2u
+#define STREAM_SERVICE_INTERNAL_RESET 1u
+#define STREAM_SERVICE_INTERNAL_NODE_REGISTER 2u
 
-    /* change stream format from SWC media decoder, script applying change of use-case (IO_format, vocoder frame-size..): sampling, nb of channel, 2D frame size */
-    #define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE 3u      
+/* change stream format from SWC media decoder, script applying change of use-case (IO_format, vocoder frame-size..): sampling, nb of channel, 2D frame size */
+#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE 3u      
 
-    //#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_FS 3u       /* SWC information for a change of stream format, sampling, nb of channel */
-    //#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_NCHAN 4u     /* raw data sample, mapping of channels, (web radio use-case) */
-    //#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_RAW 5u
-    //#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_MAP 6u
+//#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_FS 3u       /* SWC information for a change of stream format, sampling, nb of channel */
+//#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_NCHAN 4u     /* raw data sample, mapping of channels, (web radio use-case) */
+//#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_RAW 5u
 
-    #define STREAM_SERVICE_INTERNAL_AUDIO_ERROR 7u        /* PLC applied, Bad frame (no header, no synchro, bad data format), bad parameter */
-    
-    #define STREAM_SERVICE_INTERNAL_DEBUG_TRACE 8u          /* 1b, 1B, 16char */
-    #define STREAM_SERVICE_INTERNAL_DEBUG_TRACE_STAMPS 9u
+#define STREAM_SERVICE_INTERNAL_SECURE_ADDRESS 6u       /* this call is made from the secured address */
 
-    #define STREAM_SERVICE_INTERNAL_AVAILABLE 10u
+#define STREAM_SERVICE_INTERNAL_AUDIO_ERROR 7u          /* PLC applied, Bad frame (no header, no synchro, bad data format), bad parameter */
 
-    #define STREAM_SERVICE_INTERNAL_SETARCDESC 11u  /* buffers holding MP3 songs.. rewind from script, switch a NN model to another, change a parameter-set using arcs */
+#define STREAM_SERVICE_INTERNAL_DEBUG_TRACE 8u          /* 1b, 1B, 16char */
+#define STREAM_SERVICE_INTERNAL_DEBUG_TRACE_STAMPS 9u
 
+#define STREAM_SERVICE_INTERNAL_AVAILABLE 10u
 
-    //STREAM_SERVICE_INTERNAL_DEBUG_TRACE, STREAM_SERVICE_INTERNAL_DEBUG_TRACE_1B, STREAM_SERVICE_INTERNAL_DEBUG_TRACE_DIGIT, 
-    //STREAM_SERVICE_INTERNAL_DEBUG_TRACE_STAMPS, STREAM_SERVICE_INTERNAL_DEBUG_TRACE_STRING,
-    //STREAM_SAVE_HOT_PARAMETER, 
-    //STREAM_LOW_POWER,     /* interface to low-power platform settings, "wake-me in 24h with deep-sleep in-between" */
-    //STREAM_PROC_ARCH,     /* returns the processor architecture details, used before executing specific assembly codes */
+#define STREAM_SERVICE_INTERNAL_SETARCDESC 11u  /* buffers holding MP3 songs.. rewind from script, switch a NN model to another, change a parameter-set using arcs */
 
-    /* 1/STREAM_SERVICE_FLOW ------------------------------------------------ */
-    //for scripts:
-        #define STREAM_SERVICE_FLOW_ARC_RWPTR 1 
-        #define STREAM_SERVICE_FLOW_ARC_DATA 2 
-        #define STREAM_SERVICE_FLOW_ARC_FILLING 3
-
-    //for scripts/Nodes: fast data moves
-        #define STREAM_SERVICE_FLOW_DMA_SET 4       /* set src/dst/length */
-        #define STREAM_SERVICE_FLOW_DMA_START 5
-        #define STREAM_SERVICE_FLOW_DMA_STOP 6
-        #define STREAM_SERVICE_FLOW_DMA_CHECK 7
-
-    /* 2/STREAM_SERVICE_CONVERSION ------------------------------------------------ */
-        #define STREAM_SERVICE_CONVERSION_INT16_FP32 1
+#define STREAM_SERVICE_INTERNAL_KEYEXCHANGE 12      /* at reset time : key exchanges */
 
 
-    /* 3/STREAM_SERVICE_STDLIB ------------------------------------------------ */
-        /* stdlib.h */
-        //STREAM_RAND, STREAM_SRAND, STREAM_ATOF, STREAM_ATOI
-        #define STREAM_FREE
-        #define STREAM_MALLOC
-        /* string.h */
-        //STREAM_MEMSET, STREAM_STRCHR, STREAM_STRLEN,
-        //STREAM_STRNCAT, STREAM_STRNCMP, STREAM_STRNCPY, STREAM_STRSTR, STREAM_STRTOK,
+//STREAM_SERVICE_INTERNAL_DEBUG_TRACE, STREAM_SERVICE_INTERNAL_DEBUG_TRACE_1B, STREAM_SERVICE_INTERNAL_DEBUG_TRACE_DIGIT, 
+//STREAM_SERVICE_INTERNAL_DEBUG_TRACE_STAMPS, STREAM_SERVICE_INTERNAL_DEBUG_TRACE_STRING,
+//STREAM_SAVE_HOT_PARAMETER, 
+//STREAM_LOW_POWER,     /* interface to low-power platform settings, "wake-me in 24h with deep-sleep in-between" */
+//STREAM_PROC_ARCH,     /* returns the processor architecture details, used before executing specific assembly codes */
+
+/* 1/STREAM_SERVICE_FLOW ------------------------------------------------ */
+//for scripts:
+    #define STREAM_SERVICE_FLOW_ARC_RWPTR 1 
+    #define STREAM_SERVICE_FLOW_ARC_DATA 2 
+    #define STREAM_SERVICE_FLOW_ARC_FILLING 3
+
+//for scripts/Nodes: fast data moves
+    #define STREAM_SERVICE_FLOW_DMA_SET 4       /* set src/dst/length */
+    #define STREAM_SERVICE_FLOW_DMA_START 5
+    #define STREAM_SERVICE_FLOW_DMA_STOP 6
+    #define STREAM_SERVICE_FLOW_DMA_CHECK 7
+
+/* 2/STREAM_SERVICE_CONVERSION ------------------------------------------------ */
+    #define STREAM_SERVICE_CONVERSION_INT16_FP32 1
 
 
-    /* 4/STREAM_SERVICE_MATH ------------------------------------------------ */
+/* 3/STREAM_SERVICE_STDLIB ------------------------------------------------ */
+    /* stdlib.h */
+    /* string.h */
+    //STREAM_MEMSET, STREAM_STRCHR, STREAM_STRLEN,
+    //STREAM_STRNCAT, STREAM_STRNCMP, STREAM_STRNCPY, STREAM_STRSTR, STREAM_STRTOK,
+    #define STREAM_RAND     1 /* (STREAM_RAND + OPTION_SSRV(seed), *ptr1, 0, 0, n) */
+    #define STREAM_SRAND    2
+    #define STREAM_ATOF     3
+    #define STREAM_ATOI     4
+    #define STREAM_MEMSET   5
+    #define STREAM_STRCHR   6
+    #define STREAM_STRLEN   7
+    #define STREAM_STRNCAT  8
+    #define STREAM_STRNCMP  9
+    #define STREAM_STRNCPY  10
+    #define STREAM_STRSTR   11
+    #define STREAM_STRTOK   12
+    //STREAM_RAND, STREAM_SRAND, STREAM_ATOF, STREAM_ATOI
+    #define STREAM_FREE     13
+    #define STREAM_MALLOC   14
 
-        /* time.h */
-        //STREAM_ASCTIMECLOCK, STREAM_DIFFTIME, STREAM_SYS_CLOCK (ms since reset), STREAM_TIME (linux seconds)
-        //STREAM_READ_TIME (high-resolution timer), STREAM_READ_TIME_FROM_START, 
-        //STREAM_TIME_DIFFERENCE, STREAM_TIME_CONVERSION,  
-        // 
-        //STREAM_TEA,
 
-        /* From Android CHRE  https://source.android.com/docs/core/interaction/contexthub
-        String/array utilities: memcmp, memcpy, memmove, memset, strlen
-        Math library: Commonly used single-precision floating-point functions:
-        Basic operations: ceilf, fabsf, floorf, fmaxf, fminf, fmodf, roundf, lroundf, remainderf
-        Exponential/power functions: expf, log2f, powf, sqrtf
-        Trigonometric/hyperbolic functions: sinf, cosf, tanf, asinf, acosf, atan2f, tanhf
-        */
+/* 4/STREAM_SERVICE_MATH ------------------------------------------------ */
 
-    /* 5/STREAM_SERVICE_DSP_ML ------------------------------------------------ */
+    /* time.h */
+    //STREAM_ASCTIMECLOCK, STREAM_DIFFTIME, STREAM_SYS_CLOCK (ms since reset), STREAM_TIME (linux seconds)
+    //STREAM_READ_TIME (high-resolution timer), STREAM_READ_TIME_FROM_START, 
+    //STREAM_TIME_DIFFERENCE, STREAM_TIME_CONVERSION,  
+    // 
+    //STREAM_TEA,
+
+    /* From Android CHRE  https://source.android.com/docs/core/interaction/contexthub
+    String/array utilities: memcmp, memcpy, memmove, memset, strlen
+    Math library: Commonly used single-precision floating-point functions:
+    Basic operations: ceilf, fabsf, floorf, fmaxf, fminf, fmodf, roundf, lroundf, remainderf
+    Exponential/power functions: expf, log2f, powf, sqrtf
+    Trigonometric/hyperbolic functions: sinf, cosf, tanf, asinf, acosf, atan2f, tanhf
+    */
+
+/* 5/STREAM_SERVICE_DSP_ML ------------------------------------------------ */
 
 #define STREAM_SERVICE_NO_INIT         0    /* CONTROL_SSRV_LSB field*/
 #define STREAM_SERVICE_INIT_RETASAP    1    /* return even when computation is not finished */
@@ -1133,27 +1136,13 @@
 #define STREAM_SERVICE_ATAN2_Q15      23
 #define STREAM_SERVICE_ATAN2_F32      24
 
-        //#define STREAM_SERVICE_SORT 3
+#define STREAM_SERVICE_SORT 3
 
-        //STREAM_WINDOWS,                       /* windowing for spectral estimations */
-        //STREAM_FIR,
-        //STREAM_MATRIX_MULT,
-
-        //STREAM_CNORM,                         
-        //STREAM_MAX,                          
-
-        //STREAM_RADD, STREAM_CADD,
-        //STREAM_RSUB, STREAM_CSUB,
-        //STREAM_RMUL, STREAM_CMUL,             /* element-wise real/complex vector multiply, with conjugate */
-        //STREAM_RDIV, STREAM_CDIV,     
-        //STREAM_RABS,                          /* absolute values of real vectors, norm-1/2/Inf of complex numbers */
-        //STREAM_MAX,
-        //STREAM_CNORM,                         
-        //STREAM_RMAX,                          /* max between two vectors */
-
-        //STREAM_FC,                            /* fully connected layer Mat x Vec */
-        //STREAM_CNN,                           /* convolutional NN : 3x3 5x5 fixed-weights */
-        //STREAM_CONV2D,                        /* Sobel */
+#define STREAM_WINDOWS                /* windowing for spectral estimations */
+#define STREAM_FIR                    
+#define STREAM_FC                     /* fully connected layer Mat x Vec */
+#define STREAM_CNN                    /* convolutional NN : 3x3 5x5 fixed-weights */
+#define STREAM_CONV2D                 /* Sobel */
 
 /*
  *  SWC manifest :
@@ -1238,16 +1227,12 @@
 #define COMPUTCMD_ARCW2_ABSMEAN_DATA 13
 //#define COMPUTCMD_ARCW2_DATA_TO_OTHER_ARC 14    /* when data is changing the new data is push to another arc DEBUG_REG_ARCW1=[ArcID] */
 #define COMPUTCMD_ARCW2_LOOPBACK 15             /* automatic rewind read/write */
-
-// #define COMPUTCMD_ARCW2_XXXX 30
 #define COMPUTCMD_ARCW2_LAST 31
-//};
 
 //enum overflow_error_service_id {/* 2bits UNDERFLRD_ARCW2, OVERFLRD_ARCW2 */
 #define NO_OVERFLOW_MANAGEMENT 0     /* just RD/WR index alignment on the next frame size */
 #define SKIP_LAST_FRAME 1            /* flow errors management */
 #define DECIMATE_FRAME 2
-//};
 
 #define ARC_DBG_REGISTER_SIZE_W32 2     /* debug registers on 64 bits */
 
@@ -1363,8 +1348,6 @@
 
 //enum error_codes 
 #define ERROR_MEMORY_ALLOCATION     1u
-
-
 
 
 /*
@@ -1524,8 +1507,6 @@ enum stream_raw_data
 #define STREAM_STRING8   50 /* UTF-8 string of char terminated by 0 */
 #define STREAM_STRING16  51 /* UTF-16 string of char terminated by 0 */
 
-
-
 #define LAST_RAW_TYPE    64 /* coded on 6bits RAW_FMT0_LSB */
 };
 
@@ -1556,68 +1537,6 @@ enum stream_raw_data
 #define   EXPONENT_MSB 4     
 #define   EXPONENT_LSB 0
 
-    //typedef union {
-    //    float f;
-    //    struct
-    //    {   unsigned int mantissa : 23;
-    //        unsigned int exponent : 8;
-    //        unsigned int sign : 1;
-    //    } raw;
-    //} myfloat;
-    //#define BINARY32_MASK_SIGN 0x80000000
-    //#define BINARY32_MASK_EXPO 0x7FE00000
-    //#define BINARY32_MASK_SNCD 0x007FFFFF
-    //#define BINARY32_IMPLIED_BIT 0x800000
-    //#define BINARY32_SHIFT_EXPO 23
-
-    //float binary32_to_float(uint32_t x) {
-    //  // Break up into 3 parts
-    //  bool sign = x & BINARY32_MASK_SIGN;
-    //  int biased_expo = (x & BINARY32_MASK_EXPO) >> BINARY32_SHIFT_EXPO;
-    //  int32_t significand = x & BINARY32_MASK_SNCD;
-    //  float y;
-    //  if (biased_expo == 0xFF) {
-    //    y = significand ? NAN : INFINITY;  // For simplicity, NaN payload not copied
-    //  } else {
-    //    int expo;
-    //    if (biased_expo > 0) {
-    //      significand |= BINARY32_IMPLIED_BIT;
-    //      expo = biased_expo - 127;
-    //    } else {
-    //      expo = 126;
-    //    }
-    //    y = ldexpf((float)significand, expo - BINARY32_SHIFT_EXPO);
-    //  }
-    //  if (sign) {
-    //    y = -y;
-    //  }
-    //  return y;
-    //}
-    ///**************************************************************************************************
-    //*Converts binary into IEEE 754 single percision
-    //***************************************************************************************************/
-    //float bin2float(unsigned long binary){
-    //      float fp;
-    //      unsigned int s=0,e=0,f=0;
-    //      s=binary>>31;/*sign bit*/
-    //      e=(binary>>23&0xff);/*exponent*/
-    //      f=binary&0x7fffff;/*fraction*/
-    //      fp=(sign_bit(s)<<(e-127))*(1+f*(pow(2,-23)));
-    //      return(fp);
-    //}
-    ///**************************************************************************************************
-    //*Converts binary into IEEE 754 double percision
-    //***************************************************************************************************/
-    //double bin2double(int binary1, int binary2){//binary1=bits 0-31 binary2=bits 32-63
-    //      double fp;
-    //      unsigned int s=0,e=0,f=0;
-    //      s=binary2>>31;/*sign bit*/
-    //      e=(binary2>>20&0x7ff);/*exponent*/
-    //      f=(binary1*pow(2,-51)+((binary2&0x7ffff)*pow(2,-21)));/*fraction*/
-    //      fp=(sign_bit(s)*pow(2,(e-1023)))*(1+f);
-    //      return(fp);
-    //}
-
 /*============================ BIT-FIELDS MANIPULATIONS ============================*/
 /*
  *  stream constants / Macros.
@@ -1625,31 +1544,22 @@ enum stream_raw_data
  
 // We define a preprocessor macro that will allow us to add padding
 // to a data structure in a way that helps communicate our intent.
-//struct alignas(4) Pixel {
-//    char R, G, B;
-//    PADDING_BYTES(1);
-//};
+// Example : 
+//   struct alignas(4) Pixel {
+//       char R, G, B;
+//       PADDING_BYTES(1);
+//   };
 #define CONCATENATE_(a, b) a##b
 #define CONCATENATE(a, b) CONCATENATE_(a, b)
 #define PADDING_BYTES(N) char CONCATENATE(PADDING_MACRO__, __COUNTER__)[N]
 
-#if defined ( _MSC_VER )
-#define SECTION_START 
-#define SECTION_STOP 
-#else
-#define SECTION_START __attribute__((section(".graph_interpreter_section")))
-#define SECTION_STOP 
-#endif
-
 #define SHIFT_SIZE(base,shift) ((base) << ((shift) << 2));           
-
 
 #define MIN(a, b) (((a) > (b))?(b):(a))
 #define MAX(a, b) (((a) < (b))?(b):(a))
 #define ABS(a) (((a)>0)? (a):-(a))
 
 #define MAXINT32 0x7FFFFFFFL
-//#define MEMCPY(dst,src,n) {void *x; uint32_t i; x=memcpy((dst),(src),(n));}
 #define MEMCPY(dst,src,n) {uint32_t i; for(i=0;i<n;i++){dst[i]=src[i];}}
 #define MEMSWAP(dst,src,n) {uint32_t i, x; for(i=0;i<n;i++){x=dst[i];dst[i]=src[i];src[i]=x;}}
 #define MEMSET(dst,c,n) {uint32_t i; uint8_t *pt8=(uint8_t *)dst; for(i=0;i<n;i++){pt8[i]=c;} }
@@ -1677,8 +1587,6 @@ enum stream_raw_data
 #define TEST_BIT(arg, bit)  (U(arg) & (U(1) << U(bit)))
 
 #define FLOAT_TO_INT(x) ((x)>=0.0f?(int)((x)+0.5f):(int)((x)-0.5f))
-
-
 
 #endif /* cSTREAM_CONST_H */
 /*

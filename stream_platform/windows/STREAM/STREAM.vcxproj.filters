@@ -79,12 +79,6 @@
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\demodulator\arm_stream_demodulator_process.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D.c">
-      <Filter>stream_nodes</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D_process.c">
-      <Filter>stream_nodes</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\Image\arm\filter2D\arm_stream_filter2D.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
@@ -109,12 +103,6 @@
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\filter\arm_stream_filter.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\detector\arm_stream_detector.c">
-      <Filter>stream_nodes</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\detector\arm_stream_detector_process.c">
-      <Filter>stream_nodes</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\qos\arm_stream_qos.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
@@ -137,6 +125,18 @@
       <Filter>stream_nodes</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_graph_control.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector\arm_stream_detector.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector\arm_stream_detector_process.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D.c">
+      <Filter>stream_nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D_process.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
   </ItemGroup>
@@ -180,9 +180,6 @@
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\demodulator\arm_stream_demodulator.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D.h">
-      <Filter>stream_nodes</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\Image\arm\filter2D\arm_stream_filter2D.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
@@ -199,9 +196,6 @@
       <Filter>stream_nodes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\Audio\arm\filter\arm_stream_filter.h">
-      <Filter>stream_nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_nodes\Audio\arm\detector\arm_stream_detector.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\qos\arm_stream_qos.h">
@@ -224,6 +218,12 @@
     </ClInclude>
     <ClInclude Include="..\platform.h">
       <Filter>platform_manifest</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\AI\arm\detector\arm_stream_detector.h">
+      <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D.h">
+      <Filter>stream_nodes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -164,6 +164,7 @@
 #define node_subtype_units              "node_subtype_units"
 #define node_architecture               "node_architecture"
 #define node_fpu_used                   "node_fpu_used"
+#define node_use_unlock_key             "node_use_unlock_key"
 #define node_node_version               "node_node_version"
 #define node_stream_version             "node_stream_version"
 #define node_mem                        "node_mem"
@@ -204,7 +205,7 @@
 #define stream_io_new                   "stream_io"
 #define stream_io_format                "stream_io_format"
 #define stream_io_hwid                  "stream_io_hwid"
-#define stream_io_setting1              "stream_io_setting1"
+#define stream_io_setting              "stream_io_setting"
 
 /*----------------------------------------------------------------------- GRAPH FORMAT ------------- */
 #define format_new                      "format"

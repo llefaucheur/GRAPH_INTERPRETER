@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        xxx.c
- * Description:  
+ * Title:        stream_io.c
+ * Description:  callback used after data moves at the boundary of the graph
  *
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
@@ -33,7 +33,7 @@
 #include "stream_types.h"
 #include "stream_extern.h"
 
-SECTION_START
+
 
 
 /**
@@ -214,7 +214,7 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
     }
 }
 
-SECTION_STOP
+
 #ifdef __cplusplus
 }
 #endif

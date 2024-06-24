@@ -147,14 +147,16 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\arm_biquad_cascade_df1_fast_q15.c" />
     <ClCompile Include="..\..\..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\arm_biquad_cascade_df1_init_q15.c" />
+    <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D.c" />
+    <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector\arm_stream_detector.c" />
+    <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector\arm_stream_detector_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor_imadpcm.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor_imadpcm.c" />
-    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\detector\arm_stream_detector.c" />
-    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\detector\arm_stream_detector_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\filter\arm_stream_filter.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\amplifier\arm_stream_amplifier.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\amplifier\arm_stream_amplifier_process.c" />
@@ -180,8 +182,6 @@
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\split\arm_stream_split.c" />
-    <ClCompile Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D.c" />
-    <ClCompile Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Image\arm\filter2D\arm_stream_filter2D.c" />
     <ClCompile Include="..\..\..\stream_platform\windows\main.c" />
     <ClCompile Include="..\..\..\stream_platform\windows\main_call.c" />
@@ -193,11 +193,12 @@
     <ClCompile Include="..\..\..\stream_src\stream_services.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D.h" />
+    <ClInclude Include="..\..\..\stream_nodes\AI\arm\detector\arm_stream_detector.h" />
     <ClInclude Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor.h" />
     <ClInclude Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor_imadpcm.h" />
     <ClInclude Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor.h" />
     <ClInclude Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor_imadpcm.h" />
-    <ClInclude Include="..\..\..\stream_nodes\Audio\arm\detector\arm_stream_detector.h" />
     <ClInclude Include="..\..\..\stream_nodes\Audio\arm\filter\arm_stream_filter.h" />
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\amplifier\arm_stream_amplifier.h" />
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\analysis\arm_stream_analysis.h" />
@@ -212,7 +213,6 @@
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script.h" />
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script_instructions.h" />
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\split\arm_stream_split.h" />
-    <ClInclude Include="..\..\..\stream_nodes\Image\arm\detector2D\arm_stream_detector2D.h" />
     <ClInclude Include="..\..\..\stream_nodes\Image\arm\filter2D\arm_stream_filter2D.h" />
     <ClInclude Include="..\..\..\stream_platform\windows\graph_0_define.h" />
     <ClInclude Include="..\..\..\stream_platform\windows\platform_computer.h" />

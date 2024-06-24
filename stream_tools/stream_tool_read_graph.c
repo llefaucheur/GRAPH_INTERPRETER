@@ -436,7 +436,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
                 graph->arc[graph->nb_arcs -1].initialized_from_platform = 1; /* initialization is done */
             }
         }            
-        if (COMPARE(stream_io_setting1))
+        if (COMPARE(stream_io_setting))
         {   fields_extract(&pt_line, "CI", ctmp, &(graph->arc[graph->nb_arcs -1].settings)); 
             if (graph->arc[graph->nb_arcs -1].initialized_from_platform == 0)
             {   LoadPlatformArc(&(graph->arc[graph->nb_arcs -1]), &(platform->arc[graph->arc[graph->nb_arcs -1].fw_io_idx]));

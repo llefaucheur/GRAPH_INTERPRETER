@@ -78,9 +78,6 @@
     <Text Include="..\..\stream_nodes\Basic\arm\script\swc_manifest_script.txt">
       <Filter>NodesManifests</Filter>
     </Text>
-    <Text Include="..\..\stream_nodes\Image\arm\detector2D\swc_manifest_detector2D.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
     <Text Include="..\..\stream_nodes\Image\arm\filter2D\swc_manifest_filter2D.txt">
       <Filter>NodesManifests</Filter>
     </Text>
@@ -88,9 +85,6 @@
       <Filter>NodesManifests</Filter>
     </Text>
     <Text Include="..\..\stream_nodes\Audio\arm\decompressor\swc_manifest_decompressor.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Audio\arm\detector\swc_manifest_detector.txt">
       <Filter>NodesManifests</Filter>
     </Text>
     <Text Include="..\..\stream_nodes\Audio\arm\filter\swc_manifest_filter.txt">
@@ -178,6 +172,12 @@
       <Filter>NodesManifests</Filter>
     </Text>
     <Text Include="..\..\stream_nodes\Basic\arm\split\swc_manifest_split.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\AI\arm\detector\swc_manifest_detector.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\AI\arm\detector2D\swc_manifest_detector2D.txt">
       <Filter>NodesManifests</Filter>
     </Text>
   </ItemGroup>

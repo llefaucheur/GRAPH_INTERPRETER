@@ -15,7 +15,7 @@ node_mask_library    15             ; default 0 bit-field of dependencies to com
 node_subtype_units   VRMS           ; triggers the need for rescaling and data conversion
 node_architecture    0              ; arch compatible with (default: 0 = source code) to merge and sort for ARCHID_LW0
 node_fpu_used        0              ; fpu option used (default 0: none, no FPU assembly or intrinsic)
-node_use_unlock_key  1              ; a key-exchange protocol is initiated at reset time
+node_use_unlock_key  1              ; key-exchange of the encrypted entitlement key used to deobfuscate node's firmware
 node_node_version    101            ; version of the computing node
 node_stream_version  001            ; version of the stream scheduler it is compatible with
 

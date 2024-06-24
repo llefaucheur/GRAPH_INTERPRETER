@@ -43,17 +43,15 @@
 
 
 /**
-  @brief         arm_stream_script : byte-code interpreter 
+  @brief         arm_stream_script : 16bits virtual machine, or Cortex-M0 binary codes
   @param[in]     pinst      instance of the component
   @param[in]     reset      tells to set the conditional flag before the call
   @return        status     finalized processing
-                 reference SWEET16 
-                 https://archive.org/details/BYTE_Vol_02-11_1977-11_Sweet_16
-
+                 
   @par  
     Script format : 
         Scripts receive parameters:
-            - Flag "comparison OK" set during the RESET sequence, reset otherwise
+        - Label of Entry point or Flag "comparison OK" set during the RESET sequence, reset otherwise
 
     Registers 
         Instance static = 

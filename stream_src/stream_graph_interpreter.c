@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        xxx.c
+ * Title:        stream_graph_interpreter.c
  * Description:  
  *
  * $Date:        15 February 2023
@@ -36,14 +36,10 @@
 #include "stream_const.h"
 #include "stream_types.h"
 #include "stream_extern.h"
-#include <string.h>         /* memcpy */
+#include <string.h>       
 
 /*
-   Main entry point, used by the application and scripts
-
-   Interactions between the graph and its outside world :
-   - direct call to arm_stream()
-   - platform_io streams to FIFO
+   Main entry point, used by the application s
 
    Commands :
    - reset, run, end
@@ -85,10 +81,10 @@ void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint8_t
         /* change the use-case  : 
             usage: arm_graph_interpreter (STREAM_SET_PARAMETER, &instance, &use-case, 0); */
         case STREAM_SET_PARAMETER:
-	    {   /* @@@ calls the main script with SET_PARAMETER */
+	    {   /* calls the main script with SET_PARAMETER */
             /* update parameter of a specific nanoAppRT 
                 usage: arm_graph_interpreter (STREAM_SET_NANOAPPRT_PARAMETER, &instance, &parameters, 0); */
-	        /* @@@ calls specific nanoAppRT with SET_PARAMETER */
+	        /* calls specific nanoAppRT with SET_PARAMETER */
             stream_scan_graph (S, STREAM_SET_PARAMETER, (uint32_t *)data);
             break;
         }
@@ -97,24 +93,6 @@ void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint8_t
         /* usage: arm_graph_interpreter (STREAM_STOP, &instance, 0, 0); */
         case STREAM_STOP:
 	    {   stream_scan_graph (S, STREAM_STOP, 0);
-            break;
-        }
-
-        /* manual data push/pop : read information (available free space, or data amount to read)
-            arm_graph_interpreter(STREAM_FIFO_STATUS_PACK(io_platform_data_in_0), instance, *fifo size, 0) 
-            */
-        case STREAM_FIFO_STATUS: 
-        {   extern void check_graph_boundaries(arm_stream_instance_t *S);
-            //check_graph_boundaries(S);
-            //*(uint32_t *)data = RD(S->ioctrl[STREAM_DATA_START_UNPACK_FIFO(command)], ONGOING_IOSIZE);
-            break;
-        }
-
-        /* usage: arm_graph_interpreter(STREAM_DATA_START_PACK(FIFO_ID), instance, *data, size) */
-        case STREAM_DATA_START: 
-        {   
-            //// @@@@@
-            //*(uint32_t *)data = RD(S->ioctrl[STREAM_DATA_START_UNPACK_FIFO(command)], ONGOING_IOSIZE);
             break;
         }
 

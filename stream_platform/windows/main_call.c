@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
  * Title:        main.c
- * Description:  
+ * Description:  graph interpreter demo
  *
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
@@ -33,6 +33,7 @@
 #include "stream_extern.h"
 #include "graph_0_define.h"
 
+
 /**
   @brief            (main) demonstration
   @param[in/out]    none
@@ -52,21 +53,7 @@ void main_call(void)
 
     /* run the graph */
     for (int i = 0; i < 100000L; i++)
-    {  
-        /* 
-          manual data push/pop : read information (available free space, or data amount to read)
-            arm_graph_interpreter(STREAM_FIFO_STATUS_PACK(io_platform_data_in_0), instance, *fifo size, 0) 
-          and manual push/pop
-            arm_graph_interpreter(STREAM_DATA_START_PACK(io_platform_data_in_0), instance, *data, size) 
-          automatic data moved in this demo using the "instance->platform_io[]" functions 
-        */
-        //do
-        //{   arm_graph_interpreter(STREAM_FIFO_STATUS_PACK(io_platform_sensor_in_0), &instance, (uint8_t *)&fifo_freeArea, 0);
-        //} while (fifo_freeArea == 0);
-
-        //data_in = 0x55AA;
-        //arm_graph_interpreter(STREAM_DATA_START_PACK(io_platform_sensor_in_0), &instance, (uint8_t *)&data_in, sizeof(uint16_t));
-        arm_graph_interpreter (STREAM_RUN, &instance, 0, 0);
+    {  arm_graph_interpreter (STREAM_RUN, &instance, 0, 0);
     }  
 
     /* stop the graph */

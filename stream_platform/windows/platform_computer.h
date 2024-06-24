@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        xxx.c
- * Description:  
+ * Title:        platform_computer.h
+ * Description:  constants specific to this platform
  *
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
