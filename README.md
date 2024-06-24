@@ -7,22 +7,15 @@ designed with three objectives:
 
 1.  **Accelerate time to market**
 
-For system integrators and OEM : develop complex DSP/ML stream
-processing. Go fast from prototypes validated on a computer to final
-tuning steps on board, by loading the graph description <u>without</u> device
-recompilation.
+Made for system integrators and OEM who develop complex DSP/ML stream processing. Helps going fast from prototypes validated on a computer to final tuning steps on production boards, by loading a graph of computing nodes <u>without</u> device recompilation. 
 
 2.  **NanoApps repositories**
 
-Provide opaque interfaces to the platform memory hierarchy, and arrange
-the data flow is translated in the desired formats between nanoApps.
-Prepare the conditions where nanoApps will be delivered in hashed
-binary.
+Provide to the nodes an opaque interface of the platform memory hierarchy. Arranges the data flow is translated in the node desired formats. Prepares the conditions where node (nanoApps) will be delivered in a protected binary format.
 
 3.  **Portability, scalability**
 
-Use the same stream-based processing methodology from devices using
-2kBytes of RAM to multiprocessors with heterogeneous architectures.
+Use the same stream-based processing methodology from devices using 1kBytes of internal RAM to multiprocessor heterogeneous architectures. Nodes can be produced in various programming languages. The Graph are portable when interpreted on another platform.
 
 ***HOW***
 
