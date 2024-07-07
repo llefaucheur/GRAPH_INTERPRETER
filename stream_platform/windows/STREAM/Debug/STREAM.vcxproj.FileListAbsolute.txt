@@ -1,3 +1,0 @@
-C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\windows\STREAM\Debug\STREAM.exe.lastcodeanalysissucceeded
-C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\windows\STREAM\Debug\NativeCodeAnalysis.read.1.tlog
-C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\windows\STREAM\Debug\STREAM.exe

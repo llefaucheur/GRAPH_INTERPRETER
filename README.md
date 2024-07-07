@@ -2,27 +2,29 @@
 
 ***WHAT***
 
-**Graph-Interpreter** is a scheduler of **DSP/ML nanoApps**
-designed with three objectives:
+**Graph-Interpreter** is a scheduler of **DSP/ML nanoApps** designed with three objectives: 
 
-1.  **Accelerate time to market**
+1. **Accelerate time to market**
 
-For system integrators and OEM : develop complex DSP/ML stream
-processing. Go fast from prototypes validated on a computer to final
-tuning steps on board, by loading the graph description <u>without</u> device
-recompilation.
+Graph-Interpreter helps system integrators and OEM who develop complex DSP/ML stream processing. It allows going fast from prototypes validated on a computer to the final tuning steps on production boards, by updating a graph of computing nodes and their coefficients without device recompilation.  
 
-2.  **NanoApps repositories**
+2. **NanoApps repositories**
 
-Provide opaque interfaces to the platform memory hierarchy, and arrange
-the data flow is translated in the desired formats between nanoApps.
-Prepare the conditions where nanoApps will be delivered in hashed
-binary.
+It provides an opaque interface of the platform memory hierarchy to the computing nodes. It arranges the data flow is translated to the desired formats of each node. It prepares the conditions where nodes will be delivered from a Store. 
 
-3.  **Portability, scalability**
+3. **Portability, scalability**
 
-Use the same stream-based processing methodology from devices using
-2kBytes of RAM to multiprocessors with heterogeneous architectures.
+Use the same stream-based processing methodology from devices using 1 Kbytes of internal RAM to multiprocessor heterogeneous architectures. Nodes can be produced in any programming languages. The Graph are portable when interpreted on another platform.
+
+ 
+
+ **Use-case example :** 
+
+ **Tuning interfaces for AI preprocessing**
+
+Example of a graph implementing a cascade of DSP/ML algorithms and signal feature extraction before using a classifier (NPU). The system integration task consists in tuning the signal levels and the coefficients of several filters. The system integrator tunes the nodes in charge of rescaling and triggers a GPIO based on level detection. The system integrator updates the parameters of the nodes without recompilation. The memory mapping of the node is tuned on target without recompilation. The task dispatching between processors is tuned for performance optimization, without code recompilation.
+
+-----------------------------------------------------------------------------
 
 ***HOW***
 

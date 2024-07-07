@@ -24,10 +24,10 @@
  * limitations under the License.
 * 
  */
-#ifndef PLATFORM_COMPUTER_H
-#define PLATFORM_COMPUTER_H
 
-#define PLATFORM_COMPUTER 1
+#include "platform.h"
+#if PLATFORM_COMPUTER == 1
+
 
 #include "platform.h"
 #include "stream_const.h"      
@@ -88,7 +88,7 @@
 
 #define MBANK_GRAPH     0               /* graph base address (shared) */
 #define MBANK_DMEMFAST  1               /* not shared DTCM Cortex-M/LLRAM Cortex-R, swapped between SWC calls if static */
-#define SIZE_MBANK_DMEM_EXT   0x100     /* external (buffers) */
+#define SIZE_MBANK_DMEM_EXT   0x400     /* external (buffers) */
 #define SIZE_MBANK_BACKUPMEM1   0x20    /* OFFSET 1 */
 #define SIZE_MBANK_TCM2         0x20    /* TCM (fast RAM) */
 #define SIZE_MBANK_FLASH3       0x20    /* FLASH (fast RAM) */
@@ -136,5 +136,4 @@
 
 
 #endif /* #ifndef PLATFORM_COMPUTER_H */
-
 

@@ -34,9 +34,22 @@
 
 
 #include <stdint.h>
-#include "stream_const.h"
 #include "platform.h"
+#include "stream_const.h"
 
+
+/* 
+    if 64 bits architectures are reading the graph:
+    #define intPtr_t uint64_t
+    #define MAX_ADD_OFFSET 0x7FFFFFFFFFFFFFFFL
+*/
+#ifdef PLATFORM_ARCH_32BIT
+#define intPtr_t uint32_t 
+#define sintPtr_t int32_t
+#else
+#define intPtr_t uint64_t 
+#define sintPtr_t int64_t 
+#endif
 
 /* ------------------------------------------------------------------------------------------
     stream buffers

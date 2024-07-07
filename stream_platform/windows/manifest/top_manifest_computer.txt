@@ -28,7 +28,7 @@
 
     10  number of IO streams available      aligned with struct platform_io_control platform_io[] and platform_computer.h 
 
-    ;Path      Manifest         IO_AL_idx ProcCtrl clock-domain     definition          (code from platform_computer.h)
+    ;Path      Manifest         IO_AL_idx ProcCtrl clock-domain     Comments           codes from platform_computer.h
     1   io_platform_data_in_0.txt       0     1        0            application processor  IO_PLATFORM_DATA_IN_0      
     1   io_platform_data_in_1.txt       1     1        0            application processor  IO_PLATFORM_DATA_IN_1      
     1   io_platform_analog_sensor_0.txt 2     1        0            ADC                    IO_PLATFORM_ANALOG_SENSOR_0

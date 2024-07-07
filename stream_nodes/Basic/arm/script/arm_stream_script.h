@@ -59,8 +59,6 @@ extern void arm_stream_script_interpreter (
     uint16_t *byte_code,
     uint8_t *ram);
 
-extern void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data, uint32_t unit);
-
 #endif
 
 #ifdef __cplusplus

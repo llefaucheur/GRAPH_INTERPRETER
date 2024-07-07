@@ -2,16 +2,13 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\..\..\stream_platform\windows\main.c">
-      <Filter>platform_manifest</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\stream_platform\windows\main_call.c">
-      <Filter>platform_manifest</Filter>
+      <Filter>platform_main</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_platform\windows\platform_computer.c">
-      <Filter>platform_manifest</Filter>
+      <Filter>platform_main</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_platform\windows\platform_computer_io_services.c">
-      <Filter>platform_manifest</Filter>
+      <Filter>platform_main</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\arm_biquad_cascade_df1_fast_q15.c">
       <Filter>library-cmsis-dsp</Filter>
@@ -139,13 +136,19 @@
     <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D_process.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\lpc55s69evk\main_call.c">
+      <Filter>platform_main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\lpc55s69evk\platform_lpc55s69evk.c">
+      <Filter>platform_main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\lpc55s69evk\platform_lpc55s69evk_io_services.c">
+      <Filter>platform_main</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\stream_platform\windows\graph_0_define.h">
-      <Filter>platform_manifest</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\stream_platform\windows\platform_computer.h">
-      <Filter>platform_manifest</Filter>
+      <Filter>platform_main</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script.h">
       <Filter>stream_nodes</Filter>
@@ -213,17 +216,23 @@
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\analysis\arm_stream_analysis.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
-    <ClInclude Include="..\graph_header.h">
-      <Filter>platform_manifest</Filter>
-    </ClInclude>
-    <ClInclude Include="..\platform.h">
-      <Filter>platform_manifest</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\AI\arm\detector\arm_stream_detector.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D.h">
       <Filter>stream_nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\platform.h">
+      <Filter>platform_main</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\lpc55s69evk\graph_lpc55s69evk_header.h">
+      <Filter>Graphs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph_windows_header.h">
+      <Filter>Graphs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\lpc55s69evk\platform_lpc55s69evk.h">
+      <Filter>platform_main</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -236,16 +245,31 @@
     <Filter Include="library-cmsis-dsp">
       <UniqueIdentifier>{e83c8890-8848-4c55-8e76-2d73828584ec}</UniqueIdentifier>
     </Filter>
-    <Filter Include="platform_manifest">
+    <Filter Include="Graphs">
+      <UniqueIdentifier>{2bb06fad-a5cd-402f-b473-c24d37b4d518}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platform_main">
       <UniqueIdentifier>{97748a8a-4da7-4066-af7e-27a8abb8d503}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\..\stream_platform\windows\graph_0.txt">
-      <Filter>platform_manifest</Filter>
+    <Text Include="..\..\lpc55s69evk\graph_lpc55s69evk.txt">
+      <Filter>Graphs</Filter>
     </Text>
-    <Text Include="..\..\..\stream_platform\windows\graph_0_bin.txt">
-      <Filter>platform_manifest</Filter>
+    <Text Include="..\..\lpc55s69evk\graph_lpc55s69evk_bin.txt">
+      <Filter>Graphs</Filter>
+    </Text>
+    <Text Include="..\..\lpc55s69evk\graph_lpc55s69evk_debug.txt">
+      <Filter>Graphs</Filter>
+    </Text>
+    <Text Include="..\graph_windows_bin.txt">
+      <Filter>Graphs</Filter>
+    </Text>
+    <Text Include="..\graph_windows_debug.txt">
+      <Filter>Graphs</Filter>
+    </Text>
+    <Text Include="..\graph_windows.txt">
+      <Filter>Graphs</Filter>
     </Text>
   </ItemGroup>
 </Project>

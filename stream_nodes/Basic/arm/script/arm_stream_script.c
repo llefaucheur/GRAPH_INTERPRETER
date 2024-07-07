@@ -40,6 +40,27 @@
 #include "stream_types.h" 
 #include "arm_stream_script.h"
 
+static intPtr_t pack2linaddr_int(const intPtr_t *long_offset, uint32_t x, uint32_t unit)
+{
+    intPtr_t dbg1, dbg2, dbg3;
+
+    dbg1 = long_offset[RD(x,DATAOFF_ARCW0)];    
+    dbg2 = (intPtr_t)(unit * (intPtr_t)RD((x),BASEIDX_ARCW0));
+
+    if (RD(x,BAS_SIGN_ARCW0)) 
+        dbg3 = dbg1 + ~(dbg2) +1;   // dbg1-dbg2 using unsigned integers
+     else
+        dbg3 = dbg1 + dbg2;
+
+    return dbg3;  
+}
+
+static void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data, uint32_t unit)
+{
+    return (void *) (pack2linaddr_int(long_offset, data, unit));
+}
+
+
 /*
     command  = reset/set-param/stop/run
     instance = pointer to the descriptor base address of the arc)

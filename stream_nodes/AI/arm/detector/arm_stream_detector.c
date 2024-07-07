@@ -108,7 +108,7 @@ void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmb
                 memory pointers are in the same order as described in the SWC manifest
         */
         case STREAM_RESET: 
-        {   stream_al_services *stream_entry = (stream_al_services *)(uint64_t)data;
+        {   stream_al_services *stream_entry = (stream_al_services *)data;
             intPtr_t *memresults = (intPtr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
@@ -145,13 +145,13 @@ void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmb
 
             }
             pinstance->config = detector_preset[preset];    /* preset data move */
-            pinstance->services = (stream_al_services *)(uint64_t)data;
+            pinstance->services = (stream_al_services *)data;
             pinstance->decf = decfMASK; 
 
-            {  extern FILE *ptf_trace;
-        #define FILE_TRACE "..\\stream_test\\trace.raw"
-            ptf_trace = fopen(FILE_TRACE, "wb");
-            }
+        //    {  extern FILE *ptf_trace;
+        //#define FILE_TRACE "..\\stream_test\\trace.raw"
+        //    ptf_trace = fopen(FILE_TRACE, "wb");
+        //    }
             break;
         }  
         

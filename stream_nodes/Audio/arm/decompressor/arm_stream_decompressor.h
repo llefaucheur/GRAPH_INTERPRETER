@@ -46,8 +46,7 @@ typedef struct
 
 
 
-extern void arm_stream_decompressor_process (arm_stream_decompressor_instance *instance, void *input, void *output, uint32_t *nsamp);
-
+extern void arm_stream_decompressor_process (arm_stream_decompressor_instance *instance, uint8_t *input, int16_t *output, uint32_t *nsamp);
 
 #endif //cARM_STREAM_DECOMPRESSOR_H
 

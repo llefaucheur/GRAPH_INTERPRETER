@@ -215,7 +215,7 @@
 #define   _____________GR0_MSB U(31) 
 #define   _____________GR0_LSB U(29) // 3 
 #define       RAMSPLIT_GR0_MSB U(28) //   
-#define       RAMSPLIT_GR0_LSB U(27) // 2 COPY_CONF_GR0_COPY_ALL_IN_RAM / _FROM_ARCDESC / _ALREADY_IN_RAM
+#define       RAMSPLIT_GR0_LSB U(27) // 2 COPY_CONF_GR0_COPY_ALL_IN_RAM / _FROM_PIO / _ALREADY_IN_RAM
 #define    GRAPH_RAM_OFFSET(L,G)     pack2linaddr_int(L,G[0], LINADDR_UNIT_BYTE)
 #define    GRAPH_RAM_OFFSET_PTR(L,G) pack2linaddr_ptr(L,G[0], LINADDR_UNIT_BYTE)
 
@@ -411,7 +411,7 @@
 #define  IO_DOMAIN_IOFMT_MSB 19u  /*    the domain should match with the arc prod/cons format */
 #define  IO_DOMAIN_IOFMT_LSB 15u  /* 5  32 Domains, to select the format of the tuning word2 */
 #define FROMIOBUFF_IOFMT_MSB 14u   
-#define FROMIOBUFF_IOFMT_LSB 14u  /* 1  share the arc buffer with the IO BSP */
+#define FROMIOBUFF_IOFMT_LSB 14u  /* 1  share the arc buffer with the IO BSP "io_buffer_allocation" */
 #define  SET0COPY1_IOFMT_MSB 13u  
 #define  SET0COPY1_IOFMT_LSB 13u  /* 1  command_id IO_COMMAND_SET_BUFFER / IO_COMMAND_DATA_MOVE */
 #define   SERVANT1_IOFMT_MSB 12u  
@@ -1229,12 +1229,7 @@
 #define COMPUTCMD_ARCW2_LOOPBACK 15             /* automatic rewind read/write */
 #define COMPUTCMD_ARCW2_LAST 31
 
-//enum overflow_error_service_id {/* 2bits UNDERFLRD_ARCW2, OVERFLRD_ARCW2 */
-#define NO_OVERFLOW_MANAGEMENT 0     /* just RD/WR index alignment on the next frame size */
-#define SKIP_LAST_FRAME 1            /* flow errors management */
-#define DECIMATE_FRAME 2
-
-#define ARC_DBG_REGISTER_SIZE_W32 2     /* debug registers on 64 bits */
+#define ARC_DBG_REGISTER_SIZE_W32 2             /* debug registers on 64 bits */
 
 /*==========================================  ARCS  ===================================================*/
                                          
@@ -1452,8 +1447,7 @@
 /*================================ STREAM ARITHMETICS DATA/TYPE ====================================================*/
 /* types fit in 6bits, arrays start with 0, stream_bitsize_of_raw() is identical */
 
-enum stream_raw_data 
-{
+
 #define STREAM_DATA_ARRAY 0 /* see stream_array: [0NNNTT00] 0, type, nb */
 #define STREAM_S1         1 /* S, one signed bit, "0" = +1 */                           /* one bit per data */
 #define STREAM_U1         2 /* one bit unsigned, boolean */
@@ -1508,7 +1502,7 @@ enum stream_raw_data
 #define STREAM_STRING16  51 /* UTF-16 string of char terminated by 0 */
 
 #define LAST_RAW_TYPE    64 /* coded on 6bits RAW_FMT0_LSB */
-};
+
 
 
 #define STREAM_PTRPHY      4    

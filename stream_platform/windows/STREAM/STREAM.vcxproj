@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\..\stream_platform\windows;..\..\..\stream_graph;..\..\..\stream_nodes;..\..\..\stream_src;..\..\..\stream_libraries\CMSIS-DSP\Include;..\..\..\stream_al;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\stream_platform;..\..\..\stream_graph;..\..\..\stream_nodes;..\..\..\stream_src;..\..\..\stream_libraries\CMSIS-DSP\Include;$(IncludePath)</IncludePath>
     <SourcePath>C:\Work\GITHUB_LLF\CMSIS-Stream\stream_al;C:\Work\GITHUB_LLF\CMSIS-Stream\stream_src;$(SourcePath)</SourcePath>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
@@ -184,13 +184,15 @@
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\split\arm_stream_split.c" />
     <ClCompile Include="..\..\..\stream_nodes\Image\arm\filter2D\arm_stream_filter2D.c" />
     <ClCompile Include="..\..\..\stream_platform\windows\main.c" />
-    <ClCompile Include="..\..\..\stream_platform\windows\main_call.c" />
     <ClCompile Include="..\..\..\stream_platform\windows\platform_computer.c" />
     <ClCompile Include="..\..\..\stream_platform\windows\platform_computer_io_services.c" />
     <ClCompile Include="..\..\..\stream_src\stream_graph_interpreter.c" />
     <ClCompile Include="..\..\..\stream_src\stream_io.c" />
     <ClCompile Include="..\..\..\stream_src\stream_scheduler.c" />
     <ClCompile Include="..\..\..\stream_src\stream_services.c" />
+    <ClCompile Include="..\..\lpc55s69evk\main_call.c" />
+    <ClCompile Include="..\..\lpc55s69evk\platform_lpc55s69evk.c" />
+    <ClCompile Include="..\..\lpc55s69evk\platform_lpc55s69evk_io_services.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D.h" />
@@ -214,17 +216,22 @@
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script_instructions.h" />
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\split\arm_stream_split.h" />
     <ClInclude Include="..\..\..\stream_nodes\Image\arm\filter2D\arm_stream_filter2D.h" />
-    <ClInclude Include="..\..\..\stream_platform\windows\graph_0_define.h" />
     <ClInclude Include="..\..\..\stream_platform\windows\platform_computer.h" />
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\..\stream_src\stream_extern.h" />
     <ClInclude Include="..\..\..\stream_src\stream_types.h" />
-    <ClInclude Include="..\graph_header.h" />
-    <ClInclude Include="..\platform.h" />
+    <ClInclude Include="..\..\lpc55s69evk\graph_lpc55s69evk_header.h" />
+    <ClInclude Include="..\..\lpc55s69evk\platform_lpc55s69evk.h" />
+    <ClInclude Include="..\..\platform.h" />
+    <ClInclude Include="..\graph_windows_header.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\..\stream_platform\windows\graph_0.txt" />
-    <Text Include="..\..\..\stream_platform\windows\graph_0_bin.txt" />
+    <Text Include="..\..\lpc55s69evk\graph_lpc55s69evk.txt" />
+    <Text Include="..\..\lpc55s69evk\graph_lpc55s69evk_bin.txt" />
+    <Text Include="..\..\lpc55s69evk\graph_lpc55s69evk_debug.txt" />
+    <Text Include="..\graph_windows.txt" />
+    <Text Include="..\graph_windows_bin.txt" />
+    <Text Include="..\graph_windows_debug.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

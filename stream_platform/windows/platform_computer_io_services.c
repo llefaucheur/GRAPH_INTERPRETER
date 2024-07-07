@@ -24,6 +24,10 @@
  * limitations under the License.
 * 
  */
+
+#include "platform.h"
+#if PLATFORM_COMPUTER == 1
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -140,12 +144,13 @@ void analog_sensor_0 (uint32_t command, uint8_t *data, uint32_t size)
     case STREAM_SET_PARAMETER:
     case STREAM_RESET:
         #if DATA_FROM_FILES
-            if (NULL == (ptf_in_stream_in_0_data = fopen("..\\stream_test\\sine_noise_offset.wav", "rb")))
+            //if (NULL == (ptf_in_stream_in_0_data = fopen("..\\stream_test\\sine_noise_offset.wav", "rb"))) 
+            if (NULL == (ptf_in_stream_in_0_data = fopen("..\\stream_test\\chirp_M6dB.wav", "rb")))
             {   exit (-1); 
             }
             else 
             {   int i, c; 
-                for(i=0;i<512;i++) 
+                for(i=0;i<48;i++) 
                 { fread(&c,1,1,ptf_in_stream_in_0_data); // skip WAV header
                 }
             }
@@ -290,14 +295,14 @@ void gpio_out_0 (uint32_t command, uint8_t *data, uint32_t size)
         #else
             ptr_in_gpio_out_data = 0;
         #endif
-        break;
+        break; 
 
     case STREAM_RUN:
          /* "io_platform_stream_in_0," frame_size option in samples + FORMAT-0 in the example graph */ 
-        #define FORMAT_CONSUMER_FRAME_SIZE 12
-            size  = (FORMAT_CONSUMER_FRAME_SIZE/2);
+        //#define FORMAT_CONSUMER_FRAME_SIZE 12
+        //    size  = (FORMAT_CONSUMER_FRAME_SIZE/2);
         #if DATA_FROM_FILES
-            fwrite(tx_buffer, 2, size, ptf_in_gpio_out_data);
+            fwrite(data, 1, size, ptf_in_gpio_out_data);
             fflush(ptf_in_gpio_out_data);
         #else
             memcpy(&(ptf_in_gpio_out_data[ptr_in_gpio_out_data]), tx_buffer, 2 * size);
@@ -381,7 +386,7 @@ void data_out_0 (uint32_t command, uint8_t *data, uint32_t size)
     }
 }
 
-
+#endif
 /*
  * -----------------------------------------------------------------------
  */

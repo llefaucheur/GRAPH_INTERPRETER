@@ -155,7 +155,7 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
                     break;
             }
 
-            pinstance->services = (stream_al_services *)(uint64_t)data;
+            pinstance->services = (stream_al_services *)(intPtr_t)data;
             break;
         }       
 

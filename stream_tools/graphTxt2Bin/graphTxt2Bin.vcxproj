@@ -19,7 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\stream_platform\windows\graph_header.h" />
+    <ClInclude Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk_header.h" />
+    <ClInclude Include="..\..\stream_platform\platform.h" />
+    <ClInclude Include="..\..\stream_platform\windows\graph_windows_header.h" />
     <ClInclude Include="..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\stream_src\stream_extern.h" />
     <ClInclude Include="..\..\stream_src\stream_types.h" />
@@ -52,9 +54,31 @@
     <Text Include="..\..\stream_nodes\Image\arm\filter2D\swc_manifest_filter2D.txt" />
     <Text Include="..\..\stream_nodes\Image\elm\TJpgDec\swc_manifest_TjpgDec.txt" />
     <Text Include="..\..\stream_nodes\swc_manifest_none.txt" />
-    <Text Include="..\..\stream_platform\windows\graph_0.txt" />
-    <Text Include="..\..\stream_platform\windows\graph_0_bin.txt" />
+    <Text Include="..\..\stream_platform\graph_1.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk_bin.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk_debug.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_2d_in_0.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_analog_sensor_0.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_audio_in_0.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_data_in_0.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_data_in_1.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_data_out_0.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_gpio_out_0.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_gpio_out_1.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_imu_temperature_0.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_line_in_0.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_line_out_0.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_motion_in_0.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_node_trace_0.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_stream_in_0.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\procmap_manifest_lpc55s69evk.txt" />
+    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\top_manifest_lpc55s69evk.txt" />
+    <Text Include="..\..\stream_platform\sub_graph_0.txt" />
     <Text Include="..\..\stream_platform\windows\graph_1.txt" />
+    <Text Include="..\..\stream_platform\windows\graph_windows.txt" />
+    <Text Include="..\..\stream_platform\windows\graph_windows_bin.txt" />
+    <Text Include="..\..\stream_platform\windows\graph_windows_debug.txt" />
     <Text Include="..\..\stream_platform\windows\manifest\top_manifest_computer.txt" />
     <Text Include="..\..\stream_platform\windows\manifest\io_platform_2d_in_0.txt" />
     <Text Include="..\..\stream_platform\windows\manifest\io_platform_analog_sensor_0.txt" />
@@ -141,7 +165,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\windows;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>

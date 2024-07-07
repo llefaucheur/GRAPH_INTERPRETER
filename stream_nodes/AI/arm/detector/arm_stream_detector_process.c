@@ -33,7 +33,8 @@
 #include "stream_const.h"
 #include "stream_types.h"
 
-#define PRINTF 1 // debug
+
+#define PRINTF 0 // debug
 
 #if PRINTF
 #include <stdio.h>
@@ -121,7 +122,7 @@ void arm_stream_detector_process (arm_detector_instance *pinstance,
         {   DOWNCOUNTER = MINIFLOAT2Q31(RELOADCOUNTER);
         }
 
-        pResult[isamp] = (DOWNCOUNTER > 0) ? 0x7FFF : 0;
+        pResult[isamp] = (DOWNCOUNTER > 0) ? 0x7FFF : 0;  // in[isamp]; //
 
 #if PRINTF        
         {   

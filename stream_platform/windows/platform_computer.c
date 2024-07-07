@@ -24,10 +24,12 @@
  * limitations under the License.
 * 
  */
+#include "platform.h"
+#if PLATFORM_COMPUTER == 1
+
 #ifdef __cplusplus
  extern "C" {
 #endif
-
 /*-----------------------------------------------------------------------*/
 #define DATA_FROM_FILES 1
 
@@ -179,7 +181,7 @@ const p_io_function_ctrl platform_io [LAST_IO_FUNCTION_PLATFORM] =
 
 const uint32_t graph_input[] = 
 { 
-#include "graph_0_bin.txt"
+#include "graph_windows_bin.txt"
 };
 
 
@@ -687,7 +689,7 @@ void al_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_
 
 
 
-
+#endif
 /*
  * -----------------------------------------------------------------------
  */

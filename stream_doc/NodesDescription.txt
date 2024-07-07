@@ -33,6 +33,10 @@
 ;   the script are sharing the same memory buffer (BASEIDXOFFSCRARCW0). To have 
 ;   individual static memory associated to a script the "private memory flag" must be set.
 ;
+;   Special functions: 
+;       - lock   : a block of nodes to a processor to have good cache performance, 
+;       - if-then: a block of nodes based on script decision (FIFO content/debug registers, ..)
+;       - loop   : repeat a list of node several time for cache efficiency and small frame size
 ;
 ;   Checks if the data it needs is available and returns to the scheduler 
 ;   Its single arc (TX) is always empty
@@ -78,36 +82,21 @@ _end_
 ;----------------------------------------------------------------------------------------
 ;2. arm_stream_graph_control
 ;----------------------------------------------------------------------------------------
-;   mix of scheduler controls : lock, bypass, loop, if-then, UART remote controler
+;   scheduler controls : 
+;       - debug  : remote UART controler 
+;           minimal serial interface protocol with stream header detection, 
+;           6b->8b conversion, scheduler call to set parameters, change use-case, 
+;           reload a new graph and optionnaly restart the graph using application_callbacks[]
 ;   
-;   lock the next N nodes to let them be executed on the same processor
-;       or have scripts placed before/after processing (ASRC drift control for example)
-;
-;   conditional execution of some nodes from use-case value (if-then) [debug_reg + page_index]
-;       using a stack and the scripting language
-;
-;   minimal serial interface protocol with stream header detection, 
-;       6b->8b conversion, scheduler call to set parameters, change use-case, 
-;       reload a new graph and optionnaly restart the graph using application_callbacks[]
-;
 ;    Use-case : dispatch debug commands and allow a new graph to be downloaded
 ;
 node
     arm_stream_graph_control   0        ; instance index 0
-    script_stack        12              ; size of the stack, default = 0 
-    map_verbose         0               ; level of debug trace, default = #0
 
-;                                       ; codes 
-    1 h16; 0211 PSHC INT8 S0=2 > R0?
-    1 h16; AD10 GTR
-    1 h16; 6111 JMPC #1 2 > R0 : exit
-    1 h16; 0211 PSHC INT16 ARC1
-    1 h16; 0011             
-    1 h16; 7111 CALS READPARAM (param_id, /mySWC /toArc, arcID) 
-    1 h16; B111 LABL #1
-    1 h16; 9011 OPRC RETS  
+    parameters   0       
 
-    _end_               end of byte codes
+    _end_
+
 _end_
 
 ;
@@ -335,13 +324,13 @@ _end_
 ;   2 read the signal to noise ratio
 ;
 node 
-    arm_stream_detector 0       node name  + instance ID
+    arm_stream_detector 0               node name  + instance ID
 
-    preset              1               ; parameter preset used at boot time, default = #0
-    map_verbose         1               ; level #1 of debug trace = #0
+    preset              1               parameter preset used at boot time, default = #0
+    map_verbose         1               level #1 of debug trace = #0
 
 
-    parameters 0                   ; TAG   "load all parameters"
+    parameters 0                        TAG=0   "load all parameters"
         8; i8; 1 2 3 4 5 6 7 8  the 8 bytes of "struct detector_parameters"
     _end_    
 _end_

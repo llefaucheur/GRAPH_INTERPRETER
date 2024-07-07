@@ -1,9 +1,8 @@
 ;===========================================================================================================================
 ;   TOP GRAPH
                                 ; 0: destination of the binary graph is in RAM (default) 
-                                ; 1: keep the graph in Flash and copy in RAM the portion starting from the node linked-list
-                                ; 2: keep the graph in Flash and copy in RAM the portion starting from the arc descriptors
-graph_location  0               ; 3: the graph is already in RAM provided by the application
+                                ; 1: keep the graph in Flash and copy in RAM the portion starting from PIO (the end of node linked-list)
+graph_location  0               ; 2: the graph is already in RAM provided by the application
 
                                 ; LSB set means "call the debug script before each nanoAppsRT is called"
                                 ; bit 1 (2) set means "call the debug script after each naonoAppsRT is called"
@@ -208,5 +207,8 @@ arc_flush           0           ; control of register "MPFLUSH_ARCW1" : forced f
 arc_extend_addr     1           ; address range extension-mode of the arc descriptor "EXTEND_ARCW2" for large NN models, default = #0 (no extension)
 arc_map_hwblock     0           ; mapping VID index from "procmap_manifest_xxxx.txt" to map the buffer, default = #0 (VID0)
 arc_jitter_ctrl     1.5         ; factor to apply to the minimum size between the producer and the consumer, default = 1.0 (no jitter)
-
+        arc_parameters  0       ; (parameter arcs) buffer preloading, or arc descriptor set with script
+            7  i8; 2 3 4 5 6 7 8 ; parameters
+include 1 filter_parameters.txt ; path + text file-name using parameter syntax 
+        _end_  
 ;=============================

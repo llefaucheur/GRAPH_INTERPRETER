@@ -153,7 +153,7 @@ void arm_stream_filter2D (int32_t command, stream_handle_t instance, stream_xdmb
                     break;
             }
 
-            pinstance->services = (stream_al_services *)(uint64_t)data;
+            pinstance->services = (stream_al_services *)data;
             break;
         }       
 

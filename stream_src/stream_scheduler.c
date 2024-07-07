@@ -1120,7 +1120,7 @@ static void reset_component (arm_stream_instance_t *S)
     
     memreq = &(S->swc_header[S->swc_memory_banks_offset]);
     nbmem = (uint8_t)RD(memreq[0],NBALLOC_LW2);
-    memreq_physical[0] = (intPtr_t)(uint64_t)(S->swc_instance_addr);
+    memreq_physical[0] = (intPtr_t)(S->swc_instance_addr);
 
     for (imem = 1; imem < nbmem; imem++)
     {   /* create pointers to the right memory bank */

@@ -1,8 +1,0 @@
-﻿  stream_tool_graph2Bin.c
-  stream_tool_library.c
-  stream_tool_main.c
-  stream_tool_readManifests.c
-  stream_tool_read_graph.c
-C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_read_graph.c(202,32): warning C4244: '=': conversion from 'uint64_t' to 'uint32_t', possible loss of data
-  Generating Code...
-  graphTxt2Bin.vcxproj -> C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\graphTxt2Bin\x64\Debug\graphTxt2Bin.exe

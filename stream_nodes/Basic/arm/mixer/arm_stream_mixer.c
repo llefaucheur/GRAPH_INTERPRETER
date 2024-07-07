@@ -149,13 +149,13 @@ void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuff
                 memory pointers are in the same order as described in the SWC manifest
         */
         case STREAM_RESET: 
-        {   stream_al_services *stream_entry = (stream_al_services *)(uint64_t)data;
+        {   stream_al_services *stream_entry = (stream_al_services *)data;
             intPtr_t *memresults = (intPtr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
             uint8_t iarc, nb_input_arc;
 
             arm_mixer_instance *pinstance = (arm_mixer_instance *) *memresults;
-            pinstance->services = (stream_al_services *)(uint64_t)data;
+            pinstance->services = (stream_al_services *)data;
 
             memresults++;   /* memresult points to the */
 

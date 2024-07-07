@@ -69,6 +69,7 @@
 /*----------------------------------------------------------------------- IO MANIFESTS ------------- */
 #define io_commander0_servant1      "io_commander0_servant1"
 #define io_buffer_allocation        "io_buffer_allocation"
+#define io_set0_copy1               "io_set0_copy1"
 #define io_direction_rx0tx1         "io_direction_rx0tx1"
 #define io_raw_format               "io_raw_format"
 #define io_nb_channels              "io_nb_channels"

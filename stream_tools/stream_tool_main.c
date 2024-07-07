@@ -27,15 +27,23 @@
 
 
 #include "stream_tool_include.h"
+#include "platform.h"
 
+#if PLATFORM_COMPUTER == 1
 #define GRAPH_ALL_MANIFESTS "../../stream_platform/windows/manifest/top_manifest_computer.txt"
-#define GRAPH_TXT           "../../stream_platform/windows/graph_0.txt"     /* almost-binary graph with soft addresses hand optimized mapping and multi-processor mapping */
-#define GRAPH_BIN           "../../stream_platform/windows/graph_0_bin.txt"   /* final binary graph file */
+#define GRAPH_TXT           "../../stream_platform/windows/graph_windows.txt"     /* graph */
+#define GRAPH_BIN           "../../stream_platform/windows/graph_windows_bin.txt" /* binary graph file */
+#define GRAPH_HEADER        "../../stream_platform/windows/graph_windows_header.h"  /* list of labels to do "set_parameter" from scripts */
+#define GRAPH_DEBUG         "../../stream_platform/windows/graph_windows_debug.txt" /* comments made during graph conversion  */
+#endif
 
-#define GRAPH_HEADER        "../../stream_platform/windows/graph_header.h"    /* list of labels to do "set_parameter" from scripts (script compilation step) */
-
-#define GRAPH_DEBUG         "../../stream_platform/windows/graph_debug.txt"   /* comments made during graph conversion  */
-
+#if PLATFORM_LPC55S69EVK == 1
+#define GRAPH_ALL_MANIFESTS "../../stream_platform/lpc55s69evk/manifest/top_manifest_lpc55s69evk.txt"
+#define GRAPH_TXT           "../../stream_platform/lpc55s69evk/graph_lpc55s69evk.txt"     /* graph */
+#define GRAPH_BIN           "../../stream_platform/lpc55s69evk/graph_lpc55s69evk_bin.txt" /* binary graph file */
+#define GRAPH_HEADER        "../../stream_platform/lpc55s69evk/graph_lpc55s69evk_header.h"  /* list of labels to do "set_parameter" from scripts */
+#define GRAPH_DEBUG         "../../stream_platform/lpc55s69evk/graph_lpc55s69evk_debug.txt" /* comments made during graph conversion  */
+#endif
 
 
 extern void arm_stream_read_manifests (struct stream_platform_manifest *platform, char *all_files);
