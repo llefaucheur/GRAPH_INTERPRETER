@@ -122,7 +122,12 @@ void arm_stream_detector_process (arm_detector_instance *pinstance,
         {   DOWNCOUNTER = MINIFLOAT2Q31(RELOADCOUNTER);
         }
 
-        pResult[isamp] = (DOWNCOUNTER > 0) ? 0x7FFF : 0;  // in[isamp]; //
+        if (DOWNCOUNTER > 0)
+        	pResult[isamp] = 0x7FFF;
+        else
+        	pResult[isamp] = 0x0000;
+
+        //pResult[isamp] = in[isamp];
 
 #if PRINTF        
         {   

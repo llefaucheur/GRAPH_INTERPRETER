@@ -42,10 +42,11 @@
 #define PLATFORM_STM32L475EIOT01 0      //---
 #define PLATFORM_STM32U585IOT02A        //PACK    Light,TOF,Pressure,IMU,Temp,MIC
 #define PLATFORM_STEVALMKBOXPRO 0       //CubeIDE Pressure,IMU,Temp,MIC
-#define PLATFORM_ARDUNANO33SENSEV2 0    //Arduino 
-#define PLATFORM_ARDURP2040 0           //Arduino IMU,MIC
+#define PLATFORM_ARDU_NANO33SENSEV2 0   //Arduino 
+#define PLATFORM_ARDU_RP2040 0          //Arduino IMU,MIC
 #define PLATFORM_ARDU_UNOR4W 0          //Arduino 
 #define PLATFORM_ARDU_ZERO 0            //Arduino 
+#define PLATFORM_ARDU_NICLAVISION 0     //Arduino 
 #define PLATFORM_PORTENTAC33 0          //Arduino SE050C2 Secure Element
 
 /*============================ SWITCHES =====================================*/

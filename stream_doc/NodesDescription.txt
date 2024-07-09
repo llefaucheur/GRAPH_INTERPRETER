@@ -88,7 +88,9 @@ _end_
 ;           6b->8b conversion, scheduler call to set parameters, change use-case, 
 ;           reload a new graph and optionnaly restart the graph using application_callbacks[]
 ;   
-;    Use-case : dispatch debug commands and allow a new graph to be downloaded
+;    Use-case : 
+;       - dispatch debug commands and allow a new graph to be downloaded
+;       - update the graph or an ML model, optional reset 
 ;
 node
     arm_stream_graph_control   0        ; instance index 0

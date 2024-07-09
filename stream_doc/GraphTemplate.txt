@@ -91,6 +91,8 @@ stream_io_cb_setting        0           ; use a callback (stream_al_services app
 ;    _end_
 ;
 
+mem_fill_pattern 4 DEADBEEF        ; 4-Bytes memory fill with 4words of value 0xDEADBEEF
+
 ;==============================
 ;   SUBGRAPHS
 ;
@@ -191,8 +193,8 @@ script  0                       ; index of the script, to be mapped to an index 
                                 ;  in the main graph the "top_graph_interface" have the indexes to use use in the first column 
 
                                 ;      IO-ID    NAME INST IO FORMAT
-arc_input  1 node_name  2  0  0 ; input arc index #1 connected to "node_name" instance #2 and its arc index #0, Format #0
-arc_output 2 node_name  3  1  0 ; output arc index #2 connected to "node_name" instance #3 and its arc index #1, Format #0
+arc_input  1 1 node_name 2 0 0  ; input arc index #1 data move:set0_copy1 connected to "node_name" instance #2 and its arc index #0, Format #0
+arc_output 2 1 node_name 3 1 0  ; output arc index #2 data move:set0_copy1 connected to "node_name" instance #3 and its arc index #1, Format #0
                                 ;----ARC CONNECTION BETWEEN TWO NANOAPPS
                                 ;     NAME INST IO FMT    NAME INST IO FMT
 arc node1 1 2 0 node2 3 4 1     ; arc   node1 instance node_index1 format_index1      node2 node_index2 format_index2  

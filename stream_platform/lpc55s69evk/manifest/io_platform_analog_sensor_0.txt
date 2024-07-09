@@ -4,7 +4,9 @@
                                                                        
 io_platform_sensor_in_0                     ; name for the tools                            
 analog_in                                   ; domain name,   unit: dB, Vrms, mV/Gauss, dps, kWh, ...
-io_set0_copy1            1                  ; buffers are declared with the DMA bsp
+
+io_commander0_servant1  0
+
 
 ; io_commander0_servant1 1                    ; commander=0 servant=1 (default is servant)
 ; io_buffer_allocation   2.0                  ; default is 0, which means the buffer is declared outside of the graph

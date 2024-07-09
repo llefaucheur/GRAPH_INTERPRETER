@@ -415,7 +415,9 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(top_trace_node))    
         {   
         }
-
+        if (COMPARE(mem_fill_pattern))
+        {   fields_extract(&pt_line, "CIH", ctmp, &(graph->debug_pattern_size), &(graph->debug_pattern));
+        }
         /* ----------------------------------------------- STREAM IO --------------------------------------------------------*/
         if (COMPARE(stream_io_new))         // stream_io "soft ID" 
         {   fields_extract(&pt_line, "CI", ctmp, &(graph->arc[graph->nb_arcs].idx_arc_in_graph));   
@@ -595,33 +597,35 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         
         /* --------------------------------------------- ARCS ----------------------------------------------------------------------*/
         if (COMPARE(arc_input))                                         //arc_input  idx_stream_io node_name instance arc_index Format
-        {   uint32_t instCons, inPort, fmtCons, arcIO, SwcConsGraphIdx;
+        {   uint32_t instCons, inPort, fmtCons, arcIO, SwcConsGraphIdx, set0_copy1;
             struct stream_node_manifest *graph_node_Cons;
             char Consumer[NBCHAR_LINE];
 
-            fields_extract(&pt_line, "CICIII", ctmp, &idx_stream_io, Consumer, &instCons, &inPort, &fmtCons); 
+            fields_extract(&pt_line, "CIICIII", ctmp, &idx_stream_io, &set0_copy1, Consumer, &instCons, &inPort, &fmtCons); 
             findArcIOWithThisID(graph, idx_stream_io, &arcIO);      /* arcIO receives the stream from idx_stream_IO */
             graph->arc[arcIO] = graph->arc[arcIO];                  /* copy the already filled arc IO details to this new arc */
 
             search_graph_node(Consumer, &graph_node_Cons, &SwcConsGraphIdx, graph); /* update the arc of the consumer */
             graph->arc[arcIO].format_idx_dst = fmtCons;        
             graph->arc[arcIO].SwcProdGraphIdx = SwcConsGraphIdx;
+            graph->arc[arcIO].set0_copy1 = set0_copy1;
             graph_node_Cons->arc[inPort].format_idx_dst = fmtCons;               
             graph_node_Cons->arc[inPort].arcID = arcIO;               
             graph_node_Cons->arc[inPort].rx0tx1 = 0;
         }
         if (COMPARE(arc_output))                                        //arc_output  idx_stream_io node_name instance arc_index Format
-        {   uint32_t instProd, outPort, fmtProd, arcIO, SwcProdGraphIdx;
+        {   uint32_t instProd, outPort, fmtProd, arcIO, SwcProdGraphIdx, set0_copy1;
             struct stream_node_manifest *graph_node_Prod;
             char Producer[NBCHAR_LINE];
 
-            fields_extract(&pt_line, "CICIII", ctmp, &idx_stream_io, Producer, &instProd, &outPort, &fmtProd);
+            fields_extract(&pt_line, "CIICIII", ctmp, &idx_stream_io, &set0_copy1, Producer, &instProd, &outPort, &fmtProd);
             findArcIOWithThisID(graph, idx_stream_io, &arcIO);      /* arcIO send the stream to idx_stream_IO */
             graph->arc[arcIO] = graph->arc[arcIO];                  /* copy the already filled arc IO details to this new arc */
 
             search_graph_node(Producer, &graph_node_Prod, &SwcProdGraphIdx, graph);
             graph->arc[arcIO].format_idx_dst = fmtProd;           
             graph->arc[arcIO].SwcProdGraphIdx = SwcProdGraphIdx;
+            graph->arc[arcIO].set0_copy1 = set0_copy1;
             graph_node_Prod->arc[outPort].format_idx_dst = fmtProd;               
             graph_node_Prod->arc[outPort].arcID = arcIO;               
             graph_node_Prod->arc[outPort].rx0tx1 = 1;

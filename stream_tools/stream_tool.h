@@ -519,6 +519,7 @@ struct stream_graph_linkedlist
     uint32_t sched_return, dbg_script_fields; 
     uint32_t idbg;
     dbgtrace_t dbg[MAXDBGTRACEGRAPH];
+    uint32_t debug_pattern, debug_pattern_size;
 
     FILE *ptf_graph_bin;/* graph conversion  */
     FILE *ptf_debug;    /* comments during graph compilation */

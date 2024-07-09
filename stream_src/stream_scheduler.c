@@ -663,7 +663,7 @@ void load_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1)
             if (LW2S_COPY == RD(memaddr, SWAP_LW2S))
             {   arc_data_operations (S, arc, data_moved_from_arc, (uint8_t *)memaddr, memlen);
             } 
-            else
+            else if (LW2S_SWAP == RD(memaddr, SWAP_LW2S))
             {   arc_data_operations (S, arc, data_swapped_with_arc, (uint8_t *)memaddr, memlen);
             } 
 

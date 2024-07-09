@@ -330,15 +330,16 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     if (graph->option_graph_location == COPY_CONF_GR0_COPY_ALL_IN_RAM || 
         graph->option_graph_location == COPY_CONF_GR0_ALREADY_IN_RAM )
     {   
-        vid_malloc(VID0, 4 * (addrW32s + (SIZEOF_ARCDESC_W32 * graph->nb_arcs)), 
+        vid_malloc(VID0, 4 * (addrW32s + (SIZEOF_ARCDESC_W32 * graph->nb_arcs) + graph->debug_pattern_size), 
             MEM_REQ_4BYTES_ALIGNMENT, &i, 0, "COPY_CONF_GR0", platform, graph);
     }
 
     if (graph->option_graph_location == COPY_CONF_GR0_FROM_PIO)
     {
-        vid_malloc(VID0, 4 * (addrW32s + (SIZEOF_ARCDESC_W32 * graph->nb_arcs) - LK_PIO), 
+        vid_malloc(VID0, 4 * (addrW32s + (SIZEOF_ARCDESC_W32 * graph->nb_arcs) - LK_PIO  + graph->debug_pattern_size), 
             MEM_REQ_4BYTES_ALIGNMENT, &i, 0, "COPY_CONF_GR0", platform, graph);
     }
+
 
 
     /*
@@ -367,6 +368,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         }
         size = 0.5f + (jitterFactor * size);
 
+        /* memory allocation of BUFFERS */
         sprintf(tmpstring, "_%d_buff",i);  
         vid_malloc(arc->memVID, 
                 (uint32_t)size, MEM_REQ_4BYTES_ALIGNMENT,
@@ -374,6 +376,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
                 platform, graph);
 
         HCDEF_SSDC("arc", tmpstring, graph->arc[i].graph_base27b, " arc buffer address");
+        ARCW0 = ARCW1 = ARCW2 = ARCW3 = 0;
 
         ST(ARCW0, PRODUCFMT_ARCW0, graph->arc[i].fmtProd);
         ST(ARCW0, BASEIDXOFFARCW0, graph->arc[i].graph_base27b);  
@@ -399,6 +402,17 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         GWORDINC(ARCW3);
     }
     HCNEWLINE()   
+
+
+    /*
+        ==== debug filling pattern ====
+    */
+    for (i = 0; i < graph->debug_pattern_size; i++)
+    {   
+        sprintf(tmpstring, "    padding "); GTEXT(tmpstring);GWORDINC(graph->debug_pattern);
+    }
+    HCNEWLINE()   
+
 
     /* 
         LINKED-LIST of SWC , second pass with ONLY static memory allocation 

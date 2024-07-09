@@ -69,7 +69,6 @@
 /*----------------------------------------------------------------------- IO MANIFESTS ------------- */
 #define io_commander0_servant1      "io_commander0_servant1"
 #define io_buffer_allocation        "io_buffer_allocation"
-#define io_set0_copy1               "io_set0_copy1"
 #define io_direction_rx0tx1         "io_direction_rx0tx1"
 #define io_raw_format               "io_raw_format"
 #define io_nb_channels              "io_nb_channels"
@@ -206,7 +205,9 @@
 #define stream_io_new                   "stream_io"
 #define stream_io_format                "stream_io_format"
 #define stream_io_hwid                  "stream_io_hwid"
-#define stream_io_setting              "stream_io_setting"
+#define stream_io_setting               "stream_io_setting"
+
+#define mem_fill_pattern                "mem_fill_pattern"
 
 /*----------------------------------------------------------------------- GRAPH FORMAT ------------- */
 #define format_new                      "format"

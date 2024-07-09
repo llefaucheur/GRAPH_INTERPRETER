@@ -30,6 +30,6 @@ node arm_stream_filter  0
 node arm_stream_detector 0     
     node_preset         3                   detector preset 
 ;----------------------------------------------------------------------
-arc_input   0 arm_stream_filter     0 0 0  
-arc_output  1 arm_stream_detector   0 1 0  
+arc_input   0 0 arm_stream_filter     0 0 0  
+arc_output  1 0 arm_stream_detector   0 1 0  
 arc arm_stream_filter 0 1 0 arm_stream_detector 0 0 0     

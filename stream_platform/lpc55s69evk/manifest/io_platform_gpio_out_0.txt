@@ -6,6 +6,6 @@ io_platform_gpio_out_0                      ; name for the tools
 gpio_out                                    ; domain name,   no specific field
 
 io_direction_rx0tx1     1                  
-io_set0_copy1           1                   ; buffers are declared with the DMA bsp
+io_commander0_servant1  0
 
 _end_

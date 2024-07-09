@@ -785,7 +785,7 @@
 #define   ARCHID_LW0_LSB U(24) /* 3 execution reserved to this processor architecture (1..7)  */
 /*---------------------------*/
 #define  LOADFMT_LW0_MSB U(23) /* 1 optional arcs format loading in reset_component() */
-#define  LOADFMT_LW0_LSB U(23) /*   controled by "node_use_arc_format" in the graph, 4 words loaded */
+#define  LOADFMT_LW0_LSB U(23) /*   controled by "node_use_arc_format" in the graph */
 #define  ARCLOCK_LW0_MSB U(22) /* 1 0/1 the first/second arc locks the components */
 #define  ARCLOCK_LW0_LSB U(22) /*   */
 #define   SCRIPT_LW0_MSB U(21) /*   script called Before/After (debug, verbose trace control) */
@@ -1287,8 +1287,8 @@
 #define COLLISION_ARCW3_LSB U(24) /*       to check node-access collision from an other processor */
 #define ALIGNBLCK_ARCW3_MSB U(23) /*    producer blocked */
 #define ALIGNBLCK_ARCW3_LSB U(23) /* 1  producer sets "need for data realignement"  */
-#define   UNUSED__ARCW3_MSB U(22) /*     */
-#define   UNUSED__ARCW3_LSB U(22) /* 1   */
+#define   ________ARCW3_MSB U(22) /*     */
+#define   ________ARCW3_LSB U(22) /* 1   */
 #define     WRITE_ARCW3_MSB U(21) /*    write pointer is incremented by FRAMESIZE_FMT0 */
 #define     WRITE_ARCW3_LSB U( 0) /* 22 write read index  Byte-acurate up to 4MBytes starting from base address */
 

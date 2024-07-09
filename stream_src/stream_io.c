@@ -128,7 +128,7 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
             write = write + data_size;
             ST(arc[3], WRITE_ARCW3, write);     /* update the write index */
 
-            /* reset the data transfert flag is frame is already received */
+            /* reset the data transfert flag is a frame is fully received */
             {   uint32_t consumer_frame_size, i;
                 i = RD(arc[1],CONSUMFMT_ARCW1) * STREAM_FORMAT_SIZE_W32;
                 consumer_frame_size = RD(S->all_formats[i], FRAMESIZE_FMT0);
