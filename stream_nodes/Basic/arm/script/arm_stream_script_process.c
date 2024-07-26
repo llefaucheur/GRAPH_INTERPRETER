@@ -52,47 +52,7 @@
     Script format : 
         Scripts receive parameters:
         - Label of Entry point or Flag "comparison OK" set during the RESET sequence, reset otherwise
-
-    Registers 
-        Instance static = 
-            3 bits addressing for 6 x Float + 2 Stack 
-            3 bits for pointers AD0 .. AD5 + SP01
-            3 bits for Special regs mapped on one 64bits register 
-                (MaxInc, Inc, Address Loop for LDR/STR), 
-                BitFieldPos, Length
-                BanzLoop  
-                        <---- MSB word ----------------><---- LSB word ---------------->
-                        FEDCBA9876543210FEDCBA987654321|FEDCBA9876543210FEDCBA9876543210
-            Special reg0                                                    StopBit+StartBit
-            Special reg1                                             Flag  LoopCnt                                                       
-            Special reg2                                        DTYPE
-            Special reg3                MIN / MAX for cicular addressing                           
-            Special reg4  INC 0/+1/-1  *(ddd) increment_rrr 0 1 -1 inc -inc inc_modulo -inc_modulo
-            Special reg5 _________
-
-
-            minimum state memory = (0 register + 0 pointer + 1 special) x 8 Bytes = 8 Bytes + stack 
-            standard state memory= (6 registers+ 6 pointers+ 1 special) x 8 Bytes = 104 Bytes + stack (6=default)
-
-            registers format :                                                       DTYPE
-                        <---- MSB word ----------------><---- LSB word ---------------->
-                        FEDCBA9876543210FEDCBA987654321|FEDCBA9876543210FEDCBA987654____
-            int32       <------------------------------>____________________________0000
-            q15         <------------------------------>____________________________0001
-            fp32        <------------------------------>____________________________0010
-            TIME16      ________________<-------------->____________________________0011
-            TIME32      <------------------------------>____________________________0100
-            27b + DTYPE DTYPE<------ 27bits address---->____________________________0101
-            Pointer     <----------------- 64 bits to logical shift right ----------0110
-            TIME64      <----------------- 64 bits to shift right ------------------0111    
-            fp64        <----------------- 64 bits 4bits of mantissa removed--------1000
-            int64-4bits <----------------- 64 bits to arithmetic shift right -------1001 
-            char /0     ________________________<------>____________________________1010
                                                                                     1011
-                                                                                    1100
-                                                                                    1101
-                                                                                    1110
-                                                                                    1111
         Instance memory area (from const.h)
             TX ARC descriptor: locks execution, 
                 base address = instance, nb registers + nb ptr/2
@@ -102,167 +62,141 @@
 
             stack and registers are preserved between calls 
             the conditional flag is set at reset to allow specific initialization
-            R0 is a parameter for function calls and reset (use-case setting)
             type conversions are managed by the interpreter
                 during calls, arithmetics operations..
-            a CALS/CALL saves the flags, address and [OPCT RET] pops it
-            Flag "comparison OK" is used for conditional call/jump
-                the flag is set during STREAM_RESET and reset during STREAM_RUN
-            Flag "forced operation with boolean" after [OPCT BOOL]
-            The interpreter keeps the trace of the last 4 instructions for [JUMPOFF backward]
             The initial SP position is preserved for fast return
 
 
+    Registers 
+        Instance static = 12 registers (R1..R12) + stack (S, S') 
+        R0 means "not used" or "zero"
+        S' is the top-1 stack position 
+        P1,P2,P3 27bits portable format with DTYPE :
 
-    Instructions 16bits + 16/32bits constants, all with conditional execution
+        registers format :                      DTYPE
+                    <---- MSB word ----------------> <---- LSB word ---------------->  
+                    FEDCBA9876543210FEDCBA987654____ FEDCBA9876543210FEDCBA987654321|  
+        int32       ____________________________0000 <------------------------------>  
+        q15         ____________________________0001 <------------------------------>  
+        fp32        ____________________________0010 <------------------------------>  
+        TIME64      <-------------------------->0011 <------------------------------>    
+        fp64        <-------------------------->0100 <------------------------------>  
+        int64-4bits <-------------------------->0101 <------------------------------>  
+        TIME16      ____________________________0110 ________________<-------------->  
+        TIME32      ____________________________0111 <------------------------------>  
+        27b + DTYPE ____________________________1000 DTYPE<------ 27bits address---->  
+        Pointe32/64 <-------------------------->1001 <------------------------------>  
+        char /0     ____________________________1010 ________________________<------>  
+                                                      
+    Instructions 32bits + 32/64bits extra constants when K >= 0x3F0..3FF (1008..1023)
+        3F0 : next word is int32       
+        3F1 : next word is q15         
+        3F2 : next word is fp32              MOVI #fp32
+        3F3 : next word is TIME64      
+        3F4 : next word is fp64        
+        3F5 : next word is int64-4bits 
+        3F6 : next word is TIME16      
+        3F7 : next word is TIME32      
+        3F8 : next word is 27b + DTYPE 
+        3F9 : next word is Pointer     
+        3FA : next word is char /0     
 
-    FEDCBA9876543210
-    C00000000yyyyrrr 1 register
-           yyyy
-           0 EQ0    does rrr == 0
-           1 LE0    does rrr <= 0
-           2 LT0    does rrr < 0
-           3 NE0    does rrr != 0
-           4 GT0    does rrr > 0
-           5 GE0    does rrr >= 0
-           6 PUSH   vvv regs        (CPAR   ad(ddd) -> reg(rrr)  )
-           7 POP    vvv
-           8 DUP    duplicate stack
-           9 DELS   remove S0 or up to S1
-          10 RET    subroutine return, restore just SP and flags
-          11 RETR   subroutine return, restore all 
-          12 JMPA   jump to computed address rrr
-          13 CALA   call computed address rrr
-          14 CONV   rrr converter to DTYPE (special)
-          15 
+    GENERAL : 
+        if_II DST =(yyyyyyy) SRC1 uu SRC2 kk K7
+        (IF Y/N), ((*P)/R/S)DST OPERAND_yyyyy ((*P)/R/S)SRC1,((*P)/R/S)SRC2, ARITHMETICS_OPERAND xx (K)
+        FEDCBA9876543210FEDCBA9876543210
+        II______________________________ if yes, if not, no test, break-point
+        __yyyyyyy_______________________ Op-code 
+        _________OPAR___________________ arithmetic op
+        _____________DST.SRC1SRC2_______ Registers
+        _____________________xxxxxxXXXXX 11-bits Constant = +/- 0 .. 1000 / Bit field for |K|>1000
 
-    FEDCBA9876543210
-   (C00000000yyyyrrr  1 register )
-    C0000yyyyydddrrr  2 registers
-         yyyyy= 
-           2 EQ     does ddd == rrr
-           3 LE     does ddd <= rrr
-           4 LT     does ddd <  rrr
-           5 NE     does ddd != rrr 
-           6 GT     does ddd > rrr 
-           7 GE     does ddd >= rrr
-           8 BIT0   does ddd & (1 << rrr) = 0
-           9 BIT1   does ddd & (1 << rrr) > 0                           
-          10 SQRT   ddd = square-root(rrr)                              
-          11 NEG    ddd = -(rrr)                                        
-          12 SWAP   ddd <-> rrr                                         
-          13 COPY   ddd <- rrr                                          
-          14 SWAR   ad(ddd) <-> reg(rrr) 
-          15 CPAR   ad(ddd) -> reg(rrr)  
-          16 CPRA   ad(ddd) <- reg(rrr)  
-          17 CPRS   special(ddd) <- reg(rrr)  
-          18 CPSR   reg(rrr) <- special(ddd)
-          19 PSHP   *(ddd) increment_rrr 0 1 -1 inc -inc inc_modulo -inc_modulo
-          20 POPP   *(ddd) increment_rrr                                                    
-          21 CNVR   rrr converted to DTYPE (special) => ddd
-          22 
-          23
-          24
-          25
-          26
-          27
-          28
-          29  ??? CPYA  ad05 + SP01 => ad05 + SP01 
-          30      CPYS  sp01 + SP01 => sp05 + SP01 
-          31      CPYR  RR01 + SP01 => RR05 + SP01 
-
-
-    FEDCBA9876543210
-   (C0000yyyyydddrrr  2 registers)
-    C0xxxxxddduuuvvv  3 registers
-      xxxxx  
-           4 MOD   ddd = uuu mod vvv                  
-           5 ASHT  ddd = uuu << vvv (arithmetic)
-           6 LSHT  ddd = uuu << vvv (logical)
-           7 OR    ddd = uuu | vvv
-           8 XOR   ddd = uuu ^ vvv
-           9 AND   ddd = uuu & vvv
-          10 NOR   ddd = !(bb | vvv)
-          11 NORM  ddd = normed on MSB(vvv), applied shift in uuu
-          12 BSET  ddd = uuu | (1 << vvv)   
-          13 BCLR  ddd = uuu & ~(1 << vvv)  
-          14 ADD   ddd = uuu + vvv                    
-          15 SUB   ddd = uuu - vvv 
-          16 MUL   ddd = uuu x vvv                    
-          17 DIV   ddd = uuu / vvv                    
-          18 RDIV  ddd = vvv / uuu
-          19 MAX   ddd = max (uuu, vvv) sets F when uuu>vvv
-          20 MIN   ddd = min (uuu, vvv) sets F when uuu<vvv
-          21 AMAX  ddd = max (abs(uuu), abs(vvv)) sets F when abs(vvv)>abs(uuu)
-          22 AMIN  ddd = min (abs(uuu), abs(RYvvv sets F when abs(vvv)<abs(uuu)
-          23 SQRA  ddd = uuu + (vvv * vvv) 
-          24 LDR   ddd = *(uuu_adr) increment_vvv using the type of ddd
-          25 STR   *(ddd_adr) increment_vvv = uuu using the type of uuu
-          26 
-          27 
-          28 
-          29 
-          30 
-          31 
-          32 
-          
-
-    FEDCBA9876543210    branch
-   (C0xxxxxddduuuvvv  3 registers)
-    C1000xxxxkkkkkkk  K7 JMP
-         xxxx
-             
-           0 LABEL      K7       to address byte-code and parameter constants
-           1 JMP        label_K7
-           2 BANZ       Label_K7
-           3 JMP        signed_K7  signed instruction offset
-           4 CALL       Label_K7
-           5 CALLSYS    {K7}   system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW)
-           6 CALLSCRPT  {K7} common scripts and node control
-           7 CALLAPP    {K7}   0K6=64 local callbacks 1K6= 64 global callbacks
-           8 RETK1      return and keep registers in bitfield K7 
-           9 RETK2      return and keep registers, Special, address
-          10 PUSHLABEL  Label_K7  push the address of Label K7 on the stack
-          11 
-          12 
-          13 
-          14 
-          15 
+    Programming examples
+        TEST R1 < R2 + 129
+        TEST *P3 < S * 3.14159
+        TEST bit 17 of R1
+        R1 = (bit-field K11)
+        R1 = R2 x R3
+        R1 = R2 + #K11
+        P1 = P2 + #K11 (DTYPE)
+        S0 = S0 + 3.14159
+        R1 = 3.141592653589793
+        R1 = S0 + S1 
+        R1 = R2 << R3
+        R1 = R2 & (1 << #K5)
+        R1 = AMAX(R2, #K11)
+        R1 = MIN(R2, R3)
+        JUMP L_17 (R1)                      PUSH + JMP 
+        CALSYS L_17, (R1,R2,R3)             PUSH + CALL 
 
 
-    FEDCBA9876543210    movi, bit-test
-   (C1000xxxxkkkkkkk  K7 JMP)
-    C1xxxxxuuukkkkkk  K6 + R 
-           4 BITSET  uuu = uuu | (1 << K6)
-           5 BITCLR  uuu = uuu & ~(1 << K6)
-           6 ADDK    uuu = uuu + K6        (inc)
-           7 SUBK    uuu = uuu - K6        (dec)
-           8 RSUBK   uuu = K6 - uuu
-           9 DIVK    uuu = uuu / K6
-          10 RDVK    uuu = K6 / uuu
-          11 MULK    uuu = uuu x Signed_K6 (+/- 31)
-          12 TSTBIT0 does uuu & (1 << K6) = 0  
-          13 TSTBIT1 does uuu & (1 << K6) != 0
-          14 ASHIFTK uuu = uuu << K6(signed)
-          15 LSHIFTK uuu = uuu << K6 logical
-          16 WRSP    *SP[K6] = uuu
-          17 RDSP    uuu = *SP[K6]
-          18 MOVI    uuu = #signed_k6  (SET / CLR)
-          19 MVIS    spc = #signed_k6  (set/clear flag, loop, mask)
-          20 MOVI    uuu = #DTYPE following
-          21 MOVA    adr = #DTYPE address /16 /32 /64 bits x 2 (integer / float)
-          22 MOVI    spc = #DTYPE to special regs
-          23 BITF    read : (special) bit-range, save in uuu
-          24 BITF    write : shift uuu + mask to SP0
-          24 
-          25 
-          26
-          27
-          28
-          29
-          30
-          31
+    OPAR (SRC1 / SRC2) or (SRC1 / K)
+         0  SRC1 + SRC2 (or K)              PUSH: S=R+0  POP:R=S+0   DUP: S=S+0  DEL: R0=S+0  DEL2: R0=S'+0
+         1  SRC1 - SRC2 (or K)                  MOVI #K: R=R0+K
+         2  SRC1 * SRC2 (or K)
+         3  SRC1 / SRC2 (or K)              DIV  
+         4  SRC2(or K) - SRC1               NEG and RSUB
+         5  SRC2(or K) / SRC1               RDIV
+         6  SRC1 | SRC2 (or K)              if SRC is a pointer then it is decoded as *(SRC)
+         7  !(SRC1 | SRC2) (or K)
+         8  SRC1 & SRC2 (or K)
+         9  SRC1 ^ SRC2 (or K)
+        10  SRC1 % SRC2 (or K)
+        11  SRC1 << SRC2 (or K)             SHIFT   
+        12  SRC1 >> SRC2 (or K)
+        13  SRC1 | (1 << SRC2 (or K))       BSET      
+        14  SRC1 & (1 << SRC2 (or K))       BCLR     TESTBIT 0/R0 OPAR_SHIFT(SRC1, 1<<K5)
+        15  MAX   (SRC1, SRC2)                     
+        16  MIN   (SRC1, SRC2)                      
+        17  AMAX  (abs(SRC1), abs(SRC2)) 
+        18  AMIN  (abs(SRC1), abs(SRC2))
+        19  MAXF  (SRC1, SRC2) sets F when SRC1>SRC2                       
+        20  MINF  (SRC1, SRC2) sets F when SRC1<SRC2                       
+        21  AMAXF (abs(SRC1), abs(SRC2)) sets F when abs(SRC1)>abs(SRC2)   
+        22  AMINF (abs(SRC1), abs(SRC2)) sets F when abs(SRC1)<abs(SRC2)
+        23  SQRA (SRC1 + SRC2 x SRC2)
 
+
+    OPERATION FIELD yyyyyyy
+         0  TEST DST =  SRC1 OPAR K    TEST DST =  K     and TEST DST =  SRC1
+         1  TEST DST <= SRC1 OPAR K    TEST DST <= K     and TEST DST <= SRC1
+         2  TEST DST <  SRC1 OPAR K    TEST DST <  K     and TEST DST <  SRC1
+         3  TEST DST != SRC1 OPAR K    TEST DST != K     and TEST DST != SRC1
+         4  TEST DST >= SRC1 OPAR K    TEST DST >= K     and TEST DST >= SRC1
+         5  TEST DST >  SRC1 OPAR K    TEST DST >  K     and TEST DST >  SRC1
+         6  TEST DST =  SRC1 OPAR SRC2 TEST DST =  SRC2  and TEST DST =  SRC1
+         7  TEST DST <= SRC1 OPAR SRC2 TEST DST <= SRC2  and TEST DST <= SRC1
+         8  TEST DST <  SRC1 OPAR SRC2 TEST DST <  SRC2  and TEST DST <  SRC1
+         9  TEST DST != SRC1 OPAR SRC2 TEST DST != SRC2  and TEST DST != SRC1
+        10  TEST DST >= SRC1 OPAR SRC2 TEST DST >= SRC2  and TEST DST >= SRC1
+        11  TEST DST >  SRC1 OPAR SRC2 TEST DST >  SRC2  and TEST DST >  SRC1
+        12  DST (bitfield #K5) = SRC  
+        13  DST = SRC (bitfield #K5)
+        14  DST = OPAR (SRC1 + SRC2)    (+ x & MIN)
+        15  DST = OPAR (SRC1 + K)
+        16  DST = SQRT(SRC)
+        17  PTR DST increment_rrr 0 1 -1 inc -inc inc_modulo -inc_modulo (K11)
+        18  PTR DST increment_rrr 0 1 -1 inc from the DTYPE of SRC1
+        19  NORM DST = normed on MSB(SRC1), applied shift in SRC2
+        20  WRSP *SP[K] = DST
+        21  RDSP DST = *SP[K]
+        22  JMPA  jump to computed address DST 
+        23  CALA  call computed address DST
+        24  PUSH FLAG
+        25  CNVR DST converted to DTYPE of SRC
+        26  CNVR DST, DTYPE
+        27  PUSHLABEL  Label_K7  push the address of Label K7 on the stack    
+        28  LABEL      K7       to address byte-code and parameter constants 
+        29  JMP        (DST, SRC1, SRC2/R0=none),label_K7  
+        30  BANZ DST   Label_K7   
+        31  JMP        (DST, SRC1, SRC2/R0=none),signed_K7  signed instruction offset  
+        32  CALL       (DST, SRC1, SRC2/R0=none),Label_K7  
+        33  CALLSYS    (DST, SRC1, SRC2/R0=none),{K7} system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW, Pointers) 
+        34  CALLSCRPT  (DST, SRC1, SRC2/R0=none),{K7} common scripts and node control  
+        35  CALLAPP    (DST, SRC1, SRC2/R0=none),{K7} 0K6=64 local callbacks 1K6= 64 global callbacks   
+        36  RETKEEP    return and keep registers in bitfield K11    
+        37  RETURN 
+        38  SWAP SRC, DST
 
 =========================================================================================
 
@@ -352,14 +286,12 @@
         //  Power meter process is using 3 phases x voltage, current, reactive power
         //  Save the state of a button (shutter button)
         //Command from arm_stream_command_interpreter() : return the code version number, ..
-
-
- */
+*/
 
 /*
-    FIFOTX buffer : instance | types[regs + stack] | registers & stack | scratch/parameters
-    stack     | 0| 1| 2| 3|    Push => stack     | X| 1| 2| 3|
-      SP        |                        SP           |
+    FIFOTX buffer : instance | [regs + stack]   scratch/parameters
+                               stack     | 0| 1| 2| 3|    Push => stack     | X| 1| 2| 3|
+                                 SP        |                        SP           |
 */
 
 void arm_stream_script_interpreter (
@@ -379,7 +311,7 @@ void arm_stream_script_interpreter (
     PC = 0;
     F = 0;
 
-    tmp8 = RD(descriptor[SCRIPT_PTR_SCRARCW0], NBREGS_SCRARCW0);    
+    tmp8 = RD(descriptor[SCRIPT_PTR_SCRARCW0], NBREGS_SCRARCW3);    
     SP = (SCRIPT_REGSIZE +1) * tmp8;                       /* stack index is after registers */
 
     typ8 = ram;                                     /* register types  */
@@ -432,9 +364,9 @@ void arm_stream_script_interpreter (
             /* 0000 0011 Clll.llll (C)CALLSYS un/conditional system call (0..127) */
             case 3:
                 arm_stream_services( (uint32_t)((stack[SP-1]).i32), 
-                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-2]).i32, LINADDR_UNIT_BYTE), 
-                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-3]).i32, LINADDR_UNIT_BYTE), 
-                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-4]).i32, LINADDR_UNIT_BYTE), 
+                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-2]).i32, LINADDR_UNIT_W32), 
+                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-3]).i32, LINADDR_UNIT_W32), 
+                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-4]).i32, LINADDR_UNIT_W32), 
                     (uint32_t)((stack[SP-5]).i32));
                     SP = SP-5;
                 break;

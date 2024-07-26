@@ -202,14 +202,15 @@ struct node_memory_bank
     uint32_t sizeFromGraph;     /* E */
     uint32_t sizeNchan;
     float sizeFS;
-    uint32_t sizeFrame, sizeParameter;
+    uint32_t sizeFrame;
     uint32_t iarcChannelI, iarcSamplingJ, iarcFrameK;
-    uint32_t alignmentBytes;    /* enum buffer_alignment_type in NUMBER OF BYTES */
+    uint32_t alignmentBytes;    /* enum buffer_alignment_type in NUMBER OF BYTES >= 4 */
     uint32_t stat0work1ret2;    /* enum mem_mapping_type : static, working, pseudo working, backup */
     uint32_t speed;             /* enum mem_speed_type */
     uint32_t relocatable;       /* enum buffer_relocation_type */
     uint32_t data0prog1;        /* data / program memory */
     uint32_t toSwap, swapVID;   /* @@@@ memory bank to swap to swapVID */
+    uint32_t malloc_add;        /* added from graph */
 
     uint32_t mem_VID;           /* optimization during graphTXT node declaration */
 
@@ -257,8 +258,8 @@ struct formatStruct
     float samplingRate;
     uint32_t timestamp;         /* FMT1                 */
     uint32_t timeformat;        /* FMT1                 */
-    float frame_length;         /* FMT0    frame length format (0:in milliseconds 1:in samples) */
-    uint32_t framelength_format;   /* frame length format (0:in milliseconds 1:in samples) */
+    float frame_length;      /* FMT0    frame length format (0:in milliseconds 1:in samples) */
+    uint32_t framelength_format; /* frame length format (0:in milliseconds 1:in samples) */
 
     /* format section specific to each domain */
     union
@@ -292,7 +293,7 @@ struct arcStruct
     char IO_name[MAXCHAR_NAME];         // IO stream name used in the GUI
     char domainName[MAXCHAR_NAME];      // arc name used in the GUI 
 
-    uint32_t set0_copy1;                // SET0COPY1_IOFMT data move through pointer setting of data copy 
+    uint32_t set0copy1;                // SET0COPY1_IOFMT data move through pointer setting of data copy 
     uint32_t commander0_servant1;       // SERVANT1_IOFMT selection for polling protocol 
     uint32_t graphalloc_X_bsp_0;        // buffer declared in BSP (0) or Graph x (multiplication factor of the Frame size, 2 for a ping-pong buffer for example 
     uint32_t sram0_hwdmaram1;           // buffer in standard RAM=0, in HW IO RAM=1 
@@ -330,7 +331,6 @@ struct arcStruct
     float sizeFactor;
 
     // specific to SWC
-    uint32_t format_idx_src, format_idx_dst; // stream format index
     uint32_t inPlaceProcessing;          /* SWCONLY flag buffer overlay with another arcID, 0=none*/
     uint32_t arcIDbufferOverlay;         /* SWCONLY   arcID being overlaid */
     uint32_t src_instanceid, dst_instanceid; /* for information during graph reading */
@@ -359,8 +359,7 @@ struct stream_node_manifest
     uint32_t deliveryMode;               /* 0:source, 1:binary 2:2 binaries (fat binary)*/
 
     uint32_t arc_parameter;             // SWC with extra-large amount of parameters (NN models) will declare it with extra arcs
-    uint32_t steady_stream;             // (0) the data flow is variable (or constant, default value :1) on all input and output arcs
-    uint32_t same_data_rate;            // (0) the arcs have different data rates, (1) all arcs have the same data rate 
+    uint32_t same_data_rate;            // (0) the arcs have different data rates, (1) all arcs have the same data rate  (0) the data flow is variable (or constant, default value :1) on all input and output arcs
     uint32_t use_dtcm;                  // default 0 (no MP DTCM_LW2), 1: fast memory pointer placed after the arc format
     uint32_t use_arc_format;            // default 0 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
     uint32_t mask_library;              // default 0 bit-field of dependencies to computing libraries
@@ -379,6 +378,8 @@ struct stream_node_manifest
     uint32_t lock_proc;
     uint32_t lock_arch;                 
     uint32_t headerPACK;
+    uint32_t use_boot_key, boot_key[MAXNB_WORD32_BOOT_KEY];    /* max 1024 bits boot key */
+    uint32_t use_user_key, user_key[MAXNB_WORD32_USER_KEY];    /* max 1024 bits user key */
 
     /* memory */
     uint32_t nbMemorySegment;
@@ -393,7 +394,6 @@ struct stream_node_manifest
     uint32_t local_script_index;
     uint32_t ParameterSizeW32;          /* size of the array below */
     uint32_t PackedParameters[MAXPARAMETERSIZE]; /* words32 PACK */
-    float malloc_E; 
 
     /* arcs and buffers */
     uint32_t initialized_from_platform;
@@ -429,7 +429,7 @@ struct stream_script
     char script_bytecode[AVG_SCRIPT_LEN];
     uint32_t script_instance27b, nbw32_allocated;           // static address, size
     uint32_t stack_memory_shared;                           // flag
-    uint32_t script_nb_byte_code, nb_reg, nb_ptr, nb_stack; // memory allocation parameters
+    uint32_t script_nb_byte_code, nb_reg, nb_stack; // memory allocation parameters
     uint32_t stack_memory_script, mem_VID;
     uint32_t script_offset;
     uint32_t script_format;     /* 0 : interpreted byte code, or architecture native code */
@@ -492,12 +492,12 @@ struct stream_graph_linkedlist
     uint32_t PackedFormat;                          /*  consolidated formats per arc, inter-nodes and at boundaries */  
                                                     /* format section common to all stream interfaces (digital format) */  
     /* ------- FORMAT ------ */
-    uint32_t nb_formats;
+    uint32_t current_format_index, nb_formats;
     struct formatStruct arcFormat[MAX_NB_FORMAT];   /* merged formats */
 
     /* ------- ARCS ------- */
     struct arcStruct arc[MAX_NB_NODES];             /* rx0tx1, domain, digital format and FS accuracy => merge data */
-    uint16_t nb_arcs, nb_io_arcs;                   /*  consolidated formats per arc, inter-nodes and at boundaries */
+    uint16_t nb_arcs, nb_io_arcs, current_io_arc;   /*  consolidated formats per arc, inter-nodes and at boundaries */
     uint32_t nb_debug_pages;                        /* arcs self-debug : number of 16x64b debug pages, in the buffer of arc0 */ 
     uint32_t nb_debug_registers;                    /* arcs self-debug : number of 16x64b debug registers, in the buffer of arc0 */ 
     
@@ -514,6 +514,7 @@ struct stream_graph_linkedlist
     /* ------- OUTPUT ------- */
     uint32_t end_binary_graph, memVID;              /* compilation result, location of the graph in memory */
     uint32_t option_graph_location;
+    uint32_t graph_location_from_0;                 /* graph_location offset from VID0 (long_offset[0]) */
     uint32_t binary_graph[MAXBINARYGRAPHW32];   
     char  binary_graph_comments[MAXBINARYGRAPHW32][NBCHAR_LINE];
     uint32_t sched_return, dbg_script_fields; 

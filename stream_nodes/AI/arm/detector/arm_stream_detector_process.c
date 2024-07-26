@@ -34,7 +34,7 @@
 #include "stream_types.h"
 
 
-#define PRINTF 0 // debug
+#define PRINTF 1 // debug
 
 #if PRINTF
 #include <stdio.h>
@@ -70,6 +70,7 @@ void arm_stream_detector_process (arm_detector_instance *pinstance,
                      int16_t *in, int32_t inputLength, 
                      int16_t *pResult)
 {
+#ifdef CODE_ARM_STREAM_DETECTOR
     int32_t isamp = 0;
     int32_t input_data;
     int32_t DBGZ3;
@@ -143,6 +144,7 @@ void arm_stream_detector_process (arm_detector_instance *pinstance,
 #endif     
         isamp++;
     }
+#endif
 }
 
 #ifdef __cplusplus

@@ -367,23 +367,24 @@ _end_
 ;   Parameters : coding scheme 
 ;
 ;   presets (provision codes):
-;   #1 : encoder IMADPCM
-;   #2 : encoder LPC
-;   #3 : encoder CVSD for BT speech 
-;   #4 : encoder LC3 
-;   #5 : encoder SBC
-;   #6 : encoder mSBC
-;   #7 : encoder OPUS Silk
-;   #7 : encoder MP3
-;   #8 : encoder MPEG-4 aacPlus v2 
-;   #9 : encoder OPUS CELT
+;   #1 : coder IMADPCM
+;   #2 : coder LPC
+;   #3 : 
+;   #4 : coder CVSD for BT speech 
+;   #5 : coder LC3 
+;   #6 : coder SBC
+;   #7 : coder mSBC
+;   #7 : coder OPUS Silk
+;   #8 : coder MP3
+;   #9 : coder MPEG-4 aacPlus v2 
+;   #10: coder OPUS CELT
+;   #11: coder JPEG
 
 ;
 node 
     arm_stream_compressor 0
 
     parameters     0             ; TAG   "load all parameters"
-        
         4; i32; 0 0 0 0     provision for extra parameters in other codecs
     _end_
 _end_
@@ -391,7 +392,7 @@ _end_
 ;----------------------------------------------------------------------------------------
 ;   11    arm_stream_decompressor
 ;----------------------------------------------------------------------------------------
-;   Operation : wave decompression of MONO encoded data
+;   Operation : decompression of encoded data
 ;   Parameters : coding scheme and a block of 16 parameter bytes for codecs
 ;
 ;       WARNING : if the output format can change (mono/stereo, sampling-rate, ..)
@@ -400,11 +401,11 @@ _end_
 ;           mapped in a RAM for dynamic updates with "COPY_CONF_GRAPH0_COPY_ALL_IN_RAM"
 ;
 ;       Example of data to share with the application
-;       outputFormat: AndroidOutputFormat.MPEG_4,
-;       audioEncoder: AndroidAudioEncoder.AAC,
-;       sampleRate: 44100,
-;       numberOfChannels: 2,
-;       bitRate: 128000,
+;           outputFormat: AndroidOutputFormat.MPEG_4,
+;           audioEncoder: AndroidAudioEncoder.AAC,
+;           sampleRate: 44100,
+;           numberOfChannels: 2,
+;           bitRate: 128000,
 ;
 ;   presets provision
 ;   #1 : decoder IMADPCM
@@ -424,8 +425,6 @@ node
     arm_stream_decompressor (i)
 
     parameters     0             ; TAG   "load all parameters"
-        
-        1  i8; 1            state = off (generates zeros) / on with ramp-up
         4; i32; 0 0 0 0     provision for extra parameters in other codecs
     _end_
 _end_

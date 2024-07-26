@@ -26,7 +26,7 @@
  */
 
 #include "platform.h"
-#if PLATFORM_LPC55S69EVK == 1
+#ifdef PLATFORM_LPC55S69EVK
 
 #ifdef __cplusplus
  extern "C" {

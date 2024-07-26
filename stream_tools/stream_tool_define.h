@@ -61,11 +61,14 @@
 
 #define MAX_PROC_MEMBANK 256     /* number of physical memory banks of the processor, for the graph processing */
 
+#define MAXNB_WORD32_BOOT_KEY 32    /* 1024 bits boot key */
+#define MAXNB_WORD32_USER_KEY 32    /* 1024 bits user key */
+
 #define VID_default 0
 
 #define MAX_POSSIBLE_NB_MEMORY_OFFSET 8 /* long_offset[] size */
 
-#define SECTION_END "_end_"
+#define SECTION_END "end"
 /*----------------------------------------------------------------------- IO MANIFESTS ------------- */
 #define io_commander0_servant1      "io_commander0_servant1"
 #define io_buffer_allocation        "io_buffer_allocation"
@@ -154,17 +157,19 @@
 #define io_backlight_brightness        "io_backlight_brightness"
 
 /*----------------------------------------------------------------------- NODE MANIFESTS ------------- */
+#define node_developer_name             "node_developer_name"
+#define node_name                       "node_name"
+#define node_logo                       "node_logo"
 #define node_nb_arcs                    "node_nb_arcs"
 #define node_arc_parameter              "node_arc_parameter"
-#define node_steady_stream              "node_steady_stream"
-#define node_same_data_rate             "node_same_data_rate"
+#define node_same_rxtx_data_rate        "node_same_rxtx_data_rate"
 #define node_use_mpdtcm                 "node_use_mpdtcm"
 #define node_use_arc_format             "node_use_arc_format"
 #define node_mask_library               "node_mask_library"
 #define node_subtype_units              "node_subtype_units"
 #define node_architecture               "node_architecture"
 #define node_fpu_used                   "node_fpu_used"
-#define node_use_unlock_key             "node_use_unlock_key"
+#define node_use_boot_key               "node_use_boot_key"
 #define node_node_version               "node_node_version"
 #define node_stream_version             "node_stream_version"
 #define node_mem                        "node_mem"
@@ -195,7 +200,8 @@
 #define subgraph                        "subgraph"
 #define set_file_path                   "set_file_path"
 #define graph_location                  "graph_location"
-#define graph_map_hwblock               "graph_map_hwblock"
+#define graph_location_offset           "graph_location_offset"
+#define graph_memory_bank               "graph_memory_bank"
 #define debug_script_fields             "debug_script_fields"
 #define scheduler_return                "scheduler_return"
 #define allowed_processors              "allowed_processors"
@@ -206,17 +212,17 @@
 #define stream_io_format                "stream_io_format"
 #define stream_io_hwid                  "stream_io_hwid"
 #define stream_io_setting               "stream_io_setting"
+#define stream_io_setting_callback      "stream_io_setting_callback"
 
 #define mem_fill_pattern                "mem_fill_pattern"
 
 /*----------------------------------------------------------------------- GRAPH FORMAT ------------- */
-#define format_new                      "format"
+#define format_index                    "format_index"
 #define format_raw_data                 "format_raw_data"
 #define format_frame_length             "format_frame_length"
 #define format_interleaving             "format_interleaving"
 #define format_nbchan                   "format_nbchan"
 #define format_time_stamp               "format_time_stamp"
-#define format_time_stamp_size          "format_time_stamp_size"
 #define format_sdomain                  "format_sdomain"
 #define format_domain                   "format_domain"
 #define format_sampling_rate            "format_sampling_rate"
@@ -228,10 +234,9 @@
 
 /*----------------------------------------------------------------------- GRAPH NODES ------------- */
 #define node_new                        "node"
-#define node_lock_arcs                  "node_lock_arcs"
 #define node_preset                     "node_preset"
-#define node_malloc_E                   "node_malloc_E"
 #define node_map_hwblock                "node_map_hwblock"
+#define node_malloc_add                 "node_malloc_add"
 #define node_map_copy                   "node_map_copy"
 #define node_map_swap                   "node_map_swap"
 #define node_trace_id                   "node_trace_id"
@@ -239,6 +244,7 @@
 #define node_map_arch                   "node_map_arch"
 #define node_map_rtos                   "node_map_rtos"
 #define node_map_verbose                "node_map_verbose"
+#define node_memory_isolation           "node_memory_isolation"
 #define node_parameters                 "node_parameters"
 
 /*----------------------------------------------------------------------- GRAPH SCRIPTS ------------- */
@@ -260,7 +266,7 @@
 #define arc_debug_reg                   "arc_debug_reg"
 #define arc_debug_page                  "arc_debug_page"
 #define arc_flush                       "arc_flush"
-#define arc_extend_addr                 "arc_extend_addr"
+#define arc_extend_address                 "arc_extend_address"
 #define arc_map_hwblock                 "arc_map_hwblock"
 #define arc_jitter_ctrl                 "arc_jitter_ctrl"
 

@@ -64,7 +64,6 @@ void script_memory_consumption(struct stream_script *script)
     /* minimum state memory = (0 register + 0 pointer + 1 special) x 8 Bytes = 8 Bytes + stack  */
     script->nbw32_allocated = SCRIPT_REGSIZE;   /* special registers */
     script->nbw32_allocated += script->nb_reg * SCRIPT_REGSIZE;
-    script->nbw32_allocated += script->nb_ptr * SCRIPT_REGSIZE;
     script->nbw32_allocated += script->nb_stack * SCRIPT_REGSIZE;
 }
 
@@ -107,15 +106,20 @@ int vid_malloc (uint32_t VID, intPtr_t size, uint32_t alignment,
     if (found == 0) 
         exit(-5);
 
-    sprintf(tmpstring, " OFF %d BASE 0x%04X PT 0x%04X MAXW 0x%04X SIZE %04X", 
+    sprintf(tmpstring, " OFF %d BASE 0x%04X PT 0x%04X MAXW 0x%04X SIZE_bytes %04X", 
         offsetID, offset, platform->membank[ibank].ptalloc_static, platform->membank[ibank].max_working_booking, size);
+
+    /* no buffer alignment on Bytes and Word16 */
+    if (alignment < MEM_REQ_4BYTES_ALIGNMENT)
+    {   alignment = MEM_REQ_4BYTES_ALIGNMENT;
+    }
 
     alignmask =  ~((1 << (7&alignment)) -1);
     size = (size + 3) & alignmask;
      
     *pack27b = 0;
     ST(*pack27b, DATAOFF_ARCW0, offsetID);
-    ST(*pack27b, BASEIDX_ARCW0, offset);
+    ST(*pack27b, BASEIDX_ARCW0, offset >> 2);   /* offset is in WORD32 !! */
 
     if (working == MEM_TYPE_WORKING)
     {   if (size > platform->membank[ibank].max_working_booking)
@@ -123,7 +127,8 @@ int vid_malloc (uint32_t VID, intPtr_t size, uint32_t alignment,
         }
     }
     } else // MEM_TYPE_STATIC, MEM_TYPE_PERIODIC_BACKUP
-    {   platform->membank[ibank].ptalloc_static += size;
+    {   
+        platform->membank[ibank].ptalloc_static += size;    /* next malloc is WORD32 aligned */
     }
     
     if (platform->membank[ibank].ptalloc_static +
@@ -551,6 +556,7 @@ int fields_extract(char **pt_line, char *types,  ...)
                 break;
             ptstart0++;
         }
+
         ptstart = ptstart0;
     }
 

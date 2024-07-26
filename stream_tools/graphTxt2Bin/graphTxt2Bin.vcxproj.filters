@@ -29,6 +29,9 @@
     <Filter Include="PlatformsManifests\Computer PlatformManifests">
       <UniqueIdentifier>{4ce02fe8-ef73-4fe8-bef0-713e9093e164}</UniqueIdentifier>
     </Filter>
+    <Filter Include="PlatformsManifests\lp-mspm0l1306">
+      <UniqueIdentifier>{165b930c-3efd-41c7-9f93-23bd967c6819}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\stream_tool.h">
@@ -55,7 +58,10 @@
     <ClInclude Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk_header.h">
       <Filter>GraphSteps</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\stream_platform\windows\graph_windows_header.h">
+    <ClInclude Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_header.h">
+      <Filter>GraphSteps</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\stream_platform\windows\graph_computer_header.h">
       <Filter>GraphSteps</Filter>
     </ClInclude>
   </ItemGroup>
@@ -120,9 +126,6 @@
     <Text Include="..\..\stream_doc\NodesDescription.txt">
       <Filter>Doc</Filter>
     </Text>
-    <Text Include="..\..\stream_doc\GraphTemplate.txt">
-      <Filter>Doc</Filter>
-    </Text>
     <Text Include="..\..\stream_nodes\swc_manifest_none.txt">
       <Filter>NodesManifests</Filter>
     </Text>
@@ -157,15 +160,6 @@
       <Filter>GraphSteps</Filter>
     </Text>
     <Text Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk_debug.txt">
-      <Filter>GraphSteps</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\graph_windows_bin.txt">
-      <Filter>GraphSteps</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\graph_windows_debug.txt">
-      <Filter>GraphSteps</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\graph_windows.txt">
       <Filter>GraphSteps</Filter>
     </Text>
     <Text Include="..\..\stream_platform\windows\manifest\io_platform_2d_in_0.txt">
@@ -258,6 +252,72 @@
     <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_stream_in_0.txt">
       <Filter>PlatformsManifests\LPC55S69 PlatformManifests</Filter>
     </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_2d_in_0.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_analog_sensor_0.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_audio_in_0.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_data_in_0.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_data_in_1.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_data_out_0.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_gpio_out_0.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_gpio_out_1.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_imu_temperature_0.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_line_in_0.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_line_out_0.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_motion_in_0.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_node_trace_0.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_stream_in_0.txt">
+      <Filter>PlatformsManifests\lp-mspm0l1306</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\procmap_manifest_lp-mspm0l1306.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\top_manifest_lp-mspm0l1306.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_bin.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_debug.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\windows\graph_computer_bin.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\windows\graph_computer_debug.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\windows\graph_computer.txt">
+      <Filter>GraphSteps</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\stream_tool_graph2Bin.c">
@@ -275,5 +335,19 @@
     <ClCompile Include="..\stream_tool_readManifests.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\stream_doc\GraphTemplate.md">
+      <Filter>Doc</Filter>
+    </None>
+    <None Include="..\..\stream_doc\IoManifestTemplate.md">
+      <Filter>Doc</Filter>
+    </None>
+    <None Include="..\..\stream_doc\NodeManifestTemplate.md">
+      <Filter>Doc</Filter>
+    </None>
+    <None Include="..\..\stream_doc\NodesDescription.md">
+      <Filter>Doc</Filter>
+    </None>
   </ItemGroup>
 </Project>

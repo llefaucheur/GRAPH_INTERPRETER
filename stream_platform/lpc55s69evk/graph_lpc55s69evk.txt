@@ -9,7 +9,7 @@
 ;   +----------+     +--------+      +--------+     +--------+
 ;                
 ;----------------------------------------------------------------------
-format                  0
+format_index         0
 format_frame_length     960     ; BUFF_LEN in i2s_dma_record_playback.c
 ;----------------------------------------------------------------------
 stream_io               0
@@ -25,15 +25,15 @@ node arm_stream_filter  0
         1  u8;  1                           postShift
         5 s16; 522  -483   522 31055 -15735  elliptic band-pass 1500..2000/48kHz
         5 s16; 522 -1044   522 31624 -15879
-    _end_
+    end
 ;----------------------------------------------------------------------
 node arm_stream_detector 0     
     node_preset         3                   detector preset 
 ;----------------------------------------------------------------------
-arc_input   0 1 arm_stream_filter     0 0 0  
-arc_output  1 1 arm_stream_detector   0 1 0  
+arc_input   0 1 0 arm_stream_filter     0 0 0  
+arc_output  1 1 0 arm_stream_detector   0 1 0  
 arc arm_stream_filter 0 1 0 arm_stream_detector 0 0 0     
 ;----------------------------------------------------------------------
 mem_fill_pattern    4 h11223344
 
-_end_
+end

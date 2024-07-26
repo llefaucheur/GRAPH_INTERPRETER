@@ -65,7 +65,7 @@ node
         5 h16; 1231 1D28 1231 63E8 D475     b0/b1/b2/-a1/-a2  ellip(4, 1, 40, 3600/8000, 'low') 
         5 h16; 1231 0B34 1231 2470 9821     second biquad
         ;  _include    1   arm_stream_filter2D_parameters_x.txt      
-        _end_
+        end
 
     Half-band low-pass filter2D :
     [b,a] = ellip(4, 1, 40, 3600/8000, 'low')  MATLAB

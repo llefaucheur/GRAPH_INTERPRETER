@@ -26,7 +26,7 @@
  */
 
 #include "platform.h"
-#if PLATFORM_LPC55S69EVK == 1
+#ifdef PLATFORM_LPC55S69EVK
 
 #ifdef __cplusplus
  extern "C" {
@@ -35,7 +35,6 @@
 /*-----------------------------------------------------------------------*/
 #define DATA_FROM_FILES 1
 
-#define _CRT_SECURE_NO_DEPRECATE 1
 #if DATA_FROM_FILES
 #include <stdio.h>
 #endif
@@ -575,7 +574,7 @@ void platform_init_io(arm_stream_instance_t *S)
         {
             iarc = RD(*pio, IOARCID_IOFMT);
             iarc = SIZEOF_ARCDESC_W32 * iarc;
-            address = (uint8_t *)pack2linaddr_ptr(S->long_offset, all_arcs[iarc + BUF_PTR_ARCW0], LINADDR_UNIT_BYTE);
+            address = (uint8_t *)pack2linaddr_ptr(S->long_offset, all_arcs[iarc + BUF_PTR_ARCW0], LINADDR_UNIT_W32);
             size = (uint32_t)RD(all_arcs[iarc + BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
 
             io_func = &(S->platform_io[RD(*pio, FWIOIDX_IOFMT)]);

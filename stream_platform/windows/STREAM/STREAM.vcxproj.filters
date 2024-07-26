@@ -1,15 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\stream_platform\windows\main.c">
-      <Filter>platform_main</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\stream_platform\windows\platform_computer.c">
-      <Filter>platform_main</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\stream_platform\windows\platform_computer_io_services.c">
-      <Filter>platform_main</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\arm_biquad_cascade_df1_fast_q15.c">
       <Filter>library-cmsis-dsp</Filter>
     </ClCompile>
@@ -82,16 +73,10 @@
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor_process.c">
-      <Filter>stream_nodes</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor_imadpcm.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor.c">
-      <Filter>stream_nodes</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor_process.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor_imadpcm.c">
@@ -136,20 +121,38 @@
     <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D_process.c">
       <Filter>stream_nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\lpc55s69evk\main_call.c">
-      <Filter>platform_main</Filter>
+    <ClCompile Include="..\..\lp-mspm0l1306\platform_lp-mspm0l1306.c">
+      <Filter>platform_main\MSP1306</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\lpc55s69evk\platform_lpc55s69evk.c">
-      <Filter>platform_main</Filter>
+    <ClCompile Include="..\..\lp-mspm0l1306\platform_lp-mspm0l1306_io_services.c">
+      <Filter>platform_main\MSP1306</Filter>
     </ClCompile>
     <ClCompile Include="..\..\lpc55s69evk\platform_lpc55s69evk_io_services.c">
-      <Filter>platform_main</Filter>
+      <Filter>platform_main\LPC55S69</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\lpc55s69evk\platform_lpc55s69evk.c">
+      <Filter>platform_main\LPC55S69</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\windows\platform_computer_io_services.c">
+      <Filter>platform_main\Computer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\windows\platform_computer.c">
+      <Filter>platform_main\Computer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\lpc55s69evk\main_call_lpc55s69evk.c">
+      <Filter>platform_main\LPC55S69</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\windows\main.c">
+      <Filter>platform_main\Computer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main_call_computer.c">
+      <Filter>platform_main\Computer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\lp-mspm0l1306\main_call_lp-mspm0l1306.c">
+      <Filter>platform_main\MSP1306</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\stream_platform\windows\platform_computer.h">
-      <Filter>platform_main</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script.h">
       <Filter>stream_nodes</Filter>
     </ClInclude>
@@ -225,14 +228,23 @@
     <ClInclude Include="..\..\platform.h">
       <Filter>platform_main</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\lpc55s69evk\graph_lpc55s69evk_header.h">
-      <Filter>Graphs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\graph_windows_header.h">
-      <Filter>Graphs</Filter>
+    <ClInclude Include="..\..\lp-mspm0l1306\platform_lp-mspm0l1306.h">
+      <Filter>platform_main\MSP1306</Filter>
     </ClInclude>
     <ClInclude Include="..\..\lpc55s69evk\platform_lpc55s69evk.h">
-      <Filter>platform_main</Filter>
+      <Filter>platform_main\LPC55S69</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_platform\windows\platform_computer.h">
+      <Filter>platform_main\Computer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\lpc55s69evk\graph_lpc55s69evk_header.h">
+      <Filter>platform_main\LPC55S69</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph_computer_header.h">
+      <Filter>platform_main\Computer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\lp-mspm0l1306\graph_lp-mspm0l1306_header.h">
+      <Filter>platform_main\MSP1306</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -251,25 +263,43 @@
     <Filter Include="platform_main">
       <UniqueIdentifier>{97748a8a-4da7-4066-af7e-27a8abb8d503}</UniqueIdentifier>
     </Filter>
+    <Filter Include="platform_main\Computer">
+      <UniqueIdentifier>{f45e93d7-d341-427b-b865-b2046b67fff5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platform_main\LPC55S69">
+      <UniqueIdentifier>{86541e3b-2801-4e4b-9037-b08f39912138}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platform_main\MSP1306">
+      <UniqueIdentifier>{75e7365e-10fe-4fc5-8762-dcd209a2f1ac}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\lpc55s69evk\graph_lpc55s69evk.txt">
-      <Filter>Graphs</Filter>
+      <Filter>platform_main\LPC55S69</Filter>
     </Text>
     <Text Include="..\..\lpc55s69evk\graph_lpc55s69evk_bin.txt">
-      <Filter>Graphs</Filter>
+      <Filter>platform_main\LPC55S69</Filter>
     </Text>
     <Text Include="..\..\lpc55s69evk\graph_lpc55s69evk_debug.txt">
-      <Filter>Graphs</Filter>
+      <Filter>platform_main\LPC55S69</Filter>
     </Text>
-    <Text Include="..\graph_windows_bin.txt">
-      <Filter>Graphs</Filter>
+    <Text Include="..\graph_computer.txt">
+      <Filter>platform_main\Computer</Filter>
     </Text>
-    <Text Include="..\graph_windows_debug.txt">
-      <Filter>Graphs</Filter>
+    <Text Include="..\graph_computer_bin.txt">
+      <Filter>platform_main\Computer</Filter>
     </Text>
-    <Text Include="..\graph_windows.txt">
-      <Filter>Graphs</Filter>
+    <Text Include="..\graph_computer_debug.txt">
+      <Filter>platform_main\Computer</Filter>
+    </Text>
+    <Text Include="..\..\lp-mspm0l1306\graph_lp-mspm0l1306.txt">
+      <Filter>platform_main\MSP1306</Filter>
+    </Text>
+    <Text Include="..\..\lp-mspm0l1306\graph_lp-mspm0l1306_bin.txt">
+      <Filter>platform_main\MSP1306</Filter>
+    </Text>
+    <Text Include="..\..\lp-mspm0l1306\graph_lp-mspm0l1306_debug.txt">
+      <Filter>platform_main\MSP1306</Filter>
     </Text>
   </ItemGroup>
 </Project>

@@ -103,11 +103,11 @@ void read_top_graph_interface (char **pt_line, struct stream_platform_manifest* 
 
 
 /* ====================================================================================   
-    Read and pack the script until finding "_end_" / SECTION_END
+    Read and pack the script until finding "end" / SECTION_END
 
     script_byte_codes
     ....
-    _end_               end of byte codes  
+    end               end of byte codes  
 */
 void stream_tool_read_script(char **pt_line, struct stream_script *script)
 {
@@ -173,7 +173,7 @@ void stream_tool_read_parameters(
 void compute_memreq(struct node_memory_bank *m, struct formatStruct *all_format)
 {
     uint32_t nchan;
-    uint64_t size;
+    intPtr_t size;
     float FS, frame_length;
 
     /* struct graph stream_node_manifest all_nodes : compute the memreq from arc data 
@@ -190,13 +190,13 @@ void compute_memreq(struct node_memory_bank *m, struct formatStruct *all_format)
     size = m->size0;                    // A
     
     nchan = all_format[m->iarcChannelI].nchan;          // nchan-1 only when building thr binary graph 
-    size += (uint64_t) (0.5 + (m->sizeNchan * nchan));  // + B x nb_channels_arc(i)
+    size += (intPtr_t) (0.5 + (m->sizeNchan * nchan));  // + B x nb_channels_arc(i)
     
     FS = all_format[m->iarcSamplingJ].samplingRate;
-    size += (uint64_t) (0.5 + (m->sizeFS * FS));        // + C x samplingHz_arc(j)
+    size += (intPtr_t) (0.5 + (m->sizeFS * FS));        // + C x samplingHz_arc(j)
     
     frame_length = all_format[m->iarcFrameK].frame_length;
-    size += (uint64_t) (0.5 + (m->sizeFrame * frame_length));  // + D x frame_size_arc(k)
+    size += (intPtr_t) (0.5 + (m->sizeFrame * frame_length));  // + D x frame_size_arc(k)
     
     size = ((size+3)>>2)<<2;
     m->graph_memreq_size = size;
@@ -303,7 +303,7 @@ void LoadPlatformArc(struct arcStruct *Agraph, struct arcStruct *Aplatform)
     Agraph->settings=                 Aplatform->settings;                  // pack format of digital + MSIC options (SETTINGS_IOFMT2), the format depends on the IO domain 
     Agraph->domain=                   Aplatform->domain;                    // domain of operation
     Agraph->fw_io_idx=                Aplatform->fw_io_idx;                 // ID of the interface given in "files_manifests_computer" associated function (platform dependent) 
-    Agraph->set0_copy1=               Aplatform->set0_copy1;                // SET0COPY1_IOFMT data move through pointer setting of data copy 
+    Agraph->set0copy1=                Aplatform->set0copy1;                  // SET0COPY1_IOFMT data move through pointer setting of data copy 
     Agraph->commander0_servant1=      Aplatform->commander0_servant1;       // SERVANT1_IOFMT selection for polling protocol 
     Agraph->raw_format_options=       Aplatform->raw_format_options;
     Agraph->nb_channels_option=       Aplatform->nb_channels_option;    
@@ -334,7 +334,6 @@ void LoadPlatformNode(struct stream_node_manifest *graph_node, struct stream_nod
     graph_node->masklib            = platform_node->masklib;              
     graph_node->codeVersion        = platform_node->codeVersion;          
     graph_node->arc_parameter      = platform_node->arc_parameter;        
-    graph_node->steady_stream      = platform_node->steady_stream;        
     graph_node->same_data_rate     = platform_node->same_data_rate;       
     graph_node->use_dtcm           = platform_node->use_dtcm;             
     graph_node->use_arc_format     = platform_node->use_arc_format;       
@@ -348,7 +347,6 @@ void LoadPlatformNode(struct stream_node_manifest *graph_node, struct stream_nod
     graph_node->inPlaceProcessing  = platform_node->inPlaceProcessing; 
     graph_node->arcIDbufferOverlay = platform_node->arcIDbufferOverlay;
     graph_node->locking_arc        = platform_node->locking_arc;
-    graph_node->malloc_E           = platform_node->malloc_E;
 
     size = MAX_NB_MEM_REQ_PER_NODE * sizeof (node_memory_bank_t);
     memcpy(graph_node->memreq, platform_node->memreq, size);
@@ -394,7 +392,10 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(graph_location))        // graph_location 1 : keep the graph in Flash and copy in RAM a portion  
         {   fields_extract(&pt_line, "CI", ctmp, &(graph->option_graph_location)); 
         }
-        if (COMPARE(graph_map_hwblock))     // graph_map_hwblock <VID> 
+        if (COMPARE(graph_location_offset)) // graph_location offset from VID0 (long_offset[0])
+        {   fields_extract(&pt_line, "CI", ctmp, &(graph->graph_location_from_0)); 
+        }
+        if (COMPARE(graph_memory_bank))     // graph_memory_bank <VID> 
         {   fields_extract(&pt_line, "CI", ctmp, &(graph->memVID)); 
         }
         if (COMPARE(debug_script_fields))   //  LSB set means "call the debug script before each nanoAppsRT is called"
@@ -422,42 +423,43 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(stream_io_new))         // stream_io "soft ID" 
         {   fields_extract(&pt_line, "CI", ctmp, &(graph->arc[graph->nb_arcs].idx_arc_in_graph));   
             graph->arc[graph->nb_arcs].ioarc_flag = 1;
+            graph->current_io_arc = graph->nb_arcs;
             graph->nb_arcs++; graph->nb_io_arcs++;
         }
         if (COMPARE(stream_io_hwid))        // stream_io HWID 
-        {   fields_extract(&pt_line, "CI", ctmp, &(graph->arc[graph->nb_arcs -1].fw_io_idx)); 
-            if (graph->arc[graph->nb_arcs -1].initialized_from_platform == 0)
-            {   LoadPlatformArc(&(graph->arc[graph->nb_arcs -1]), &(platform->arc[graph->arc[graph->nb_arcs -1].fw_io_idx]));
-                graph->arc[graph->nb_arcs -1].initialized_from_platform = 1; /* initialization is done */
+        {   fields_extract(&pt_line, "CI", ctmp, &(graph->arc[graph->current_io_arc].fw_io_idx)); 
+            if (graph->arc[graph->current_io_arc].initialized_from_platform == 0)
+            {   LoadPlatformArc(&(graph->arc[graph->current_io_arc]), &(platform->arc[graph->arc[graph->current_io_arc].fw_io_idx]));
+                graph->arc[graph->current_io_arc].initialized_from_platform = 1; /* initialization is done */
             }
         }
         if (COMPARE(stream_io_format))      // stream_io FORMAT 
-        {   fields_extract(&pt_line, "CI", ctmp, &(graph->arc[graph->nb_arcs -1].format)); 
-            if (graph->arc[graph->nb_arcs -1].initialized_from_platform == 0)
-            {   LoadPlatformArc(&(graph->arc[graph->nb_arcs -1]), &(platform->arc[graph->arc[graph->nb_arcs -1].fw_io_idx]));
-                graph->arc[graph->nb_arcs -1].initialized_from_platform = 1; /* initialization is done */
+        {   fields_extract(&pt_line, "CI", ctmp, &(graph->arc[graph->current_io_arc].format)); 
+            if (graph->arc[graph->current_io_arc].initialized_from_platform == 0)
+            {   LoadPlatformArc(&(graph->arc[graph->current_io_arc]), &(platform->arc[graph->arc[graph->current_io_arc].fw_io_idx]));
+                graph->arc[graph->current_io_arc].initialized_from_platform = 1; /* initialization is done */
             }
         }            
         if (COMPARE(stream_io_setting))
-        {   fields_extract(&pt_line, "CI", ctmp, &(graph->arc[graph->nb_arcs -1].settings)); 
-            if (graph->arc[graph->nb_arcs -1].initialized_from_platform == 0)
-            {   LoadPlatformArc(&(graph->arc[graph->nb_arcs -1]), &(platform->arc[graph->arc[graph->nb_arcs -1].fw_io_idx]));
-                graph->arc[graph->nb_arcs -1].initialized_from_platform = 1; /* initialization is done */
+        {   fields_extract(&pt_line, "CI", ctmp, &(graph->arc[graph->current_io_arc].settings)); 
+            if (graph->arc[graph->current_io_arc].initialized_from_platform == 0)
+            {   LoadPlatformArc(&(graph->arc[graph->current_io_arc]), &(platform->arc[graph->arc[graph->current_io_arc].fw_io_idx]));
+                graph->arc[graph->current_io_arc].initialized_from_platform = 1; /* initialization is done */
             }
         }     
         /* ----------------------------------------------- FORMATS ----------------------------------------------------------*/
-        if (COMPARE(format_new))
-        {   fields_extract(&pt_line, "CI", ctmp, &(graph->nb_formats)); 
-            graph->arcFormat[graph->nb_formats].raw_data = STREAM_S16;    /* default format data */
-            graph->arcFormat[graph->nb_formats].frame_length = 1;
-            graph->arcFormat[graph->nb_formats].nchan = 1;
-            graph->nb_formats ++;
+        if (COMPARE(format_index))
+        {   fields_extract(&pt_line, "CI", ctmp, &(graph->current_format_index)); 
+            graph->arcFormat[graph->current_format_index].raw_data = STREAM_S16;    /* default format data */
+            graph->arcFormat[graph->current_format_index].frame_length = 1.0;
+            graph->arcFormat[graph->current_format_index].nchan = 1;
+            graph->nb_formats = MAX(graph->current_format_index, graph->nb_formats);
         }
         if (COMPARE(format_frame_length))
-        {   fields_extract(&pt_line, "Cf", ctmp, &(graph->arcFormat[graph->nb_formats -1].frame_length)); 
+        {   fields_extract(&pt_line, "CF", ctmp, &(graph->arcFormat[graph->current_format_index].frame_length)); 
         }
         if (COMPARE(format_raw_data))
-        {   
+        {   fields_extract(&pt_line, "CI", ctmp, &(graph->arcFormat[graph->current_format_index].raw_data)); 
         }   
         if (COMPARE(format_interleaving))
         {   
@@ -469,9 +471,6 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         {   
         }   
         if (COMPARE(format_time_stamp))
-        {   
-        }   
-        if (COMPARE(format_time_stamp_size))
         {   
         }   
         if (COMPARE(format_sdomain))
@@ -514,18 +513,17 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             LoadPlatformNode(graph_node, platform_node);
             graph_node->initialized_from_platform = 1;
             graph_node->graph_instance = instance;
-
+            graph_node->locking_arc = 1;
             graph->nb_nodes++;
 
-        }
-        if (COMPARE(node_lock_arcs))
-        {   fields_extract(&pt_line, "CI", ctmp, &(graph->all_nodes[graph->nb_nodes -1].locking_arc)); 
         }
         if (COMPARE(node_preset))
         {   fields_extract(&pt_line, "CI", ctmp, &(graph->all_nodes[graph->nb_nodes -1].preset)); 
         }
-        if (COMPARE(node_malloc_E))     // malloc done when the arcs are connected to the node (for the arc's format)
-        {   fields_extract(&pt_line, "CF", ctmp, &(graph->all_nodes[graph->nb_nodes -1].malloc_E)); 
+        if (COMPARE(node_malloc_add))     // addition of Bytes in a memory bank 
+        {   uint32_t nBytes, iMem; 
+            fields_extract(&pt_line, "CII", ctmp, &nBytes, &iMem);
+             graph->all_nodes[graph->nb_nodes -1].memreq[iMem].malloc_add = nBytes;
         }
         if (COMPARE(node_map_hwblock))
         {   fields_extract(&pt_line, "CII", ctmp, &i, &j); graph->all_nodes[graph->nb_nodes -1].memreq[i].mem_VID = j; 
@@ -566,16 +564,11 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             {   graph->nb_scripts = graph->idx_script;
             }
             graph->all_scripts[graph->idx_script].nb_reg = 6;
-            graph->all_scripts[graph->idx_script].nb_ptr = 6;
             graph->all_scripts[graph->idx_script].nb_stack = 6;
         }
         if (COMPARE(script_registers))      // script_registers    6 
         {   fields_extract(&pt_line, "CI", ctmp, &i); 
             graph->all_scripts[graph->idx_script].nb_reg = i;
-        }
-        if (COMPARE(script_pointers))       // script_pointers     6 
-        {   fields_extract(&pt_line, "CI", ctmp, &i); 
-            graph->all_scripts[graph->idx_script].nb_ptr = i;
         }
         if (COMPARE(script_stack))          // script_stack        6       ; size of the stack in word64 (default = 6)
         {  fields_extract(&pt_line, "CI", ctmp, &i); 
@@ -597,36 +590,40 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         
         /* --------------------------------------------- ARCS ----------------------------------------------------------------------*/
         if (COMPARE(arc_input))                                         //arc_input  idx_stream_io node_name instance arc_index Format
-        {   uint32_t instCons, inPort, fmtCons, arcIO, SwcConsGraphIdx, set0_copy1;
+        {   uint32_t instCons, inPort, fmtCons, fmtProd, arcIO, SwcConsGraphIdx, set0copy1;
             struct stream_node_manifest *graph_node_Cons;
             char Consumer[NBCHAR_LINE];
 
-            fields_extract(&pt_line, "CIICIII", ctmp, &idx_stream_io, &set0_copy1, Consumer, &instCons, &inPort, &fmtCons); 
+            fields_extract(&pt_line, "CIIICIII", ctmp, &idx_stream_io, &set0copy1, &fmtProd, Consumer, &instCons, &inPort, &fmtCons); 
             findArcIOWithThisID(graph, idx_stream_io, &arcIO);      /* arcIO receives the stream from idx_stream_IO */
-            graph->arc[arcIO] = graph->arc[arcIO];                  /* copy the already filled arc IO details to this new arc */
+            //graph->arc[arcIO] = graph->arc[arcIO];                  /* copy the already filled arc IO details to this new arc */
 
             search_graph_node(Consumer, &graph_node_Cons, &SwcConsGraphIdx, graph); /* update the arc of the consumer */
-            graph->arc[arcIO].format_idx_dst = fmtCons;        
+            graph->arc[arcIO].fmtProd = fmtProd;        
+            graph->arc[arcIO].fmtCons = fmtCons;        
             graph->arc[arcIO].SwcProdGraphIdx = SwcConsGraphIdx;
-            graph->arc[arcIO].set0_copy1 = set0_copy1;
-            graph_node_Cons->arc[inPort].format_idx_dst = fmtCons;               
+            graph->arc[arcIO].set0copy1 = set0copy1;
+            graph_node_Cons->arc[inPort].fmtProd = fmtProd;   // @@@ check frame_length_option.. is compatible with this format            
+            graph_node_Cons->arc[inPort].fmtCons = fmtCons;               
             graph_node_Cons->arc[inPort].arcID = arcIO;               
             graph_node_Cons->arc[inPort].rx0tx1 = 0;
         }
         if (COMPARE(arc_output))                                        //arc_output  idx_stream_io node_name instance arc_index Format
-        {   uint32_t instProd, outPort, fmtProd, arcIO, SwcProdGraphIdx, set0_copy1;
+        {   uint32_t instProd, outPort, fmtCons, fmtProd, arcIO, SwcProdGraphIdx, set0copy1;
             struct stream_node_manifest *graph_node_Prod;
             char Producer[NBCHAR_LINE];
 
-            fields_extract(&pt_line, "CIICIII", ctmp, &idx_stream_io, &set0_copy1, Producer, &instProd, &outPort, &fmtProd);
+            fields_extract(&pt_line, "CIIICIII", ctmp, &idx_stream_io, &set0copy1, &fmtCons, Producer, &instProd, &outPort, &fmtProd);
             findArcIOWithThisID(graph, idx_stream_io, &arcIO);      /* arcIO send the stream to idx_stream_IO */
-            graph->arc[arcIO] = graph->arc[arcIO];                  /* copy the already filled arc IO details to this new arc */
+            //graph->arc[arcIO] = graph->arc[arcIO];                  /* copy the already filled arc IO details to this new arc */
 
             search_graph_node(Producer, &graph_node_Prod, &SwcProdGraphIdx, graph);
-            graph->arc[arcIO].format_idx_dst = fmtProd;           
+            graph->arc[arcIO].fmtProd = fmtProd;           
+            graph->arc[arcIO].fmtCons = fmtCons;           
             graph->arc[arcIO].SwcProdGraphIdx = SwcProdGraphIdx;
-            graph->arc[arcIO].set0_copy1 = set0_copy1;
-            graph_node_Prod->arc[outPort].format_idx_dst = fmtProd;               
+            graph->arc[arcIO].set0copy1 = set0copy1;
+            graph_node_Prod->arc[outPort].fmtProd = fmtProd;               
+            graph_node_Prod->arc[outPort].fmtCons = fmtCons;  // @@@ check frame_length_option.. is compatible with this format                
             graph_node_Prod->arc[outPort].arcID = arcIO;               
             graph_node_Prod->arc[outPort].rx0tx1 = 1;
         }
@@ -637,13 +634,13 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
             fields_extract(&pt_line, "CCIIICIII", ctmp, Producer, &instProd, &outPort, &fmtProd, Consumer, &instCons, &inPort, &fmtCons);
             search_graph_node(Producer, &graph_node_Prod, &SwcProdGraphIdx, graph);
-            graph_node_Prod->arc[outPort].format_idx_src = fmtProd;
+            graph_node_Prod->arc[outPort].fmtProd = fmtProd;
             graph_node_Prod->arc[outPort].SwcProdGraphIdx = SwcProdGraphIdx;
             graph_node_Prod->arc[outPort].arcID = graph->nb_arcs;  
             graph_node_Prod->arc[outPort].rx0tx1 = 1;
 
             search_graph_node(Consumer, &graph_node_Cons, &SwcConsGraphIdx, graph);
-            graph_node_Cons->arc[inPort].format_idx_dst = fmtCons;
+            graph_node_Cons->arc[inPort].fmtCons = fmtCons;
             graph_node_Cons->arc[inPort].SwcConsGraphIdx = SwcConsGraphIdx;
             graph_node_Cons->arc[inPort].arcID = graph->nb_arcs;    
             graph_node_Cons->arc[inPort].rx0tx1 = 0;
@@ -678,7 +675,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         {   fields_extract(&pt_line, "CI", ctmp, &i); 
             graph->arc[graph->nb_arcs -1].memVID = i;
         }
-        if (COMPARE(arc_extend_addr))
+        if (COMPARE(arc_extend_address))
         {   fields_extract(&pt_line, "CI", ctmp, &i); 
             graph->arc[graph->nb_arcs -1].memVID = i;
         }

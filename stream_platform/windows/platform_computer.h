@@ -25,8 +25,33 @@
 * 
  */
 
-#include "platform.h"
-#if PLATFORM_COMPUTER == 1
+#ifndef cPLATFORM_COMPUTER_H
+#define cPLATFORM_COMPUTER_H
+
+#ifdef PLATFORM_COMPUTER 
+
+#define _CRT_SECURE_NO_DEPRECATE
+
+/* conditional compilation */
+#define CODE_ARM_STREAM_SCRIPT         /* byte-code interpreter, index "arm_stream_script_INDEX" */
+#define CODE_ARM_STREAM_GRAPH_CONTROL  /* scheduler control : lock, bypass, loop, if-then */
+#define CODE_ARM_STREAM_ROUTER         /* copy input arcs and subchannel and output arcs and subchannels   */     
+#define CODE_ARM_STREAM_CONVERTER      /* raw data format converter */
+#define CODE_ARM_STREAM_AMPLIFIER      /* amplifier mute and un-mute with ramp and delay control */
+#define CODE_ARM_STREAM_MIXER          /* multichannel mixer with mute/unmute and ramp control */
+#define CODE_ARM_STREAM_FILTER         /* cascade of DF1 filters */
+#define CODE_ARM_STREAM_DETECTOR       /* estimates peaks/floor of the mono input and triggers a flag on high SNR */
+#define CODE_ARM_STREAM_RESCALER       /* raw data values remapping using "interp1" */
+#define CODE_ARM_STREAM_COMPRESSOR     /* raw data compression with adaptive prediction */
+#define CODE_ARM_STREAM_DECOMPRESSOR   /* raw data decompression */
+#define CODE_ARM_STREAM_MODULATOR      /* signal generator with modulation */
+#define CODE_ARM_STREAM_DEMODULATOR    /* signal demodulator, frequency estimator */
+#define CODE_ARM_STREAM_RESAMPLER      /* asynchronous sample-rate converter */
+#define CODE_ARM_STREAM_QOS            /* raw data interpolator with synchronization to one HQoS stream */
+#define CODE_ARM_STREAM_SPLIT          /* let a buffer be used by several nodes */
+#define CODE_ARM_STREAM_DETECTOR2D     /* activity detection, pattern detection */
+#define CODE_ARM_STREAM_FILTER2D       /* Filter, rescale, rotate, exposure compensation */
+#define CODE_ARM_STREAM_ANALYSIS       /* arm_stream_analysis, */
 
 
 #include "platform.h"
@@ -137,3 +162,4 @@
 
 #endif /* #ifndef PLATFORM_COMPUTER_H */
 
+#endif /* ifndef cPLATFORM_COMPUTER_H */

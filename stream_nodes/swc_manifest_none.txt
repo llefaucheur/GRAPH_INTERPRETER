@@ -1,3 +1,3 @@
-    ARM                             ; developer name
-    none                            ; node name
-_end_
+node_developer_name      ARM                             ; developer name
+node_name                none                            ; node name
+end

@@ -152,10 +152,8 @@
     <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector\arm_stream_detector.c" />
     <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector\arm_stream_detector_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor.c" />
-    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\compressor\arm_stream_compressor_imadpcm.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor.c" />
-    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor_imadpcm.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\filter\arm_stream_filter.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\amplifier\arm_stream_amplifier.c" />
@@ -190,9 +188,13 @@
     <ClCompile Include="..\..\..\stream_src\stream_io.c" />
     <ClCompile Include="..\..\..\stream_src\stream_scheduler.c" />
     <ClCompile Include="..\..\..\stream_src\stream_services.c" />
-    <ClCompile Include="..\..\lpc55s69evk\main_call.c" />
+    <ClCompile Include="..\..\lp-mspm0l1306\main_call_lp-mspm0l1306.c" />
+    <ClCompile Include="..\..\lp-mspm0l1306\platform_lp-mspm0l1306.c" />
+    <ClCompile Include="..\..\lp-mspm0l1306\platform_lp-mspm0l1306_io_services.c" />
+    <ClCompile Include="..\..\lpc55s69evk\main_call_lpc55s69evk.c" />
     <ClCompile Include="..\..\lpc55s69evk\platform_lpc55s69evk.c" />
     <ClCompile Include="..\..\lpc55s69evk\platform_lpc55s69evk_io_services.c" />
+    <ClCompile Include="..\main_call_computer.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D.h" />
@@ -220,18 +222,23 @@
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\..\stream_src\stream_extern.h" />
     <ClInclude Include="..\..\..\stream_src\stream_types.h" />
+    <ClInclude Include="..\..\lp-mspm0l1306\graph_lp-mspm0l1306_header.h" />
+    <ClInclude Include="..\..\lp-mspm0l1306\platform_lp-mspm0l1306.h" />
     <ClInclude Include="..\..\lpc55s69evk\graph_lpc55s69evk_header.h" />
     <ClInclude Include="..\..\lpc55s69evk\platform_lpc55s69evk.h" />
     <ClInclude Include="..\..\platform.h" />
-    <ClInclude Include="..\graph_windows_header.h" />
+    <ClInclude Include="..\graph_computer_header.h" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="..\..\lp-mspm0l1306\graph_lp-mspm0l1306.txt" />
+    <Text Include="..\..\lp-mspm0l1306\graph_lp-mspm0l1306_bin.txt" />
+    <Text Include="..\..\lp-mspm0l1306\graph_lp-mspm0l1306_debug.txt" />
     <Text Include="..\..\lpc55s69evk\graph_lpc55s69evk.txt" />
     <Text Include="..\..\lpc55s69evk\graph_lpc55s69evk_bin.txt" />
     <Text Include="..\..\lpc55s69evk\graph_lpc55s69evk_debug.txt" />
-    <Text Include="..\graph_windows.txt" />
-    <Text Include="..\graph_windows_bin.txt" />
-    <Text Include="..\graph_windows_debug.txt" />
+    <Text Include="..\graph_computer.txt" />
+    <Text Include="..\graph_computer_bin.txt" />
+    <Text Include="..\graph_computer_debug.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

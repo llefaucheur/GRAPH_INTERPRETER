@@ -36,13 +36,10 @@
 #include <stdint.h>
 
 
-typedef struct 
-{
-	int valprev;
-	int index;
-} CodecState;
+#define VALPREV 0
+#define INDEX   1
 
-extern void decode_imadpcm(CodecState* state, uint8_t* input, uint32_t numSamples, int16_t* output);
+extern void decode_imadpcm(int32_t *state, uint8_t* input, uint32_t numSamples, int16_t* output);
 
 #endif
 

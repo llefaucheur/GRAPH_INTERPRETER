@@ -148,18 +148,17 @@ typedef struct
 
     uint32_t *swc_header;               // current swc
     stream_handle_t swc_instance_addr;
-    uint16_t arcID[MAX_NB_STREAM_PER_SWC];
     uint8_t *pt8b_collision_arc;        // collision
     uint32_t pack_command;              // preset, narc, tag, instanceID, command
     uint32_t iomask;                    // _IOMASK_ fields 
 
     uint32_t scheduler_control;         // PACK_STREAM_PARAM(..);
     uint32_t whoami_ports;              // _PARCH_ fields 
+    uint16_t arcID[MAX_NB_STREAM_PER_SWC];
     uint8_t swc_memory_banks_offset;    // offset in words  
     uint8_t swc_parameters_offset;      // 
     uint8_t main_script;                // debug script
     uint8_t nb_stream_instances;        // stream instances pointers (in words) = &(all_arcs[ -nb_stream_instances]) 
-    uint8_t memory_segment_swap;        // bit-field of the memory segments to swap (TO_SWAP_LW2S) 
     uint8_t error_log;                  // bit-field of logged errors 
 
 } arm_stream_instance_t;

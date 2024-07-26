@@ -15,4 +15,4 @@ analog_in                                   ; domain name,   unit: dB, Vrms, mV/
 ; io_analogscale         0.55                 ; 0.55V is corresponding to full-scale (0x7FFF or 1.0f) with the default setting
 ; io_sampling_rate       {1 16000 44100 48000} ; sampling rate options (enumeration in Hz)  
 ; io_rescale_factor      12.24  -44.3         ; [1/a off] analog_input = invinterpa x ((samples/Full_Scale_Digital) - interpoff)
-_end_
+end

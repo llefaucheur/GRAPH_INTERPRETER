@@ -36,6 +36,8 @@
 
 #include "stream_const.h"
 #include "stream_types.h"
+#include "platform.h"
+
 #include "dsp\filtering_functions.h"
 #include "arm_stream_filter.h"
 
@@ -65,7 +67,7 @@ node
         5 h16; 1231 1D28 1231 63E8 D475     b0/b1/b2/-a1/-a2  ellip(4, 1, 40, 3600/8000, 'low') 
         5 h16; 1231 0B34 1231 2470 9821     second biquad
         ;  _include    1   arm_stream_filter_parameters_x.txt      
-        _end_
+        end
 
     Half-band low-pass filter :
     [b,a] = ellip(4, 1, 40, 3600/8000, 'low')  MATLAB
@@ -107,6 +109,7 @@ node
  */
 void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
+#ifdef CODE_ARM_STREAM_FILTER
     *status = TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
     switch (RD(command,COMMAND_CMD))
@@ -275,6 +278,7 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
         case STREAM_UPDATE_RELOCATABLE:
         default : break;
     }
+#endif
 }
 
 #ifdef __cplusplus

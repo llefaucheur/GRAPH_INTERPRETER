@@ -108,7 +108,7 @@ static int16_t stepsizeTable[89] = {
 /*
         The "state" keeps encoded data until there is enough to send a byte to outp
 */
-void encode_imadpcm(CodecState* state, int16_t* input, uint32_t numSamples, uint8_t* outp)
+void encode_imadpcm(uint32_t *state, int16_t* input, uint32_t numSamples, uint8_t* output)
 {
     int8_t sign;			/* Current adpcm sign bit #TODO Remove if sign bit of diff can be used directly */
     int16_t delta;			/* Current adpcm output value */
@@ -121,8 +121,8 @@ void encode_imadpcm(CodecState* state, int16_t* input, uint32_t numSamples, uint
     int16_t bufferstep;		/* toggle between outputbuffer/output */
 
 	// Note: Initial states are 0 which gives step = 7
-    valpred = state->valprev;
-    index = state->index;
+    valpred = state[VALPREV];
+    index = state[INDEX];
     step = stepsizeTable[index];
     
     bufferstep = 1;
@@ -178,16 +178,16 @@ void encode_imadpcm(CodecState* state, int16_t* input, uint32_t numSamples, uint
 	    if ( bufferstep ) {
 	        outputbuffer = delta & 0x0f;
 	    } else {
-	        *outp++ = ((delta << 4) & 0xf0) | outputbuffer;
+	        *output++ = ((delta << 4) & 0xf0) | outputbuffer;
 	    }
 	    bufferstep = !bufferstep;
     }
 
     /* Output last step, if needed */
     if ( !bufferstep )
-      *outp++ = (uint8_t)outputbuffer;
+      *output++ = (uint8_t)outputbuffer;
     
-    state->valprev = valpred;
-    state->index = index;
+    state[VALPREV] = valpred;
+    state[INDEX] = index;
 }
 

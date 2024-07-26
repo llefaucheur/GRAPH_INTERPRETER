@@ -2,8 +2,8 @@
 ; SOFTWARE COMPONENT MANIFEST - "arm_stream_split"
 ; ------------------------------------------------------------------------------------------------------------
 ;
-    ARM                     ; developer name
-    arm_stream_split        ; node name
+node_developer_name      ARM                     ; developer name
+node_name                arm_stream_split        ; node name
 
 
-_end_
+end

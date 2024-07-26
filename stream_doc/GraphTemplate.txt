@@ -23,8 +23,11 @@ graph_map_hwblock       0       ; index of the memory block VID indexes where to
 
 ;============================
 ;   FORMATS 
+;   
+;   the format used for the output of a multimedia decoder must be separated in case the decoded
+;       format of the frames is changed on the fly 
 ;
-format                  2           ; index used to start the declaration of a new format
+format_index         2           ; index used to start the declaration of a new format
 format_raw_data         17          ; raw data of this format  (17 : S16 is the default)
 format_frame_length     160         ; frame length in number of bytes (default :1)
 format_interleaving     0           ; 0 means interleaved data, 1 means deinterleaved data by packets of "frame size"
@@ -114,7 +117,7 @@ subgraph
 node <node_name> <instance_index> ; instance index in the (sub)graph, the compilation listing gives the physical index
 
 node_preset              1      ; parameter preset used at boot time, default = #0
-node_malloc_E            12     ; "E" parameter used in "Memory Size Bytes", default = #0
+node_malloc_add          12 1   ; memory allocation added #12 Bytes to memory bank #1 (node_mem index of manifest)
 node_map_hwblock         2  3   ; index of the memory block "node_mem" and the VID indexes from "procmap_manifest_xxxx.txt" 
                                 ;   where to map it. Default VID's is 0.
 node_map_copy            2  3   ; copy the indexed "node_mem" to VID 3 (faster memory) before run
@@ -171,7 +174,7 @@ node arm_stream_script 1        ; instance index of arm_stream_script
                                 ;   the nanoApp (using pointers to 8/16/32bits fields).
        1  i8; 0                 ; TAG= 0 "load all parameters"
        7  i8; 2 3 4 5 6 7 8     ; parameters
-
+       nmk
    node_parameters <ID2>        ; 
        include 1 binary_code.txt ; path ID and file name
    _end_  
@@ -193,8 +196,8 @@ script  0                       ; index of the script, to be mapped to an index 
                                 ;  in the main graph the "top_graph_interface" have the indexes to use use in the first column 
 
                                 ;      IO-ID    NAME INST IO FORMAT
-arc_input  1 1 node_name 2 0 0  ; input arc index #1 data move:set0_copy1 connected to "node_name" instance #2 and its arc index #0, Format #0
-arc_output 2 1 node_name 3 1 0  ; output arc index #2 data move:set0_copy1 connected to "node_name" instance #3 and its arc index #1, Format #0
+arc_input  1 1 0 node 2 0 0     ; input arc index #1 data move:set0_copy1 format #0 connected to "node_name" instance #2 and its arc index #0, Format #0
+arc_output 2 1 0 node 3 1 0     ; output arc index #2 data move:set0_copy1 format #0 connected to "node_name" instance #3 and its arc index #1, Format #0
                                 ;----ARC CONNECTION BETWEEN TWO NANOAPPS
                                 ;     NAME INST IO FMT    NAME INST IO FMT
 arc node1 1 2 0 node2 3 4 1     ; arc   node1 instance node_index1 format_index1      node2 node_index2 format_index2  

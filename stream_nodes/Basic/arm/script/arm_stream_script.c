@@ -71,7 +71,7 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
 {
     switch (RD(command,COMMAND_CMD))
     { 
-        /* func(command = (STREAM_RESET, COLD, PRESET, TRACEID tag, NB ARCS IN/OUT)
+       /* func(command = (STREAM_RESET, COLD, PRESET, TRACEID tag, NB ARCS IN/OUT)
                 instance = memory_results and all memory banks
                 data = address of Stream function
                 No arc
@@ -82,9 +82,12 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
                     write index = start of parameters index + synchronization byte
         */
         case STREAM_RESET: 
-        {   
-            break;
-        }    
+        {   stream_al_services *stream_entry = (stream_al_services *)data;
+            intPtr_t *memresults = (intPtr_t *)instance;
+            uint16_t preset = RD(command, PRESET_CMD);
+
+            arm_stream_instance_t *pinstance = (arm_stream_instance_t *) *memresults++;
+        }
 
         /* func(command = bitfield (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
                     TAG of a parameter to set, ALLPARAM_ means "set all the parameters" in a raw
@@ -95,8 +98,8 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
         {   uint32_t *pt32bsrc;
             uint32_t *arc_desc = (uint32_t *) instance;
             pt32bsrc = (uint32_t *) data;
-            arc_desc[SCRIPT_UC_SCRARCW1] = (*pt32bsrc++);       // 2x4-bytes use-case communicated by uper layers
-            arc_desc[SCRIPT_UC_SCRARCW2] = (*pt32bsrc++);       // 
+            arc_desc[SCRIPT_UC0_SCRARCW1] = (*pt32bsrc++);       // 2x4-bytes use-case communicated by uper layers
+            arc_desc[SCRIPT_UC1_SCRARCW2] = (*pt32bsrc++);       // 
             SET_BIT(arc_desc[SCRIPT_PTR_SCRARCW0], NEW_USE_CASE_SCRIPT_LSB);
         }
 
@@ -118,15 +121,23 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
             pt_pt++;        arc_desc = (uint32_t *)pt_pt->address;  
 
             /* reset the instance */
-            clear_size =  (SCRIPT_REGSIZE + 1) * RD(arc_desc[SCRIPT_PTR_SCRARCW0], NBREGS_SCRARCW0);
+            clear_size =  (SCRIPT_REGSIZE + 1) * RD(arc_desc[SCRIPT_PTR_SCRARCW0], NBREGS_SCRARCW3);
             clear_size += (SCRIPT_REGSIZE + 1) * RD(arc_desc[WRIOCOLL_SCRARCW3], NSTACK_SCRARCW3);
-            src = (uint8_t *)pack2linaddr_ptr(S->long_offset, RD(arc_desc[SCRIPT_PTR_SCRARCW0], BASEIDXOFFSCRARCW0), LINADDR_UNIT_BYTE);
+            src = (uint8_t *)pack2linaddr_ptr(S->long_offset, RD(arc_desc[SCRIPT_PTR_SCRARCW0], BASEIDXOFFSCRARCW0), LINADDR_UNIT_W32);
             MEMSET(src, 0, clear_size);
 
             arm_stream_script_interpreter (S, arc_desc, byte_code, src);
             break;
         }
-        default: break;
+
+
+
+        default:
+        case STREAM_READ_PARAMETER: 
+        case STREAM_UPDATE_RELOCATABLE: 
+        case STREAM_STOP: 
+        {   break;
+        }    
     }
 }
 

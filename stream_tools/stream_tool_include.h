@@ -34,7 +34,7 @@
 #define cSTREAM_TOOL_INCLUDE_H
 
 #ifdef _MSC_VER 
-#define _CRT_SECURE_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_DEPRECATE
 #endif
 #include <stdio.h>    
 #include <string.h>

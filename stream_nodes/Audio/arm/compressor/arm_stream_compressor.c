@@ -45,19 +45,29 @@
 ;----------------------------------------------------------------------------------------
 ;9.	    arm_stream_compressor
 ;----------------------------------------------------------------------------------------
-;   Operation : wave compression using IMADPCM(4bits/sample)
-;   Parameters : coding scheme 
+;   Operation : compression 
+;   Parameters : coding scheme and a block of 16 parameter bytes for codecs
 ;
-;   presets:
-;   #1 : standard IMADPCM encoder 
-;   Provision for other coding schemes
+;       Example of data to share with the application
+;           outputFormat: AndroidOutputFormat.MPEG_4,
+;           audioEncoder: AndroidAudioEncoder.AAC,
+;           sampleRate: 44100,
+;           numberOfChannels: 2,
+;           bitRate: 128000,
 ;
-node arm_stream_compressor;
-    3  i8; 0 1 0        instance, preset, tag IMADPCM 8kHz encoder IMADPCM 8kHz encoder 
-;
-    parameter_start <optional label for scripts>
-    4; i32; 0 0 0 0     provision for extra parameters in other codecs
-    parameter_end
+;   presets provision
+;   #1 : decoder IMADPCM
+;   #2 : decoder LPC
+;   #3 : MIDI player / tone sequencer
+;   #4 : decoder CVSD for BT speech 
+;   #5 : decoder LC3 
+;   #6 : decoder SBC
+;   #7 : decoder mSBC
+;   #7 : decoder OPUS Silk
+;   #8 : decoder MP3
+;   #9 : decoder MPEG-4 aacPlus v2 
+;   #10: decoder OPUS CELT
+;   #11: decoder JPEG 
 */
 
 /**
@@ -78,45 +88,34 @@ void arm_stream_compressor (int32_t command, stream_handle_t instance, stream_xd
                 instance = *memory_results,  
                 data = address of Stream function
                 
-                memresults are followed by 2 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
-                memory pointers are in the same order as described in the SWC manifest
+                memresult[0] : instance of the component
+                memresult[1] : pointer to the second allocated memory 
+                memresult[2] : input arc WORD 0 
+                memresult[3] : input arc WORD 1 
+                memresult[4] : input arc WORD 2 
+                memresult[5] : input arc WORD 3  
+                memresult[6] : output arc WORD 0 - frame size
+                memresult[7] : output arc WORD 1 - time-stamp, raw format, interleaving, nchan
+                memresult[8] : output arc WORD 2  is domain-dependent : sampling rate
+                memresult[9] : output arc WORD 3  is domain-dependent : audio mapping  
         */
         case STREAM_RESET: 
         {   stream_al_services *stream_entry = (stream_al_services *)data;
-            intPtr_t *memresults = (intPtr_t *)instance;
+            intPtr_t *memreq = (intPtr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
-            arm_stream_compressor_instance *pinstance = (arm_stream_compressor_instance *)  *memresults;
-            memresults++;
+            arm_stream_compressor_instance *pinstance = (arm_stream_compressor_instance *) (memreq[0]);
+            pinstance->TCM = (uint32_t *) (memreq[1]);       /* second bank = fast memory */
 
+            pinstance->output_format[0] = (memreq[6]);
+            pinstance->output_format[1] = (memreq[7]);
+            pinstance->output_format[2] = (memreq[8]);
+            pinstance->output_format[3] = (memreq[9]);
+
+            /* save the address of the "services" */
+            pinstance->stream_service_entry = (stream_al_services *)(intPtr_t)data;
             break;
         }    
-
-        /* func(command = bitfield (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
-                    TAG of a parameter to set, ALLPARAM_ means "set all the parameters" in a raw
-                *instance, 
-                data = (one or all)
-        */ 
-        case STREAM_SET_PARAMETER:
-        {   
-            uint8_t *new_parameters = (uint8_t *)data;
-            break;
-        }
-
-
-
-        /* func(command = STREAM_READ_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
-                    TAG/index of a parameter to read (Metadata, Needle), 0xFF means "read all the parameters"
-                *instance, 
-                data = *parameter(s) to read
-        */ 
-        case STREAM_READ_PARAMETER:  
-        {   
-            uint8_t *new_parameters = (uint8_t *)data;
-
-            break;
-        }
-        
 
 
         /* func(command = STREAM_RUN, PRESET, TAG, NB ARCS IN/OUT)
@@ -129,41 +128,62 @@ void arm_stream_compressor (int32_t command, stream_handle_t instance, stream_xd
         case STREAM_RUN:   
         {
             arm_stream_compressor_instance *pinstance = (arm_stream_compressor_instance *)instance;
-            intPtr_t nb_data, stream_xdmbuffer_size, bufferout_free;
+            intPtr_t nb_samp, stream_xdmbuffer_size, nb_bytes, bufferout_free;
             stream_xdmbuffer_t *pt_pt;
-            #define SAMP_IN uint8_t 
-            #define SAMP_OUT int16_t
+            #define SAMP_IN int16_t 
+            #define SAMP_OUT uint8_t
             SAMP_IN *inBuf;
             SAMP_OUT *outBuf;
 
-            pt_pt = data;
-            inBuf  = (SAMP_IN *)pt_pt->address;   
-            stream_xdmbuffer_size     = pt_pt->size;
-            pt_pt++;
-            outBuf = (SAMP_OUT *)(pt_pt->address); 
-            bufferout_free        = pt_pt->size;
+            pt_pt = data;   inBuf  = (SAMP_IN *)pt_pt->address;   
+                            stream_xdmbuffer_size = pt_pt->size;
 
-            nb_data = stream_xdmbuffer_size / sizeof(SAMP_IN);
+            pt_pt++;        outBuf = (SAMP_OUT *)(pt_pt->address); 
+                            bufferout_free = pt_pt->size;
 
-            arm_stream_compressor_process (pinstance, inBuf, outBuf, &nb_data);
+            nb_samp = stream_xdmbuffer_size / sizeof(SAMP_IN);
 
-            /* the SWC is producing an amount of data different from the consumed one (see xdm11 in the manifest) */
-            pt_pt = data;
-            *(&(pt_pt->size)) = nb_data * sizeof(SAMP_IN); /* amount of data consumed */
-            pt_pt ++;
-            *(&(pt_pt->size)) = nb_data * sizeof(SAMP_OUT);   /* amount of data produced */
+
+            switch (RD(command,PRESET_CMD))
+            {
+                case ENCODER_IMADPCM            :
+                    nb_bytes = (nb_samp >> 1);   /* two samples generates 1 byte */ 
+
+                    encode_imadpcm(&(pinstance->state[0]), inBuf, nb_samp, outBuf);
+
+                    /*  update only the size field 
+                        the SWC is producing an amount of data different from the consumed one (see xdm11 in the manifest) 
+                    */
+                    pt_pt = data;   *(&(pt_pt->size)) = nb_samp * sizeof(SAMP_IN);      /* amount of data consumed */
+                    pt_pt ++;       *(&(pt_pt->size)) = nb_bytes * sizeof(SAMP_OUT);     /* amount of data produced */
+
+                    break;
+
+                default:
+                case ENCODER_LPC                :
+                case ENCODER_CVSD               :
+                case ENCODER_LC3                :
+                case ENCODER_SBC                :
+                case ENCODER_MSBC               :
+                case ENCODER_OPUS_SILK          :
+                case ENCODER_MP3                :
+                case ENCODER_MPEG4_AACPLUS_V2   :
+                case ENCODER_OPUS_CELT          :
+                case ENCODER_JPEG               :
+                    break;
+            }
+
+
 
             
             break;
         }
 
-
-
-        /* func(command = STREAM_STOP, PRESET, TAG, NB ARCS IN/OUT)
-               instance,  
-               data = unused
-        */  
-        case STREAM_STOP:  break;    
+        default:
+        case STREAM_SET_PARAMETER:  
+        case STREAM_READ_PARAMETER:  
+        case STREAM_STOP:  
+            break;       
     }
 }
 

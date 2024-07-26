@@ -27,32 +27,43 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#define PLATFORM_COMPUTER 0             //Windows 32/64bits
-#define PLATFORM_LPC55S69EVK 1          //LPCXPRESSO line-in line-out
-#define PLATFORM_MSPM0L1306 0           //CCS  + MSPM0C1104
-#define PLATFORM_LPCX860MAX 0           //
-#define PLATFORM_LPCX804B 0             // 
-#define PLATFORM_WIOTERMINAL 0          //<<<<
-#define PLATFORM_GROVEVISIONAIV2 0      //
-#define PLATFORM_EFM32PG32 0            //Simplicity Studio
-#define PLATFORM_RP2040 0               //<<<<
-#define PLATFORM_RP2350 0               //<<<<
-#define PLATFORM_STM32U083DK 0          //<<<<
-#define PLATFORM_STM32C0116DK 0         //PACK
-#define PLATFORM_STM32L475EIOT01 0      //---
-#define PLATFORM_STM32U585IOT02A        //PACK    Light,TOF,Pressure,IMU,Temp,MIC
-#define PLATFORM_STEVALMKBOXPRO 0       //CubeIDE Pressure,IMU,Temp,MIC
-#define PLATFORM_ARDU_NANO33SENSEV2 0   //Arduino 
-#define PLATFORM_ARDU_RP2040 0          //Arduino IMU,MIC
-#define PLATFORM_ARDU_UNOR4W 0          //Arduino 
-#define PLATFORM_ARDU_ZERO 0            //Arduino 
-#define PLATFORM_ARDU_NICLAVISION 0     //Arduino 
-#define PLATFORM_PORTENTAC33 0          //Arduino SE050C2 Secure Element
+#define PLATFORM_COMPUTER               //Windows 32/64bits
+//#define PLATFORM_LPC55S69EVK            //LPCXPRESSO line-in line-out
+//#define PLATFORM_MSPM0L1306             //SYSOSC 24MHz/320 = FS 75kHz
+//#define PLATFORM_LPCX860MAX             //
+//#define PLATFORM_LPCX804B               // 
+//#define PLATFORM_WIOTERMINAL            //<<<<
+//#define PLATFORM_GROVEVISIONAIV2        //
+//#define PLATFORM_EFM32PG32              //Simplicity Studio
+//#define PLATFORM_RP2040                 //<<<<
+//#define PLATFORM_RP2350                 //<<<<
+//#define PLATFORM_STM32U083DK            //<<<<
+//#define PLATFORM_STM32C0116DK           //PACK
+//#define PLATFORM_STM32L475EIOT01        //---
+//#define PLATFORM_STM32U585IOT02A        //PACK    Light,TOF,Pressure,IMU,Temp,MIC
+//#define PLATFORM_STEVALMKBOXPRO         //CubeIDE Pressure,IMU,Temp,MIC
+//#define PLATFORM_ARDU_NANO33SENSEV2     //Arduino 
+//#define PLATFORM_ARDU_RP2040            //Arduino IMU,MIC
+//#define PLATFORM_ARDU_UNOR4W            //Arduino 
+//#define PLATFORM_ARDU_ZERO              //Arduino 
+//#define PLATFORM_ARDU_NICLAVISION       //Arduino 
+//#define PLATFORM_PORTENTAC33            //Arduino SE050C2 Secure Element
 
 /*============================ SWITCHES =====================================*/
 #define PLATFORM_ARCH_32BIT
 //#define PLATFORM_ARCH_64BIT
 
+/*==========================================================================*/
+
+#ifdef PLATFORM_COMPUTER
+#include "windows\platform_computer.h"
+#endif
+#ifdef PLATFORM_LPC55S69EVK
+#include "lplpc55s69evk\platform_lpc55s69evk.h"
+#endif
+#ifdef PLATFORM_MSPM0L1306
+#include "lp-mspm0l1306\platform_lp-mspm0l1306.h"
+#endif
 /*==========================================================================*/
 
 #endif /* #ifndef PLATFORM_H */

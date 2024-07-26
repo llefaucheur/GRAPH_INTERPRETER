@@ -146,7 +146,10 @@ static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_
             break;
         }
 
-        case STREAM_SERVICE_INTERNAL_KEYEXCHANGE : /* at reset time : key exchanges to deobfuscate node's firmware (TBD) */
+        /* at reset time : key exchanges to deobfuscate node's firmware (TBD) + 
+            graph/user activation key to activate specific features  
+         */
+        case STREAM_SERVICE_INTERNAL_KEYEXCHANGE : 
         {   break;
         }
     }

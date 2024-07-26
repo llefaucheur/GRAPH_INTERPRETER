@@ -62,7 +62,7 @@ void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input
     W1 = instance->parameters[1];
 
     /* input */
-    psrc = (uint16_t *)(input);
+    psrc = (int16_t *)(input);
     //if (RD(format, INTERLEAVING_FMT) == FMT_INTERLEAVED)
     //{   psrc = psrc + RD(W0, SUBCHANID_W0_IN);
     //    incsrc = 1+ RD(format, NBCHANM1_AMPLI_FMT);
@@ -77,7 +77,7 @@ void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input
     */
 
     /* output = last arc */
-    pdst = (uint16_t *)(output);
+    pdst = (int16_t *)(output);
     //if (RD(format, INTERLEAVING_FMT) == FMT_INTERLEAVED)
     //{   pdst = pdst + RD(param, SUBCHANID_IN);
     //    incdst = 1+ RD(format, NBCHANM1_AMPLI_FMT);

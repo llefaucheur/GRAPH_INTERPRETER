@@ -29,15 +29,15 @@
 #include "stream_tool_include.h"
 #include "platform.h"
 
-#if PLATFORM_COMPUTER == 1
+#ifdef PLATFORM_COMPUTER 
 #define GRAPH_ALL_MANIFESTS "../../stream_platform/windows/manifest/top_manifest_computer.txt"
-#define GRAPH_TXT           "../../stream_platform/windows/graph_windows.txt"     /* graph */
-#define GRAPH_BIN           "../../stream_platform/windows/graph_windows_bin.txt" /* binary graph file */
-#define GRAPH_HEADER        "../../stream_platform/windows/graph_windows_header.h"  /* list of labels to do "set_parameter" from scripts */
-#define GRAPH_DEBUG         "../../stream_platform/windows/graph_windows_debug.txt" /* comments made during graph conversion  */
+#define GRAPH_TXT           "../../stream_platform/windows/graph_computer.txt"     /* graph */
+#define GRAPH_BIN           "../../stream_platform/windows/graph_computer_bin.txt" /* binary graph file */
+#define GRAPH_HEADER        "../../stream_platform/windows/graph_computer_header.h"  /* list of labels to do "set_parameter" from scripts */
+#define GRAPH_DEBUG         "../../stream_platform/windows/graph_computer_debug.txt" /* comments made during graph conversion  */
 #endif
 
-#if PLATFORM_LPC55S69EVK == 1
+#ifdef PLATFORM_LPC55S69EVK 
 #define GRAPH_ALL_MANIFESTS "../../stream_platform/lpc55s69evk/manifest/top_manifest_lpc55s69evk.txt"
 #define GRAPH_TXT           "../../stream_platform/lpc55s69evk/graph_lpc55s69evk.txt"     /* graph */
 #define GRAPH_BIN           "../../stream_platform/lpc55s69evk/graph_lpc55s69evk_bin.txt" /* binary graph file */
@@ -45,6 +45,13 @@
 #define GRAPH_DEBUG         "../../stream_platform/lpc55s69evk/graph_lpc55s69evk_debug.txt" /* comments made during graph conversion  */
 #endif
 
+#ifdef PLATFORM_MSPM0L1306 
+#define GRAPH_ALL_MANIFESTS "../../stream_platform/lp-mspm0l1306/manifest/top_manifest_lp-mspm0l1306.txt"
+#define GRAPH_TXT           "../../stream_platform/lp-mspm0l1306/graph_lp-mspm0l1306.txt"     /* graph */
+#define GRAPH_BIN           "../../stream_platform/lp-mspm0l1306/graph_lp-mspm0l1306_bin.txt" /* binary graph file */
+#define GRAPH_HEADER        "../../stream_platform/lp-mspm0l1306/graph_lp-mspm0l1306_header.h"  /* list of labels to do "set_parameter" from scripts */
+#define GRAPH_DEBUG         "../../stream_platform/lp-mspm0l1306/graph_lp-mspm0l1306_debug.txt" /* comments made during graph conversion  */
+#endif
 
 extern void arm_stream_read_manifests (struct stream_platform_manifest *platform, char *all_files);
 extern void arm_stream_read_graph(struct stream_platform_manifest* platform,struct stream_graph_linkedlist *graph, char* ggraph_txt);

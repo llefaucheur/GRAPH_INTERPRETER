@@ -3,11 +3,11 @@
 ;   Tuning : zoom, light-adjust and focus in a specific region of the input image, (by quadrant+central)
 ; ------------------------------------------------------------------------------------------------------------
 ;
-    ARM                     ; developer name
-    arm_stream_detector2D     ; node name
+node_developer_name      ARM                     ; developer name
+node_name                arm_stream_detector2D     ; node name
 
-node_steady_stream   0      ; (0) the data flow is variable 
-node_same_data_rate  0      ; (0) the arcs have different data rates
+node_same_rxtx_data_rate   0      ; (0) the data flow is variable 
+node_same_rxtx_data_rate 0  ; (0) the arcs have different data rates
 node_use_arc_format  0      ; default 1 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
 
 ;----------------------------------------------------------------------------------------
@@ -21,4 +21,4 @@ node_mem_alloc         32ry
 
 
  
-_end_
+end

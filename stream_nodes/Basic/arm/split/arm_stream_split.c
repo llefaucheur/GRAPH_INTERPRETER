@@ -115,16 +115,16 @@ node arm_stream_split
 */
 
 #define NB_PRESET 1
-const uint32_t share_parameter_presets [NB_PRESET][NB_W32_PARAMETERS] = 
-{   
-    /* share-4 mono to mono output, gain-0dB, muted */
-    {   PACKSHARECONFIG_W0(128,5,4,5),  
-        PACKSHARECHANNELS_W2(128,2,0,0), PACKSHARECHANNELS_W3(0,0),      
-        PACKSHARECHANNELS_W2(128,2,0,0), PACKSHARECHANNELS_W3(0,0),      
-        PACKSHARECHANNELS_W2(128,2,0,0), PACKSHARECHANNELS_W3(0,0),      
-        PACKSHARECHANNELS_W2(128,2,0,0), PACKSHARECHANNELS_W3(0,0),      
-    },
-};
+//const uint32_t share_parameter_presets [NB_PRESET][NB_W32_PARAMETERS] = 
+//{   
+//    /* share-4 mono to mono output, gain-0dB, muted */
+//    {   PACKSHARECONFIG_W0(128,5,4,5),  
+//        PACKSHARECHANNELS_W2(128,2,0,0), PACKSHARECHANNELS_W3(0,0),      
+//        PACKSHARECHANNELS_W2(128,2,0,0), PACKSHARECHANNELS_W3(0,0),      
+//        PACKSHARECHANNELS_W2(128,2,0,0), PACKSHARECHANNELS_W3(0,0),      
+//        PACKSHARECHANNELS_W2(128,2,0,0), PACKSHARECHANNELS_W3(0,0),      
+//    },
+//};
 
 /**
   @brief         
@@ -159,11 +159,9 @@ void arm_stream_split (int32_t command, stream_handle_t instance, stream_xdmbuff
             memresults++;   /* memresult points to the */
 
             /* here reset */
+            nb_input_arc = (uint8_t)preset;
             if (preset <= 1)
-            {   nb_input_arc = RD(share_parameter_presets[preset][0], NBINPUTARC_W0);
-            }
-            else
-            {   nb_input_arc = (uint8_t)preset;
+            {   //nb_input_arc = RD(share_parameter_presets[preset][0], NBINPUTARC_W0);
             }
 
             /* copy the frame-size, interleaving scheme and nb of channels of each arc */

@@ -33,28 +33,56 @@
 #include "stream_extern.h"
 
 
+#include "platform.h"
+#ifdef PLATFORM_COMPUTER
+
+arm_stream_instance_t instance;
+
 /**
   @brief            (main) demonstration
   @param[in/out]    none
   @return           int
   @remark
  */
-void main_call(void)
+void main_init(void)
 {
     extern void platform_init_stream_instance(arm_stream_instance_t *instance);
-    arm_stream_instance_t instance;
 
     /* copy the graph, initializes the interpreter instance */
     platform_init_stream_instance (&instance);
 
     /* reset the graph */
     arm_graph_interpreter (STREAM_RESET, &instance, 0, 0);
+}
 
-    /* run the graph */
-    for (int i = 0; i < 100000L; i++)
-    {  arm_graph_interpreter (STREAM_RUN, &instance, 0, 0);
-    }  
 
-    /* stop the graph */
+/**
+  @brief            (main) demonstration
+  @param[in/out]    none
+  @return           int
+  @remark
+ */
+void main_run(void)
+{
+    arm_graph_interpreter (STREAM_RUN, &instance, 0, 0);
+}  
+
+void Push_Ping_Pong(uint32_t *data, uint32_t size)
+{
+    extern void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_t size);
+    extern uint8_t platform_io_al_idx_to_graph[];
+
+    arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data, size);
+}
+
+/**
+  @brief            (main) demonstration
+  @param[in/out]    none
+  @return           int
+  @remark
+ */
+void main_stop(void)
+{
     arm_graph_interpreter (STREAM_STOP, &instance, 0, 0);
 }
+#endif

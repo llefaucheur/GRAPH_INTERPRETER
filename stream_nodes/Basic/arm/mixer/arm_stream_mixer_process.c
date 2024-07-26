@@ -67,7 +67,7 @@ void arm_stream_mixer_process (arm_mixer_instance *instance, stream_xdmbuffer_t 
 
         /* input */
         arcid = RD(W2, MIXER_ARCID_IN_W2);
-        psrc = (uint16_t *)((xdm_buf + arcid)->address);
+        psrc = (int16_t *)((xdm_buf + arcid)->address);
         if (RD(format, INTERLEAVING_FMT) == FMT_INTERLEAVED)
         {   psrc = psrc + RD(W2, SUBCHANID_IN_W2);
             incsrc = 1+ RD(format, NBCHANM1_MIXER_FMT);
@@ -78,7 +78,7 @@ void arm_stream_mixer_process (arm_mixer_instance *instance, stream_xdmbuffer_t 
         }
 
         /* output = last arc */
-        pdst = (uint16_t *)((xdm_buf + narc)->address);
+        pdst = (int16_t *)((xdm_buf + narc)->address);
         if (RD(format, INTERLEAVING_FMT) == FMT_INTERLEAVED)
         {   pdst = pdst + RD(W2, SUBCHANID_IN_W2);
             incdst = 1+ RD(format, NBCHANM1_MIXER_FMT);

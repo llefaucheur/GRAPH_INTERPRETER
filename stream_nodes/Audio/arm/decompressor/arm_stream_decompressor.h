@@ -38,15 +38,36 @@
 #include "stream_types.h"  
 #include "arm_stream_decompressor_imadpcm.h"
 
+#define DECODER_IMADPCM          1  
+#define DECODER_LPC              2  
+#define DECODER_MIDI             3  
+#define DECODER_CVSD             4  
+#define DECODER_LC3              5  
+#define DECODER_SBC              6  
+#define DECODER_MSBC             7  
+#define DECODER_OPUS_SILK        8  
+#define DECODER_MP3              9  
+#define DECODER_MPEG4_AACPLUS_V2 10  
+#define DECODER_OPUS_CELT        11 
+#define DECODER_JPEG             12 
+
+
+#define STATE_DEFAULT_SIZE 4                    /* node_malloc_E defines the effective size, depending on presets/Codec selection  */
+
 typedef struct
 {
-    stream_al_services *stream_entry;
-    CodecState* state;
+    /* memory area reserved for Codec internal computations */
+    uint32_t *TCM;
+
+    stream_al_services *stream_service_entry;
+    uint32_t output_format[STREAM_FORMAT_SIZE_W32];
+
+    uint32_t state[STATE_DEFAULT_SIZE];      /* LAST FIELD OF THE DECLARATION !! */
 } arm_stream_decompressor_instance;
 
 
 
-extern void arm_stream_decompressor_process (arm_stream_decompressor_instance *instance, uint8_t *input, int16_t *output, uint32_t *nsamp);
+extern void decode_imadpcm(int32_t *state, uint8_t* input, uint32_t numSamples, int16_t* output);
 
 #endif //cARM_STREAM_DECOMPRESSOR_H
 

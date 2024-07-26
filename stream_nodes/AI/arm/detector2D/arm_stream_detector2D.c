@@ -29,10 +29,6 @@
  extern "C" {
 #endif
    
- 
-
-#define _CRT_SECURE_NO_DEPRECATE 1
-#include <stdio.h>  /* for sprintf */
 
 
 #include "stream_const.h"

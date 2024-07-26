@@ -1,0 +1,48 @@
+### Heading
+# H1
+## H2
+### H3 
+
+[click on this link](#my-multi-word-header)
+### My Multi Word Header
+
+### Bold          **bold text**
+### Italic          *italicized text*
+### Underline <ins>text underlined</ins>
+### Color         <font color="red">This text is red!</font>
+
+### Horizontal Line (+ blank lines)     ---
+### Code      `code`
+### Fenced Code Block
+```
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "age": 25
+}
+```
+	### Ordered List
+1. First item
+2. Second item
+3. Third item
+
+### Unordered List
+- First item
+- Second item
+- Third item
+
+### Task List
+- [x] Write the press release
+- [ ] Update the website
+- [ ] Contact the media
+
+### Table
+| Syntax | Desc right-aligned |
+| ----------- | -----------: |
+| Header | Title |
+| Paragraph | Text |
+
+### Link        [TEXT](https://www.markdownguide.org)
+                <https://www.markdownguide.org>
+### Image     ![alt text](https://www.markdownguide.org/assets/images/tux.png)
+

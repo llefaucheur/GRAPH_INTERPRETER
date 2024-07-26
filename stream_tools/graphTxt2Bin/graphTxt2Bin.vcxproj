@@ -19,9 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_header.h" />
     <ClInclude Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk_header.h" />
     <ClInclude Include="..\..\stream_platform\platform.h" />
-    <ClInclude Include="..\..\stream_platform\windows\graph_windows_header.h" />
+    <ClInclude Include="..\..\stream_platform\windows\graph_computer_header.h" />
     <ClInclude Include="..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\stream_src\stream_extern.h" />
     <ClInclude Include="..\..\stream_src\stream_types.h" />
@@ -30,10 +31,6 @@
     <ClInclude Include="..\stream_tool_include.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\stream_doc\GraphTemplate.txt" />
-    <Text Include="..\..\stream_doc\IoManifestTemplate.txt" />
-    <Text Include="..\..\stream_doc\NodesDescription.txt" />
-    <Text Include="..\..\stream_doc\NodeManifestTemplate.txt" />
     <Text Include="..\..\stream_nodes\AI\arm\detector2D\swc_manifest_detector2D.txt" />
     <Text Include="..\..\stream_nodes\AI\arm\detector\swc_manifest_detector.txt" />
     <Text Include="..\..\stream_nodes\Audio\arm\compressor\swc_manifest_compressor.txt" />
@@ -55,6 +52,25 @@
     <Text Include="..\..\stream_nodes\Image\elm\TJpgDec\swc_manifest_TjpgDec.txt" />
     <Text Include="..\..\stream_nodes\swc_manifest_none.txt" />
     <Text Include="..\..\stream_platform\graph_1.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_bin.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_debug.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_2d_in_0.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_analog_sensor_0.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_audio_in_0.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_data_in_0.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_data_in_1.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_data_out_0.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_gpio_out_0.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_gpio_out_1.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_imu_temperature_0.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_line_in_0.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_line_out_0.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_motion_in_0.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_node_trace_0.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_stream_in_0.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\procmap_manifest_lp-mspm0l1306.txt" />
+    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\top_manifest_lp-mspm0l1306.txt" />
     <Text Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk.txt" />
     <Text Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk_bin.txt" />
     <Text Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk_debug.txt" />
@@ -76,9 +92,9 @@
     <Text Include="..\..\stream_platform\lpc55s69evk\manifest\top_manifest_lpc55s69evk.txt" />
     <Text Include="..\..\stream_platform\sub_graph_0.txt" />
     <Text Include="..\..\stream_platform\windows\graph_1.txt" />
-    <Text Include="..\..\stream_platform\windows\graph_windows.txt" />
-    <Text Include="..\..\stream_platform\windows\graph_windows_bin.txt" />
-    <Text Include="..\..\stream_platform\windows\graph_windows_debug.txt" />
+    <Text Include="..\..\stream_platform\windows\graph_computer.txt" />
+    <Text Include="..\..\stream_platform\windows\graph_computer_bin.txt" />
+    <Text Include="..\..\stream_platform\windows\graph_computer_debug.txt" />
     <Text Include="..\..\stream_platform\windows\manifest\top_manifest_computer.txt" />
     <Text Include="..\..\stream_platform\windows\manifest\io_platform_2d_in_0.txt" />
     <Text Include="..\..\stream_platform\windows\manifest\io_platform_analog_sensor_0.txt" />
@@ -103,6 +119,12 @@
     <ClCompile Include="..\stream_tool_main.c" />
     <ClCompile Include="..\stream_tool_readManifests.c" />
     <ClCompile Include="..\stream_tool_read_graph.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\stream_doc\GraphTemplate.md" />
+    <None Include="..\..\stream_doc\IoManifestTemplate.md" />
+    <None Include="..\..\stream_doc\NodeManifestTemplate.md" />
+    <None Include="..\..\stream_doc\NodesDescription.md" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

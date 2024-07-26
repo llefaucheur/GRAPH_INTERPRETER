@@ -31,7 +31,8 @@
 #include "stream_const.h"      
 #include "stream_types.h"  
 #include "stream_extern.h"
-
+#include "platform.h"
+#ifdef PLATFORM_LPC55S69EVK
 arm_stream_instance_t instance;
 
 /**
@@ -73,3 +74,4 @@ void main_stop(void)
 {
     arm_graph_interpreter (STREAM_STOP, &instance, 0, 0);
 }
+#endif

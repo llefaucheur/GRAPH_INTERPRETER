@@ -30,7 +30,7 @@
 #endif
     
 
-#define _CRT_SECURE_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_DEPRECATE
 #include <stdio.h>    
 #include <string.h>
 #include <stdint.h>
@@ -288,7 +288,7 @@ void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *arc)
         {   fields_extract(&pt_line, "CI", cstring, &(arc->format.nchan)); 
         }
         if (COMPARE(io_frame_length))
-        {   fields_extract(&pt_line, "CF", cstring, &(arc->format.frame_length)); 
+        {   fields_options_extract(&pt_line, &(arc->frame_length_option));  
         }
         //if (COMPARE(io_frame_duration))
         //{   fields_extract(&pt_line, "CF", cstring, &(arc->format.frame_length)); 
@@ -388,30 +388,34 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
     char* pt_line, ctmp[NBCHAR_LINE];
     uint32_t i, idx_mem, idx_arc;
  
+    /* initializations, fill the default values, different of 0 */
     pt_line = inputFile;
     idx_mem = 0;
 
-    jump2next_valid_line(&pt_line);
-    fields_extract(&pt_line, "c", node->developerName);     /* developer's name */
-    fields_extract(&pt_line, "c", node->nodeName);          /*  node name for the GUI */
-
-    /* fill the default values, different of 0 */
     for (i = 0; i < MAX_NB_MEM_REQ_PER_NODE; i++) node->memreq[i].alignmentBytes = 4;
-    node->nbInputArc = node->nbOutputArc = node->steady_stream = node->same_data_rate = 
+    node->nbInputArc = node->nbOutputArc = node->same_data_rate = 
         node->arc[1].rx0tx1 = node->locking_arc = 1;
+
+    jump2next_valid_line(&pt_line);
 
     while (globalEndFile != FOUND_END_OF_FILE)
     {
+        if (COMPARE(node_developer_name))   
+        {   fields_extract(&pt_line, "CC", ctmp, node->developerName);  
+        }
+        if (COMPARE(node_name))  
+        {   fields_extract(&pt_line, "CC", ctmp, node->nodeName);  
+        }
         if (COMPARE(node_nb_arcs))          // node_nb_arcs rx tx
         {   fields_extract(&pt_line, "CII", ctmp, &(node->nbInputArc), &(node->nbOutputArc));  
+        }
+        if (COMPARE(node_logo))                     // file name (file path of the manifest) 
+        {   //fields_extract(&pt_line, "CIC", ctmp, node->nodeName);  
         }
         if (COMPARE(node_arc_parameter))              
         {   fields_extract(&pt_line, "CI", ctmp, &(node->nbParamArc)); 
         }
-        if (COMPARE(node_steady_stream))              // 0) the data flow is variable (or constant, default value :1) on all input and output arcs
-        {   fields_extract(&pt_line, "CI", ctmp, &(node->steady_stream)); 
-        }
-        if (COMPARE(node_same_data_rate))             // (0) the arcs have different data rates, (1) all arcs have the same data rate 
+        if (COMPARE(node_same_rxtx_data_rate))     // (default 0) the arcs have different data rates, (1) all arcs have the same data rate 
         {   fields_extract(&pt_line, "CI", ctmp, &(node->same_data_rate)); 
         }
         if (COMPARE(node_use_mpdtcm))                
@@ -432,8 +436,8 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         if (COMPARE(node_fpu_used))
         {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
-        if (COMPARE(node_use_unlock_key))
-        {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
+        if (COMPARE(node_use_boot_key))
+        {   fields_extract(&pt_line, "CI", ctmp, &(node->use_boot_key)); 
         }
         if (COMPARE(node_node_version))
         {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
@@ -445,6 +449,18 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         {   fields_extract(&pt_line, "CI", ctmp, &idx_mem);  
             if (idx_mem +1 > node->nbMemorySegment) // memory segment counts from 0
             {   node->nbMemorySegment = idx_mem +1;
+            }
+        }
+        if (COMPARE(node_mem_alignement))
+        {   fields_extract(&pt_line, "CI", ctmp, &i);
+            switch(i) {
+            default:
+            case 4:   node->memreq[idx_mem].alignmentBytes = MEM_REQ_4BYTES_ALIGNMENT  ; break;
+            case 8:   node->memreq[idx_mem].alignmentBytes = MEM_REQ_8BYTES_ALIGNMENT  ; break;
+            case 16:  node->memreq[idx_mem].alignmentBytes = MEM_REQ_16BYTES_ALIGNMENT ; break;
+            case 32:  node->memreq[idx_mem].alignmentBytes = MEM_REQ_32BYTES_ALIGNMENT ; break;
+            case 64:  node->memreq[idx_mem].alignmentBytes = MEM_REQ_64BYTES_ALIGNMENT ; break;
+            case 128: node->memreq[idx_mem].alignmentBytes = MEM_REQ_128BYTES_ALIGNMENT; break;
             }
         }
         if (COMPARE(node_mem_alloc))        // node_mem_alloc    A=32 
@@ -531,7 +547,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     char file_name[NBCHAR_LINE];
     char graph_platform_manifest_name[NBCHAR_LINE];
     uint32_t nb_nodes, inode, nb_stream, istream;
-    char node_name[NBCHAR_LINE];
+    char node_name_[NBCHAR_LINE];
     char IO_name[NBCHAR_LINE];
     char paths[MAX_NB_PATH][NBCHAR_LINE];
     int32_t nb_paths, ipath, fw_io_idx, processorBitFieldAffinity, clockDomain;
@@ -608,9 +624,9 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     for (inode = 0; inode < nb_nodes; inode++)
     {
         jump2next_valid_line(&pt_line);
-        sscanf (pt_line, "%d %s", &ipath, node_name); /* read the node's manifest name */
+        sscanf (pt_line, "%d %s", &ipath, node_name_); /* read the node's manifest name */
         strcpy(file_name, paths[ipath]);
-        strcat(file_name, node_name);
+        strcat(file_name, node_name_);
 
         memset(inputFile, 0, MAXINPUT);
         read_input_file(file_name, inputFile);

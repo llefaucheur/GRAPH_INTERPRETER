@@ -39,6 +39,7 @@
 #include "stream_const.h"
 #include "stream_types.h"
 #include "arm_stream_amplifier.h"
+#include "platform.h"
 
 /*
 ;----------------------------------------------------------------------------------------
@@ -64,6 +65,11 @@ node arm_stream_amplifier;
     2 i16;  0 0         delay-up/down
     parameter_end    
 */
+#ifndef CODE_ARM_STREAM_AMPLIFIER
+void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+{
+}
+#else
 
 /**
   @brief         
@@ -178,9 +184,10 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
         */  
         case STREAM_STOP:  break;    
     }
+#endif
 }
 
 #ifdef __cplusplus
 }
-#endif
+#endif  // #ifndef CODE_ARM_STREAM_AMPLIFIER
  

@@ -9,8 +9,8 @@
 ;   +----------+     +--------+      +--------+     +--------+
 ;                
 ;----------------------------------------------------------------------
-format                  0
-format_frame_length     8
+format_index            0
+format_frame_length     64     ; #define ADC_SAMPLE_SIZE (64)
 ;----------------------------------------------------------------------
 stream_io               0
 stream_io_hwid          2       ; io_platform_analog_sensor_0.txt
@@ -25,11 +25,14 @@ node arm_stream_filter  0
         1  u8;  1                           postShift
         5 s16; 681   422   681 23853 -15161  elliptic band-pass 1450..1900/16kHz
         5 s16; 681 -1342   681 26261 -15331
-    _end_
+    end
 ;----------------------------------------------------------------------
 node arm_stream_detector 0     
     node_preset         3                   detector preset 
 ;----------------------------------------------------------------------
-arc_input   0 0 arm_stream_filter     0 0 0  
-arc_output  1 0 arm_stream_detector   0 1 0  
+arc_input   0 0 0 arm_stream_filter     0 0 0   ; input 0, set0, fmt0 / node inst0 arc0 fmt0
+arc_output  1 0 0 arm_stream_detector   0 1 0  
 arc arm_stream_filter 0 1 0 arm_stream_detector 0 0 0     
+;----------------------------------------------------------------------
+
+end

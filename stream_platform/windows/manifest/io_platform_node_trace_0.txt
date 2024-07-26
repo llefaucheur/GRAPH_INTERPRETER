@@ -4,4 +4,4 @@
                                                                        
     trace_file_0            ; name for the tools                            
     general                 ; domain name,   no specific field
-    _end_
+    end

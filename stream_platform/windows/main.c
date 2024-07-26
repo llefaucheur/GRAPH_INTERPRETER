@@ -26,13 +26,25 @@
  */
 
 #include "platform.h"
+#include <stdlib.h>
+/*   mask = ~((1 << (7 & mem_req_2bytes_alignment) -1) */
 
-extern void main_call(void);
+extern void main_init(void);
+extern void main_run(void);
+extern void main_stop(void);
 
 int main(void)
-{
-    main_call();
+{   int i;
 
-    exit(-3);
+    main_init();
+
+    for (i = 0; i < 100000; i++)
+    {   main_run();
+    }
+
+    main_stop();
+
+    exit (-3);
 }
 
+//#endif

@@ -92,7 +92,7 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
     arc = &(arc[SIZEOF_ARCDESC_W32 * RD(*pio, IOARCID_IOFMT)]);
 
     base = RD(arc[0], BASEIDXOFFARCW0);
-    long_base = (uint8_t *)pack2linaddr_ptr(S->long_offset, base, LINADDR_UNIT_BYTE);
+    long_base = (uint8_t *)pack2linaddr_ptr(S->long_offset, base, LINADDR_UNIT_W32);
     fifosize = RD(arc[1], BUFF_SIZE_ARCW1);
     read = RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);

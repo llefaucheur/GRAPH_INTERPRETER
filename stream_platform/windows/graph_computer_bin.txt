@@ -1,0 +1,54 @@
+//--------------------------------------
+//  DATE Fri Jul 26 19:33:29 2024
+//  AUTOMATICALLY GENERATED CODES
+//  DO NOT MODIFY !
+//--------------------------------------
+0x00000030, // ------- Number of words/Bytes in the graph = 48 / 192 
+0x00000000, // 000 000 [0] Destination in RAM 0, and RAM split 0 
+0x00000041, // 004 001 [1] Number of IOs 2, Formats 1, Scripts 0 
+0x00000015, // 008 002 [2] LinkedList size 21, Collision table 0, Arc debug 0 
+0x00000003, // 00C 003 [3] Nb arcs 3  SchedCtrl 0 ScriptCtrl 0   
+0x00000001, // 010 004 [4] Processors allowed 
+0x00000000, // 014 005 [5] memory consumed 0,1,2,3 
+0x00000000, // 018 006 [6] memory consumed 4,5,6,7 
+0x00000000, // 01C 007 settings of io(graph 0) 2 arc 0 set0copy1=1 rx0tx1=0  
+0x00000000, // 020 008 settings of io(graph 1) 9 arc 1 set0copy1=1 rx0tx1=1  
+0x00C04807, // 024 009 -----  arm_stream_filter(0) idx:7 Nrx 1 Ntx 1 ArcFmt 1 lockArc 1 
+0x08020000, // 028 00A ARC 0 Rx0Tx1 0 dbgpage0 -- ARC 2 Rx0Tx1 1 dbgpage0 
+0x48000036, // 02C 00B Nb Memreq-1 1  XDM11 same data rate 1 
+0x0000004C, // 030 00C Reserved static memory bank(0) = bank 0 stat0work1ret2 = 0 size 76  
+0x4A000000, // 034 00D Nb Memreq-1 1  XDM11 same data rate 1 
+0x00000008, // 038 00E Scratch memory bank(1) = bank 2 stat0work1ret2 = 1  size 8  
+0x01000007, // 03C 00F ParamLen 6+1 Preset 1 Tag0ALL 0 
+0x02A90102, // 040 010 (0) 
+0x02A901A6, // 044 011 (1) 
+0xC4C75D2D, // 048 012 (2) 
+0xFAC202A9, // 04C 013 (3) 
+0x669502A9, // 050 014 (4) 
+0x0000C41D, // 054 015 (5) 
+0x00404808, // 058 016 -----  arm_stream_detector(0) idx:8 Nrx 1 Ntx 1 ArcFmt 0 lockArc 1 
+0x08010002, // 05C 017 ARC 2 Rx0Tx1 0 dbgpage0 -- ARC 1 Rx0Tx1 1 dbgpage0 
+0x08000046, // 060 018 Nb Memreq-1 1  XDM11 same data rate 0 
+0x00000034, // 064 019 Reserved static memory bank(0) = bank 0 stat0work1ret2 = 0 size 52  
+0x08000052, // 068 01A Nb Memreq-1 1  XDM11 same data rate 0 
+0x00000020, // 06C 01B Reserved static memory bank(1) = bank 0 stat0work1ret2 = 2 size 32  
+0x03000001, // 070 01C ParamLen 0+1 Preset 3 Tag0ALL 0 
+0x000003FF, // 074 01D -------------------  vvvvvvvvv RAM vvvvvvvvv 
+0x00203000, // 078 01E IO(graph0) 2 arc 0 set0copy1=1 rx0tx1=0 servant1 1 shared 0 domain 0 
+0x00903801, // 07C 01F IO(graph1) 9 arc 1 set0copy1=1 rx0tx1=1 servant1 1 shared 0 domain 0 
+0x00000008, // 080 020 Format  0 frameSize 8  
+0x00004400, // 084 021           nchan 1 raw 17 
+0x00000000, // 088 022           domain-dependent 
+0x00000000, // 08C 023           domain-dependent 
+0x00000030, // 090 024 ARC descriptor(0) Base 30h (Ch words) fmtProd_0 frameL 8.0 
+0x00000008, // 094 025     Size 8h fmtCons_0 FrameL 8.0 
+0x00000000, // 098 026  
+0x00000000, // 09C 027  
+0x00000032, // 0A0 028 ARC descriptor(1) Base 32h (Ch words) fmtProd_0 frameL 8.0 
+0x00000008, // 0A4 029     Size 8h fmtCons_0 FrameL 8.0 
+0x00000000, // 0A8 02A  
+0x00000000, // 0AC 02B  
+0x00000034, // 0B0 02C ARC descriptor(2) Base 34h (Dh words) fmtProd_0 frameL 8.0 
+0x00000008, // 0B4 02D     Size 8h fmtCons_0 FrameL 8.0 
+0x00000000, // 0B8 02E  
+0x00000000, // 0BC 02F  

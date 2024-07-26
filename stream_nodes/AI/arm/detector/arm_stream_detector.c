@@ -31,9 +31,10 @@
    
  
 
-#define _CRT_SECURE_NO_DEPRECATE 1
 #include "stream_const.h"
 #include "stream_types.h"
+#include "platform.h"
+
 #include "arm_stream_detector.h"
 
 
@@ -41,6 +42,7 @@
 
 #if PRINTF
 #include <stdio.h>
+#define _CRT_SECURE_NO_DEPRECATE
 #endif
 /*
 ;----------------------------------------------------------------------------------------
@@ -74,18 +76,20 @@ arm_stream_detector
     PARSTOP  
 */
 
+#ifdef CODE_ARM_STREAM_DETECTOR
 #define NB_PRESET 5
 const detector_parameters detector_preset [NB_PRESET] = 
 {   /*  log2counter, log2decfMASK, 
         high_pass_shifter, low_pass_shifter, low_pass_z7_z8,  
         vad_rise, vad_fall, THR */
+
     {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #1 no HPF, fast for button debouncing */
     {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #2 VAD with HPF pre-filtering, tuned for Fs <20kHz */
     {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #3 VAD with HPF pre-filtering, tuned for Fs >20kHz */
     {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #4 IMU detector : HPF, slow time constants */
     {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #5 IMU detector : HPF, fast time constants */
 };
-
+#endif
 
 /**
   @brief         
@@ -97,6 +101,7 @@ const detector_parameters detector_preset [NB_PRESET] =
  */
 void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
 {
+#ifdef CODE_ARM_STREAM_DETECTOR
     *status = TASKS_COMPLETED;    /* default return status, unless processing is not finished */
     switch (RD(command,COMMAND_CMD))
     { 
@@ -148,10 +153,6 @@ void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmb
             pinstance->services = (stream_al_services *)data;
             pinstance->decf = decfMASK; 
 
-        //    {  extern FILE *ptf_trace;
-        //#define FILE_TRACE "..\\stream_test\\trace.raw"
-        //    ptf_trace = fopen(FILE_TRACE, "wb");
-        //    }
             break;
         }  
         
@@ -233,6 +234,7 @@ void arm_stream_detector (int32_t command, stream_handle_t instance, stream_xdmb
             break;
         }
     }
+#endif
 }
 
 #ifdef __cplusplus

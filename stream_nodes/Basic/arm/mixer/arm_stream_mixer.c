@@ -116,16 +116,16 @@ node arm_stream_mixer
 */
 
 #define NB_PRESET 1
-const uint32_t mixer_parameter_presets [NB_PRESET][NB_W32_PARAMETERS] = 
-{   
-    /* mixer-4 mono to mono output, gain-0dB, muted */
-    {   PACKMIXERCONFIG_W0(128,5,4,5),  
-        PACKMIXERCHANNELS_W2(128,2,0,0), PACKMIXERCHANNELS_W3(0,0),      
-        PACKMIXERCHANNELS_W2(128,2,0,0), PACKMIXERCHANNELS_W3(0,0),      
-        PACKMIXERCHANNELS_W2(128,2,0,0), PACKMIXERCHANNELS_W3(0,0),      
-        PACKMIXERCHANNELS_W2(128,2,0,0), PACKMIXERCHANNELS_W3(0,0),      
-    },
-};
+//const uint32_t mixer_parameter_presets [NB_PRESET][NB_W32_PARAMETERS] = 
+//{   
+//    /* mixer-4 mono to mono output, gain-0dB, muted */
+//    {   PACKMIXERCONFIG_W0(128,5,4,5),  
+//        PACKMIXERCHANNELS_W2(128,2,0,0), PACKMIXERCHANNELS_W3(0,0),      
+//        PACKMIXERCHANNELS_W2(128,2,0,0), PACKMIXERCHANNELS_W3(0,0),      
+//        PACKMIXERCHANNELS_W2(128,2,0,0), PACKMIXERCHANNELS_W3(0,0),      
+//        PACKMIXERCHANNELS_W2(128,2,0,0), PACKMIXERCHANNELS_W3(0,0),      
+//    },
+//};
 
 /**
   @brief         
@@ -160,11 +160,9 @@ void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuff
             memresults++;   /* memresult points to the */
 
             /* here reset */
+            nb_input_arc = (uint8_t)preset;
             if (preset <= 1)
-            {   nb_input_arc = RD(mixer_parameter_presets[preset][0], NBINPUTARC_W0);
-            }
-            else
-            {   nb_input_arc = (uint8_t)preset;
+            {   //nb_input_arc = RD(mixer_parameter_presets[preset][0], NBINPUTARC_W0);
             }
 
             /* copy the frame-size, interleaving scheme and nb of channels of each arc */

@@ -26,7 +26,7 @@
  */
 
 #include "platform.h"
-#if PLATFORM_COMPUTER == 1
+#ifdef PLATFORM_COMPUTER
 
 #ifdef __cplusplus
  extern "C" {
@@ -35,7 +35,7 @@
 /*-----------------------------------------------------------------------*/
 #define DATA_FROM_FILES 1
 
-#define _CRT_SECURE_NO_DEPRECATE 1
+//#define _CRT_SECURE_NO_DEPRECATE 1
 #if DATA_FROM_FILES
 #include <stdio.h>
 #endif
@@ -92,8 +92,8 @@ extern uint8_t platform_io_al_idx_to_graph[];
 
 /* the IO manifest declares graphalloc_X_bsp_0 = 0 : the buffers are declared in BSP */
 #define graphalloc_X_bsp_0 0
-static int16_t tx_buffer[16];
-static int16_t rx_buffer[16];
+//static int16_t tx_buffer[16];
+//static int16_t rx_buffer[16];
 
 
 void data_in_0 (uint32_t command, uint8_t *data, uint32_t size) 
@@ -116,19 +116,40 @@ void data_in_0 (uint32_t command, uint8_t *data, uint32_t size)
 
 
 void data_in_1 (uint32_t command, uint8_t *data, uint32_t size) 
-{
+{   int32_t tmp, stream_format_io_setting;
+
     switch (command)
     {
-    case STREAM_RUN:            /* data moves */
-        break;
-    case STREAM_SET_PARAMETER:  /* presets reloaded */
-        break;
-    case STREAM_SET_BUFFER:     /* if memory allocation is made in the graph */
-        break;
     default:
-    case STREAM_STOP:           /* stop data moves */
+    case STREAM_SET_PARAMETER:
+    case STREAM_RESET:
+        if (NULL == (ptf_in_stream_in_0_data = fopen("..\\stream_test\\chirp_imadpcm.wav", "rb")))
+        {   exit (-1); 
+        }
+        else 
+        {   int i, c; 
+            for(i=0;i<64;i++) 
+            {   fread(&c,1,1,ptf_in_stream_in_0_data); // skip WAV header
+            }
+        }
+        stream_format_io_setting = *data;            
         break;
-    case STREAM_READ_PARAMETER: /* setting done ? device is ready ? calibrated ? */
+
+    case STREAM_RUN:
+        tmp = fread(data, 1, size, ptf_in_stream_in_0_data);
+        if (size != tmp)
+        {   arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], data, 0);
+            fclose (ptf_in_stream_in_0_data);
+        }
+        else
+        {   arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], data, size);
+        }
+        break;
+
+    case STREAM_STOP:
+            fclose (ptf_in_stream_in_0_data);
+        break;
+    case STREAM_SET_BUFFER:
         break;
     }
 }
@@ -136,8 +157,8 @@ void data_in_1 (uint32_t command, uint8_t *data, uint32_t size)
 
 void analog_sensor_0 (uint32_t command, uint8_t *data, uint32_t size) 
 {   int32_t tmp, stream_format_io_setting;
-    uint32_t cumulated_data = 0;
-    int16_t *data16 = rx_buffer;
+#define FORMAT_PRODUCER_FRAME_SIZE 8
+
     switch (command)
     {
     default:
@@ -161,22 +182,13 @@ void analog_sensor_0 (uint32_t command, uint8_t *data, uint32_t size)
         break;
 
     case STREAM_RUN:
-         /* "io_platform_stream_in_0," frame_size option in samples + FORMAT-0 in the example graph */ 
-        #define FORMAT_PRODUCER_FRAME_SIZE 8
-            size  = (FORMAT_PRODUCER_FRAME_SIZE/2);
+    
+        if (size != FORMAT_PRODUCER_FRAME_SIZE)
+            size = size; //!!
 
-            //for (j = i = 0; i < size; i++) 
-            //{   j = fscanf(ptf_in_stream_in_0_data, "%d,", &tmp); 
-            //    data16[i] = (int16_t)tmp; 
-            //    cumulated_data += sizeof(int16_t);
-            //}
-            //if (j > 0) tmp = size; else tmp = 0;
+         /* "io_platform_stream_in_0," frame_size option in samples + FORMAT-0 in the example graph */
         #if DATA_FROM_FILES
-            tmp = fread(data16, 2, size, ptf_in_stream_in_0_data);
-
-            //for (i = 0; i < size; i++) 
-            //{   data16[i] = (int16_t)0x1000; 
-            //}
+            tmp = fread(data, 1, FORMAT_PRODUCER_FRAME_SIZE, ptf_in_stream_in_0_data);
         #else
             memcpy(data16, &(ptf_in_stream_in_0_data[ptr_in_stream_in_0_data]), 2 * size);
             ptr_in_stream_in_0_data += size;
@@ -184,16 +196,15 @@ void analog_sensor_0 (uint32_t command, uint8_t *data, uint32_t size)
                 tmp = size+1;
             else tmp = size;
         #endif
-            cumulated_data = 2 * size;
 
-            if (size != tmp)
+            if (FORMAT_PRODUCER_FRAME_SIZE != tmp)
             {   arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], data, 0);
         #if DATA_FROM_FILES
                 fclose (ptf_in_stream_in_0_data);
         #endif
             }
             else
-            {   arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data16, cumulated_data);
+            {   arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data, FORMAT_PRODUCER_FRAME_SIZE);
             }
         break;
 
@@ -282,7 +293,6 @@ void line_out_0 (uint32_t command, uint8_t *data, uint32_t size)
 }
 void gpio_out_0 (uint32_t command, uint8_t *data, uint32_t size) 
 {   
-#define FORMAT_CONSUMER_FRAME_SIZE 12
     switch (command)
     {
     default:
@@ -301,6 +311,7 @@ void gpio_out_0 (uint32_t command, uint8_t *data, uint32_t size)
          /* "io_platform_stream_in_0," frame_size option in samples + FORMAT-0 in the example graph */ 
         //#define FORMAT_CONSUMER_FRAME_SIZE 12
         //    size  = (FORMAT_CONSUMER_FRAME_SIZE/2);
+            arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_GPIO_OUT_0], (uint8_t *)data, size);
         #if DATA_FROM_FILES
             fwrite(data, 1, size, ptf_in_gpio_out_data);
             fflush(ptf_in_gpio_out_data);
@@ -312,7 +323,6 @@ void gpio_out_0 (uint32_t command, uint8_t *data, uint32_t size)
                  i=0;
             }
         #endif
-            arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_GPIO_OUT_0], (uint8_t *)tx_buffer, FORMAT_CONSUMER_FRAME_SIZE);
 
         break;
 
@@ -326,8 +336,6 @@ void gpio_out_0 (uint32_t command, uint8_t *data, uint32_t size)
         #if graphalloc_X_bsp_0 != 0
         tx_buffer = (int16_t *)data; 
         #endif
-        memset(tx_buffer, 0, FORMAT_CONSUMER_FRAME_SIZE);
-
         break;
     }
 }
@@ -368,8 +376,9 @@ void data_out_0 (uint32_t command, uint8_t *data, uint32_t size)
     case STREAM_RUN:
         #if DATA_FROM_FILES
             //fprintf(ptf_trace, "%s\n", data);
-            fwrite(data, 1, size, ptf_trace);
-            fflush(ptf_trace);
+            //fwrite(data, 1, size, ptf_trace);
+            //fflush(ptf_trace);
+
             arm_graph_interpreter_io_ack(platform_io_al_idx_to_graph[IO_PLATFORM_DATA_OUT_0], data,size);
         #else
             ptr_trace = 0;  // no trace 

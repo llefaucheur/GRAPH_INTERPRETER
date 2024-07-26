@@ -45,6 +45,7 @@ static uint8_t arc_ready_for_write(arm_stream_instance_t *S, uint32_t *arc, uint
 static uint8_t arc_ready_for_read(arm_stream_instance_t *S, uint32_t *arc, uint32_t *frame_size);
 static intPtr_t arc_extract_info_int (arm_stream_instance_t *S, uint32_t *arc, uint8_t tag);
 static void load_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1);
+static void check_graph_boundaries(arm_stream_instance_t *S);
 
 #define script_option (RD(S->scheduler_control, SCRIPT_SCTRL))
 #define return_option (RD(S->scheduler_control, RETURN_SCTRL))
@@ -198,7 +199,7 @@ static uint8_t * arc_extract_info_pt (arm_stream_instance_t *S, uint32_t *arc, u
     read =  RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
     base =  RD(arc[0], BASEIDXOFFARCW0);
-    long_base = pack2linaddr_ptr(S->long_offset, base, LINADDR_UNIT_BYTE);
+    long_base = pack2linaddr_ptr(S->long_offset, base, LINADDR_UNIT_W32);
 
     switch (tag)
     {
@@ -367,7 +368,7 @@ static void arc_data_operations (
     //xdm_data = (stream_xdmbuffer_t *)buffer;
     //fifosize =  RD(arc[1], BUFF_SIZE_ARCW1);
     base =      RD(arc[0], BASEIDXOFFARCW0);
-    long_base = pack2linaddr_ptr(S->long_offset, base, LINADDR_UNIT_BYTE);
+    long_base = pack2linaddr_ptr(S->long_offset, base, LINADDR_UNIT_W32);
 
     switch (tag)
     {
@@ -513,7 +514,7 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
         } 
     }   
 
-    if (0 == ret)
+    if ((pre0post1 == 0) && (0 == ret))
     {   return (ret);     /* arcs are not ready, stop execution */
     }
 
@@ -547,7 +548,7 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
                 else
                 {   /* the SWC put the amount of data produced in "size"
                         output buffer of the SWC : check the pointer increment */
-                    increment = (uint32_t)(xdm_data->size);
+                    increment = (uint32_t)(xdm_data[iarc].size);
                 }
                 write = write + increment;
                 ST(arc[3], WRITE_ARCW3, write);
@@ -601,7 +602,7 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
                 {
                     /* the SWC put the amount of data consumed in "size"
                         input buffer of the SWC, update the read index*/
-                    increment = (uint32_t)(xdm_data->size);
+                    increment = (uint32_t)(xdm_data[iarc].size);
                 }
                 read = read + increment;
                 ST(arc[2], READ_ARCW2, read);
@@ -632,7 +633,7 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
   @brief        copy/swap FIFO to fast memory
   @return       none
 
-  @par          parse memory_segment_swap, extract the arcID (SWAPBUFID_LW2S)
+  @par          parse memory_segment_swap
                 use the arcID descriptor for the address and length of data to copy/swap
                 parameter pre0post1 tells if we are before or after processing
                 the field SWAP_LW2S tells to copy or swap the memory segment
@@ -649,13 +650,13 @@ void load_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1)
     intPtr_t *memaddr;
     uint32_t *memreq, *arc, memlen;
     
-    mask = S->memory_segment_swap;                          /* bit-field of segments to swap */
+    mask = RD(((uint32_t *)S->swc_instance_addr)[SIZE_LW2], TO_SWAP_LW2S); /* bit-field of segments to swap */
     memreq = &(S->swc_header[S->swc_memory_banks_offset]);  /* list of memory segments to copy */
     
     for (imem = 0; imem < MAX_NB_MEM_REQ_PER_NODE; imem++)
     {   
         if (TEST_BIT(mask, imem))
-        {   memaddr = (intPtr_t *)pack2linaddr_ptr (S->long_offset, memreq[NBW32_MEMREQ_LW2 * imem + ADDR_LW2], LINADDR_UNIT_BYTE);
+        {   memaddr = (intPtr_t *)pack2linaddr_ptr (S->long_offset, memreq[NBW32_MEMREQ_LW2 * imem + ADDR_LW2], LINADDR_UNIT_W32);
             arcID = RD(memaddr, SWAPBUFID_LW2S);
             arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
             memlen = RD(arc[1], BUFF_SIZE_ARCW1);
@@ -693,7 +694,7 @@ void load_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1)
       check input ring buffers :
       each Stream instance has a list of graph boundary to check for in/out data
  */
-void check_graph_boundaries(arm_stream_instance_t *S)
+static void check_graph_boundaries(arm_stream_instance_t *S)
 {
     uint8_t graph_io_idx;
     uint8_t need_data_move;
@@ -787,7 +788,6 @@ void check_graph_boundaries(arm_stream_instance_t *S)
 
 
 /*----------------------------------------------------------------------------
-/**
   @brief        check_hwsw_compatibility
   @param[in]    none
   @return       none
@@ -902,8 +902,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
     
             /* a script called scan_graph for a parameter change */
             if (command == STREAM_SET_PARAMETER)
-            {   /* if (/* the "arm_stream_instance_t" has all the details */
-                return;
+            {   return;
             }
 
             /* if the SWC generating the input data was blocked (ALIGNBLCK_ARCW3=1) 
@@ -983,7 +982,7 @@ static void read_header (arm_stream_instance_t *S)
 
     S->swc_parameters_offset = S->swc_memory_banks_offset;
     x = S->swc_header[S->swc_memory_banks_offset];
-    S->swc_parameters_offset  += NBW32_MEMREQ_LW2 * RD(x, NBALLOC_LW2);
+    S->swc_parameters_offset  += NBW32_MEMREQ_LW2 * (1 + RD(x, NALLOCM1_LW2));
 
     /* default parameters of the node */
     S->pack_command = PACK_COMMAND(
@@ -998,11 +997,9 @@ static void read_header (arm_stream_instance_t *S)
     S->swc_instance_addr = (stream_handle_t)pack2linaddr_int
         (S->long_offset, 
          S->swc_header[S->swc_memory_banks_offset],
-         LINADDR_UNIT_BYTE
+         LINADDR_UNIT_W32
         );
 
-    /* list of memory segment to swap */
-    S->memory_segment_swap = (uint8_t)RD(((uint32_t *)S->swc_instance_addr)[SIZE_LW2], TO_SWAP_LW2S);
 
     /* read the physical address */
     S->address_swc = S->node_entry_point_table[idx_swc];
@@ -1119,12 +1116,13 @@ static void reset_component (arm_stream_instance_t *S)
     intPtr_t memreq_physical[MEMRESET];
     
     memreq = &(S->swc_header[S->swc_memory_banks_offset]);
-    nbmem = (uint8_t)RD(memreq[0],NBALLOC_LW2);
+    nbmem = (uint8_t)RD(memreq[0],NALLOCM1_LW2);
+    nbmem ++;
     memreq_physical[0] = (intPtr_t)(S->swc_instance_addr);
 
     for (imem = 1; imem < nbmem; imem++)
     {   /* create pointers to the right memory bank */
-        memreq_physical[imem] = pack2linaddr_int(S->long_offset, memreq[NBW32_MEMREQ_LW2 * imem], LINADDR_UNIT_BYTE);
+        memreq_physical[imem] = pack2linaddr_int(S->long_offset, memreq[NBW32_MEMREQ_LW2 * imem], LINADDR_UNIT_W32);
     }      
 
     if (TEST_BIT(S->swc_header[0], LOADFMT_LW0_LSB))
@@ -1157,6 +1155,8 @@ static void reset_component (arm_stream_instance_t *S)
         (stream_handle_t) memreq_physical, 
         (stream_xdmbuffer_t *) arm_stream_services, 
         &check);
+
+    /* @@@ TODO : STREAM_SERVICE_INTERNAL_KEYEXCHANGE for KEY_LW2S for key exchanges */
 }
 
 
@@ -1173,7 +1173,7 @@ static void reset_component (arm_stream_instance_t *S)
 static void set_new_parameters (arm_stream_instance_t *S, uint32_t *ptr_param32b)
 {
     uint32_t tmp;
-    int status;
+    uint32_t status;
 
     /*
         BOOTPARAMS: 
@@ -1230,7 +1230,9 @@ static void run_node (arm_stream_instance_t *S)
     ST(S->pack_command, COMMAND_CMD, STREAM_RUN);
 
     /* check memory segments for copy to TCM/fast memory @@@*/
-    if (S->memory_segment_swap)
+
+    /* list of memory segment to swap */
+    if (RD(((uint32_t *)S->swc_instance_addr)[SIZE_LW2], TO_SWAP_LW2S))
     {   load_memory_segments (S, 0);
     }
 
@@ -1252,7 +1254,7 @@ static void run_node (arm_stream_instance_t *S)
     arc_index_update(S, xdm_data, 1); 
 
     /* check memory segments for restore / swap back */
-    if (S->memory_segment_swap)
+    if (RD(((uint32_t *)S->swc_instance_addr)[SIZE_LW2], TO_SWAP_LW2S))
     {   load_memory_segments (S, 1);
     }    
 

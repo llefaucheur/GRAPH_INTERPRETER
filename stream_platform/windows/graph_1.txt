@@ -37,10 +37,10 @@ set_file_path           3    ../../stream_platform/windows/
 
 
 ;----------------------------------------------------------------------------------------
-format                  0
+format_index         0
 format_frame_length     8
 
-format                  1
+format_index         1
 format_frame_length     12
 
 ;----------------------------------------------------------------------------------------
@@ -70,7 +70,7 @@ script 0
         1 h16; e810             equ r0,#0
         1 h16; 0381             ccallsys 1
         1 h16; C000             ret
-    _end_                       
+    end                       
 
 
 ;----------------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ script 0
 node arm_stream_filter 0 
 
     node_preset       1                     ; Q15 filter
-    node_malloc_E     1                     ; for debug
+    node_malloc_add   4  1                  ; for debug
     node_map_hwblock  1  5                  ; TCM = VID5
     node_map_swap     1  3                  ; SRAM1
 
@@ -124,8 +124,8 @@ node arm_stream_filter 0
 ;        1  i8;  0       postShift
 ;        5 f32; 0.284277f 0.455582f 0.284277f 0.780535f -0.340176f  b0/b1/b2/-a1/-a2  ellip(4, 1, 40, 3600/8000, 'low')
 ;        5 f32; 0.284277f 0.175059f 0.284277f 0.284669f -0.811514f    
-    _end_
-_end_
+    end
+end
 
 ;-----------------------------------------
 node arm_stream_filter 1                     ; second instance, default VID
@@ -137,36 +137,36 @@ node arm_stream_filter 1                     ; second instance, default VID
         1  u8;  1                           postShift
         5 s16; 9315, 14928,  9315, 25576, -11147, 
         5 s16; 9315,  5736,  9315,  9328, -26591, 
-    _end_
-_end_
+    end
+end
 
 ;----------------------------------------------------------------------------------------
 node arm_stream_detector 0       ; arm_stream_detector
-_end_
+end
 
 ;----------------------------------------------------------------------------------------
 node arm_stream_decompressor 1
     preset 1                        ; IADPCM 
-_end_
+end
 
 ;----------------------------------------------------------------------------------------
 node arm_stream_converter 0         ; arm_stream_converter
-_end_
+end
 
 ;----------------------------------------------------------------------------------------
 node 
     arm_stream_modulator 0      ; arm_stream_modulator : preset tone generation
-_end_
+end
 
 ;----------------------------------------------------------------------------------------
 node 
     arm_stream_mixer 0          ; arm_stream_mixer
-_end_
+end
 
 ;----------------------------------------------------------------------------------------
 node 
     arm_stream_split 0          ; arm_stream_split
-_end_
+end
 
 ;--------------- LAST SECTION OF THE GRAPH-------------------------------------
 arc_section

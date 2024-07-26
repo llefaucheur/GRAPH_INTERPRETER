@@ -104,7 +104,7 @@ static int16_t stepsizeTable[89] = {
 
 
  
-void decode_imadpcm(CodecState* state, uint8_t* input, uint32_t numSamples, int16_t* output)
+void decode_imadpcm(int32_t *state, uint8_t* input, uint32_t numSamples, int16_t* output)
 {
     int8_t  sign;			/* Current adpcm sign bit #TODO Remove if sign bit of diff can be used directly */
     int16_t delta;			/* Current adpcm output value */
@@ -115,9 +115,9 @@ void decode_imadpcm(CodecState* state, uint8_t* input, uint32_t numSamples, int1
     int16_t index;			/* Current step change index */
 	int16_t inputbuffer;		/* place to keep next 4-bit value */
     int16_t bufferstep;		/* toggle between inputbuffer/input */
-
-    valpred = state->valprev;
-    index = state->index;
+   
+    valpred = state[VALPREV];
+    index = state[INDEX];
     step = stepsizeTable[index];
 
     bufferstep = 0;
@@ -166,7 +166,7 @@ void decode_imadpcm(CodecState* state, uint8_t* input, uint32_t numSamples, int1
 	    *output++ = valpred;
     }
 
-    state->valprev = valpred;
-    state->index = index;
+    state[VALPREV] = valpred;
+    state[INDEX] = index;
 }
 

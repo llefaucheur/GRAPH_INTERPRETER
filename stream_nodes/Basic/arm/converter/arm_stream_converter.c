@@ -39,6 +39,8 @@
 
 #include "stream_const.h"
 #include "stream_types.h"
+#include "platform.h"
+
 #include "arm_stream_converter.h"
 
 
@@ -51,7 +53,11 @@
 arm_stream_converter
     3  i8; 0 0 0        instance, task = raw conversion, no tag. No parameter
 */
-
+#ifndef CODE_ARM_STREAM_CONVERTER
+void arm_stream_converter (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+{
+}
+#else
 
 
 /**
@@ -130,8 +136,10 @@ void arm_stream_converter (int32_t command, stream_handle_t instance, stream_xdm
         default :
             break;
     }
+#endif
 }
 #ifdef __cplusplus
 }
-#endif
+#endif  // #ifndef CODE_ARM_STREAM_CONVERTER
+
  

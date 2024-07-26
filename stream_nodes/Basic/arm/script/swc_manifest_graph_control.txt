@@ -2,8 +2,8 @@
 ; SOFTWARE COMPONENT MANIFEST - "arm_stream_script"
 ; ------------------------------------------------------------------------------------------------------------
 ;
-    ARM                             ; developer name
-    arm_stream_script               ; node name
+node_developer_name      ARM                             ; developer name
+node_name                arm_stream_script               ; node name
 
     node_nb_arcs         0 1                 ; nb arc input, output (default configuration)
     node_mask_library    15                  ; default 0 bit-field of dependencies to computing libraries
@@ -16,4 +16,4 @@
     node_mem                0
     node_mem_alloc         32
 
-_end_
+end
