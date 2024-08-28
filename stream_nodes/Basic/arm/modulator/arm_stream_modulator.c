@@ -97,7 +97,7 @@ void arm_stream_modulator (int32_t command, stream_handle_t instance, stream_xdm
                 data = address of Stream function
                 
                 memresults are followed by 2 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
-                memory pointers are in the same order as described in the SWC manifest
+                memory pointers are in the same order as described in the NODE manifest
         */
         case STREAM_RESET: 
         {   stream_al_services *stream_entry = (stream_al_services *)data;
@@ -166,13 +166,9 @@ void arm_stream_modulator (int32_t command, stream_handle_t instance, stream_xdm
 
             arm_stream_modulator_process(pinstance, inBuf, outBuf, &nb_data);
 
-            /* the SWC is producing an amount of data different from the consumed one (see xdm11 in the manifest) */
-            pt_pt = data;
-            *(&(pt_pt->size)) = nb_data * sizeof(SAMP_IN); /* amount of data consumed */
-            pt_pt ++;
-            *(&(pt_pt->size)) = nb_data * sizeof(SAMP_OUT);   /* amount of data produced */
+            pt_pt = data;   *(&(pt_pt->size)) = nb_data * sizeof(SAMP_IN);     /* amount of data consumed */
+            pt_pt ++;       *(&(pt_pt->size)) = nb_data * sizeof(SAMP_OUT);    /* amount of data produced */
 
-            
             break;
         }
 

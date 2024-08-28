@@ -30,7 +30,13 @@
 
 #ifdef PLATFORM_COMPUTER 
 
+//#define STREAM_PLATFORM_SERVICES        /* call the platform service with its fast libraries w/wo accelerators */
+#undef STREAM_PLATFORM_SERVICES        /* call CMSIS libraries */
+
 #define _CRT_SECURE_NO_DEPRECATE
+
+#define PLATFORM_ARCH_32BIT
+//#define PLATFORM_ARCH_64BIT
 
 /* conditional compilation */
 #define CODE_ARM_STREAM_SCRIPT         /* byte-code interpreter, index "arm_stream_script_INDEX" */
@@ -54,15 +60,18 @@
 #define CODE_ARM_STREAM_ANALYSIS       /* arm_stream_analysis, */
 
 
-#include "platform.h"
-#include "stream_const.h"      
-#include "stream_types.h"
+/*------ Floating point allowed ------*/
+#define STREAM_FLOAT_ALLOWED 1
 
 /* max number of nodes installed at compilation time */
 #define NB_NODE_ENTRY_POINTS 20
 
-/* max number of application callbacks used from SWC and scripts */
+/* max number of application callbacks used from NODE and scripts */
 #define MAX_NB_APP_CALLBACKS 8
+
+#include "platform.h"
+#include "stream_const.h"      
+#include "stream_types.h"
 
 
 /* code size saving switch */
@@ -112,11 +121,11 @@
 #define ARCH_ID 0 
 
 #define MBANK_GRAPH     0               /* graph base address (shared) */
-#define MBANK_DMEMFAST  1               /* not shared DTCM Cortex-M/LLRAM Cortex-R, swapped between SWC calls if static */
-#define SIZE_MBANK_DMEM_EXT   0x400     /* external (buffers) */
+#define MBANK_DMEMFAST  1               /* not shared DTCM Cortex-M/LLRAM Cortex-R, swapped between NODE calls if static */
+#define SIZE_MBANK_DMEM_EXT    0x1000   /* 4K external (buffers) */
 #define SIZE_MBANK_BACKUPMEM1   0x20    /* OFFSET 1 */
 #define SIZE_MBANK_TCM2         0x20    /* TCM (fast RAM) */
-#define SIZE_MBANK_FLASH3       0x20    /* FLASH (fast RAM) */
+#define SIZE_MBANK_FLASH3       0x20    /* FLASH */
 
 
 #ifdef _MSC_VER 

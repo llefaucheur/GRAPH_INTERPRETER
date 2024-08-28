@@ -1,48 +1,51 @@
-;----------------------------------------------------------------------------------------
-; List of nodes
-;----------------------------------------------------------------------------------------
-;
-  1 arm_stream_script,         /* byte-code interpreter, index "arm_stream_script_INDEX" */
-  2 arm_stream_graph_control,  /* scheduler control : lock, bypass, loop, if-then */
-  3 arm_stream_router,         /* copy input arcs and subchannel and output arcs and subchannels   */     
-  4 arm_stream_converter,      /* raw data format converter */
-  5 arm_stream_amplifier,      /* amplifier mute and un-mute with ramp and delay control */
-  6 arm_stream_mixer,          /* multichannel mixer with mute/unmute and ramp control */
-  7 arm_stream_filter,         /* cascade of DF1 filters */
-  8 arm_stream_detector,       /* estimates peaks/floor of the mono input and triggers a flag on high SNR */
-  9 arm_stream_rescaler,       /* raw data values remapping using "interp1" */
- 10 arm_stream_compressor,     /* raw data compression with adaptive prediction */
- 11 arm_stream_decompressor,   /* raw data decompression */
- 12 arm_stream_modulator,      /* signal generator with modulation */
- 13 arm_stream_demodulator,    /* signal demodulator, frequency estimator */
- 14 arm_stream_resampler,      /* asynchronous sample-rate converter */
- 15 arm_stream_qos,            /* raw data interpolator with synchronization to one HQoS stream */
- 16 arm_stream_split,          /* let a buffer be used by several nodes */
- 17 arm_stream_detector2D,     /* activity detection, pattern detection */
- 18 arm_stream_filter2D,       /* Filter, rescale, rotate, exposure compensation */
- 19 arm_stream_analysis,       /* arm_stream_analysis, */
 
- 
-;----------------------------------------------------------------------------------------
-; 1     arm_stream_script
-;----------------------------------------------------------------------------------------
-; scripts are special nodes, the byte code in indexed in the SCRIPTS section of the graph
-; data RAM is placed in a shared arc for all script (instance reg+stack parameters)
-; constants are placed after the byte-codes
-; The default memory configuration is "shared": the TX_FIFO descriptors associated with 
-;   the script are sharing the same memory buffer (BASEIDXOFFSCRARCW0). To have 
-;   individual static memory associated to a script the "private memory flag" must be set.
-;
-;   Special functions: 
-;       - lock   : a block of nodes to a processor to have good cache performance, 
-;       - if-then: a block of nodes based on script decision (FIFO content/debug registers, ..)
-;       - loop   : repeat a list of node several time for cache efficiency and small frame size
-;
-;   Checks if the data it needs is available and returns to the scheduler 
-;   Its single arc (TX) is always empty
-node arm_stream_script 1        ; instance index of arm_stream_script
+---------------------------------------------------------------------------------------
+**List of pre-installed nodes**
+[TOC]
+---------------------------------------------------------------------------------------
+```
+  1 arm_stream_script          byte-code interpreter index "arm_stream_script_INDEX" 
+  2 arm_stream_graph_control   scheduler control : lock bypass loop if-then 
+  3 arm_stream_router          copy input arcs and subchannel and output arcs and subchannels        
+  4 arm_stream_converter       raw data interleaving sampling-rate converter 
+  5 arm_stream_amplifier       amplifier mute and un-mute with ramp and delay control 
+  6 arm_stream_mixer           multichannel mixer with mute/unmute and ramp control 
+  7 arm_stream_filter          cascade of DF1 filters 
+  8 arm_stream_detector        estimates peaks/floor of the mono input and triggers a flag on high SNR 
+  9 arm_stream_rescaler        raw data values remapping using "interp1" 
+ 10 arm_stream_compressor      raw data compression with adaptive prediction 
+ 11 arm_stream_decompressor    raw data decompression 
+ 12 arm_stream_modulator       signal generator with modulation 
+ 13 arm_stream_demodulator     signal demodulator frequency estimator 
+ 14 arm_stream_resampler       asynchronous high-quality sample-rate converter 
+ 15 arm_stream_qos             raw data interpolator with synchronization to one HQoS stream 
+ 16 arm_stream_split           let a buffer be used by several nodes 
+ 17 arm_stream_analysis        arm_stream_analysis 
+ 18 arm_stream_detector2D      activity detection pattern detection 
+ 19 arm_stream_filter2D        Filter rescale/zoom/extract rotate exposure compensation 
+ 20 arm_stream_mixer2D         add two images with alpha blending 
+```
+
+
+# arm_stream_script
+
+Scripts are special nodes, the byte code in indexed in the SCRIPTS section of the graph data RAM is placed in a shared arc for all script (instance reg+stack parameters) constants are placed after the byte-codes.
+
+The default memory configuration is "shared": the TX_FIFO descriptors associated with   the script are sharing the same memory buffer. 
+
+To have individual static memory associated to a script the "private memory flag" must be set.
+
+  Special functions: 
+      - lock   : a block of nodes to a processor to have good cache performance, 
+            - if-then: a block of nodes based on script decision (FIFO content/debug registers, ..)
+            - loop   : repeat a list of node several time for cache efficiency and small frame size
+
+  Checks if the data it needs is available and returns to the scheduler 
+  Its single arc (TX) is always empty
+
+```  
+    node arm_stream_script 1        ; instance index of arm_stream_script
     
-    script_registers   2        ; number of registers (default is max = 6)
     script_pointers    2        ; number of pointer (default is max = 6)
     script_stack      12        ; size of the stack in word64 (default = 6)
     script_mem_shared  1        ; Is it a private RAM(0) or can it be shared with other scripts(1)
@@ -67,31 +70,32 @@ node arm_stream_script 1        ; instance index of arm_stream_script
 
    node_parameters <ID2>        ; node parameters and index to let the code addressing it
                                 ; Set_parameter : the array of parameters starts on 32bits-aligned addresses
-                                ; The programmer must arrange the data are aligned with respect to the way parameters are read in 
-                                ;   the nanoApp (using pointers to 8/16/32bits fields).
+                                ; The programmer arranges the data are aligned with respect to the way parameters are read in 
+                                ;   the node (using pointers to 8/16/32bits fields).
        1  i8; 0                 ; TAG= 0 "load all parameters"
        7  i8; 2 3 4 5 6 7 8     ; parameters
 
    node_parameters <ID2>        ; 
        include 1 binary_code.txt ; path ID and file name
    _end_  
-
 _end_
+```
 
 
-;----------------------------------------------------------------------------------------
-;2. arm_stream_graph_control
-;----------------------------------------------------------------------------------------
-;   scheduler controls : 
-;       - debug  : remote UART controler (RX + TX)
-;           minimal serial interface protocol with stream header detection, 
-;           6b->8b conversion, scheduler call to set parameters, change use-case, 
-;           reload a new graph and optionnaly restart the graph using application_callbacks[]
-;   
-;    Use-case : 
-;       - dispatch debug commands and allow a new graph to be downloaded
-;       - update the graph or an ML model, optional reset 
-;
+----------------------------------------------------------------------------------------
+# arm_stream_graph_control
+
+scheduler controls : 
+    - debug  : remote UART controler (RX + TX)
+        minimal serial interface protocol with stream header detection, 
+        6b->8b conversion, scheduler call to set parameters, change use-case, 
+        reload a new graph and optionnaly restart the graph using application_callbacks[]
+
+ Use-case : 
+    - dispatch debug commands and allow a new graph to be downloaded
+    - update the graph or an ML model, optional reset 
+
+```
 node
     arm_stream_graph_control   0        ; instance index 0
 
@@ -100,19 +104,20 @@ node
     _end_
 
 _end_
+```
 
-;
-;----------------------------------------------------------------------------------------
-;   3	arm_stream_router
-;----------------------------------------------------------------------------------------
-;   I/O streams have the same RAW format size, if time-stamped then only with frame size of 1
-;
-;   table of routing : a list of 16bits words (source 8b + destination 8b)
-;   format: router arc index (3b)           up to 8 arcs
-;           sub-channel index -1 (5b)       up to 32 channels
-;
-;   example with the router_2x2 used to merge 2 stereo input in a 4-channels output
-;
+----------------------------------------------------------------------------------------
+# arm_stream_router
+
+I/O streams have the same RAW format size, if time-stamped then only with frame size of 1
+
+table of routing : a list of 16bits words (source 8b + destination 8b)
+format: router arc index (3b)           up to 8 arcs
+        sub-channel index -1 (5b)       up to 32 channels
+
+example with the router_2x2 used to merge 2 stereo input in a 4-channels output
+
+```
 node 
     arm_stream_router i
     parameters     0             ; TAG   "load all parameters"
@@ -124,56 +129,59 @@ node
         4 i16; 1 1 2 3      move arc1,chan1, to arc2,chan3
     _end_
 _end_
-;
-;----------------------------------------------------------------------------------------
-;   4	arm_stream_converter
-;----------------------------------------------------------------------------------------
-;   Operation : convert input format to the format of the output arc. 
-;   For 2D data this is image rescaling, sampling-rate is not used
-;   Converter do not check Framesize
-;   Converter is changing RAW data and Units, interleaving, time-stamp format, number of channels
-;       and sampling-rate (subroutines shared with arm_stream_resampler)
-;   
-;   Operations :
-;   - check the output buffer size with the new format and sampling rate
-;       new size = frame-input duration x new data rate/s
-;   - process nchan, interleaving and time-stamps (as 1..8 extra channels for time64)
-;       routing input buffer to a scratch buffer, merge with raw data change
-;           for images: use an intermediate format separating color/monochrome and RGB/YUV
-;       nchan changes are done with masks on channels for the averaging 
-;   - 2D resize and 1D resampling : filter + interpolator
-;   TBD : creating a synchronous stream from an input using time-stamps (IMU data for ex.)
-;
-;   Parameters : domains of operations to correctly interpret the Word2 of the FORMAT (SETTINGS_IOFMT2)
-;   
+```
+
+----------------------------------------------------------------------------------------
+# arm_stream_converter
+
+Operation : convert input arc format to the format of the output arc. 
+Conversion takes care of RAW data, frame size, interleaving, time-stamp format, number of channels, sampling-rate.
+
+Operations :
+- copy input data to the first internal scratch buffer with the management of the target number of channels and using deinterleave intermediate format. The start of the deinterleaved buffer is a copy of the previously processed end of buffers, for the implementation of filters using a memory.
+- sampling rate converter, with a dedicated processing for the asynchronous to synchronous conversion, to second scratch buffer
+- raw data conversion, interleaving conversion and copy of the result
+
+The case of IMU format is managed like other one-dimension format. 
+
+The case of 2D format is special with operations of pixel area extraction, zoom, interpolate, rotation  and pixel format conversions.
+
+
+
+Parameters :
+
+```
 arm_stream_converter (i)
 
     parameters     0             ; TAG   "load all parameters"
         2  i8; 4 5          index of the input and output formats
     _end_
 _end_
-;
-;----------------------------------------------------------------------------------------
-;   5	arm_stream_amplifier
-;----------------------------------------------------------------------------------------
-;   Operation : control of the amplitude of the input stream with controlled time of ramp-up/ramp-down. 
-;   The gain control “mute” is used to store the current gain setting, being reloaded with the command “unmute”
-;   Option : either the same gain/controls for all channels or list of parameters for each channel
-;
-;   Parameters :  new gain/mute/unmute, ramp-up/down slope, delay before starting the slope. 
-;   Use-cases :
-;       Features : adaptive gain control (compressor, expander, AGC) under a script control with energy polling 
-;       Metadata features : "saturation occured" "energy"
-;       Mixed-Signal glitches : remove the first seconds of an IR sensor until it was self-calibrated (same for audio Class-D)
-;
-;
-;   parameters of amplifier (variable size): 
-;   TAG_CMD = 1, uint8_t, 1st-order shifter slope time (as stream_mixer, 0..75k samples)
-;   TAG_CMD = 2, uint16_t, desired gain FP_8m4e, 0dB=0x0805
-;   TAG_CMD = 3, uint8_t, set/reset mute state
-;   TAG_CMD = 4, uint16_t, delay before applying unmute, in samples
-;   TAG_CMD = 5, uint16_t, delay before applying mute, in samples
-;
+```
+
+---------------------------------------------------------------------------------------
+# arm_stream_amplifier
+
+
+Operation : control of the amplitude of the input stream with controlled time of ramp-up/ramp-down. 
+The gain control â€œmuteâ€ is used to store the current gain setting, being reloaded with the command â€œunmuteâ€
+Option : either the same gain/controls for all channels or list of parameters for each channel
+
+Parameters :  new gain/mute/unmute, ramp-up/down slope, delay before starting the slope. 
+Use-cases :
+    Features : adaptive gain control (compressor, expander, AGC) under a script control with energy polling 
+    Metadata features : "saturation occured" "energy"
+    Mixed-Signal glitches : remove the first seconds of an IR sensor until it was self-calibrated (same for audio Class-D)
+
+
+parameters of amplifier (variable size): 
+TAG_CMD = 1, uint8_t, 1st-order shifter slope time (as stream_mixer, 0..75k samples)
+TAG_CMD = 2, uint16_t, desired gain FP_8m4e, 0dB=0x0805
+TAG_CMD = 3, uint8_t, set/reset mute state
+TAG_CMD = 4, uint16_t, delay before applying unmute, in samples
+TAG_CMD = 5, uint16_t, delay before applying mute, in samples
+
+```
 node 
     arm_stream_amplifier (i)
 
@@ -185,64 +193,64 @@ node
         2 i16;  0 0         delay-up/down
     _end_  
 _end_
+```
 
-;
-;----------------------------------------------------------------------------------------
-;   6	arm_stream_mixer
-;----------------------------------------------------------------------------------------
-;   Operation : receives several mono or multichannel streams and produces one output arc. 
-;   Mixer manages up to 8 multichannels input arcs, the number is given at STREAM_RESET stage.
-;
-;   Parameters : input arcs names, their associated gain and time-constant in [ms], name of the 
-;     output arc and an extra mixing gain
-;     + index of the HQoS input arc to use for the frame size to use, if the other arcs
-;       have flow-errors it will be managed with their respective OVERFLRD_ARCW2 index
-;
-;    Synchronization operation : arranges multiple input streams are delivered at the same time.
-;       Use-case: multi-channel audio stream, each channel is processed with independent
-;        signal processing feature. The problem is to avoid (on MP devices) one channel to
-;        be delivered to the final mixer ahead and desynchronized from the others
-;       (should be OK when the arcs have the sma buffer size / framesize)
-;
-;   preset : 
-;   #1 (default) : mixer-4 with all arcs unmuted with gain = 0dB, slopes of ~1000 samples
-;   #2 (shut-down) : mixer-4 with all arcs with gain = -96dB, slopes of ~100 samples
-;   >2 : number of input channels
-;
-;   parameters of mixer (variable size): 
-;   - slopes of rising and falling gains, identical to all channels
-;     slope coefficient = 0..15 (iir_coef = 1-1/2^coef = 0 .. 0.99)
-;     Convergence time to 90% of the target in samples:
-;      slope   nb of samples to converge
-;          0           0
-;          1           3
-;          2           8
-;          3          17
-;          4          36
-;          5          73
-;          6         146
-;          7         294
-;          8         588
-;          9        1178
-;         10        2357
-;         11        4715
-;         12        9430
-;         13       18862
-;         14       37724
-;         15       75450
-;         convergence in samples = abs(round(1./abs(log10(1-1./2.^[0:15])'))
-;
-;   - output mixer gain format FP
-;
-;   format to be packed in 32bits words: 
-;           input arc index (4b)        up to 15 arcs
-;           sub-channel index -1 (5b)   up to 32 channels per arc of the input arc
-;           sub-channel index -1 (5b)   up to 32 channels per arc of the output arc
-;           gain  (16b)                 format FP
-;           muted (1b)                  1 = "muted"
-;
-node 
-    arm_stream_mixer (i)
+----------------------------------------------------------------------------------------
+# arm_stream_mixer
+
+Operation : receives several mono or multichannel streams and produces one output arc. 
+Mixer manages up to 8 multichannels input arcs, the number is given at STREAM_RESET stage.
+
+Parameters : input arcs names, their associated gain and time-constant in [ms], name of the 
+  output arc and an extra mixing gain
+  + index of the HQoS input arc to use for the frame size to use, if the other arcs
+    have flow-errors it will be managed with their respective OVERFLRD_ARCW2 index
+
+ Synchronization operation : arranges multiple input streams are delivered at the same time.
+    Use-case: multi-channel audio stream, each channel is processed with independent
+     signal processing feature. The problem is to avoid (on MP devices) one channel to
+     be delivered to the final mixer ahead and desynchronized from the others
+    (should be OK when the arcs have the sma buffer size / framesize)
+
+preset : 
+#1 (default) : mixer-4 with all arcs unmuted with gain = 0dB, slopes of ~1000 samples
+#2 (shut-down) : mixer-4 with all arcs with gain = -96dB, slopes of ~100 samples
+>2 : number of input channels
+
+parameters of mixer (variable size): 
+- slopes of rising and falling gains, identical to all channels
+  slope coefficient = 0..15 (iir_coef = 1-1/2^coef = 0 .. 0.99)
+  Convergence time to 90% of the target in samples:
+   slope   nb of samples to converge
+       0           0
+       1           3
+       2           8
+       3          17
+       4          36
+       5          73
+       6         146
+       7         294
+       8         588
+       9        1178
+      10        2357
+      11        4715
+      12        9430
+      13       18862
+      14       37724
+      15       75450
+      convergence in samples = abs(round(1./abs(log10(1-1./2.^[0:15])'))
+
+- output mixer gain format FP
+
+format to be packed in 32bits words: 
+        input arc index (4b)        up to 15 arcs
+        sub-channel index -1 (5b)   up to 32 channels per arc of the input arc
+        sub-channel index -1 (5b)   up to 32 channels per arc of the output arc
+        gain  (16b)                 format FP
+        muted (1b)                  1 = "muted"
+
+```
+node arm_stream_mixer (i)
 
 ;   Example: 4 input one mono, one stereo, output is stereo
     parameters     0             ; TAG   "load all parameters"
@@ -264,28 +272,28 @@ node
         1 h32; 803             +12dB gain; stereo input right to the right
     _end_
 _end_            
- 
+```
 
-;
-;----------------------------------------------------------------------------------------
-;   7	arm_stream_filter
-;----------------------------------------------------------------------------------------
-;   Operation : receives one multichannel stream and produces one filtered multichannel stream. 
-;   Parameters : biquad filters coefficients used in cascade. Implementation is 2 Biquads max.
-;   (see www.w3.org/TR/audio-eq-cookbook)
-;   Option : either the same coefficients for all channels or list of coefficients for each channel
-;
-;   presets:
-;   #1 : bypass
-;   #2 : LPF fc=fs/4
-;   #3 : DC-filter (use-case: audio, XYZ gravity compensation/estimation)
-;
-;   parameter of filter : 
-;   - number of biquads in cascade (1 or 2)
-;   - coefficients in FP32
-;
-node
-    arm_stream_filter 0         node subroutine name + instance ID
+
+----------------------------------------------------------------------------------------
+# arm_stream_filter
+Operation : receives one multichannel stream and produces one filtered multichannel stream. 
+Parameters : biquad filters coefficients used in cascade. Implementation is 2 Biquads max.
+(see www.w3.org/TR/audio-eq-cookbook)
+Option : either the same coefficients for all channels or list of coefficients for each channel
+
+presets:
+#1 : bypass
+#2 : LPF fc=fs/4
+#3 : DC-filter (use-case: audio, XYZ gravity compensation/estimation)
+#4 : long Median filter
+
+parameter of filter : 
+- number of biquads in cascade (1 or 2)
+- coefficients in FP32
+
+```
+node arm_stream_filter 0         node subroutine name + instance ID
 
     node_preset         1               ; parameter preset used at boot time, default = #0
     node_map_hwblock    0  0            ; list of "nb_mem_block" VID indexes of "procmap_manifest_xxxx.txt" where to map the allocated memory
@@ -300,31 +308,30 @@ node
         ; or  _include    1   arm_stream_filter_parameters_x.txt      (path + file-name)
     _end_
 _end_
+```
+----------------------------------------------------------------------------------------
+# arm_stream_detector
 
-;
-;
-;----------------------------------------------------------------------------------------
-;   8	arm_stream_detector
-;----------------------------------------------------------------------------------------
-;   Operation : provides a boolean output stream from the detection of a rising 
-;   edge above a tunable signal to noise ratio. 
-;   A tunable delay allows to maintain the boolean value for a minimum amount of time 
-;   Use-case example 1: debouncing analog input and LED / user-interface.
-;   Use-case example 2: IMU and voice activity detection (VAD)
-;   Parameters : time-constant to gate the output, sensitivity of the use-case
-;
-;   presets control
-;   #1 : no HPF pre-filtering, fast and high sensitivity detection (button debouncing)
-;   #2 : VAD with HPF pre-filtering, time constants tuned for ~10kHz
-;   #3 : VAD with HPF pre-filtering, time constants tuned for ~44.1kHz
-;   #4 : IMU detector : HPF, slow reaction time constants
-;   #5 : IMU detector : HPF, fast reaction time constants
-;
-;   Metadata information can be extracted with the command "TAG_CMD" from parameter-read:
-;   0 read the floor noise level
-;   1 read the current signal peak
-;   2 read the signal to noise ratio
-;
+Operation : provides a boolean output stream from the detection of a rising 
+edge above a tunable signal to noise ratio. 
+A tunable delay allows to maintain the boolean value for a minimum amount of time 
+Use-case example 1: debouncing analog input and LED / user-interface.
+Use-case example 2: IMU and voice activity detection (VAD)
+Parameters : time-constant to gate the output, sensitivity of the use-case
+
+presets control
+#1 : no HPF pre-filtering, fast and high sensitivity detection (button debouncing)
+#2 : VAD with HPF pre-filtering, time constants tuned for ~10kHz
+#3 : VAD with HPF pre-filtering, time constants tuned for ~44.1kHz
+#4 : IMU detector : HPF, slow reaction time constants
+#5 : IMU detector : HPF, fast reaction time constants
+
+Metadata information can be extracted with the command "TAG_CMD" from parameter-read:
+0 read the floor noise level
+1 read the current signal peak
+2 read the signal to noise ratio
+
+```
 node 
     arm_stream_detector 0               node name  + instance ID
 
@@ -336,51 +343,54 @@ node
         8; i8; 1 2 3 4 5 6 7 8  the 8 bytes of "struct detector_parameters"
     _end_    
 _end_
-;
-;
-;----------------------------------------------------------------------------------------
-;   9	arm_stream_rescaler
-;----------------------------------------------------------------------------------------
-;    Operation : applies vq = interp1(x,v,xq) 
-;    Following https://fr.mathworks.com/help/matlab/ref/interp1.html
-;      linear of polynomial interpolation (implementation)
-;    Parameters : X,V vectors, size max = 32 points
-;
-;   no preset ('0')
-;
+```
+
+
+----------------------------------------------------------------------------------------
+# arm_stream_rescaler
+
+ Operation : applies vq = interp1(x,v,xq) 
+ Following https://fr.mathworks.com/help/matlab/ref/interp1.html
+   linear of polynomial interpolation (implementation)
+ Parameters : X,V vectors, size max = 32 points
+
+no preset ('0')
+
+```
 node 
     arm_stream_rescaler (i)
 
     parameters     0             ; TAG   "load all parameters"
         
 ;               input   output
-        2; f32; -1  1
-        2; f32;  0  0       ; this table creates the abs(x) conversion
-        2; f32;  1  1
+        2; f32; -1      1
+        2; f32;  0      0       ; this table creates the abs(x) conversion
+        2; f32;  1      1
     _end_  
 _end_
-;
-;----------------------------------------------------------------------------------------
-;   10	    arm_stream_compressor
-;----------------------------------------------------------------------------------------
-;   Operation : wave compression using IMADPCM(4bits/sample)
-;   Parameters : coding scheme 
-;
-;   presets (provision codes):
-;   #1 : coder IMADPCM
-;   #2 : coder LPC
-;   #3 : 
-;   #4 : coder CVSD for BT speech 
-;   #5 : coder LC3 
-;   #6 : coder SBC
-;   #7 : coder mSBC
-;   #7 : coder OPUS Silk
-;   #8 : coder MP3
-;   #9 : coder MPEG-4 aacPlus v2 
-;   #10: coder OPUS CELT
-;   #11: coder JPEG
+```
 
-;
+---------------------------------------------------------------------------------------
+# arm_stream_compressor
+
+Operation : wave compression using IMADPCM(4bits/sample)
+Parameters : coding scheme 
+
+presets (provision codes):
+- 1 : coder IMADPCM
+- 2 : coder LPC
+- 3 : 
+- 4 : coder CVSD for BT speech 
+- 5 : coder LC3 
+- 6 : coder SBC
+- 7 : coder mSBC
+- 7 : coder OPUS Silk
+- 8 : coder MP3
+- 9 : coder MPEG-4 aacPlus v2 
+- 10: coder OPUS CELT
+- 11: coder JPEG
+
+```
 node 
     arm_stream_compressor 0
 
@@ -388,39 +398,43 @@ node
         4; i32; 0 0 0 0     provision for extra parameters in other codecs
     _end_
 _end_
-;
-;----------------------------------------------------------------------------------------
-;   11    arm_stream_decompressor
-;----------------------------------------------------------------------------------------
-;   Operation : decompression of encoded data
-;   Parameters : coding scheme and a block of 16 parameter bytes for codecs
-;
-;       WARNING : if the output format can change (mono/stereo, sampling-rate, ..)
-;           the variation is detected by the node and reported to the scheduler with 
-;           "STREAM_SERVICE_INTERNAL_FORMAT_UPDATE", the "uint32_t *all_formats" must be 
-;           mapped in a RAM for dynamic updates with "COPY_CONF_GRAPH0_COPY_ALL_IN_RAM"
-;
-;       Example of data to share with the application
-;           outputFormat: AndroidOutputFormat.MPEG_4,
-;           audioEncoder: AndroidAudioEncoder.AAC,
-;           sampleRate: 44100,
-;           numberOfChannels: 2,
-;           bitRate: 128000,
-;
-;   presets provision
-;   #1 : decoder IMADPCM
-;   #2 : decoder LPC
-;   #3 : MIDI player / tone sequencer
-;   #4 : decoder CVSD for BT speech 
-;   #5 : decoder LC3 
-;   #6 : decoder SBC
-;   #7 : decoder mSBC
-;   #7 : decoder OPUS Silk
-;   #8 : decoder MP3
-;   #9 : decoder MPEG-4 aacPlus v2 
-;   #10: decoder OPUS CELT
-;   #11: decoder JPEG 
-;
+```
+
+----------------------------------------------------------------------------------------
+# arm_stream_decompressor
+
+Operation : decompression of encoded data
+Parameters : coding scheme and a block of 16 parameter bytes for codecs
+
+â€‹	dynamic parameters : pause, stop, fast-forward x2 and x4.
+
+    WARNING : if the output format can change (mono/stereo, sampling-rate, ..)
+        the variation is detected by the node and reported to the scheduler with 
+        "STREAM_SERVICE_INTERNAL_FORMAT_UPDATE", the "uint32_t *all_formats" must be 
+        mapped in a RAM for dynamic updates with "COPY_CONF_GRAPH0_COPY_ALL_IN_RAM"
+    
+    Example of data to share with the application
+        outputFormat: AndroidOutputFormat.MPEG_4,
+        audioEncoder: AndroidAudioEncoder.AAC,
+        sampleRate: 44100,
+        numberOfChannels: 2,
+        bitRate: 128000,
+
+presets provision
+- 1 : decoder IMADPCM
+- 2 : decoder LPC
+- 3 : MIDI player / tone sequencer
+- 4 : decoder CVSD for BT speech 
+- 5 : decoder LC3 
+- 6 : decoder SBC
+- 7 : decoder mSBC
+- 7 : decoder OPUS Silk
+- 8 : decoder MP3
+- 9 : decoder MPEG-4 aacPlus v2 
+- 10: decoder OPUS CELT
+- 11: decoder JPEG 
+
+```
 node 
     arm_stream_decompressor (i)
 
@@ -428,35 +442,38 @@ node
         4; i32; 0 0 0 0     provision for extra parameters in other codecs
     _end_
 _end_
- 
-;
-;----------------------------------------------------------------------------------------
-;   12	    arm_stream_modulator
-;----------------------------------------------------------------------------------------
-;    Operation : sine, noise, square, saw tooth with amplitude or frequency modulation
-;    use-case : ring modulator, sweep generation with a cascade of a ramp generator and
-;       a frequency modulator
-;
-;   Parameters types and Tags:
-;    u8 #1 wave type : 1=sine 2=square 3=white noise 4=pink noise 
-;                  5=sawtooth 6=triangle 7=pulse
-;                  8=prerecorded pattern playback from arc 
-;                  9=sigma-delta with OSR control for audio on PWM ports and 8b DAC
-;                  10=PWM 11=ramp 12=step
-;
-;   parameter format for wave generation: 
-;   u16 #2 linear amplitude, format UQ16 0dB .. -96dB
-;   u16 #3 amplitude offset, format Q15 [-1 .. +1]
-;   f32 #4 wave frequency [Hz] [0.1uHz .. 250kHz], 0Hz translates to DC level.
-;   s16 #5 starting phase, format S15 [-pi .. +pi]/pi
-;   u8  #6 modulation type, 0:amplitude, 1:frequency (reserved 2:FSK, ..)
-;   u8  #7 modulation, 0:none 1=from arc bit stream, 2=from arc q15 words
-;   u16 #8 modulation index (a) and offset (b), in q15 as fraction of frequency or amplitude
-;          modulation y=ax+b, x=input data.
-;   f32 #9 modulation frequency [Hz] separating two data bits/samples from the arc
-;
-node 
-    arm_stream_modulator (i)
+```
+
+----------------------------------------------------------------------------------------
+# arm_stream_modulator
+
+
+ Operation : sine, noise, square, saw tooth with amplitude or frequency modulation
+ use-case : ring modulator, sweep generation with a cascade of a ramp generator and
+    a frequency modulator
+
+Parameters types and Tags:
+ u8 #1 wave type : 1=sine 2=square 3=white noise 4=pink noise 
+               5=sawtooth 6=triangle 7=pulse
+               8=prerecorded pattern playback from arc 
+               9=sigma-delta with OSR control for audio on PWM ports and 8b DAC
+               10=PWM 11=ramp 12=step
+
+parameter format for wave generation: 
+```
+u16 #2 linear amplitude, format UQ16 0dB .. -96dB
+u16 #3 amplitude offset, format Q15 [-1 .. +1]
+f32 #4 wave frequency [Hz] [0.1uHz .. 250kHz], 0Hz translates to DC level.
+s16 #5 starting phase, format S15 [-pi .. +pi]/pi
+u8  #6 modulation type, 0:amplitude, 1:frequency (reserved 2:FSK, ..)
+u8  #7 modulation, 0:none 1=from arc bit stream, 2=from arc q15 words
+u16 #8 modulation index (a) and offset (b), in q15 as fraction of frequency or amplitude
+       modulation y=ax+b, x=input data.
+f32 #9 modulation frequency [Hz] separating two data bits/samples from the arc
+```
+
+```
+node arm_stream_modulator (i)
 
     parameters     0             ; TAG   "load all parameters"
         
@@ -469,23 +486,22 @@ node
         1 f32;  300     300Hz modulation => (900Hz .. 1500Hz modulation)
     _end_
 _end_
+```
 
-;
-;----------------------------------------------------------------------------------------
-;   13  arm_stream_demodulator
-;----------------------------------------------------------------------------------------
-;    Operation : decode a bit-stream from analog data. Use-case: IR decoder, CAN/UART on 
-;       SPI/I2S audio.
-;    Parameters : clock and parity setting or let the algorithm discover the frame setting after 
-;        some time. https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter
-;
-;   presets control :
-;   #1 .. 10: provision for  demodulators
-;
-;   Metadata information can be extracted with the command "parameter-read":
-;   TAG_CMD = 1 read the signal amplitude
-;   TAG_CMD = 2 read the signal to noise ratio
-;
+----------------------------------------------------------------------------------------
+# arm_stream_demodulator
+
+ Operation : decode a bit-stream from analog data. Use-case: IR decoder, CAN/UART on SPI/I2S audio.
+ Parameters : clock and parity setting or let the algorithm discover the frame setting after some time. https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter
+
+presets control :
+#1 .. 10: provision for  demodulators
+
+Metadata information can be extracted with the command "parameter-read":
+TAG_CMD = 1 read the signal amplitude
+TAG_CMD = 2 read the signal to noise ratio
+
+```
 node 
     arm_stream_demodulator (i)
     parameters     0             ; TAG   "load all parameters"
@@ -494,29 +510,29 @@ node
         4 i16; 0 0 2 0      move arc0,chan0, to arc2,chan0
     _end_
 _end_
+```
 
-;
-;----------------------------------------------------------------------------------------
-;   14	    arm_stream_resampler
-;----------------------------------------------------------------------------------------
-;   Operation : convert multichannel input data rate to the rate of the output arcs 
-;     + synchronous rate convertion with +/- 100ppm adjustment
-;     + conversion of time-stamp asynchronous to synchronous stream
-;   
-;   SSRC synchronous rate converter, FS in/out are exchanged during STREAM_RESET
-;   ASRC asynchronous rate converter using time-stamps (in) to synchronous FS (out)
-;       pre-LP-filtering tuned from Fout/Fin ratio + Lagrange polynomial interpolator
-;
-;   drift compensation managed with STREAM_SET_PARAMETER command:
-;   TAG_CMD = 0 to stop drift compensation
-;   TAG_CMD = 1 to continuously apply a drift compensation of +100ppm
-;   TAG_CMD = 2 to continuously apply a drift compensation of -100ppm
-;
-;   The script associated to the node is used to read the in/out arcs filling state
-;       to tune the drift control
-;
-node 
-    arm_stream_resampler (i)
+
+----------------------------------------------------------------------------------------
+# arm_stream_resampler
+
+Operation : convert multichannel input data rate to the rate of the output arcs 
+  + synchronous rate convertion with +/- 100ppm adjustment
+  + conversion of time-stamp asynchronous to synchronous stream
+
+SSRC synchronous rate converter, FS in/out are exchanged during STREAM_RESET
+ASRC asynchronous rate converter using time-stamps (in) to synchronous FS (out) pre-LP-filtering tuned from Fout/Fin ratio + Lagrange polynomial interpolator
+
+drift compensation managed with STREAM_SET_PARAMETER command:
+TAG_CMD = 0 to stop drift compensation
+TAG_CMD = 1 to continuously apply a drift compensation of +100ppm
+TAG_CMD = 2 to continuously apply a drift compensation of -100ppm
+
+The script associated to the node is used to read the in/out arcs filling state
+    to tune the drift control
+
+``` 
+node arm_stream_resampler (i)
 
     parameters     0             ; TAG   "load all parameters"
         
@@ -525,16 +541,16 @@ node
     _end_
 _end_
 
-;
-;----------------------------------------------------------------------------------------
-;   15  arm_stream_qos
-;----------------------------------------------------------------------------------------
-;
-;    Operation : align the content of arc buffers with respect to an high-priority one. (HQOS)
-;    Parameters : the list of arcs and the one taken as time-alignment reference 
-;
-node 
-    arm_stream_qos (i)
+```
+
+----------------------------------------------------------------------------------------
+# arm_stream_qos
+
+Operation : align the content of arc buffers with respect to an high-priority one. (HQOS)
+Parameters : the list of arcs and the one taken as time-alignment reference 
+
+```
+node arm_stream_qos (i)
 
     parameters     0             ; TAG   "load all parameters"
         
@@ -545,19 +561,20 @@ node
         4 i16; 1 1 2 3      move arc1,chan1, to arc2,chan3
     _end_
 _end_
-;
-;----------------------------------------------------------------------------------------
-;   16  arm_stream_split 
-;----------------------------------------------------------------------------------------
-;
-;    Operation : share the input arc to several output arcs, to let several nodes have
-;       access to the same buffer without data duplication. Consolidate the output read
-;       indexes before updating the input arc read index. 
-;       There is no priority managed between output arcs.
-;       The base, size and write index of the output arcs are identical to the input arc 
-;   
-;    Parameters : the list of arcs , no memory for instances is needed
-;
+```
+
+----------------------------------------------------------------------------------------
+# arm_stream_split 
+
+Operation : share the input arc to several output arcs, to let several nodes have
+   access to the same buffer without data duplication. Consolidate the output read
+   indexes before updating the input arc read index. 
+   There is no priority managed between output arcs.
+   The base, size and write index of the output arcs are identical to the input arc 
+
+Parameters : the list of arcs , no memory for instances is needed
+
+```
 node 
     arm_stream_split (i)
     parameters     0             ; TAG   "load all parameters"
@@ -569,32 +586,56 @@ node
         4 i16; 1 1 2 3      move arc1,chan1, to arc2,chan3
     _end_
 _end_
+```
 
-;
-;----------------------------------------------------------------------------------------
-;   17  arm_stream_detector2D   MOTION DETECTOR
-;----------------------------------------------------------------------------------------
-;
+----------------------------------------------------------------------------------------
+# arm_stream_analysis
 
-;   Motion and pattern detector (lines)
+ Operation : spectrum and energy analysis
+ Use-case : debug with script control
+            results are used with "read_parameter"
+
+presets :
+#1 : frequency estimator, counting the number of periods
+ Operation : input signal frequency estimator with second-order autoregression
+ Use-case example: measure 50Hz from power lines on the three phases (a -1% deviation means "power-down").
+ Parameters : none. output data estimate sampling rate is provided at reset
+#2 : energy estimation and DC offset
+#3 : energy analysis on 3 frequency points (Goertzel)
+#4 : full spectrum 64 points in decibels
+#5 : gyroscope rotation drifts on XYZ 
+
+```
+    arm_stream_analysis (i)
+
+    parameters     0             ; TAG   "load all parameters"
+        
+    _end_
+_end_
+```
+
+----------------------------------------------------------------------------------------
+# arm_stream_detector2D
+
+Motion and pattern detector (lines)
 
 
-;   Operation : detection of movement(s) and computation of the movement map
-;   Parameters : sensitivity, floor-noise smoothing factors
-;   Metadata : decimated map of movement detection
-;
-;   presets control
-;   #1 : no HPF pre-filtering, fast and high sensitivity detection (button debouncing)
-;
-;   preset parameter : 
-;
-;   Metadata information can be extracted with the command "TAG_CMD" from parameter-read:
-;   0 read the floor noise level
-;   1 read the current signal peak
-;   2 read the signal to noise ratio
-;
-node 
-    arm_stream_detector2D (i)
+Operation : detection of movement(s) and computation of the movement map
+Parameters : sensitivity, floor-noise smoothing factors
+Metadata : decimated map of movement detection
+
+presets control
+#1 : no HPF pre-filtering, fast and high sensitivity detection (button debouncing)
+
+preset parameter : 
+
+Metadata information can be extracted with the command "TAG_CMD" from parameter-read:
+0 read the floor noise level
+1 read the current signal peak
+2 read the signal to noise ratio
+
+```
+node arm_stream_detector2D (i)
 
     parameters     0             ; TAG   "load all parameters"
         
@@ -605,23 +646,22 @@ node
         4 i16; 1 1 2 3      move arc1,chan1, to arc2,chan3
     _end_
 _end_
-;
-;
-;----------------------------------------------------------------------------------------
-;   18  arm_stream_filter2D
-;----------------------------------------------------------------------------------------
+```
 
-;   Filter, rescale, rotate, exposure compensation
+----------------------------------------------------------------------------------------
+# arm_stream_filter2D
 
-;   Operation : 2D filters 
-;   Parameters : convolutional kernels, decimation, distortion, color mapping/effect
-;
-;   presets:
-;   #1 : bypass
-;
-;   parameter of filter : 
-;
-;
+Filter, rescale/zoom/extract, rotate, exposure compensation
+
+Operation : 2D filters 
+Parameters : convolutional kernels, decimation, distortion, color mapping/effect
+
+presets:
+#1 : bypass
+
+parameter of filter : 
+
+```
 node
     arm_stream_filter2D   (i)
 
@@ -634,34 +674,25 @@ node
         4 i16; 1 1 2 3      move arc1,chan1, to arc2,chan3
     _end_
 _end_
-;
+```
 
 
-;----------------------------------------------------------------------------------------
-;   19  arm_stream_analysis
-;----------------------------------------------------------------------------------------
-;
-;    Operation : spectrum and energy analysis
-;    Use-case : debug with script control
-;               results are used with "read_parameter"
-;   
-;   presets :
-;   #1 : frequency estimator, counting the number of periods
-;    Operation : input signal frequency estimator with second-order autoregression
-;    Use-case example: measure 50Hz from power lines on the three phases (a -1% deviation means "power-down").
-;    Parameters : none. output data estimate sampling rate is provided at reset
-;   #2 : energy estimation and DC offset
-;   #3 : energy analysis on 3 frequency points (Goertzel)
-;   #4 : full spectrum 64 points in decibels
-;   #5 : gyroscope rotation drifts on XYZ 
-;
-    arm_stream_analysis (i)
+----------------------------------------------------------------------------------------
+# arm_stream_mixer2D
+
+   image composition, progressive alpha-blending
+
+```
+node
+    arm_stream_mixer2D   (i)
 
     parameters     0             ; TAG   "load all parameters"
         
+        2  i8; 2 2          nb input/output arcs
+        4 i16; 0 0 2 0      move arc0,chan0, to arc2,chan0
+        4 i16; 0 1 2 1      move arc0,chan1, to arc2,chan1
+        4 i16; 1 0 2 2      move arc1,chan0, to arc2,chan2
+        4 i16; 1 1 2 3      move arc1,chan1, to arc2,chan3
     _end_
 _end_
-
-
-
-;----------------------------------------------------------------------------------------
+```

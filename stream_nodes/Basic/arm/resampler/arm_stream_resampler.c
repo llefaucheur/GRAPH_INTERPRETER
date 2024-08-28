@@ -92,7 +92,7 @@ void arm_stream_resampler (int32_t command, stream_handle_t instance, stream_xdm
                 memresults are followed by 2 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
                     => used by the router to know the size of each raw element 
                     (see stream_bitsize_of_raw())
-                memory pointers are in the same order as described in the SWC manifest
+                memory pointers are in the same order as described in the NODE manifest
         */
         case STREAM_RESET: 
         {   stream_al_services *stream_entry = (stream_al_services *)data;

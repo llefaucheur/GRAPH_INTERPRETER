@@ -46,7 +46,12 @@ typedef struct
 
 
 
-extern void arm_stream_demodulator_process (arm_stream_demodulator_instance *instance, void *input, void *output, intPtr_t *nsamp);
+extern void arm_stream_demodulator_process1 (arm_stream_demodulator_instance *instance, 
+    void *input, void *output, intPtr_t *nsamp);
+extern void arm_stream_demodulator_process2 (arm_stream_demodulator_instance *instance, 
+    void *input, void *output, intPtr_t *nsamp);
+extern void arm_stream_demodulator_process3 (arm_stream_demodulator_instance *instance, 
+    void *input, void *output, intPtr_t *nsamp);
 
 
 

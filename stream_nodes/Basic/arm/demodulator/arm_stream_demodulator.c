@@ -87,13 +87,13 @@ void arm_stream_demodulator (int32_t command, stream_handle_t instance, stream_x
                 data = address of Stream function
                 
                 memresults are followed by 2 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
-                memory pointers are in the same order as described in the SWC manifest
+                memory pointers are in the same order as described in the NODE manifest
         */
         case STREAM_RESET: 
         {   stream_al_services *stream_entry = (stream_al_services *)data;
             intPtr_t *memresults = (intPtr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
-            uint16_t tag = RD(command, SWC_TAG_CMD);        /* extra parameters */
+            uint16_t tag = RD(command, NODE_TAG_CMD);        /* extra parameters */
 
             arm_stream_demodulator_instance *pinstance = (arm_stream_demodulator_instance *) *memresults;
             memresults++;
@@ -155,14 +155,10 @@ void arm_stream_demodulator (int32_t command, stream_handle_t instance, stream_x
 
             nb_data = stream_xdmbuffer_size / sizeof(SAMP_IN);
 
-            arm_stream_demodulator_process(pinstance, inBuf, outBuf, &nb_data);
+            // arm_stream_demodulator_process(pinstance, inBuf, outBuf, &nb_data);
 
-            /* the SWC is producing an amount of data different from the consumed one (see xdm11 in the manifest) */
-            pt_pt = data;
-            *(&(pt_pt->size)) = nb_data * sizeof(SAMP_IN); /* amount of data consumed */
-            pt_pt ++;
-            *(&(pt_pt->size)) = nb_data * sizeof(SAMP_OUT);   /* amount of data produced */
-
+            pt_pt = data;   *(&(pt_pt->size)) = nb_data * sizeof(SAMP_IN);     /* amount of data consumed */
+            pt_pt ++;       *(&(pt_pt->size)) = nb_data * sizeof(SAMP_OUT);    /* amount of data produced */
             
             break;
         }

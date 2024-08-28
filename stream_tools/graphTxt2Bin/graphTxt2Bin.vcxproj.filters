@@ -64,6 +64,9 @@
     <ClInclude Include="..\..\stream_platform\windows\graph_computer_header.h">
       <Filter>GraphSteps</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\stream_nodes\stream_common.h">
+      <Filter>Stream</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\stream_nodes\Basic\arm\mixer\swc_manifest_mixer.txt">
@@ -117,15 +120,6 @@
     <Text Include="..\..\stream_nodes\Basic\arm\resampler\swc_manifest_resampler.txt">
       <Filter>NodesManifests</Filter>
     </Text>
-    <Text Include="..\..\stream_doc\NodeManifestTemplate.txt">
-      <Filter>Doc</Filter>
-    </Text>
-    <Text Include="..\..\stream_doc\IoManifestTemplate.txt">
-      <Filter>Doc</Filter>
-    </Text>
-    <Text Include="..\..\stream_doc\NodesDescription.txt">
-      <Filter>Doc</Filter>
-    </Text>
     <Text Include="..\..\stream_nodes\swc_manifest_none.txt">
       <Filter>NodesManifests</Filter>
     </Text>
@@ -140,18 +134,6 @@
     </Text>
     <Text Include="..\..\stream_nodes\AI\arm\detector2D\swc_manifest_detector2D.txt">
       <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\sub_graph_0.txt">
-      <Filter>GraphSteps</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\graph_1.txt">
-      <Filter>GraphSteps</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\graph_1.txt">
-      <Filter>GraphSteps</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\sub_graph_0.txt">
-      <Filter>GraphSteps</Filter>
     </Text>
     <Text Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk.txt">
       <Filter>GraphSteps</Filter>
@@ -337,16 +319,22 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\stream_doc\GraphTemplate.md">
+    <None Include="..\..\stream_doc\Graph.md">
       <Filter>Doc</Filter>
     </None>
-    <None Include="..\..\stream_doc\IoManifestTemplate.md">
+    <None Include="..\..\stream_doc\IoManifest.md">
       <Filter>Doc</Filter>
     </None>
-    <None Include="..\..\stream_doc\NodeManifestTemplate.md">
+    <None Include="..\..\stream_doc\NodeManifest.md">
       <Filter>Doc</Filter>
     </None>
     <None Include="..\..\stream_doc\NodesDescription.md">
+      <Filter>Doc</Filter>
+    </None>
+    <None Include="..\..\stream_doc\PlatformManifest.md">
+      <Filter>Doc</Filter>
+    </None>
+    <None Include="..\..\stream_doc\Tables.md">
       <Filter>Doc</Filter>
     </None>
   </ItemGroup>

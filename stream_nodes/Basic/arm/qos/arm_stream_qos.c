@@ -135,7 +135,7 @@ void arm_stream_qos (int32_t command, stream_handle_t instance, stream_xdmbuffer
                 data = address of Stream function
                 
                 memresults are followed by 2 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
-                memory pointers are in the same order as described in the SWC manifest
+                memory pointers are in the same order as described in the NODE manifest
         */
         case STREAM_RESET: 
         {   stream_al_services *stream_entry = (stream_al_services *)data;
@@ -182,7 +182,7 @@ void arm_stream_qos (int32_t command, stream_handle_t instance, stream_xdmbuffer
 
             /* copy all the parameters */
             pt8bsrc = (uint8_t *) data;
-            if (RD(command, SWC_TAG_CMD) == ALLPARAM_)
+            if (RD(command, NODE_TAG_CMD) == ALLPARAM_)
             {
                 pt8bdst = (uint8_t *) &(pinstance->configuration);
                 for (i = 0; i < sizeof(pinstance->configuration); i++)

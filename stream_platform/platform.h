@@ -28,11 +28,13 @@
 #define PLATFORM_H
 
 #define PLATFORM_COMPUTER               //Windows 32/64bits
+//#define PLATFORM_WIOTERMINAL            //<<<<
 //#define PLATFORM_LPC55S69EVK            //LPCXPRESSO line-in line-out
 //#define PLATFORM_MSPM0L1306             //SYSOSC 24MHz/320 = FS 75kHz
-//#define PLATFORM_LPCX860MAX             //
-//#define PLATFORM_LPCX804B               // 
-//#define PLATFORM_WIOTERMINAL            //<<<<
+//#define PLATFORM_MCXC041                //2K RAM IMU temp LED
+//#define PLATFORM_MCXN236                //DMIC, audio, dual M33, crypto, display
+//#define PLATFORM_CY8CKIT_062S2          //M4
+//#define PLATFORM_CY8CKIT_E84            //M55
 //#define PLATFORM_GROVEVISIONAIV2        //
 //#define PLATFORM_EFM32PG32              //Simplicity Studio
 //#define PLATFORM_RP2040                 //<<<<
@@ -46,12 +48,7 @@
 //#define PLATFORM_ARDU_RP2040            //Arduino IMU,MIC
 //#define PLATFORM_ARDU_UNOR4W            //Arduino 
 //#define PLATFORM_ARDU_ZERO              //Arduino 
-//#define PLATFORM_ARDU_NICLAVISION       //Arduino 
 //#define PLATFORM_PORTENTAC33            //Arduino SE050C2 Secure Element
-
-/*============================ SWITCHES =====================================*/
-#define PLATFORM_ARCH_32BIT
-//#define PLATFORM_ARCH_64BIT
 
 /*==========================================================================*/
 

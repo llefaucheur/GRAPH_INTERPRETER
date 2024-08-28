@@ -101,7 +101,7 @@ void arm_stream_detector2D (int32_t command, stream_handle_t instance, stream_xd
                 data = address of Stream function
 
                 memresults are followed by 2 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
-                memory pointers are in the same order as described in the SWC manifest
+                memory pointers are in the same order as described in the NODE manifest
         */
         case STREAM_RESET: 
         {   stream_al_services *stream_entry = (stream_al_services *)data;
@@ -131,9 +131,9 @@ void arm_stream_detector2D (int32_t command, stream_handle_t instance, stream_xd
         */ 
         case STREAM_SET_PARAMETER:
         {   arm_detector2D_instance *pinstance = (arm_detector2D_instance *) instance;
-            pinstance->config = detector2D_preset[RD(command,SWC_TAG_CMD)];
+            pinstance->config = detector2D_preset[RD(command,NODE_TAG_CMD)];
 
-            if (RD(command,SWC_TAG_CMD) == ALLPARAM_) 
+            if (RD(command,NODE_TAG_CMD) == ALLPARAM_) 
             {   uint8_t *pt8bsrc, *pt8bdst, i, n;
 
                 /* copy the parameters */
@@ -176,7 +176,6 @@ void arm_stream_detector2D (int32_t command, stream_handle_t instance, stream_xd
 
             arm_stream_detector2D_process (pinstance, inBuf, (int32_t)nb_data, outBuf);
 
-            /* the SWC is producing an amount of data different from the consumed one (see xdm11 in the manifest) */
             pt_pt = data;
             *(&(pt_pt->size)) = nb_data * sizeof(SAMP_IN); /* amount of data consumed */
             pt_pt ++;

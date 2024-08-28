@@ -300,10 +300,10 @@ void LoadPlatformArc(struct arcStruct *Agraph, struct arcStruct *Aplatform)
 {
     Agraph->rx0tx1=                   Aplatform->rx0tx1;                    // ARC0_LW1 and RX0TX1_IOFMT : direction rx=0 tx=1 parameter=2 (rx never consumed) 
     Agraph->setupTime=                Aplatform->setupTime;                 // [ms] to avoid this information to being only in the BSP 
-    Agraph->settings=                 Aplatform->settings;                  // pack format of digital + MSIC options (SETTINGS_IOFMT2), the format depends on the IO domain 
+    Agraph->settings[0]=              Aplatform->settings[0];               // @@@@@TODO pack format of digital + MSIC options (SETTINGS_IOFMT2), the format depends on the IO domain 
     Agraph->domain=                   Aplatform->domain;                    // domain of operation
     Agraph->fw_io_idx=                Aplatform->fw_io_idx;                 // ID of the interface given in "files_manifests_computer" associated function (platform dependent) 
-    Agraph->set0copy1=                Aplatform->set0copy1;                  // SET0COPY1_IOFMT data move through pointer setting of data copy 
+    Agraph->set0copy1=                Aplatform->set0copy1;                 // SET0COPY1_IOFMT data move through pointer setting of data copy 
     Agraph->commander0_servant1=      Aplatform->commander0_servant1;       // SERVANT1_IOFMT selection for polling protocol 
     Agraph->raw_format_options=       Aplatform->raw_format_options;
     Agraph->nb_channels_option=       Aplatform->nb_channels_option;    
@@ -335,8 +335,7 @@ void LoadPlatformNode(struct stream_node_manifest *graph_node, struct stream_nod
     graph_node->codeVersion        = platform_node->codeVersion;          
     graph_node->arc_parameter      = platform_node->arc_parameter;        
     graph_node->same_data_rate     = platform_node->same_data_rate;       
-    graph_node->use_dtcm           = platform_node->use_dtcm;             
-    graph_node->use_arc_format     = platform_node->use_arc_format;       
+    graph_node->using_arc_format   = platform_node->using_arc_format;       
     graph_node->mask_library       = platform_node->mask_library;         
     graph_node->subtype_units      = platform_node->subtype_units;        
     graph_node->architecture       = platform_node->architecture;         
@@ -550,6 +549,12 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(node_map_verbose))
         {   
         }   
+        if (COMPARE(node_memory_isolation))
+        {   
+        }   
+        if (COMPARE(node_memory_clear))
+        {   /* @@@@@  set CLEAR_LW2S */
+        }   
         if (COMPARE(node_parameters))
         {   uint32_t TAG; 
             fields_extract(&pt_line, "CI", ctmp, &TAG);
@@ -563,12 +568,8 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             if (graph->nb_scripts < graph->idx_script)
             {   graph->nb_scripts = graph->idx_script;
             }
-            graph->all_scripts[graph->idx_script].nb_reg = 6;
+            graph->all_scripts[graph->idx_script].nb_reg = 6;       /* default number of registers and stack size */
             graph->all_scripts[graph->idx_script].nb_stack = 6;
-        }
-        if (COMPARE(script_registers))      // script_registers    6 
-        {   fields_extract(&pt_line, "CI", ctmp, &i); 
-            graph->all_scripts[graph->idx_script].nb_reg = i;
         }
         if (COMPARE(script_stack))          // script_stack        6       ; size of the stack in word64 (default = 6)
         {  fields_extract(&pt_line, "CI", ctmp, &i); 

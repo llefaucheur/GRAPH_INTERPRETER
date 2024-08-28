@@ -76,23 +76,24 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
     extern arm_stream_instance_t * platform_io_callback_parameter;
     arm_stream_instance_t *S = platform_io_callback_parameter;
     uint32_t *arc;
-    uint32_t *pio;
+    uint8_t *ongoing;
+    uint32_t *pio_control;
 
     uint32_t read;
     uint32_t write;
-    uint32_t base;
     uint32_t fifosize;
     uint8_t *long_base;
     uint8_t *src;
     uint8_t *dst;
 
-    pio = S->pio;
-    pio = &(pio[STREAM_IOFMT_SIZE_W32 * graph_io_idx]);
+    pio_control = &(S->graph[GRAPH_HEADER_NBWORDS + graph_io_idx * STREAM_IOFMT_SIZE_W32]);
+    ongoing = &(S->ongoing[graph_io_idx]);
     arc = S->all_arcs;
-    arc = &(arc[SIZEOF_ARCDESC_W32 * RD(*pio, IOARCID_IOFMT)]);
+    arc = &(arc[SIZEOF_ARCDESC_W32 * RD(*pio_control, IOARCID_IOFMT0)]);
 
-    base = RD(arc[0], BASEIDXOFFARCW0);
-    long_base = (uint8_t *)pack2linaddr_ptr(S->long_offset, base, LINADDR_UNIT_W32);
+    long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];                       /* platfom memory offsets */
+    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << LOG2ADDR_UNIT_W32]); /* BASE is in word32 */
+
     fifosize = RD(arc[1], BUFF_SIZE_ARCW1);
     read = RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
@@ -103,12 +104,12 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
 
 
 
-    if (0 == TEST_BIT(*pio, RX0TX1_IOFMT_LSB))
+    if (0 == TEST_BIT(*pio_control, RX0TX1_IOFMT0_LSB))
     {    
         /* 
             RX : stream going to the graph 
         */
-        if (IO_COMMAND_SET_BUFFER != RD(*pio, SET0COPY1_IOFMT))
+        if (IO_COMMAND_SET_BUFFER != RD(*pio_control, SET0COPY1_IOFMT0))
         {               
             /* IO_COMMAND_DATA_MOVE : reset the ONGOING flag when enough small 
                 sub-frames have been received
@@ -130,17 +131,17 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
 
             /* reset the data transfert flag is a frame is fully received */
             {   uint32_t consumer_frame_size, i;
-                i = RD(arc[1],CONSUMFMT_ARCW1) * STREAM_FORMAT_SIZE_W32;
+                i = RD(arc[4],CONSUMFMT_ARCW4) * STREAM_FORMAT_SIZE_W32;
                 consumer_frame_size = RD(S->all_formats[i], FRAMESIZE_FMT0);
 
                 if (write - read >= consumer_frame_size)
-                {   CLEAR_BIT(*pio, ONGOING_IOFMT_LSB);
+                {   CLEAR_BIT(*ongoing, ONGOING_IO_LSB);
                 }
             }
 
             /* does the write index is already far, ask for data realignment by the consumer node */
             {   uint32_t producer_frame_size, i;
-                i = RD(arc[0],PRODUCFMT_ARCW0) * STREAM_FORMAT_SIZE_W32;
+                i = RD(arc[4],PRODUCFMT_ARCW4) * STREAM_FORMAT_SIZE_W32;
                 producer_frame_size = RD(S->all_formats[i], FRAMESIZE_FMT0);
 
                 if (write > fifosize - producer_frame_size)
@@ -151,18 +152,18 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
         else /* IO_COMMAND_SET_BUFFER */
         {
             /* arc_set_base_address_to_arc */
-            ST(arc[0], BASEIDXOFFARCW0, lin2pack(S, data));
+            arc[0] = lin2pack(S, data);
             ST(arc[1], BUFF_SIZE_ARCW1, data_size); /* FIFO size aligned with the buffer size */
             ST(arc[2], READ_ARCW2, 0);
             ST(arc[3], WRITE_ARCW3, data_size); /* automatic rewind after read */
-            CLEAR_BIT(*pio, ONGOING_IOFMT_LSB);
+            CLEAR_BIT(*ongoing, ONGOING_IO_LSB);
         }
     }
     else 
     {   /* 
             TX: stream from the graph 
         */
-        if (IO_COMMAND_SET_BUFFER != RD(*pio, SET0COPY1_IOFMT))
+        if (IO_COMMAND_SET_BUFFER != RD(*pio_control, SET0COPY1_IOFMT0))
         {     
            /* IO_COMMAND_DATA_MOVE : reset the ONGOING flag when the remaining data to transmit 
                 is small, and below the transmitter frame size
@@ -196,20 +197,20 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
 
             /* reset the data transfert flag if no frame is ready for transmit */
             {   uint32_t consumer_frame_size, i;
-                i = RD(arc[1],CONSUMFMT_ARCW1) * STREAM_FORMAT_SIZE_W32;
+                i = RD(arc[4],CONSUMFMT_ARCW4) * STREAM_FORMAT_SIZE_W32;
                 consumer_frame_size = RD(S->all_formats[i], FRAMESIZE_FMT0);
                 if (write - read < consumer_frame_size)
-                {   CLEAR_BIT(*pio, ONGOING_IOFMT_LSB);
+                {   CLEAR_BIT(*ongoing, ONGOING_IO_LSB);
                 }
             }
         } 
         else /* IO_COMMAND_SET_BUFFER for the next frame to send */
         {
             /*arc_set_base_address_to_arc */
-            ST(arc[0], BASEIDXOFFARCW0, lin2pack(S, data));
+            arc[0] = lin2pack(S, data);
             ST(arc[2], READ_ARCW2, 0);
             ST(arc[3], WRITE_ARCW3, 0);
-            CLEAR_BIT(*pio, ONGOING_IOFMT_LSB);
+            CLEAR_BIT(*ongoing, ONGOING_IO_LSB);
         }
     }
 }

@@ -36,7 +36,7 @@
 
 #include "stream_const.h"      
 #include "stream_types.h"  
-#include "dsp\filtering_functions.h"
+
 
 
 typedef int16_t q15_t;
@@ -61,7 +61,7 @@ typedef struct
 {
     q15_t coefs[MAX_NB_BIQUAD_Q15*6];
     q15_t state[MAX_NB_BIQUAD_Q15*4];    
-    arm_biquad_casd_df1_inst_q15 biquad_casd_df1_inst_q15;
+    
 
 } arm_filter2D_memory;
 

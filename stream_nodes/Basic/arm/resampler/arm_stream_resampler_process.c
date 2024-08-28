@@ -44,7 +44,7 @@
 
 
 /*
-   swc_run - "the" subroutine  ------------------------------------------
+   node_run - "the" subroutine  ------------------------------------------
 */
 
 #define FREE_MEMORY 1

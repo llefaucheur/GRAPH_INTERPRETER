@@ -39,7 +39,25 @@
 #include "stream_const.h"
 #include "stream_types.h"
 #include "arm_stream_amplifier.h"
-#include "dsp/none.h"
+
+
+  inline int32_t __SSAT(int32_t val, uint32_t sat)
+  {
+    if ((sat >= 1U) && (sat <= 32U))
+    {
+      const int32_t max = (int32_t)((1U << (sat - 1U)) - 1U);
+      const int32_t min = -1 - max ;
+      if (val > max)
+      {
+        return max;
+      }
+      else if (val < min)
+      {
+        return min;
+      }
+    }
+    return val;
+  }
 
 /**
   @brief         

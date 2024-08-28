@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\stream_nodes\stream_common.h" />
     <ClInclude Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_header.h" />
     <ClInclude Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk_header.h" />
     <ClInclude Include="..\..\stream_platform\platform.h" />
@@ -51,7 +52,6 @@
     <Text Include="..\..\stream_nodes\Image\arm\filter2D\swc_manifest_filter2D.txt" />
     <Text Include="..\..\stream_nodes\Image\elm\TJpgDec\swc_manifest_TjpgDec.txt" />
     <Text Include="..\..\stream_nodes\swc_manifest_none.txt" />
-    <Text Include="..\..\stream_platform\graph_1.txt" />
     <Text Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306.txt" />
     <Text Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_bin.txt" />
     <Text Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_debug.txt" />
@@ -90,8 +90,6 @@
     <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_stream_in_0.txt" />
     <Text Include="..\..\stream_platform\lpc55s69evk\manifest\procmap_manifest_lpc55s69evk.txt" />
     <Text Include="..\..\stream_platform\lpc55s69evk\manifest\top_manifest_lpc55s69evk.txt" />
-    <Text Include="..\..\stream_platform\sub_graph_0.txt" />
-    <Text Include="..\..\stream_platform\windows\graph_1.txt" />
     <Text Include="..\..\stream_platform\windows\graph_computer.txt" />
     <Text Include="..\..\stream_platform\windows\graph_computer_bin.txt" />
     <Text Include="..\..\stream_platform\windows\graph_computer_debug.txt" />
@@ -111,7 +109,6 @@
     <Text Include="..\..\stream_platform\windows\manifest\io_platform_node_trace_0.txt" />
     <Text Include="..\..\stream_platform\windows\manifest\io_platform_stream_in_0.txt" />
     <Text Include="..\..\stream_platform\windows\manifest\procmap_manifest_computer.txt" />
-    <Text Include="..\..\stream_platform\windows\sub_graph_0.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\stream_tool_graph2Bin.c" />
@@ -121,10 +118,12 @@
     <ClCompile Include="..\stream_tool_read_graph.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\stream_doc\GraphTemplate.md" />
-    <None Include="..\..\stream_doc\IoManifestTemplate.md" />
-    <None Include="..\..\stream_doc\NodeManifestTemplate.md" />
+    <None Include="..\..\stream_doc\Graph.md" />
+    <None Include="..\..\stream_doc\IoManifest.md" />
+    <None Include="..\..\stream_doc\NodeManifest.md" />
     <None Include="..\..\stream_doc\NodesDescription.md" />
+    <None Include="..\..\stream_doc\PlatformManifest.md" />
+    <None Include="..\..\stream_doc\Tables.md" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

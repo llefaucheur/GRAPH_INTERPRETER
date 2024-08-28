@@ -75,26 +75,38 @@ typedef float sfloat;
 typedef double sdouble;
 
 #else
-union floatb {
-    float f;
-    uint32_t i;
-    struct {
-        unsigned m : 23;   /* Mantissa */
-        unsigned e : 8;    /* Exponent */
-        unsigned s : 1;    /* Sign bit */
-    } b;
-};
+//union floatb {
+//    uint32_t i;
+//    struct {
+//        unsigned m : 23;   /* Mantissa */
+//        unsigned e : 8;    /* Exponent */
+//        unsigned s : 1;    /* Sign bit */
+//    } b;
+//};
 
-union doubleb {
-    double d;
-    uint64_t i;
-    struct {
-        unsigned ml: 32;   /* Mantissa low */
-        unsigned mh: 20;   /* Mantissa high */
-        unsigned e : 11;   /* Exponent */
-        unsigned s : 1;    /* Sign bit */
-    } b;
-};
+struct {
+    unsigned m : 23;        /* Mantissa */
+    unsigned e : 8;         /* Exponent */
+    unsigned s : 1;         /* Sign bit */
+} floatb;
+
+//union doubleb {
+//    uint64_t i;
+//    struct {
+//        unsigned ml: 32;   /* Mantissa low */
+//        unsigned mh: 20;   /* Mantissa high */
+//        unsigned e : 11;   /* Exponent */
+//        unsigned s : 1;    /* Sign bit */
+//    } b;
+//};
+
+struct {
+    unsigned ml: 32;        /* Mantissa low */
+    unsigned mh: 20;        /* Mantissa high */
+    unsigned e : 11;        /* Exponent */
+    unsigned s : 1;         /* Sign bit */
+} sdouble;
+
 typedef uint32_t sfloat;
 typedef uint64_t sdouble;
 #endif
@@ -130,9 +142,10 @@ typedef void (*p_io_function_ctrl) (uint32_t command, uint8_t *data, uint32_t le
 */
 typedef struct  
 {  
-    const intPtr_t *long_offset;        // pointer to "intPtr_t long_offset[MAX_NB_MEMORY_OFFSET];" 
-    uint32_t *graph;
-    uint32_t *pio;
+    uint8_t **long_offset;              // pointer to "long_offset[MAX_NB_MEMORY_OFFSET]" 
+    uint32_t *graph;                    // base address of the binary graph
+    uint8_t *ongoing;                   // pointer to the RAM area to the IOs : on-going transfer flag
+
     uint32_t *all_formats;   
     uint32_t *all_arcs;
     uint32_t *linked_list;   
@@ -143,21 +156,21 @@ typedef struct
     const p_stream_al_services * application_callbacks;
     const p_stream_al_services * al_services;
 
-    p_stream_node address_swc;
+    p_stream_node address_node;
     uint32_t *linked_list_ptr;          // current position of the linked-list read pointer
 
-    uint32_t *swc_header;               // current swc
-    stream_handle_t swc_instance_addr;
+    uint32_t *node_header;              // current node
+    stream_handle_t node_instance_addr;
     uint8_t *pt8b_collision_arc;        // collision
     uint32_t pack_command;              // preset, narc, tag, instanceID, command
     uint32_t iomask;                    // _IOMASK_ fields 
 
     uint32_t scheduler_control;         // PACK_STREAM_PARAM(..);
     uint32_t whoami_ports;              // _PARCH_ fields 
-    uint16_t arcID[MAX_NB_STREAM_PER_SWC];
-    uint8_t swc_memory_banks_offset;    // offset in words  
-    uint8_t swc_parameters_offset;      // 
-    uint8_t main_script;                // debug script
+    uint16_t arcID[MAX_NB_STREAM_PER_NODE];
+    uint8_t node_memory_banks_offset;   // offset in words  
+    uint8_t node_parameters_offset;     // 
+    uint8_t main_script;                // debug script common to all nodes
     uint8_t nb_stream_instances;        // stream instances pointers (in words) = &(all_arcs[ -nb_stream_instances]) 
     uint8_t error_log;                  // bit-field of logged errors 
 

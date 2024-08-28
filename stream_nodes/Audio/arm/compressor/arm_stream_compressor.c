@@ -152,10 +152,10 @@ void arm_stream_compressor (int32_t command, stream_handle_t instance, stream_xd
                     encode_imadpcm(&(pinstance->state[0]), inBuf, nb_samp, outBuf);
 
                     /*  update only the size field 
-                        the SWC is producing an amount of data different from the consumed one (see xdm11 in the manifest) 
+                        the NODE is producing an amount of data different from the consumed one (see xdm11 in the manifest) 
                     */
                     pt_pt = data;   *(&(pt_pt->size)) = nb_samp * sizeof(SAMP_IN);      /* amount of data consumed */
-                    pt_pt ++;       *(&(pt_pt->size)) = nb_bytes * sizeof(SAMP_OUT);     /* amount of data produced */
+                    pt_pt ++;       *(&(pt_pt->size)) = nb_bytes * sizeof(SAMP_OUT);    /* amount of data produced */
 
                     break;
 

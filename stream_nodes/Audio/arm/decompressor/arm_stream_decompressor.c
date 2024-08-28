@@ -118,6 +118,12 @@ void arm_stream_decompressor (int32_t command, stream_handle_t instance, stream_
 
             /* save the address of the "services" */
             pinstance->stream_service_entry = (stream_al_services *)(intPtr_t)data;
+
+            /* clear memory */
+            MEMSET(&(pinstance->memory_state[0]), 0, sizeof(pinstance->memory_state));
+
+            pinstance->decoder_state = STATE_RUN;
+
             break;
         }    
 
@@ -150,11 +156,16 @@ void arm_stream_decompressor (int32_t command, stream_handle_t instance, stream_
             {
                 case DECODER_IMADPCM            :
                     nb_samp = (nb_data << 1);   /* one byte generates 2 samples */ 
-                    decode_imadpcm((int32_t *)&(pinstance->state[0]), inBuf, nb_samp, outBuf);
+                    decode_imadpcm((int32_t *)&(pinstance->memory_state[0]), inBuf, nb_samp, outBuf, pinstance->decoder_state);
 
                     /*  update only the size field 
-                        the SWC is producing an amount of data different from the consumed one (see xdm11 in the manifest) 
+                        the NODE is producing an amount of data different from the consumed one (see xdm11 in the manifest) 
                     */
+
+                    if (pinstance->decoder_state == STATE_PAUSE)
+                    {   nb_data = 0; /* no data was consumed during the PAUSE state */
+                    }
+
                     pt_pt = data;   *(&(pt_pt->size)) = nb_data * sizeof(SAMP_IN);      /* amount of data consumed */
                     pt_pt ++;       *(&(pt_pt->size)) = nb_samp * sizeof(SAMP_OUT);     /* amount of data produced */
                     break;
@@ -178,7 +189,14 @@ void arm_stream_decompressor (int32_t command, stream_handle_t instance, stream_
         }
 
         default:
+            break;
         case STREAM_SET_PARAMETER:  
+        {   //arm_stream_decompressor_instance *pinstance = (arm_stream_decompressor_instance *) instance;
+            //pinstance->decoder_state = STATE_PAUSE;
+            //pinstance->decoder_state = STATE_FAST_FORWARD2;
+            //pinstance->decoder_state = STATE_FAST_FORWARD4;
+            break;
+        }
         case STREAM_READ_PARAMETER:  
         case STREAM_STOP:  
             break;    

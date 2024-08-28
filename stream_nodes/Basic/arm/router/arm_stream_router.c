@@ -115,7 +115,7 @@ void arm_stream_router (int32_t command, stream_handle_t instance, stream_xdmbuf
                 memresults are followed by 2 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
                     => used by the router to know the size of each raw element 
                     (see stream_bitsize_of_raw())
-                memory pointers are in the same order as described in the SWC manifest
+                memory pointers are in the same order as described in the NODE manifest
 
                 the number of arcs (NARC_CMD) is used to configure arm_stream_router_instance.configuration
         */

@@ -215,7 +215,7 @@ struct node_memory_bank
     uint32_t mem_VID;           /* optimization during graphTXT node declaration */
 
     intPtr_t graph_memreq_size; /* computed after graph reading */
-    uint32_t graph_base27b;     /* memory base address in 27 bits pack format (offsetID + offset) */
+    uint32_t graph_base;     /* memory base address in 27 bits pack format (offsetID + offset) */
 };
 typedef struct node_memory_bank node_memory_bank_t;
 
@@ -258,7 +258,7 @@ struct formatStruct
     float samplingRate;
     uint32_t timestamp;         /* FMT1                 */
     uint32_t timeformat;        /* FMT1                 */
-    float frame_length;      /* FMT0    frame length format (0:in milliseconds 1:in samples) */
+    float frame_length;         /* FMT0    frame length format (0:in milliseconds 1:in samples) */
     uint32_t framelength_format; /* frame length format (0:in milliseconds 1:in samples) */
 
     /* format section specific to each domain */
@@ -283,7 +283,7 @@ struct arcStruct
     uint32_t rx0tx1;                    // ARC0_LW1 and RX0TX1_IOFMT : direction rx=0 tx=1 parameter=2 (rx never consumed) 
     uint8_t  ioarc_flag;                // boolean this arc connects to IOs 
     float    setupTime;                 // [ms] to avoid this information to being only in the BSP 
-    uint32_t settings;                  // pack format of digital + MSIC options (SETTINGS_IOFMT2), the format depends on the IO domain 
+    uint32_t settings[STREAM_IOFMT_SIZE_W32-1];   // pack format of digital + MSIC options (SETTINGS_IOFMT2), the format depends on the IO domain 
     uint32_t idx_arc_in_graph;          // "stream_io new" index field 
     uint32_t domain;                    // domain of operation
     struct formatStruct format;         // stream_format 
@@ -322,7 +322,7 @@ struct arcStruct
 
     /* ----- graph data ----- */    
     uint32_t memVID;
-    uint32_t graph_base27b;
+    uint32_t graph_base;
 
     /* ------ COMPILATION RESULT-- */
     //uint32_t ioarc;                    /* arc index used in the graph description */
@@ -360,8 +360,7 @@ struct stream_node_manifest
 
     uint32_t arc_parameter;             // SWC with extra-large amount of parameters (NN models) will declare it with extra arcs
     uint32_t same_data_rate;            // (0) the arcs have different data rates, (1) all arcs have the same data rate  (0) the data flow is variable (or constant, default value :1) on all input and output arcs
-    uint32_t use_dtcm;                  // default 0 (no MP DTCM_LW2), 1: fast memory pointer placed after the arc format
-    uint32_t use_arc_format;            // default 0 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
+    uint32_t using_arc_format;            // default 0 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
     uint32_t mask_library;              // default 0 bit-field of dependencies to computing libraries
     uint32_t subtype_units;             // triggers the need for rescaling and data conversion
     uint32_t architecture;              // arch compatible with (default: 0 = source code) to merge and sort for ARCHID_LW0

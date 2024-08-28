@@ -290,6 +290,7 @@ void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *arc)
         if (COMPARE(io_frame_length))
         {   fields_options_extract(&pt_line, &(arc->frame_length_option));  
         }
+
         //if (COMPARE(io_frame_duration))
         //{   fields_extract(&pt_line, "CF", cstring, &(arc->format.frame_length)); 
         //}
@@ -421,8 +422,8 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         if (COMPARE(node_use_mpdtcm))                
         {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
-        if (COMPARE(node_use_arc_format))
-        {   fields_extract(&pt_line, "CI", ctmp, &(node->use_arc_format));  // TBC
+        if (COMPARE(node_using_arc_format))
+        {   fields_extract(&pt_line, "CI", ctmp, &(node->using_arc_format));  // TBC
         }
         if (COMPARE(node_mask_library))
         {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC

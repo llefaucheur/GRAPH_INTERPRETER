@@ -81,7 +81,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "arm_stream_decompressor_imadpcm.h"
-#include "dsp/none.h"
+#include "arm_stream_decompressor.h"
 
 
 /* Intel ADPCM step variation table */
@@ -103,8 +103,25 @@ static int16_t stepsizeTable[89] = {
 };
 
 
+  inline int32_t __SSAT(int32_t val, uint32_t sat)
+  {
+    if ((sat >= 1U) && (sat <= 32U))
+    {
+      const int32_t max = (int32_t)((1U << (sat - 1U)) - 1U);
+      const int32_t min = -1 - max ;
+      if (val > max)
+      {
+        return max;
+      }
+      else if (val < min)
+      {
+        return min;
+      }
+    }
+    return val;
+  }
  
-void decode_imadpcm(int32_t *state, uint8_t* input, uint32_t numSamples, int16_t* output)
+void decode_imadpcm(int32_t *state, uint8_t* input, uint32_t numSamples, int16_t* output, uint8_t decoder_state)
 {
     int8_t  sign;			/* Current adpcm sign bit #TODO Remove if sign bit of diff can be used directly */
     int16_t delta;			/* Current adpcm output value */
@@ -163,7 +180,11 @@ void decode_imadpcm(int32_t *state, uint8_t* input, uint32_t numSamples, int16_t
 	    step = stepsizeTable[index];
 
 	    /* Step 7 - Output value */
-	    *output++ = valpred;
+        if (decoder_state == STATE_PAUSE)
+        {   *output++ = 0;
+        } else
+        {   *output++ = valpred;
+        }
     }
 
     state[VALPREV] = valpred;

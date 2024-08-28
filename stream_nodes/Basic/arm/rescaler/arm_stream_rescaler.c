@@ -87,7 +87,7 @@ void arm_stream_rescaler (int32_t command, stream_handle_t instance, stream_xdmb
                 data = address of Stream function
                 
                 memresults are followed by 2 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
-                memory pointers are in the same order as described in the SWC manifest
+                memory pointers are in the same order as described in the NODE manifest
         */        
         case STREAM_RESET: 
         {   stream_al_services *stream_entry = (stream_al_services *)data;

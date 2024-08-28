@@ -146,7 +146,7 @@ void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuff
                 data = address of Stream function
                 
                 memresults are followed by 2 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
-                memory pointers are in the same order as described in the SWC manifest
+                memory pointers are in the same order as described in the NODE manifest
         */
         case STREAM_RESET: 
         {   stream_al_services *stream_entry = (stream_al_services *)data;
@@ -193,7 +193,7 @@ void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuff
             pt8bsrc = (uint8_t *) data;     
             pt8bdst = (uint8_t *) &(pinstance->parameters[0]); 
 
-            switch (RD(command,SWC_TAG_CMD))
+            switch (RD(command,NODE_TAG_CMD))
             {   default : n = 0; break;
                 case TAG_CMD_SLOPE:         pt8bdst += 3; n = 1; break;
                 case TAG_CMD_OUTPUT_GAIN:   pt8bdst += 0; n = 2; break;

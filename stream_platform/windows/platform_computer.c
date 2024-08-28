@@ -119,16 +119,16 @@ p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
         1 1 9 4 number of architectures, number of processors, number of memory banks, number of offsets
  */
 
-static uint32_t MEXT[SIZE_MBANK_DMEM_EXT];
-static uint32_t BACKUPMEM1[SIZE_MBANK_BACKUPMEM1]; 
-static uint32_t TCM2[SIZE_MBANK_TCM2]; 
-static uint32_t FLASH3[SIZE_MBANK_FLASH3]; 
+static uint8_t MEXT[SIZE_MBANK_DMEM_EXT];
+static uint8_t BACKUPMEM1[SIZE_MBANK_BACKUPMEM1]; 
+static uint8_t TCM2[SIZE_MBANK_TCM2]; 
+static uint8_t FLASH3[SIZE_MBANK_FLASH3]; 
 
-const intPtr_t long_offset[MAX_NB_MEMORY_OFFSET] = 
-{   (const intPtr_t) &(MEXT[0]),
-    (const intPtr_t) &(BACKUPMEM1[0]),
-    (const intPtr_t) &(TCM2[0]),
-    (const intPtr_t) &(FLASH3[0]),
+const uint8_t * long_offset[MAX_NB_MEMORY_OFFSET] = 
+{   &(MEXT[0]),
+    &(BACKUPMEM1[0]),
+    &(TCM2[0]),
+    &(FLASH3[0]),
 };
 
 
@@ -201,7 +201,7 @@ uint64_t global_stream_time64;
 
 
 /*
-    Callback for SWC and scripts (CALS  system call (0..7) and application callbacks (8..15))
+    Callback for NODE and scripts (CALS  system call (0..7) and application callbacks (8..15))
         and ARC debug activities (ARC_APP_CALLBACK1) 
     Use-case : 
         deep-sleep proposal from the scheduler
@@ -277,22 +277,22 @@ uint32_t lin2pack (arm_stream_instance_t *S, uint8_t *buffer)
                 The scheduler of each Stream instance sends a physical address to the Nodes
                 and translates here the indexes to physical address using a table of offsets.
  */
-static intPtr_t pack2linaddr_int(const intPtr_t *long_offset, uint32_t x, uint32_t unit)
+static intPtr_t pack2linaddr_int(const uint8_t **long_offset, uint32_t x, uint32_t unit)
 {
-    intPtr_t dbg1, dbg2, dbg3;
+    const uint8_t *dbg1;
+    intPtr_t dbg2;
+    const uint8_t *dbg3;
+    intPtr_t result;
 
     dbg1 = long_offset[RD(x,DATAOFF_ARCW0)];    
     dbg2 = (intPtr_t)(unit * (intPtr_t)RD((x),BASEIDX_ARCW0));
+    dbg3 = &(dbg1[dbg2]);
+    result = (intPtr_t)dbg3;
 
-    if (RD(x,BAS_SIGN_ARCW0)) 
-        dbg3 = dbg1 + ~(dbg2) +1;   // dbg1-dbg2 using unsigned integers
-     else
-        dbg3 = dbg1 + dbg2;
-
-    return dbg3;  
+    return result;  
 }
 
-void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data, uint32_t unit)
+void * pack2linaddr_ptr(const uint8_t **long_offset, uint32_t data, uint32_t unit)
 {
     return (void *) (pack2linaddr_int(long_offset, data, unit));
 }
@@ -318,8 +318,8 @@ extern const p_stream_al_services application_callbacks[];
 #define STREAM_CURRENT_INSTANCE 0
 #define STREAM_NB_INSTANCE 1
 
-    S->graph = (uint32_t *) &(graph_input[1]);
-    S->long_offset = long_offset;
+    S->graph = (uint32_t *) &(graph_input[1]);      /* binary graph address loaded in the graph interpreter instance */ 
+    S->long_offset = (uint8_t **) long_offset;                /* there is one single graph executed per platform */ 
 
     S->scheduler_control = PACK_STREAM_PARAM(
             STREAM_MAIN_INSTANCE,
@@ -329,10 +329,10 @@ extern const p_stream_al_services application_callbacks[];
             STREAM_SCHD_RET_END_ALL_PARSED
             );
 
-    ST(S->whoami_ports, ARCHID_PARCH, ARCH_ID);  /* 3 fields used for SWC locking */
+    ST(S->whoami_ports, ARCHID_PARCH, ARCH_ID);  /* 3 fields used for NODE locking */
     ST(S->whoami_ports, PROCID_PARCH, PROC_ID);
     ST(S->whoami_ports, PRIORITY_PARCH, STREAM_INSTANCE_LOWLATENCYTASKS);
-    ST(S->whoami_ports, SWC_W32OFF_PARCH, 0);   /* index in the linked list */
+    ST(S->whoami_ports, NODE_W32OFF_PARCH, 0);   /* index in the linked list */
     S->al_services = al_service;
     S->application_callbacks = application_callbacks;
     S->node_entry_point_table = &(node_entry_point_table[0]);
@@ -351,10 +351,10 @@ extern const p_stream_al_services application_callbacks[];
     S->linked_list_ptr = S->linked_list;
 
     PIOoffsetWords += RD((S->graph)[2], LINKEDLISTSZW32_GR2);   // linked list
-    S->pio = &(S->graph[PIOoffsetWords]);
+    S->ongoing = (uint8_t *) &(S->graph[PIOoffsetWords]);
 
-    PIOoffsetWords += RD((S->graph)[2], ARC_DEBUG_IDX_GR2) + RD((S->graph)[1], NB_IOS_GR1);
-    S->all_formats = &(S->graph[PIOoffsetWords]);
+    PIOoffsetWords += RD((S->graph)[2], ARC_DEBUG_IDX_GR2) + ((3 + RD((S->graph)[1], NB_IOS_GR1))>>2);
+    S->all_formats = &(S->graph[PIOoffsetWords]);               // PIO is an array of Bytes of size NB_IOS_GR1/4 words
 
     PIOoffsetWords += RD((S->graph)[1], NBFORMATS_GR1) * STREAM_FORMAT_SIZE_W32;
     S->all_arcs = &(S->graph[PIOoffsetWords]);
@@ -378,7 +378,7 @@ extern const p_stream_al_services application_callbacks[];
 
         /* the return option is undefined : return when no more data is available */
         if (return_script_option == 0) 
-        {   return_script_option = STREAM_SCHD_RET_END_SWC_NODATA;
+        {   return_script_option = STREAM_SCHD_RET_END_NODE_NODATA;
         }
         ST(S->scheduler_control, RETURN_SCTRL, return_script_option);
     }
@@ -418,7 +418,7 @@ extern const p_stream_al_services application_callbacks[];
 
                 The Graph is a table using uint32 :
                 - size of the graph in Words
-                [0] 27b RAM address of part/all the graph, HW-shared MEM configuration, which part is going in RAM
+                [0] 28b RAM address of part/all the graph, HW-shared MEM configuration, which part is going in RAM
                 [1] number of FORMAT, size of SCRIPTS
                 [2] size of LINKEDLIST, number of STREAM_INSTANCES
                 [3] number of ARCS, number of DEBUG registers
@@ -444,7 +444,7 @@ void platform_init_copy_graph(arm_stream_instance_t *S)
                    RAMsplit Option 0      1      2:already in RAM at graph0 address
         IO settings                RAM    Flash  
         SCRIPTS                    RAM    Flash  
-        LINKED-LIST                RAM    Flash   RAM allows SWC to be desactivated
+        LINKED-LIST                RAM    Flash   RAM allows NODE to be desactivated
         PIO                        RAM    RAM    
         FORMAT x3 words            RAM    RAM
         ARC descriptors 4 words    RAM    RAM    
@@ -491,7 +491,7 @@ void platform_init_copy_graph(arm_stream_instance_t *S)
         for (i_graph_io_idx = 0; i_graph_io_idx < tmpn; i_graph_io_idx++)
         {   
             tmpi = (S->graph)[PIOoffsetWords + i_graph_io_idx];
-            tmpi = RD(tmpi, FWIOIDX_IOFMT);
+            tmpi = RD(tmpi, FWIOIDX_IOFMT0);
             platform_io_al_idx_to_graph[tmpi] = i_graph_io_idx;
         }
     }
@@ -511,7 +511,8 @@ void platform_init_io(arm_stream_instance_t *S)
 {
     uint32_t nio;
     uint8_t graph_io_idx;
-    uint32_t *pio, *pio_base;
+    uint8_t *ongoing;
+    uint32_t *pio_control;
     uint32_t stream_format_io_setting;
     uint32_t io_mask;
     uint32_t iarc; 
@@ -539,7 +540,7 @@ void platform_init_io(arm_stream_instance_t *S)
         initialization of the graph IO ports 
     */     
     io_mask = S->iomask;
-    pio_base = S->pio;
+
     nio = RD(S->graph[1],NB_IOS_GR1);
     all_arcs = S->all_arcs;
 
@@ -551,8 +552,8 @@ void platform_init_io(arm_stream_instance_t *S)
     {
         uint8_t *address;
         uint32_t size;
-
-        pio = &(pio_base[graph_io_idx * STREAM_IOFMT_SIZE_W32]);
+        pio_control = &(S->graph[GRAPH_HEADER_NBWORDS + graph_io_idx * STREAM_IOFMT_SIZE_W32]);
+        ongoing = &(S->ongoing[graph_io_idx]);
 
         /* does this port is managed by the Graph interpreter instance ? */
         if (0 == (io_mask & (1U << graph_io_idx))) 
@@ -560,7 +561,7 @@ void platform_init_io(arm_stream_instance_t *S)
 
         /* default value settings */
         stream_format_io_setting = S->graph[GRAPH_HEADER_NBWORDS + graph_io_idx];
-        io_func = &(S->platform_io[RD(*pio, FWIOIDX_IOFMT)]);
+        io_func = &(S->platform_io[RD(*pio_control, FWIOIDX_IOFMT0)]);
         if (*io_func == 0) 
         {   continue;
         }
@@ -569,14 +570,14 @@ void platform_init_io(arm_stream_instance_t *S)
         /* 
             IO-Interface expects the buffer to be declared by the graph 
         */
-        if (0 != TEST_BIT(*pio, FROMIOBUFF_IOFMT_LSB))
+        if (0 != TEST_BIT(*pio_control, FROMIOBUFF_IOFMT0_LSB))
         {
-            iarc = RD(*pio, IOARCID_IOFMT);
+            iarc = RD(*pio_control, IOARCID_IOFMT0);
             iarc = SIZEOF_ARCDESC_W32 * iarc;
             address = (uint8_t *)pack2linaddr_ptr(S->long_offset, all_arcs[iarc + BUF_PTR_ARCW0], LINADDR_UNIT_W32);
             size = (uint32_t)RD(all_arcs[iarc + BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
 
-            io_func = &(S->platform_io[RD(*pio, FWIOIDX_IOFMT)]);
+            io_func = &(S->platform_io[RD(*pio_control, FWIOIDX_IOFMT0)]);
             (*io_func)(STREAM_SET_BUFFER, address, size);
         }
     } 

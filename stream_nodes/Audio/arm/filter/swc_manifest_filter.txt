@@ -5,7 +5,7 @@
 node_developer_name      ARM                     ; developer name
 node_name                arm_stream_filter       ; node name
 
-node_use_arc_format  1 
+node_using_arc_format  1 
 node_mask_library    15
 
 ;----------------------------------------------------------------------------------------

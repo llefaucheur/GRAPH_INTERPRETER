@@ -52,7 +52,7 @@
 #define DECODER_JPEG             12 
 
 
-#define STATE_DEFAULT_SIZE 4                    /* node_malloc_E defines the effective size, depending on presets/Codec selection  */
+#define STATE_DEFAULT_SIZE 4                    /* node_malloc_add  defines the effective size, depending on presets/Codec selection  */
 
 typedef struct
 {
@@ -62,9 +62,21 @@ typedef struct
     stream_al_services *stream_service_entry;
     uint32_t output_format[STREAM_FORMAT_SIZE_W32];
 
-    uint32_t state[STATE_DEFAULT_SIZE];      /* LAST FIELD OF THE DECLARATION !! */
+    /* LAST FIELD OF THE DECLARATION,  to let it grow without changing the "*TCM" field 
+    
+        state = decoder state + memory state  of the filters
+            pause
+    */
+    uint8_t decoder_state; 
+    uint32_t memory_state[STATE_DEFAULT_SIZE];      
+
 } arm_stream_decompressor_instance;
 
+#define STATE_RESET 1
+#define STATE_RUN 2
+#define STATE_PAUSE 3
+#define STATE_FAST_FORWARD2 4  // play speed x 2
+#define STATE_FAST_FORWARD4 5  // play speed x 4
 
 
 extern void decode_imadpcm(int32_t *state, uint8_t* input, uint32_t numSamples, int16_t* output);

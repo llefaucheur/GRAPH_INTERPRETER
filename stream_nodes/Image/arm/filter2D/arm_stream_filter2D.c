@@ -36,7 +36,7 @@
 
 #include "stream_const.h"
 #include "stream_types.h"
-#include "dsp\filtering_functions.h"
+//#include "dsp\filtering_functions.h"
 #include "arm_stream_filter2D.h"
 
 /*
@@ -116,7 +116,7 @@ void arm_stream_filter2D (int32_t command, stream_handle_t instance, stream_xdmb
                 data = address of Stream function
                 
                 memresults are followed by 2 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
-                memory pointers are in the same order as described in the SWC manifest
+                memory pointers are in the same order as described in the NODE manifest
 
                 memresult[0] : instance of the component
                 memresult[1] : pointer to the allocated memory (biquad states and coefs)
@@ -125,7 +125,7 @@ void arm_stream_filter2D (int32_t command, stream_handle_t instance, stream_xdmb
                 memresult[4] : output arc Word 0 SIZSFTRAW_FMT0 
                 memresult[5] : output arc Word 1 SAMPINGNCHANM1_FMT1 
 
-                preset (8bits) : number of biquads in cascade, max = 4, from SWC manifest 
+                preset (8bits) : number of biquads in cascade, max = 4, from NODE manifest 
                 tag (8bits)  : unused
         */
         case STREAM_RESET: 
@@ -203,13 +203,13 @@ void arm_stream_filter2D (int32_t command, stream_handle_t instance, stream_xdmb
             /* optimized kernels INIT */
             pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_INIT_WAIT_COMP,0,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
 
-            pinstance->services(
-                pinstance->iir_service,
-                (uint8_t *)&(pinstance->TCM->biquad_casd_df1_inst_q15),
-                (uint8_t *)&(pinstance->TCM->coefs[0]),
-                (uint8_t *)&(pinstance->TCM->state),
-                postShift | numStages
-                );
+            //pinstance->services(
+            //    pinstance->iir_service,
+            //    (uint8_t *)&(pinstance->TCM->biquad_casd_df1_inst_q15),
+            //    (uint8_t *)&(pinstance->TCM->coefs[0]),
+            //    (uint8_t *)&(pinstance->TCM->state),
+            //    postShift | numStages
+            //    );
 
             /* optimized kernels RUN */
             pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_CHECK_COPROCESSOR,0,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
@@ -248,13 +248,13 @@ void arm_stream_filter2D (int32_t command, stream_handle_t instance, stream_xdmb
             nb_data = stream_xdmbuffer_size / sizeof(int16_t);
             ST(pinstance->iir_service, FUNCTION_SSRV, STREAM_SERVICE_CASCADE_DF1_Q15);
 
-            pinstance->services(
-                pinstance->iir_service,
-                (uint8_t*)inBuf, 
-                (uint8_t*)outBuf,
-                (uint8_t*)(&(pinstance->TCM->biquad_casd_df1_inst_q15)),
-                (uint32_t)nb_data
-                );
+            //pinstance->services(
+            //    pinstance->iir_service,
+            //    (uint8_t*)inBuf, 
+            //    (uint8_t*)outBuf,
+            //    (uint8_t*)(&(pinstance->TCM->biquad_casd_df1_inst_q15)),
+            //    (uint32_t)nb_data
+            //    );
 
             if (STREAM_SERVICE_CHECK_END_COMP == RD(pinstance->iir_service, CONTROL_SSRV))
             {   uint8_t tmp;   /* return a completion flag */

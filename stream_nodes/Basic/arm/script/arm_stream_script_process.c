@@ -68,10 +68,8 @@
 
 
     Registers 
-        Instance static = 12 registers (R1..R12) + stack (S, S') 
-        R0 means "not used" or "zero"
-        S' is the top-1 stack position 
-        P1,P2,P3 27bits portable format with DTYPE :
+        Instance static = 10 registers (R1..R10) + stack (R11-S, R12-S') + R0(CTRL) + R13,R14,R15(free)
+        R0 means "not used" or "zero",    S' is the top-1 stack position 
 
         registers format :                      DTYPE
                     <---- MSB word ----------------> <---- LSB word ---------------->  
@@ -80,36 +78,38 @@
         q15         ____________________________0001 <------------------------------>  
         fp32        ____________________________0010 <------------------------------>  
         TIME64      <-------------------------->0011 <------------------------------>    
-        fp64        <-------------------------->0100 <------------------------------>  
+        fp64        <-------------------------->0100 <------------------------------>  mantissa is patched
         int64-4bits <-------------------------->0101 <------------------------------>  
         TIME16      ____________________________0110 ________________<-------------->  
         TIME32      ____________________________0111 <------------------------------>  
-        27b + DTYPE ____________________________1000 DTYPE<------ 27bits address---->  
-        Pointe32/64 <-------------------------->1001 <------------------------------>  
-        char /0     ____________________________1010 ________________________<------>  
-                                                      
-    Instructions 32bits + 32/64bits extra constants when K >= 0x3F0..3FF (1008..1023)
-        3F0 : next word is int32       
-        3F1 : next word is q15         
-        3F2 : next word is fp32              MOVI #fp32
-        3F3 : next word is TIME64      
-        3F4 : next word is fp64        
-        3F5 : next word is int64-4bits 
-        3F6 : next word is TIME16      
-        3F7 : next word is TIME32      
-        3F8 : next word is 27b + DTYPE 
-        3F9 : next word is Pointer     
-        3FA : next word is char /0     
+        28b + DTYPE ---BASE--- ---SIZE---_______1000 DTYPE<------ 28bits address---->  typed pointer + circular option
+        char /0     ____________________________1001 ________________________<------>  
+        Control     <-------------------------->1010 <------------------------------>   
+                R0: increment_rrr, TEST-flag, bit-fields 12b:[0..63->0..63], stack pointer, 
+
+    Instructions 32bits + 32/64bits extra words when K >= 0x3E9..3FF (1001..1023)
+        1001d : next word is int32       
+        1002d : next word is q15         
+        1003d : next word is fp32              MOVI #fp32
+        1004d : next word is TIME64      
+        1005d : next word is fp64        
+        1006d : next word is int64-4bits 
+        1007d : next word is TIME16      
+        1008d : next word is TIME32      
+        1009d : next word is 28b + DTYPE 
+        1010d : next word is Pointer     
+        1011d : next word is char /0     
 
     GENERAL : 
         if_II DST =(yyyyyyy) SRC1 uu SRC2 kk K7
         (IF Y/N), ((*P)/R/S)DST OPERAND_yyyyy ((*P)/R/S)SRC1,((*P)/R/S)SRC2, ARITHMETICS_OPERAND xx (K)
+
         FEDCBA9876543210FEDCBA9876543210
         II______________________________ if yes, if not, no test, break-point
         __yyyyyyy_______________________ Op-code 
         _________OPAR___________________ arithmetic op
         _____________DST.SRC1SRC2_______ Registers
-        _____________________xxxxxxXXXXX 11-bits Constant = +/- 0 .. 1000 / Bit field for |K|>1000
+        _____________________xxxxxxXXXXX 11-bits Constant = +/- 0 .. 1000 / Bit field for {1000 < K < 1024}
 
     Programming examples
         TEST R1 < R2 + 129
@@ -117,7 +117,6 @@
         TEST bit 17 of R1
         R1 = (bit-field K11)
         R1 = R2 x R3
-        R1 = R2 + #K11
         P1 = P2 + #K11 (DTYPE)
         S0 = S0 + 3.14159
         R1 = 3.141592653589793
@@ -131,14 +130,14 @@
 
 
     OPAR (SRC1 / SRC2) or (SRC1 / K)
-         0  SRC1 + SRC2 (or K)              PUSH: S=R+0  POP:R=S+0   DUP: S=S+0  DEL: R0=S+0  DEL2: R0=S'+0
+         0  SRC1 + SRC2 (or K)              PUSH: S=R+0  POP:R=S+R0   DUP: S=S+R0  DEL: R0=S+R0  DEL2: R0=S'+R0
          1  SRC1 - SRC2 (or K)                  MOVI #K: R=R0+K
          2  SRC1 * SRC2 (or K)
          3  SRC1 / SRC2 (or K)              DIV  
          4  SRC2(or K) - SRC1               NEG and RSUB
          5  SRC2(or K) / SRC1               RDIV
          6  SRC1 | SRC2 (or K)              if SRC is a pointer then it is decoded as *(SRC)
-         7  !(SRC1 | SRC2) (or K)
+         7  !(SRC1 | SRC2) (or K)               example TEST (*R1) > (*R2) + 3.14   or   R1 = (*R2) + R4
          8  SRC1 & SRC2 (or K)
          9  SRC1 ^ SRC2 (or K)
         10  SRC1 % SRC2 (or K)
@@ -156,47 +155,53 @@
         22  AMINF (abs(SRC1), abs(SRC2)) sets F when abs(SRC1)<abs(SRC2)
         23  SQRA (SRC1 + SRC2 x SRC2)
 
+        24..31 free
 
-    OPERATION FIELD yyyyyyy
-         0  TEST DST =  SRC1 OPAR K    TEST DST =  K     and TEST DST =  SRC1
-         1  TEST DST <= SRC1 OPAR K    TEST DST <= K     and TEST DST <= SRC1
-         2  TEST DST <  SRC1 OPAR K    TEST DST <  K     and TEST DST <  SRC1
-         3  TEST DST != SRC1 OPAR K    TEST DST != K     and TEST DST != SRC1
-         4  TEST DST >= SRC1 OPAR K    TEST DST >= K     and TEST DST >= SRC1
-         5  TEST DST >  SRC1 OPAR K    TEST DST >  K     and TEST DST >  SRC1
-         6  TEST DST =  SRC1 OPAR SRC2 TEST DST =  SRC2  and TEST DST =  SRC1
-         7  TEST DST <= SRC1 OPAR SRC2 TEST DST <= SRC2  and TEST DST <= SRC1
-         8  TEST DST <  SRC1 OPAR SRC2 TEST DST <  SRC2  and TEST DST <  SRC1
-         9  TEST DST != SRC1 OPAR SRC2 TEST DST != SRC2  and TEST DST != SRC1
-        10  TEST DST >= SRC1 OPAR SRC2 TEST DST >= SRC2  and TEST DST >= SRC1
-        11  TEST DST >  SRC1 OPAR SRC2 TEST DST >  SRC2  and TEST DST >  SRC1
-        12  DST (bitfield #K5) = SRC  
-        13  DST = SRC (bitfield #K5)
+
+    OPERATION FIELD yyyyyyy                 SRC1 = R0          K/SRC2 = 0/R0
+         0  TEST DST =  SRC1 OPAR K      TEST DST =  K      TEST DST =  SRC1
+         1  TEST DST <= SRC1 OPAR K      TEST DST <= K      TEST DST <= SRC1
+         2  TEST DST <  SRC1 OPAR K      TEST DST <  K      TEST DST <  SRC1
+         3  TEST DST != SRC1 OPAR K      TEST DST != K      TEST DST != SRC1
+         4  TEST DST >= SRC1 OPAR K      TEST DST >= K      TEST DST >= SRC1
+         5  TEST DST >  SRC1 OPAR K      TEST DST >  K      TEST DST >  SRC1
+         6  TEST DST =  SRC1 OPAR SRC2   TEST DST =  SRC2   TEST DST =  SRC1
+         7  TEST DST <= SRC1 OPAR SRC2   TEST DST <= SRC2   TEST DST <= SRC1
+         8  TEST DST <  SRC1 OPAR SRC2   TEST DST <  SRC2   TEST DST <  SRC1
+         9  TEST DST != SRC1 OPAR SRC2   TEST DST != SRC2   TEST DST != SRC1
+        10  TEST DST >= SRC1 OPAR SRC2   TEST DST >= SRC2   TEST DST >= SRC1
+        11  TEST DST >  SRC1 OPAR SRC2   TEST DST >  SRC2   TEST DST >  SRC1
+        12  DST (bitfield) = SRC  
+        13  DST = SRC (bitfield)
         14  DST = OPAR (SRC1 + SRC2)    (+ x & MIN)
         15  DST = OPAR (SRC1 + K)
         16  DST = SQRT(SRC)
-        17  PTR DST increment_rrr 0 1 -1 inc -inc inc_modulo -inc_modulo (K11)
-        18  PTR DST increment_rrr 0 1 -1 inc from the DTYPE of SRC1
-        19  NORM DST = normed on MSB(SRC1), applied shift in SRC2
-        20  WRSP *SP[K] = DST
-        21  RDSP DST = *SP[K]
-        22  JMPA  jump to computed address DST 
-        23  CALA  call computed address DST
-        24  PUSH FLAG
-        25  CNVR DST converted to DTYPE of SRC
-        26  CNVR DST, DTYPE
-        27  PUSHLABEL  Label_K7  push the address of Label K7 on the stack    
-        28  LABEL      K7       to address byte-code and parameter constants 
-        29  JMP        (DST, SRC1, SRC2/R0=none),label_K7  
-        30  BANZ DST   Label_K7   
-        31  JMP        (DST, SRC1, SRC2/R0=none),signed_K7  signed instruction offset  
-        32  CALL       (DST, SRC1, SRC2/R0=none),Label_K7  
-        33  CALLSYS    (DST, SRC1, SRC2/R0=none),{K7} system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW, Pointers) 
-        34  CALLSCRPT  (DST, SRC1, SRC2/R0=none),{K7} common scripts and node control  
-        35  CALLAPP    (DST, SRC1, SRC2/R0=none),{K7} 0K6=64 local callbacks 1K6= 64 global callbacks   
-        36  RETKEEP    return and keep registers in bitfield K11    
-        37  RETURN 
-        38  SWAP SRC, DST
+        17  PTRINC DST +/-1 +/-inc +/-inc_modulo
+        18  PTRINC DST +/-1 +/-inc +/-inc_modulo from the DTYPE of SRC1
+        19  PTRMOD DST K11      set base6b/size5b of a PTR extra word if base+word>11bits
+        20  NORM DST = normed on MSB(SRC1), applied shift in SRC2
+        21  WRSP *SP[K] = DST
+        22  RDSP DST = *SP[K]
+        23  JMPA  jump to computed address DST 
+        24  CALA  call computed address DST
+        25  PUSH CONTROL (flag and control bits)
+        26  CNVR DST converted to DTYPE of SRC
+        27  CNVR DST, DTYPE
+        28  PUSHLABEL  Label_K7  push the address of Label K7 on the stack    
+        29  LABEL      K7        to address byte-code and parameter constants 
+        30  JMP        (DST, SRC1, SRC2/R0=none),label_K7  
+        31  BANZ DST   Label_K7   
+        32  JMP        (DST, SRC1, SRC2/R0=none),Label_K7 / signed_K7  signed INSTRUCTION offset  and push 3 registers
+        33  CALL       (DST, SRC1, SRC2/R0=none),Label_K7  and push up to 3 registers
+        34  CALLSYS    (DST, SRC1, SRC2/R0=none),{K7} system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW, Pointers) 
+        35  CALLSCRIPT (DST, SRC1, SRC2/R0=none),{K7} common scripts and node control  
+        36  CALLAPP    (DST, SRC1, SRC2/R0=none),{K7} 0K6=64 local callbacks 1K6= 64 global callbacks   
+        37  RETKEEP    return and keep registers in bitfield K11    
+        38  RETURN 
+        39  SWAP SRC, DST
+        40  BITFIELD START,STOP loads 12bits in "control" for DST = SRC (bitfield)
+
+        40..127 free
 
 =========================================================================================
 
@@ -363,12 +368,12 @@ void arm_stream_script_interpreter (
 
             /* 0000 0011 Clll.llll (C)CALLSYS un/conditional system call (0..127) */
             case 3:
-                arm_stream_services( (uint32_t)((stack[SP-1]).i32), 
-                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-2]).i32, LINADDR_UNIT_W32), 
-                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-3]).i32, LINADDR_UNIT_W32), 
-                    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-4]).i32, LINADDR_UNIT_W32), 
-                    (uint32_t)((stack[SP-5]).i32));
-                    SP = SP-5;
+                //arm_stream_services( (uint32_t)((stack[SP-1]).i32), 
+                //    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-2]).i32, LINADDR_UNIT_W32), 
+                //    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-3]).i32, LINADDR_UNIT_W32), 
+                //    (uint8_t *)pack2linaddr_ptr(S->long_offset, (stack[SP-4]).i32, LINADDR_UNIT_W32), 
+                //    (uint32_t)((stack[SP-5]).i32));
+                //    SP = SP-5;
                 break;
 
             /* 0000 0100 C0ll.llll (C)CALLAPP un/conditional application callbacks (0..63) 

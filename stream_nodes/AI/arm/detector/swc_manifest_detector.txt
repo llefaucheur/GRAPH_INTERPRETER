@@ -5,18 +5,17 @@
 node_developer_name      ARM                     ; developer name
 node_name                arm_stream_detector     ; node name
 
-node_same_rxtx_data_rate   0      ; (0) the data flow is variable 
-node_same_rxtx_data_rate 0  ; (0) the arcs have different data rates
-node_use_arc_format  0      ; default 1 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
+node_same_rxtx_data_rate   0                    ; (0) the data flow is variable 
+node_using_arc_format  0                        ; default 1 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
 
 ;----------------------------------------------------------------------------------------
 ;   MEMORY ALLOCATIONS
 
 node_mem                0
-node_mem_alloc         50   ; filter static
+node_mem_alloc         50                       ; filter static
 
 node_mem                1
 node_mem_alloc         30
-node_mem_type           2   ; backup memory (Z7..)
+node_mem_type           2                       ; backup memory (Z7..)
 
 end

@@ -1,3 +1,0 @@
-node_developer_name      ARM                             ; developer name
-node_name                none                            ; node name
-end

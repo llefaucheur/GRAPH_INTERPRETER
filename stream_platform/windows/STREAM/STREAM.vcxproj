@@ -145,8 +145,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\arm_biquad_cascade_df1_fast_q15.c" />
-    <ClCompile Include="..\..\..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\arm_biquad_cascade_df1_init_q15.c" />
     <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D.c" />
     <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\AI\arm\detector\arm_stream_detector.c" />
@@ -156,11 +154,14 @@
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\decompressor\arm_stream_decompressor_imadpcm.c" />
     <ClCompile Include="..\..\..\stream_nodes\Audio\arm\filter\arm_stream_filter.c" />
+    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\filter\CMSIS-DSP\Source\FilteringFunctions\arm_biquad_cascade_df1_fast_q15.c" />
+    <ClCompile Include="..\..\..\stream_nodes\Audio\arm\filter\CMSIS-DSP\Source\FilteringFunctions\arm_biquad_cascade_df1_init_q15.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\amplifier\arm_stream_amplifier.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\amplifier\arm_stream_amplifier_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\analysis\arm_stream_analysis.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\analysis\arm_stream_analysis_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\converter\arm_stream_converter.c" />
+    <ClCompile Include="..\..\..\stream_nodes\Basic\arm\converter\arm_stream_converter_coefs.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\converter\arm_stream_converter_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\demodulator\arm_stream_demodulator.c" />
     <ClCompile Include="..\..\..\stream_nodes\Basic\arm\demodulator\arm_stream_demodulator_process.c" />
@@ -187,7 +188,6 @@
     <ClCompile Include="..\..\..\stream_src\stream_graph_interpreter.c" />
     <ClCompile Include="..\..\..\stream_src\stream_io.c" />
     <ClCompile Include="..\..\..\stream_src\stream_scheduler.c" />
-    <ClCompile Include="..\..\..\stream_src\stream_services.c" />
     <ClCompile Include="..\..\lp-mspm0l1306\main_call_lp-mspm0l1306.c" />
     <ClCompile Include="..\..\lp-mspm0l1306\platform_lp-mspm0l1306.c" />
     <ClCompile Include="..\..\lp-mspm0l1306\platform_lp-mspm0l1306_io_services.c" />
@@ -195,6 +195,9 @@
     <ClCompile Include="..\..\lpc55s69evk\platform_lpc55s69evk.c" />
     <ClCompile Include="..\..\lpc55s69evk\platform_lpc55s69evk_io_services.c" />
     <ClCompile Include="..\main_call_computer.c" />
+    <ClCompile Include="..\platform_services.c" />
+    <ClCompile Include="..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_fast_q15.c" />
+    <ClCompile Include="..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_init_q15.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\stream_nodes\AI\arm\detector2D\arm_stream_detector2D.h" />
@@ -218,6 +221,7 @@
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\script\arm_stream_script_instructions.h" />
     <ClInclude Include="..\..\..\stream_nodes\Basic\arm\split\arm_stream_split.h" />
     <ClInclude Include="..\..\..\stream_nodes\Image\arm\filter2D\arm_stream_filter2D.h" />
+    <ClInclude Include="..\..\..\stream_nodes\stream_common.h" />
     <ClInclude Include="..\..\..\stream_platform\windows\platform_computer.h" />
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\..\stream_src\stream_extern.h" />
@@ -228,6 +232,7 @@
     <ClInclude Include="..\..\lpc55s69evk\platform_lpc55s69evk.h" />
     <ClInclude Include="..\..\platform.h" />
     <ClInclude Include="..\graph_computer_header.h" />
+    <ClInclude Include="..\stream_libraries\CMSIS-DSP\Include\dsp\filtering_functions.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\lp-mspm0l1306\graph_lp-mspm0l1306.txt" />

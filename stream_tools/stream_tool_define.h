@@ -164,7 +164,7 @@
 #define node_arc_parameter              "node_arc_parameter"
 #define node_same_rxtx_data_rate        "node_same_rxtx_data_rate"
 #define node_use_mpdtcm                 "node_use_mpdtcm"
-#define node_use_arc_format             "node_use_arc_format"
+#define node_using_arc_format           "node_using_arc_format"
 #define node_mask_library               "node_mask_library"
 #define node_subtype_units              "node_subtype_units"
 #define node_architecture               "node_architecture"
@@ -245,11 +245,11 @@
 #define node_map_rtos                   "node_map_rtos"
 #define node_map_verbose                "node_map_verbose"
 #define node_memory_isolation           "node_memory_isolation"
+#define node_memory_clear               "node_memory_clear"
 #define node_parameters                 "node_parameters"
 
 /*----------------------------------------------------------------------- GRAPH SCRIPTS ------------- */
 #define common_script                   "script"
-#define script_registers                "script_registers"
 #define script_pointers                 "script_pointers"
 #define script_stack                    "script_stack"
 #define script_mem_shared               "script_mem_shared"
