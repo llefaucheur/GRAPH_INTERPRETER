@@ -547,11 +547,13 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     char* pt_line;
     char file_name[NBCHAR_LINE];
     char graph_platform_manifest_name[NBCHAR_LINE];
-    uint32_t nb_nodes, inode, nb_stream, istream;
+    uint32_t nb_stream, istream;
     char node_name_[NBCHAR_LINE];
     char IO_name[NBCHAR_LINE];
     char paths[MAX_NB_PATH][NBCHAR_LINE];
     int32_t nb_paths, ipath, fw_io_idx, processorBitFieldAffinity, clockDomain;
+    extern uint8_t globalEndFile;
+    uint8_t end_of_nodes;
 
 #define MAXINPUT 100000
     char *inputFile;
@@ -606,34 +608,40 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
         platform->arc[fw_io_idx].fw_io_idx = fw_io_idx;
     }
 
+    jump2next_valid_line(&pt_line);
 
     /*
         STEP 3 : loop on all the list of nodes manifests
     */
-    jump2next_valid_line(&pt_line);
-    sscanf(pt_line, "%d", &nb_nodes);  /* read the number of nodes in this plaform */
-    jump2next_line(&pt_line);
-
-    if (nb_nodes > MAX_NB_NODES)
-    {   fprintf(stderr, "too much nodes !"); exit(-4);
-    }
 
 #define _INTERFACE_NODE "graph_interface"
 #define _INTERFACE_NODE_ID 0
     strcpy(platform->all_nodes[_INTERFACE_NODE_ID].nodeName, _INTERFACE_NODE);      /* node[0] = IO interface */
-    platform->nb_nodes = nb_nodes;
-    for (inode = 0; inode < nb_nodes; inode++)
-    {
-        jump2next_valid_line(&pt_line);
+    platform->nb_nodes = 0;
+
+    do
+    {   if (platform->nb_nodes > MAX_NB_NODES)
+        {   fprintf(stderr, "too much nodes !"); exit(-4);
+        }
+
         sscanf (pt_line, "%d %s", &ipath, node_name_); /* read the node's manifest name */
         strcpy(file_name, paths[ipath]);
         strcat(file_name, node_name_);
 
         memset(inputFile, 0, MAXINPUT);
         read_input_file(file_name, inputFile);
-        read_node_manifest(inputFile, &(platform->all_nodes[inode]));
-        platform->all_nodes[inode].platform_swc_idx = inode;
-    }
+        read_node_manifest(inputFile, &(platform->all_nodes[platform->nb_nodes]));
+        platform->all_nodes[platform->nb_nodes].platform_NODE_idx = platform->nb_nodes;
+        platform->nb_nodes ++;
+
+        jump2next_valid_line(&pt_line);
+        if (globalEndFile == FOUND_END_OF_FILE)
+        {   break;
+        }
+    } while (1);
+
+
+    fprintf(stderr, " %d nodes ", platform->nb_nodes);
 }
 
 

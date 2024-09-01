@@ -502,7 +502,7 @@ Information :
 - manufacturer references and internet URLs
 - any other system integration warning and recommendations
 
-C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\windows\manifest\io_platform_analog_sensor_0.txt
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\computer\manifest\io_platform_analog_sensor_0.txt
 
 
 ; io_commander0_servant1 1                    ; commander=0 servant=1 (default is servant)

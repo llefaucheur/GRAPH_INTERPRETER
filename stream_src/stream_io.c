@@ -29,6 +29,9 @@
  extern "C" {
 #endif
 
+#include <stdint.h>
+#include "stream_common_const.h"
+#include "stream_common_types.h"
 #include "stream_const.h"
 #include "stream_types.h"
 #include "stream_extern.h"
@@ -92,7 +95,7 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
     arc = &(arc[SIZEOF_ARCDESC_W32 * RD(*pio_control, IOARCID_IOFMT0)]);
 
     long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];                       /* platfom memory offsets */
-    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << LOG2ADDR_UNIT_W32]); /* BASE is in word32 */
+    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << LOG2ADDR_UNIT_W32]); /* BASE is in word32 @@@ shift  ARCEXTEND_ARCW2*/
 
     fifosize = RD(arc[1], BUFF_SIZE_ARCW1);
     read = RD(arc[2], READ_ARCW2);

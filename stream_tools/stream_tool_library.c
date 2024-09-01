@@ -29,7 +29,6 @@
  extern "C" {
 #endif
 
-   
 #include "stream_tool_include.h"
 
 uint8_t globalEndFile;
@@ -104,7 +103,9 @@ int vid_malloc (uint32_t VID, intPtr_t size, uint32_t alignment,
     }
 
     if (found == 0) 
+    {   fprintf (stderr, "\n vid_malloc error not found \n");
         exit(-5);
+    }
 
     sprintf(tmpstring, " OFF %d BASE 0x%04X PT 0x%04X MAXW 0x%04X SIZE_bytes %04X", 
         offsetID, offset, platform->membank[ibank].ptalloc_static, platform->membank[ibank].max_working_booking, size);
@@ -134,7 +135,7 @@ int vid_malloc (uint32_t VID, intPtr_t size, uint32_t alignment,
     if (platform->membank[ibank].ptalloc_static +
         platform->membank[ibank].max_working_booking > 
         platform->membank[ibank].size)
-    {   /* check overflow */
+    {   fprintf (stderr, "\n vid_malloc error overflow \n");/* check overflow */
         exit(-7);
     }
 
@@ -192,6 +193,9 @@ L_jump2next_valid_line:
         globalEndFile = FOUND_END_OF_FILE;
     else
         globalEndFile = NOT_YET_END_OF_FILE;
+
+    if ('\0' == (*p))
+        globalEndFile = FOUND_END_OF_FILE;
 }
 
 
@@ -324,7 +328,9 @@ void read_input_file(char* file_name, char * inputFile)
     uint32_t idx;
 
     if (0 == (ptf_platform_manifest_file = fopen(file_name, "rt")))
+    {   fprintf (stderr, "\n read_input_file, not found \n");
         exit(-1);
+    }
     idx = 0;
     while (1) {
         if (0 == fread(&(inputFile[idx++]), 1, 1, ptf_platform_manifest_file)) 

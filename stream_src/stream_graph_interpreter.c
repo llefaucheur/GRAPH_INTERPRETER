@@ -32,7 +32,9 @@
 
 #include <stdint.h>
 
-
+#include <stdint.h>
+#include "stream_common_const.h"
+#include "stream_common_types.h"
 #include "stream_const.h"
 #include "stream_types.h"
 #include "stream_extern.h"

@@ -11,7 +11,7 @@
   5 arm_stream_amplifier       amplifier mute and un-mute with ramp and delay control 
   6 arm_stream_mixer           multichannel mixer with mute/unmute and ramp control 
   7 arm_stream_filter          cascade of DF1 filters 
-  8 arm_stream_detector        estimates peaks/floor of the mono input and triggers a flag on high SNR 
+  8 sigp_stream_detector       estimates peaks/floor of the mono input and triggers a flag on high SNR 
   9 arm_stream_rescaler        raw data values remapping using "interp1" 
  10 arm_stream_compressor      raw data compression with adaptive prediction 
  11 arm_stream_decompressor    raw data decompression 
@@ -24,7 +24,10 @@
  18 arm_stream_detector2D      activity detection pattern detection 
  19 arm_stream_filter2D        Filter rescale/zoom/extract rotate exposure compensation 
  20 arm_stream_mixer2D         add two images with alpha blending 
-```
+      bitbank/node_manifest_bitbank_JPEGENC.txt /* 20 JPG encoder                   */
+    2                         elm-lang/TJpgDec/node_manifest_TjpgDec.txt /* 21 JPG decoder                   */
+    2            arm/format_converter/node_manifest_format_converter.txt /* 22 arm_stream_format_converter raw and format converter */
+    ```
 
 
 # arm_stream_script

@@ -35,33 +35,10 @@
 
 #include <stdint.h>
 #include "platform.h"
+#include "../stream_nodes/stream_common_const.h"
+#include "../stream_nodes/stream_common_types.h"
 #include "stream_const.h"
 
-
-/* 
-    if 64 bits architectures are reading the graph:
-    #define intPtr_t uint64_t
-    #define MAX_ADD_OFFSET 0x7FFFFFFFFFFFFFFFL
-*/
-#ifdef PLATFORM_ARCH_32BIT
-#define intPtr_t uint32_t 
-#define sintPtr_t int32_t
-#else
-#define intPtr_t uint64_t 
-#define sintPtr_t int64_t 
-#endif
-
-/* ------------------------------------------------------------------------------------------
-    stream buffers
-*/
-
-struct stream_xdmbuffer
-{   
-    intPtr_t address; 
-    intPtr_t size;
-};
-
-typedef struct stream_xdmbuffer stream_xdmbuffer_t;
 
 typedef uint32_t stream_service_command;
 
@@ -113,11 +90,6 @@ typedef uint64_t sdouble;
 
 
 /* ------------------------------------------------------------------------------------------
-    opaque access to the static area of the node 
-*/
-typedef void *stream_handle_t;  
-
-/* ------------------------------------------------------------------------------------------
    APIs : nodes, services, IO controls  
   
     parameters : 
@@ -126,9 +98,6 @@ typedef void *stream_handle_t;
       stream_xdmbuffer_t data pointers 
       "state" 
  */
-
-typedef void    (stream_al_services) (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n); 
-typedef void (*p_stream_al_services) (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n); 
 
 typedef void    (stream_node) (uint32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *state);
 typedef void (*p_stream_node) (uint32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *state);

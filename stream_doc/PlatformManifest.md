@@ -66,26 +66,26 @@ List IO manifest files
 List of nodes manifests
 
 20                          
-2                          NODE_manifest_none.txt          
-2         Basic/arm/script/NODE_manifest_graph_control.txt 
-2         Basic/arm/script/NODE_manifest_script.txt        
-2         Basic/arm/router/NODE_manifest_router.txt        
-2      Basic/arm/converter/NODE_manifest_converter.txt     
-2      Basic/arm/amplifier/NODE_manifest_amplifier.txt     
-2          Basic/arm/mixer/NODE_manifest_mixer.txt         
-2         Audio/arm/filter/NODE_manifest_filter.txt        
-2       Audio/arm/detector/NODE_manifest_detector.txt      
-2       Basic/arm/rescaler/NODE_manifest_rescaler.txt      
-2     Audio/arm/compressor/NODE_manifest_compressor.txt    
-2   Audio/arm/decompressor/NODE_manifest_decompressor.txt  
-2      Basic/arm/modulator/NODE_manifest_modulator.txt     
-2    Basic/arm/demodulator/NODE_manifest_demodulator.txt   
-2      Basic/arm/resampler/NODE_manifest_resampler.txt     
-2            Basic/arm/qos/NODE_manifest_qos.txt           
-2          Basic/arm/split/NODE_manifest_split.txt         
-2     image/arm/detector2D/NODE_manifest_detector2D.txt    
-2       image/arm/filter2D/NODE_manifest_filter2D.txt      
-2       Basic/arm/analysis/NODE_manifest_analysis.txt      
+2                          node_manifest_none.txt          
+2         Basic/arm/script/node_manifest_graph_control.txt 
+2         Basic/arm/script/node_manifest_script.txt        
+2         Basic/arm/router/node_manifest_router.txt        
+2      Basic/arm/converter/node_manifest_converter.txt     
+2      Basic/arm/amplifier/node_manifest_amplifier.txt     
+2          Basic/arm/mixer/node_manifest_mixer.txt         
+2         Audio/arm/filter/node_manifest_filter.txt        
+2       Audio/arm/detector/node_manifest_detector.txt      
+2       Basic/arm/rescaler/node_manifest_rescaler.txt      
+2     Audio/arm/compressor/node_manifest_compressor.txt    
+2   Audio/arm/decompressor/node_manifest_decompressor.txt  
+2      Basic/arm/modulator/node_manifest_modulator.txt     
+2    Basic/arm/demodulator/node_manifest_demodulator.txt   
+2      Basic/arm/resampler/node_manifest_resampler.txt     
+2            Basic/arm/qos/node_manifest_qos.txt           
+2          Basic/arm/split/node_manifest_split.txt         
+2     image/arm/detector2D/node_manifest_detector2D.txt    
+2       image/arm/filter2D/node_manifest_filter2D.txt      
+2       Basic/arm/analysis/node_manifest_analysis.txt      
 
 
 

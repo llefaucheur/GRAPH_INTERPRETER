@@ -35,7 +35,7 @@
 #ifndef cSTREAM_CONST_H
 #define cSTREAM_CONST_H
 
-#include "../stream_nodes/stream_common.h"
+#include "../stream_nodes/stream_common_const.h"
 
 #define U(x) ((uint32_t)(x)) /* for MISRA-2012 compliance to Rule 10.4 */
 
@@ -211,6 +211,10 @@
 #define         NB_IOS_GR1_LSB U( 5) /*  7 Nb of I/O :  up to 128 IO streams */
 #define      NBFORMATS_GR1_MSB U( 4) 
 #define      NBFORMATS_GR1_LSB U( 0) /*  5 formats */
+/*
+ * Maximum number of IOs used by the graph 
+ * This number is lower or equal to the maximum of possible IO connexions of the platform (max {FWIOIDX_IOFMT0})
+ */
 #define MAX_GRAPH_NB_IO_STREAM  (1 << (NB_IOS_GR1_MSB - NB_IOS_GR1_LSB + 1))
 
 /* -------- GRAPH[2] size of LINKEDLIST  ---- */
@@ -277,8 +281,6 @@
 /* number of NODE calls in sequence */
 #define MAX_NODE_REPEAT 4u
 
-#define TASKS_COMPLETED 0
-#define TASKS_NOT_COMPLETED 1
 
 #define STREAM_MAIN_INSTANCE 1
 
@@ -335,6 +337,22 @@
         arcID, direction, servant/commander, 
         set pointer/copy, buffer allocation, Domain, index to the AL
 
+        example with a platform using maximum 10 IOs and a graph using "SENSOR_0" and "_DATA_OUT_0"
+            #define IO_PLATFORM_DATA_IN_0        0 
+            #define IO_PLATFORM_DATA_IN_1        1 
+            #define IO_PLATFORM_ANALOG_SENSOR_0  2   X
+            #define IO_PLATFORM_MOTION_IN_0      3 
+            #define IO_PLATFORM_AUDIO_IN_0       4 
+            #define IO_PLATFORM_2D_IN_0          5 
+            #define IO_PLATFORM_LINE_OUT_0       6 
+            #define IO_PLATFORM_GPIO_OUT_0       7 
+            #define IO_PLATFORM_GPIO_OUT_1       8 
+            #define IO_PLATFORM_DATA_OUT_0       9   X
+        The binary grap will have stream_io_control with 2 indexes "SENSOR_0" and "_DATA_OUT_0"
+
+        The table arm_graph_interpreter_io_ack[10] makes the translation 
+            platform_io_al_idx_to_graph [FWIOIDX] = graph_io_idx index in the graph for pio_control[]
+        arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data, size);
 */
 #define STREAM_IOFMT_SIZE_W32 4   /* four word for IO controls : one for the scheduler, three for IO settings */
 
@@ -518,8 +536,6 @@
 #define  NALLOCM1_LW2_LSB U(29) /*  3   2 words each : pointer + size */
 #define     XDM11_LW2_MSB U(28) /*      0: Rx/Tx flow is asynchronous  1: same consumption on Rx/Tx */   
 #define     XDM11_LW2_LSB U(28) /*  1   the input and output frame size of all arcs are identical (manifest: node_same_rxtx_data_rate)*/ 
-//#define     RELOC_LW2_MSB U(27) /*      relocatable memory segment to update with STREAM_UPDATE_RELOCATABLE */
-//#define     RELOC_LW2_LSB U(27) /*  1   @@@ TODO */
 #define BASEIDXOFFLW2_MSB U(27) 
 #define   DATAOFF_LW2_MSB DATAOFF_ARCW0_MSB
 #define   DATAOFF_LW2_LSB DATAOFF_ARCW0_LSB
@@ -527,6 +543,8 @@
 #define   BASEIDX_LW2_LSB BASEIDX_ARCW0_LSB
 #define BASEIDXOFFLW2_LSB U( 0) /* 28  */
 
+//#define     RELOC_LW2_MSB *      relocatable memory segment to update with STREAM_UPDATE_RELOCATABLE */
+//#define     RELOC_LW2_LSB *  1   @@@ TODO */
 /* 
     Memory Protection Unit (MPU)  has 8 memory segments : 4 memory segments per NODE (1 instance + 
         3 segments) + 1 code + 1 stack + 1 IRQ + 1 Stream/services/script
@@ -592,10 +610,6 @@
 #define W32LENGTH_LW3_MSB U(15) /*    if >256kB are needed then use an arc to a buffer */
 #define W32LENGTH_LW3_LSB U( 0) /* 16 skip this : number of uint32 to skip the boot parameters */
 
-/*  nbparam = 0 means any or "full set of parameters loaded from binary format" 
-    W32LENGTH_LW3 == 0 means no parameter to read
-*/
-#define ALLPARAM_ 0 
 
 /* ================================= */
 

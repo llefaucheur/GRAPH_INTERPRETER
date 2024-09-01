@@ -61,80 +61,14 @@
     <ClInclude Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_header.h">
       <Filter>GraphSteps</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\stream_platform\windows\graph_computer_header.h">
-      <Filter>GraphSteps</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\stream_nodes\stream_common.h">
       <Filter>Stream</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\stream_platform\computer\graph_computer_header.h">
+      <Filter>GraphSteps</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\stream_nodes\Basic\arm\mixer\swc_manifest_mixer.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Basic\arm\router\swc_manifest_router.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Basic\arm\demodulator\swc_manifest_demodulator.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Basic\arm\modulator\swc_manifest_modulator.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Basic\arm\amplifier\swc_manifest_amplifier.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Basic\arm\converter\swc_manifest_converter.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Basic\arm\rescaler\swc_manifest_rescaler.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Basic\arm\script\swc_manifest_script.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Image\arm\filter2D\swc_manifest_filter2D.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Audio\arm\compressor\swc_manifest_compressor.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Audio\arm\decompressor\swc_manifest_decompressor.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Audio\arm\filter\swc_manifest_filter.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Image\elm\TJpgDec\swc_manifest_TjpgDec.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Basic\arm\qos\swc_manifest_qos.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\top_manifest_computer.txt">
-      <Filter>PlatformsManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\procmap_manifest_computer.txt">
-      <Filter>PlatformsManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Basic\arm\resampler\swc_manifest_resampler.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\swc_manifest_none.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Basic\arm\script\swc_manifest_graph_control.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\Basic\arm\split\swc_manifest_split.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\AI\arm\detector\swc_manifest_detector.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\AI\arm\detector2D\swc_manifest_detector2D.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
     <Text Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk.txt">
       <Filter>GraphSteps</Filter>
     </Text>
@@ -291,14 +225,86 @@
     <Text Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_debug.txt">
       <Filter>GraphSteps</Filter>
     </Text>
-    <Text Include="..\..\stream_platform\windows\graph_computer_bin.txt">
+    <Text Include="..\..\stream_nodes\arm\amplifier\node_manifest_amplifier.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\analysis\node_manifest_analysis.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\compressor\node_manifest_compressor.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\demodulator\node_manifest_demodulator.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\filter\node_manifest_filter.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\filter2D\node_manifest_filter2D.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\script\node_manifest_graph_control.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\mixer\node_manifest_mixer.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\modulator\node_manifest_modulator.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\qos\node_manifest_qos.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\rescaler\node_manifest_rescaler.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\router\node_manifest_router.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\script\node_manifest_script.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\split\node_manifest_split.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\graph_computer.txt">
       <Filter>GraphSteps</Filter>
     </Text>
-    <Text Include="..\..\stream_platform\windows\graph_computer_debug.txt">
+    <Text Include="..\..\stream_platform\computer\graph_computer_bin.txt">
       <Filter>GraphSteps</Filter>
     </Text>
-    <Text Include="..\..\stream_platform\windows\graph_computer.txt">
+    <Text Include="..\..\stream_platform\computer\graph_computer_debug.txt">
       <Filter>GraphSteps</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\signal-processingFR\converter\node_manifest_converter.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\signal-processingFR\decompressor\node_manifest_decompressor.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\signal-processingFR\detector\node_manifest_detector.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\signal-processingFR\detector2D\node_manifest_detector2D.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\signal-processingFR\resampler\node_manifest_resampler.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\elm-lang\TJpgDec\node_manifest_TjpgDec.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\bitbank\node_manifest_bitbank_JPEGENC.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\procmap_manifest_computer.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\top_manifest_computer.txt">
+      <Filter>PlatformsManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\node_manifest_none.txt">
+      <Filter>NodesManifests</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>

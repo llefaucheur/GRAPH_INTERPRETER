@@ -43,8 +43,14 @@ The nodes returns after updating the data structures, but to lower the computati
 Examples of variable data rate (node_same_rxtx_data_rate 0): MP3 encoder with variable rate encoding option, audio rate converter at using 160/147 ratio.
 Examples of identical data rate (node_same_rxtx_data_rate 1) : an audio filter, an amplifier receiving and delivering the same data formats and frame sizes.
 
-Parameter value "0" tells the data flow is variable. The default assumption is "1" : ALL input and output arcs have the same raw data rate (same number of bytes consumed and produced per call).
-Example : ` node_steady_stream   0  ; variable stream rates `
+Parameter value "0" tells the data flow is variable, the scheduler proposes input buffers as large as possible and output buffers with as much free space as possible. It is the responsibility of the node to read and write to good amount of data to avoid underflow on input and overflow on output arcs.
+
+The default assumption is "1" : ALL input and output arcs have the same raw data rate (same number of bytes consumed and produced per call), the scheduler arranges to find the minimum common denominator between all arcs. The nodes do not have to update buffer consumption and production which known before the call.
+Example : 
+
+````
+ node_same_rxtx_data_rate   0  ; variable stream rates
+````
 
 
 ### node_using_arc_format "0/1"
@@ -56,13 +62,26 @@ Example
 The graph interpreter offers a short list of optimized DSP/ML and Math functions optimized for the platform using dedicated vector insttructions and coprocessors. 
 Some platform may not incorporate all the libraries, the "node_mask_library" is a bit-field associate to one of the librarry service. 
 This list of service is specially useful when the node is delivered in binary format.
-- bit 0 for the STDLIB library (string.h, malloc)
-- bit 1 for MATH (trigonometry, random generator, time processing)
-- bit 2 for DSP_ML (filtering, FFT, 2D convolution-8bits)
-- bit 3 for audio codecs
-- bit 4 for image and video codec
+
+bit 0 for the STDLIB library (string.h, malloc)
+
+bit 1 for MATH (trigonometry, random generator, time processing)
+
+bit 2 for DSP_ML (filtering, FFT, 2D convolution-8bits)
+
+bit 3 for audio codecs
+
+bit 4 for image and video codec
+
+
+
 Example :
-`   node_mask_library  31  ; the node has a dependency to all the computing services `
+
+```
+node_mask_library  31  ; the node has a dependency to all the computing services
+```
+
+
 
 ### node_architecture  "name" (TBD)
 Create a dependency of the execution of the node to a specific processor architecture. For example when the code is incorportating in-line assembly to a specific architecture.
@@ -84,12 +103,22 @@ Example :
 ### node_node_version    "n"
 For information, the version of the node
 Example :
-`   node_node_version    101            ; version of the computing node '
+
+```
+ node_node_version    101            ; version of the computing node
+```
+
+
 
 ### node_stream_version  "n"            
 Version of the stream scheduler it is compatible with.
 Example :
-`   node_stream_version    101 ` 
+
+```
+  node_stream_version    101
+```
+
+ 
 
 ### node_logo  "file nae" 
 File name of the node logo picture (JPG/GIF format) to use in the GUI.
@@ -106,66 +135,119 @@ A node can ask for up to 6 memory banks with tunable fields :
 
 The size can be a simple number of bytes or a computed number coupled to a function of stream format parameters (number of channels, sampling rate, frame size) and a flexible parameter defined in the graph, here.
 The total memory allocation size in bytes = 
-`     A                             fixed memory allocation in Bytes (default 0) ` 
-`   + B x nb_channels of arc(i)     number of channels in arc index i (default 0) ` 
-`   + C x sampling_rate of arc(j)   sampling rate of arc index j (default 0) ` 
-`   + D x frame_size of arc(k)      frame size used for the arc index k (default 0) ` 
-`   + parameter from the graph      optional field "node_malloc_add" ` 
+```
+   A                               fixed memory allocation in Bytes (default 0) 
+   + B x nb_channels of arc(i)     number of channels in arc index i (default 0) 
+   + C x sampling_rate of arc(j)   sampling rate of arc index j (default 0) 
+   + D x frame_size of arc(k)      frame size used for the arc index k (default 0) 
+   + parameter from the graph      optional field "node_malloc_add" 
+```
 
 The memory block index 0 is the node instance, followed by other blocks. 
-;
 ### node_mem "index"           
 The command is used to start a memory block declaration with the index in the parameter.
 Example :
+
+```
 ` node_mem 0    ; starts the declaration section of memory block #0 `  
+```
+
+
 
 ### node_mem_alloc  "A"
 The parameter gives the "A" value of fixed memory allocation in Bytes.
 Example :
-`   node_mem_alloc          32          ; size = 32Bytes data memory, default Static, default Fast memory block ` 
+
+```
+node_mem_alloc          32          ; size = 32Bytes data memory, default Static, default Fast memory block
+```
+
+
 
 ### node_mem_nbchan "B" "i" 
 Declaration of extra memory in proportion to the number of channel of a specified arc index.
 Example :
-`   node_mem_nbchan 44 3  ; add this amount of bytes : 44 x nb of channels of arc 3
+
+```
+node_mem_nbchan 44 3  ; add this amount of bytes : 44 x nb of channels of arc 3
+```
+
+
 
 ### node_mem_sampling_rate "C" "j'"
 Declaration of extra memory in proportion with the sampling rate of a given arc index.
 Example :
-`   node_mem_sampling_rate 44.0 3  ; add this amount of bytes : 44.0 x sampling_rate in Hertz of arc 3
+
+```
+node_mem_sampling_rate 44.0 3  ; add this amount of bytes : 44.0 x sampling_rate in Hertz of arc 3
+```
+
+
 
 ### node_mem_frame_size "D" "k"   
 Declaration of extra memory in proportion with the frame size  of the stream flowing through a specified arc index.
 Example :
-`   node_mem_frame_size 44 3  ; add this amount of bytes : 44 x frame size of arc 3
+
+```
+node_mem_frame_size 44 3  ; add this amount of bytes : 44 x frame size of arc 3
+```
+
+
 
 ### node_mem_alignement "n"
 Declaration of the memory Byte alignment
 Example :
-`   node_mem_alignement     4           ; 4 bytes to (default) ` 
+
+```
+node_mem_alignement     4           ; 4 bytes to (default) ` 
+```
+
+
 
 ### node_mem_type "n"
 Definition of the dynamic characteristics of the memory block :
-- 0 STATIC : memory content is preserved (default )
-- 1 WORKING : scratch memory content is not preserved between two calls 
-- 2 PERIODIC_BACKUP static parameters to reload during a warm reboot 
-- 3 PSEUDO_WORKING static only during the uncompleted execution state of the NODE
+
+0 STATIC : memory content is preserved (default )
+
+1 WORKING : scratch memory content is not preserved between two calls 
+
+2 PERIODIC_BACKUP static parameters to reload during a warm reboot 
+
+3 PSEUDO_WORKING static only during the uncompleted execution state of the NODE
+
 Example :
-`   node_mem_type 3   ; memory block put in a backup memory area when possible ` 
+
+```
+node_mem_type 3   ; memory block put in a backup memory area when possible
+```
+
+
 
 ### node_mem_speed "n"
 Declaration of the memory desired for the memory block.
-- 0 for 'best effort' or 'no constraint' on speed access
-- 1 for 'fast' memory selection when possible
-- 2 for 'critical fast' section, to be in I/DTCM when available
+
+0 for 'best effort' or 'no constraint' on speed access
+
+1 for 'fast' memory selection when possible
+
+2 for 'critical fast' section, to be in I/DTCM when available
+
 Example :
-`   node_mem_speed 0   ; relax speed constraint for this block ` 
+
+```
+node_mem_speed 0   ; relax speed constraint for this block
+```
 
 ### node_mem_relocatable "0/1"
 Declares if the pointer to this memory block is relocatable (parameter '1'), or assigned a fixed address at reset (default, parameter '0').
 When the memory block is relocatable a command 'STREAM_UPDATE_RELOCATABLE' is sent to the node with address changes.
 Example :
-`  node_mem_relocatable    1   ; the address of the block can change `
+
+```
+node_mem_relocatable    1   ; the address of the block can change
+```
+
+
 
 ### node_mem_data0prog1 "0/1"
 This command tells if the memory will be used for data or program accesses. Default is '0' for data access.
@@ -178,21 +260,27 @@ Example :
 The arc configuration gives the list of compatible options possible for the node processing. Some options are described as a list, or as a range of values. 
 The syntax is : an index and the list of numbers within brackets "{" and "}". The index gives the default value to consider in the list. Index "1" corresponds to the first element of the list.
 Index value "0" means "any value". The list can be empty in that case.
-Example : 
-`   { 2  5 6 7 8 9 } ` is an option list between five values, the index is 2 meaning the default value is the second in the list (value = 6).
+
+Example of an option list between five values, the index is 2 meaning the default value is the second in the list (value = 6).
+`   { 2  5 6 7 8 9 } ` 
 When the index is negative the list is decoded as a "range". A Range is a set of three numbers : 
+
 - the first option
 - the step to the next possible option
 - the last (included) option
 
-The absolute index value selects the default value in this range
-Example : 
-`   { -3  1 0.2 4.2 } ` is an option list of values (1, 1.2, 1.4, 1.6, 1.8, .. , 4.2), the index is -3 meaning the default value is the third in the list (value = 1.4).
+The absolute index value selects the default value in this range.
+
+Example of is an option list of values (1, 1.2, 1.4, 1.6, 1.8, .. , 4.2), the index is -3 meaning the default value is the third in the list (value = 1.4).
+`   { -3  1 0.2 4.2 } ` 
 
 ### node_arc "n"
 The command starts the declaration of a new arc, followed by its index used when connecting two nodes.
 Example :
-`   node_arc 2    ; start the declaration of a new arc with index 2
+
+```
+   node_arc 2    ; start the declaration of a new arc with index 2
+```
 
 Implementation comment : all the nodes have at least one arc on the transmit side used to manage the node's locking field.
 

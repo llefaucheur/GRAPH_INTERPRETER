@@ -267,25 +267,34 @@ void findArcIOWithThisID(struct stream_graph_linkedlist *graph, uint32_t idx_str
 * returns the pointer to the installed platform node and its index  
 */
 void search_platform_node (char *cstring, struct stream_node_manifest **platform_node, 
-                 uint32_t *platform_swc_idx, 
+                 uint32_t *platform_NODE_idx, 
                  struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph)
 {   uint32_t inode; 
     
     for (inode = 0; inode < platform->nb_nodes; inode++)
     {   if (0 == strncmp(cstring, platform->all_nodes[inode].nodeName,strlen(cstring))) break;
     }   
-    *platform_swc_idx = inode;
+    *platform_NODE_idx = inode;
     *platform_node = &(platform->all_nodes[inode]);
 }
 
-void search_graph_node(char *cstring,  struct stream_node_manifest **graph_node, uint32_t *graph_swc_idx,
+void search_graph_node(char *cstring,  struct stream_node_manifest **graph_node, uint32_t *graph_NODE_idx,
                   struct stream_graph_linkedlist *graph)
-{   uint32_t inode; 
+{   uint32_t inode, found; 
     
-    for (inode = 0; inode < graph->nb_nodes +1u; inode++)
-    {   if (0 == strncmp(cstring, graph->all_nodes[inode].nodeName,strlen(cstring))) break;
+    found = 0;
+    for (inode = 0; inode < graph->nb_nodes; inode++)
+    {   if (0 == strncmp(cstring, graph->all_nodes[inode].nodeName,strlen(cstring))) 
+        {   found = 1; 
+            break;
+        }
     }   
-    *graph_swc_idx = inode;
+
+    if (found == 0)
+    {   fprintf(stderr, "\n search_graph_node not found \n");
+        exit (-1);
+    }
+    *graph_NODE_idx = inode;
     *graph_node = &(graph->all_nodes[inode]);
 }
 
@@ -370,7 +379,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 #define COMPARE(x) (0==strncmp(pt_line, x, strlen(x)))
 
     char* pt_line, ctmp[NBCHAR_LINE], paths[MAX_NB_PATH][NBCHAR_LINE];
-    int32_t idx_format, idx_node, idx_stream_io, idx_path, i, j, platform_swc_idx;
+    int32_t idx_format, idx_node, idx_stream_io, idx_path, i, j, platform_NODE_idx;
     
     pt_line = ggraph_txt;
     idx_path = idx_format = idx_node = idx_stream_io = 0;
@@ -505,9 +514,9 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             struct stream_node_manifest *graph_node;
 
             fields_extract(&pt_line, "CCI", ctmp, cstring1, &instance);
-            search_platform_node(cstring1, &platform_node, &platform_swc_idx, platform, graph);
+            search_platform_node(cstring1, &platform_node, &platform_NODE_idx, platform, graph);
 
-            graph->all_nodes[graph->nb_nodes].platform_swc_idx = platform_swc_idx;
+            graph->all_nodes[graph->nb_nodes].platform_NODE_idx = platform_NODE_idx;
             graph_node = &(graph->all_nodes[graph->nb_nodes]);
             LoadPlatformNode(graph_node, platform_node);
             graph_node->initialized_from_platform = 1;
@@ -590,7 +599,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         }
         
         /* --------------------------------------------- ARCS ----------------------------------------------------------------------*/
-        if (COMPARE(arc_input))                                         //arc_input  idx_stream_io node_name instance arc_index Format
+        if (COMPARE(arc_input))              //arc_input    idx_stream_io set0copy1 fmtProd     node_name instance arc_index Format
         {   uint32_t instCons, inPort, fmtCons, fmtProd, arcIO, SwcConsGraphIdx, set0copy1;
             struct stream_node_manifest *graph_node_Cons;
             char Consumer[NBCHAR_LINE];
@@ -609,7 +618,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             graph_node_Cons->arc[inPort].arcID = arcIO;               
             graph_node_Cons->arc[inPort].rx0tx1 = 0;
         }
-        if (COMPARE(arc_output))                                        //arc_output  idx_stream_io node_name instance arc_index Format
+        if (COMPARE(arc_output))             //arc_output   idx_stream_io set0copy1 fmtCons     node_name    instance arc_index Format
         {   uint32_t instProd, outPort, fmtCons, fmtProd, arcIO, SwcProdGraphIdx, set0copy1;
             struct stream_node_manifest *graph_node_Prod;
             char Producer[NBCHAR_LINE];
@@ -628,7 +637,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             graph_node_Prod->arc[outPort].arcID = arcIO;               
             graph_node_Prod->arc[outPort].rx0tx1 = 1;
         }
-        if (COMPARE(arc_new))       //arc node1 instance arc_index arc_format_src node2 instance arc_index arc_format_dst
+        if (COMPARE(arc_new))  //arc   node1 instance arc_index arc_format_src     node2 instance arc_index arc_format_dst
         {   uint32_t instProd, instCons, outPort, inPort, fmtProd, fmtCons, SwcProdGraphIdx, SwcConsGraphIdx;
             struct stream_node_manifest *graph_node_Prod, *graph_node_Cons;
             char Producer[NBCHAR_LINE], Consumer[NBCHAR_LINE];

@@ -334,7 +334,7 @@ struct arcStruct
     uint32_t inPlaceProcessing;          /* SWCONLY flag buffer overlay with another arcID, 0=none*/
     uint32_t arcIDbufferOverlay;         /* SWCONLY   arcID being overlaid */
     uint32_t src_instanceid, dst_instanceid; /* for information during graph reading */
-    //uint32_t platform_swc_idx_src, platform_swc_idx_dst;    /* SWC */
+    //uint32_t platform_NODE_idx_src, platform_NODE_idx_dst;    /* SWC */
 };
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -351,7 +351,7 @@ struct stream_node_manifest
     uint32_t nbInputArc, nbOutputArc, nbParamArc;
     uint32_t nbArch, arch[MAXNBARCH];   /* stream_processor_architectures (max 256) */
     uint32_t fpu[MAXNBARCH];            /* stream_processor_sub_arch_fpu */
-    uint32_t swc_assigned_arch, swc_assigned_proc, swc_verbose, swc_assigned_priority;
+    uint32_t NODE_assigned_arch, NODE_assigned_proc, NODE_verbose, NODE_assigned_priority;
     uint32_t RWinSWC;                   /* XDM11 read/write index is managed in SWC, for variable buffer consumption */
     uint32_t formatUsed;                /* buffer format is used by the component */
     uint32_t masklib;                   /* mask of up to 16 family of processing extensions "SERVICE_COMMAND_GROUP" */
@@ -370,7 +370,7 @@ struct stream_node_manifest
     uint32_t graph_instance;            // occurence of the same node
     
     /* to build the header */
-    uint32_t platform_swc_idx; 
+    uint32_t platform_NODE_idx; 
     uint32_t arcsrdy;                   
     uint32_t narc_streamed;
     uint32_t locking_arc;               /* from the SWC in ROM */    
@@ -398,7 +398,7 @@ struct stream_node_manifest
     uint32_t initialized_from_platform;
     uint32_t inPlaceProcessing, arcIDbufferOverlay;
     //uint16_t nb_arcs;
-    struct arcStruct arc[MAX_NB_STREAM_PER_SWC]; /* loaded with default data */
+    struct arcStruct arc[MAX_NB_STREAM_PER_NODE]; /* loaded with default data */
 };
 
 typedef struct stream_node_manifest stream_node_manifest_t;
@@ -459,7 +459,7 @@ struct stream_platform_manifest
     uint32_t nb_hwio_stream;
     struct arcStruct arc[MAX_GRAPH_NB_IO_STREAM];
 
-    struct stream_node_manifest all_nodes[MAX_NB_NODES];    // SWC_IDX + memreq
+    struct stream_node_manifest all_nodes[MAX_NB_NODES];    // NODE_IDX + memreq
 
     /* desired platform domains mapping to platform capabilities (fw_io_idx) */
     int domains_to_fw_io_idx[IO_DOMAIN_MAX_NB_DOMAINS];

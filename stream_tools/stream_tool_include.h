@@ -40,14 +40,19 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 #include <math.h>
 #include <stdarg.h>  /* for void fields_extract(char **pt_line, char *types,  ...) */
 
-//#include "../stream_platform/windows/platform_computer.h"
 #include "../stream_src/stream_const.h"
+#include "../stream_platform/platform.h"
 #include "../stream_src/stream_types.h"
 #include "stream_tool_define.h"
 #include "stream_tool.h"
+#include "../stream_nodes/stream_common_const.h"
+#include "../stream_nodes/stream_common_types.h"
+#include "../stream_src/stream_const.h"
+
 
 extern uint8_t globalEndFile, FoundEndSection;
 
@@ -62,9 +67,9 @@ extern int  stream_bitsize_of_raw(uint8_t raw);
 extern int  search_word(char line[], char word[]);
 extern void stream_tool_read_parameters(char **pt_line, struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph, struct stream_node_manifest *node);
 extern int  vid_malloc(uint32_t VID, intPtr_t size, uint32_t alignment, uint32_t *pack27b, int working, char *comment, struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph);
-extern void search_platform_node(char *cstring, struct stream_node_manifest **platform_node, uint32_t *platform_swc_idx,
+extern void search_platform_node(char *cstring, struct stream_node_manifest **platform_node, uint32_t *platform_NODE_idx,
             struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph);
-extern void search_graph_node(char *cstring, struct stream_node_manifest **graph_node, uint32_t *graph_swc_idx, struct stream_graph_linkedlist *graph);
+extern void search_graph_node(char *cstring, struct stream_node_manifest **graph_node, uint32_t *graph_NODE_idx, struct stream_graph_linkedlist *graph);
 extern void compute_memreq(struct node_memory_bank *m, struct formatStruct *all_format);
 extern void script_memory_consumption(struct stream_script *script);
 

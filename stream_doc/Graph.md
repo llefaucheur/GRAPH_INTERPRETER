@@ -130,8 +130,8 @@ Word 3 of "Formats" holds specific information of each domain.
 
 #### Audio
 Audio channel mapping is encoded on 20 bits. For example a stereo channel holding "Back Left" and "Back Right" will be encoded as 0x0030.
-  | Channel name    | Name | Bit | 
-  | ----            | -- | -- | 
+ | Channel name    | Name | Bit | 
+ | ----            | -- | -- | 
  |  Front Left               | FL    | 0    |
  |  Front Right              | FR    |    1    |
  |  Front Center             | FC    |    2    |
@@ -155,8 +155,8 @@ Audio channel mapping is encoded on 20 bits. For example a stereo channel holdin
 
 #### Motion
 Motion sensor channel mapping (w/wo the temperature)
-  | Motion sensor data    | Code |  
-  | ----            | -- | 
+ | Motion sensor data    | Code |  
+ | ----            | -- | 
  |  only acceleromete   | 1  |
  |  only gyroscope    | 2  |
  |  only magnetometer   | 3  |
@@ -175,43 +175,55 @@ Format of the images in pixels: height, width, border.
 ### stream_io "n" 
 This command starts a section for the declaration of IO "n". The parameter is the interface index used in the graph. This declaration starts the definition of a new IO 
 Example 
-`   stream_io 2 `
+```
+    stream_io 2 
+```
 
 ### stream_io_hwid "ID"
 The stream_io is using the ID of the physical interface given in platform manifests (default #0)
 Example 
-`   stream_io_hwid 2  `
+```
+    stream_io_hwid 2 
+```
 
 ### stream_io_format "n" 
 Parameter: index to the table of formats (default #0)
 Example 
-`   stream_io_format 0 `
+```
+    stream_io_format 0 
+```
 
 ### stream_io_setting "W32 W32 W32"
 "IO settings" is a specific bit-field structure, specific to the IO domain, placed at the beginning of the binary graph, and used during the initialization sequence of the graph.
 Up to three control words in hexadecimal can be used.
 Example 
-`   stream_io_setting 7812440 `
+```
+    stream_io_setting 7812440 
+```
 
 ### stream_io_setting_callback "cb" "X" 
 The function "platform_init_stream_instance()" initializes the interpreter pointers to the callbacks proposed by the platform. 
 Example 
-`   stream_io_setting_callback 6 7812440 ; Use callback 6 for the setting of the  `
-`                                        ; current stream_io using parameter 7812440 `
-
+```
+    stream_io_setting_callback 6 7812440 ; Use callback 6 for the setting of the  
+                                         ; current stream_io using parameter 7812440 
+```
 -----------------------------------------
 
 ## Memory mapping (TBD)
 Split the memory mapping to ease memory overlays between nodes and arcs by defining new memory-offset index ("ID").
 Format : ID, new ID to use in the node/arc declarations, byte offset within the original ID, length of the new memory offset.
-
-` ;               original_id  new_id    start   length `
-` ; memory_mapping      2        100      1024    32700 `
+```
+;               original_id  new_id    start   length 
+; memory_mapping      2        100      1024    32700 
+```
 
 ### Memory fill
 Filling pattern placed after the arc descriptors 
 @@@@ TODO insert a picture of the graph memory map 
-`   mem_fill_pattern 5 3355AAFF   memory fill 5 word32 value 0x3355AAFF (total 20 Bytes) `
+```
+    mem_fill_pattern 5 3355AAFF   memory fill 5 word32 value 0x3355AAFF (total 20 Bytes)
+```
 
 -----------------------------------------
 
@@ -220,12 +232,13 @@ A subgraph is equalivalent to program subroutines for graphs. A subgraph can be 
 The graph compiler creates references by name mangling from the call hierarchy. A subgraph receives indexes of IO streams and memory bank indexes for tuning the memory map.
 The caller gives its indexes of the arcs to use in the subgraph, and the memory mapping offset indexes. 
 Example :
- ` subgraph `
- `    sub1                        ; subgraph name, used for name mangling ` 
- `    3 sub_graph_0.txt           ; path and file name `
- `    5 i16: 0 1 2 3 4            ; 5 streaming interfaces data_in_0, data_out_0 ..  `
- `    3 i16: 0 0 0                ; 3 partitions for fast/slow/working (identical here) `
-
+```
+    subgraph 
+       sub1                        ; subgraph name, used for name mangling 
+       3 sub_graph_0.txt           ; path and file name 
+       5 i16: 0 1 2 3 4            ; 5 streaming interfaces data_in_0, data_out_0 ..  
+       3 i16: 0 0 0                ; 3 partitions for fast/slow/working (identical here) 
+ ```
 -----------------------------------------
 
 ## Nodes declarations
@@ -233,12 +246,17 @@ Nodes are declared with their name and respective instance index in the graph (o
 The system integrator can set a "preset" (pre-tuned list of parameters described on node's documentation) and node-specific parameters to load at boot-time.
 The address offset of the nodes is provided as a result of the graph compilation step.
 Declaration syntax example : 
-`   node arm_stream_filter  0  ; first instance of the nore "arm_stream_filter" `
+```
+    node arm_stream_filter  0  ; first instance of the nore "arm_stream_filter" 
+```
 
 ### node_preset "n"
 The system intgrator can select 16 "presets" when using a node, each corresponding to a configuration of the node (see its documentation). 
 The Preset value is with RESET and SET_PARAMETER commands, the default value is 0.
-Example : ` node_preset              1      ; parameter preset used at boot time `
+Example : 
+```
+    node_preset              1      ; parameter preset used at boot time 
+```
 
 ### node_malloc_add "n" "i"
 A node memory allocation is described in its manifest. 
@@ -251,33 +269,43 @@ A node can ask for up to 6 memory banks with tunable fields :
 
 The size can be a simple number of bytes or a computed number coupled to a function of stream format parameters (number of channels, sampling rate, frame size) and a flexible parameter defined in the graph, here.
 The total memory allocation size in bytes = 
-`   A                             fixed memory allocation in Bytes (default 0) ` 
-` + B x nb_channels of arc(i)     number of channels in arc index i (default 0) ` 
-` + C x sampling_rate of arc(j)   sampling rate of arc index j (default 0) ` 
-` + D x frame_size of arc(k)      frame size used for the arc index k (default 0) ` 
-` + parameter from the graph      optional field "node_malloc_add" ` 
+```
+     A                             fixed memory allocation in Bytes (default 0)
+   + B x nb_channels of arc(i)     number of channels in arc index i (default 0)
+   + C x sampling_rate of arc(j)   sampling rate of arc index j (default 0)
+   + D x frame_size of arc(k)      frame size used for the arc index k (default 0)
+   + parameter from the graph      optional field "node_malloc_add"
+```
 
 For example an extra scratch area allocation can added as a function of the number of pixels in the images to process (default 0).
 Example : 
-`   node_malloc_add 12 0  ; add 12 bytes to segment 0` 
+```
+    node_malloc_add 12 0  ; add 12 bytes to segment 0
+```
 
 ### node_map_hwblock "m" "o"
 This command is used to tune the memory mapping and bypass the speed requirement of the node manifest. It tells to force the memory segment index given in the first parameter to be mapped to the memory offset index of the second parameter.
 Example : 
-`   node_map_hwblock 0 2 ; memory segment 0 is mapped to bank offset 2 `
+```
+    node_map_hwblock 0 2 ; memory segment 0 is mapped to bank offset 2 
+```
 
 ### node_map_copy / node_map_swap "m" "o"
 This command is used to optimize the memory mapping of small and fast memory segment by copying, or swapping, a memory segment content from and other memory offset (usually a slower one).
 Usage : 
-`   node_map_copy 1 0; forced copy of the indexed node memory segment 1 to hardware memory offset 0 `
-`   node_map_swap 1 0; forced swap of the indexed node memory segment 1 to hardware memory offset 0 `
+```
+    node_map_copy 1 0; forced copy of the indexed node memory segment 1 to hardware memory offset 0  
+    node_map_swap 1 0; forced swap of the indexed node memory segment 1 to hardware memory offset 0 
+```
 In the above both cases the memory segment 1 is copied from offset memory segment 1 (a dummy arc descriptor is created to access this temporary area). 
 In the second swap case the scheduler reads node memory segment and updates the slow memory.
 
 ### node_trace_id "io"
 Selection of the graph IO interface used for sending the debug and trace informations.
 Example : 
-`   node_trace_id  0      ; IO port 0 is used to send the trace `
+```  
+    node_trace_id  0      ; IO port 0 is used to send the trace 
+```
 
 ### node_map_proc
 ### node_map_arch
@@ -286,42 +314,53 @@ The graph can be executed in a multiprocessor and multi tasks platform. Those co
 The platform can define 7 architectures and 7 processors. When the parameter is not defined (or with value 0) the scheduler interprets it as "any processor" or "any architecture" can execute this node.
 Several OS threads can interpret the graph at the same time. A parameter "0" means any thread can execute this node, and by convention the value "1" is allocated to low-latency tasks, "3" to background tasks. 
 Examples :
-`   node_map_proc 2 ; run this node on processor 2 defined in the architecture manifest` 
-`   node_map_arch 1 ; run this node on architecture 1 defined in the architecture manifest` 
-`   node_map_rtos 1 ; run this node on thread index 1 (low-latency)`  
+```
+    node_map_proc 2 ; run this node on processor 2 defined in the architecture manifest 
+    node_map_arch 1 ; run this node on architecture 1 defined in the architecture manifest 
+    node_map_rtos 1 ; run this node on thread index 1 (low-latency) 
+```
 
 ### node_map_verbose "level"
 The default verbose level on the debug trace of this node is level "0", meaning "quiet". Other values from 1 to 3 tell to trace more information.
 Example:
-`   node_map_verbose 3 ; highest level of verbose debug trace `
+```
+    node_map_verbose 3 ; highest level of verbose debug trace
+```
 
 ### node_memory_isolation  "0/1"
 Activate (parameter "1") the processor memory protection unit during the execution of this node. 
 Example : 
-`   node_memory_isolation 1 ; activation of the memory protection unit (MPU), default 0 `
+```
+   node_memory_isolation 1 ; activation of the memory protection unit (MPU), default 0 
+```
 
 ### node_memory_clear "m"
 
 Debug and security feature: Clear the memory bank "m" before and after the execution of the node.  
 Example : 
-`   node_memory_clear 2 ; clear the memory bank 2 as seen in the manifest before and after execution `
+```
+   node_memory_clear 2 ; clear the memory bank 2 as seen in the manifest before and after execution 
+```
 
 ### node_script "index"
 The indexed script is executed before and after the node execution. The conditional is set on the first call and cleared on the second call.
 Example :
-`   node_script 12 ; call script #12 associated to this node `
+```
+  node_script 12 ; call script #12 associated to this node
+```
 
 ### node_parameters "tag"
 This command declares the parameters to share with the node during the RESET sequence. If the "tag" parameter is null is tells the following parameters is a full set. Otherwise it is an index of a subset defined in the node documentation.
 The following declaration is a list of data terminated with the "end".
 Example of a packed structure of 22 bytes of parameters:
-    ` node_parameters     0                   TAG = "all parameters" `
-    `     1  u8;  2                           Two biquads `
-    `     1  u8;  1                           postShift `
-    `     5 s16; 681   422   681 23853 -15161  elliptic band-pass 1450..1900/16kHz `
-    `     5 s16; 681 -1342   681 26261 -15331 `
-    ` end `
-    
+```
+     node_parameters     0                   TAG = "all parameters" 
+         1  u8;  2                           Two biquads 
+         1  u8;  1                           postShift 
+         5 s16; 681   422   681 23853 -15161  elliptic band-pass 1450..1900/16kHz 
+         5 s16; 681 -1342   681 26261 -15331 
+     end 
+```    
 
 -----------------------------------------
 
@@ -329,25 +368,26 @@ Example of a packed structure of 22 bytes of parameters:
 Scripts are small interpreted byte-codes designed for control and calls to the graph scheduler for node control and parameter settings.
 The declaration is made to tune for a minimum amount of memory consumption : by a limitation of the number of virtual CPU registers, the size of the stack and allowing the same stack memory to be reused for several scripts.
 A script is an instance of the node `arm_stream_script` the parameter of which is holding the byte-codes.
-
-` node arm_stream_script 1  ; script (instance) index         `  
-`     script_stack      12  ; size of the stack in word64     ` 
-`     script_mem_shared  1  ; private memory (0) or shared(1) ` 
-`     script_mem_map     0  ; mapping to VID #0 (default)     ` 
-`                                                             ` 
-`     script_language 0     ; start of macro assembler        ` 
-`         R1 = 3.141592653589793                              `
-`            . . .                                            ` 
-`         test R1 = 0                                         ` 
-`         if yes R2 = R3 + 1e-8                               ` 
-`         if no jump L_TEST_R1                                ` 
-`         R2 = min(R1, R4)                                    `
-`         label L_TEST_R1                                     ` 
-`         return                                              ` 
-`     end                                                     ` 
-`     node_parameters <ID2>                                   ` 
-`        include 1 binary_code.txt ; path ID and file name    ` 
-`     end                                                     ` 
+```
+node arm_stream_script 1  ; script (instance) index           
+    script_stack      12  ; size of the stack in word64      
+    script_mem_shared  1  ; private memory (0) or shared(1)  
+    script_mem_map     0  ; mapping to VID #0 (default)      
+                                                             
+    script_language 0     ; start of macro assembler         
+        R1 = 3.141592653589793                              
+           . . .                                             
+        test R1 = 0                                          
+        if yes R2 = R3 + 1e-8                                
+        if no jump L_TEST_R1                                 
+        R2 = min(R1, R4)                                    
+        label L_TEST_R1                                      
+        return                                               
+    end                                                      
+    node_parameters <ID2>                                    
+       include 1 binary_code.txt ; path ID and file name     
+    end                                                     
+```
 
 -----------------------------------------
 
@@ -358,21 +398,25 @@ The parameter "set0copy1" is set to 0 (default value) for a processing made "in-
 When the parameter is 1 the data is copied in the FIFO, and the graph compiler will allocate an amount of memory corresponding to a "format_frame_length".
 
 Example :
-` input arc from graph IO 4 using set0copy1=1 and using format #0      ` 
-`           to node xxfilter instance 6 input #0 using format #8       `
-` arc_input 4 1 0    xxfilter 6 0 8                                    `
-`                                                                      `
-` output arc from node xxdetector instance 5 output #1 using format #2 `
-`            to graph IO 7 using set0copy1=0 and format #9             `
-` arc_output 5 1 2   xxdetector 7 0 9                                  ` 
-`                                                                      `
-` arc between nodeAAA instance 1 output #2 using format #0             `
-`     and nodeBBB instance 3 output #4 using format #1                 `
-` arc nodeAAA 1 2 0   nodeBBB 3 4 1                                    `
+```
+ input arc from graph IO 4 using set0copy1=1 and using format #0       
+           to node xxfilter instance 6 input #0 using format #8       
+ arc_input 4 1 0    xxfilter 6 0 8                                    
+                                                                      
+ output arc from node xxdetector instance 5 output #1 using format #2 
+            to graph IO 7 using set0copy1=0 and format #9             
+ arc_output 5 1 2   xxdetector 7 0 9                                   
+                                                                      
+ arc between nodeAAA instance 1 output #2 using format #0             
+     and nodeBBB instance 3 output #4 using format #1                 
+ arc nodeAAA 1 2 0   nodeBBB 3 4 1                                    
+ ```
 
 ### arc flow control 
 Example
-` arc_flow_error 1  ; #1 do something depending on the IO domain when a flow error occurs, default #0 (no extra processing, just skip data)
+``` 
+arc_flow_error 1  ; #1 do something depending on the IO domain when a flow error occurs, default #0 (no extra processing, just skip data) 
+```
 
 ### arc debug
 Each arc descriptor can be configured to have an operation (in a list of 32) implemented with result returned in a dedicated memory section of the graph.
@@ -396,27 +440,36 @@ Each arc descriptor can be configured to have an operation (in a list of 32) imp
 | 15  | automatic rewind read/write                                                         |
 
 Example :
-`   arc_debug_cmd  1  debug action "ARC_INCREMENT_REG"         ` 
-`   arc_debug_reg  3  index of the 64bits result, default = #0 ` 
-`   arc_debug_page 0  page of 32 words / page, default = #0    ` 
+```
+    arc_debug_cmd  1  debug action "ARC_INCREMENT_REG"         
+    arc_debug_reg  3  index of the 64bits result, default = #0  
+    arc_debug_page 0  page of 32 words / page, default = #0    
+```    
 
 ### arc_flush
-`   arc_flush           0           ; control of register "MPFLUSH_ARCW1" : forced flush of data in MProcessing and shared tasks` 
+```
+    arc_flush  0 ; forced flush of data in MProcessing and shared tasks
+```
 
 ### arc_map_hwblock
-`   arc_map_hwblock     0  map the buffer to a memory offset, default = #0 (VID0)` 
+```
+     arc_map_hwblock   0  map the buffer to a memory offset, default = #0 (VID0)
+```
 
 ### arc_jitter_ctrl
 Command used during the compilation step for the FIFO buffer memory allocation with some margin.
-` arc_jitter_ctrl     1.5         ; factor to apply to the minimum size between the producer and the consumer, default = 1.0 (no jitter) ` 
+```
+    arc_jitter_ctrl  1.5  ; factor to apply to the minimum size between the producer and the consumer, default = 1.0 (no jitter) 
+```
 
 ### arc_parameters
 Arcs are used to node parameters when the inlined way (with the node declaration) is limited to 256kBytes. The node manifest declares the number of arcs used for large amount of parameters (NN model, video file, etc ..).
-`   arc_parameters  0       ; (parameter arcs) buffer preloading, or arc descriptor set with script ` 
-`      7  i8; 2 3 4 5 6 7 8 ; parameters                                                           ` 
-`   include 1 filter_parameters.txt ; path + text file-name using parameter syntax                   ` 
-`   end                                                                                             ` 
-
+```
+    arc_parameters  0       ; (parameter arcs) buffer preloading, or arc descriptor set with script 
+       7  i8; 2 3 4 5 6 7 8 ; parameters                                                            
+    include 1 filter_parameters.txt ; path + text file-name using parameter syntax                    
+    end                                                                                              
+```
 -----------------------------------------
 
 

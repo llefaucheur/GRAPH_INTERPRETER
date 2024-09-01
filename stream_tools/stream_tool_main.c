@@ -25,16 +25,15 @@
  * 
  */
 
-
 #include "stream_tool_include.h"
 #include "platform.h"
 
 #ifdef PLATFORM_COMPUTER 
-#define GRAPH_ALL_MANIFESTS "../../stream_platform/windows/manifest/top_manifest_computer.txt"
-#define GRAPH_TXT           "../../stream_platform/windows/graph_computer.txt"     /* graph */
-#define GRAPH_BIN           "../../stream_platform/windows/graph_computer_bin.txt" /* binary graph file */
-#define GRAPH_HEADER        "../../stream_platform/windows/graph_computer_header.h"  /* list of labels to do "set_parameter" from scripts */
-#define GRAPH_DEBUG         "../../stream_platform/windows/graph_computer_debug.txt" /* comments made during graph conversion  */
+#define GRAPH_ALL_MANIFESTS "../../stream_platform/computer/manifest/top_manifest_computer.txt"
+#define GRAPH_TXT           "../../stream_platform/computer/graph_computer.txt"     /* graph */
+#define GRAPH_BIN           "../../stream_platform/computer/graph_computer_bin.txt" /* binary graph file */
+#define GRAPH_HEADER        "../../stream_platform/computer/graph_computer_header.h"  /* list of labels to do "set_parameter" from scripts */
+#define GRAPH_DEBUG         "../../stream_platform/computer/graph_computer_debug.txt" /* comments made during graph conversion  */
 #endif
 
 #ifdef PLATFORM_LPC55S69EVK 
@@ -75,10 +74,10 @@ void main(void)
     struct stream_platform_manifest *platform;
     struct stream_graph_linkedlist *graph;
 
-    if (0 == (all_files = calloc (MAXINPUT, 1))) exit(-1);
-    if (0 == (ggraph = calloc (MAXINPUT, 1))) exit(-1);
-    if (0 == (platform = calloc (sizeof(struct stream_platform_manifest), 1))) exit(-1);
-    if (0 == (graph = calloc (sizeof(struct stream_graph_linkedlist), 1))) exit(-1);
+    if (0 == (all_files = calloc (MAXINPUT, 1))) {  fprintf (stderr, "\n init error \n"); {  fprintf (stderr, "\n init error \n"); exit(-1); } }
+    if (0 == (ggraph = calloc (MAXINPUT, 1))) {  fprintf (stderr, "\n init error \n"); exit(-1); }
+    if (0 == (platform = calloc (sizeof(struct stream_platform_manifest), 1))) {  fprintf (stderr, "\n init error \n"); exit(-1); }
+    if (0 == (graph = calloc (sizeof(struct stream_graph_linkedlist), 1))) {  fprintf (stderr, "\n init error \n"); exit(-1); }
 
     /* 
         Read the file names : 
@@ -90,9 +89,9 @@ void main(void)
     memset(graph, 0, sizeof(struct stream_graph_linkedlist));
 
 
-    if (0 == (graph->ptf_graph_bin  = fopen(GRAPH_BIN,  "wt"))) exit(-1);
-    if (0 == (graph->ptf_header = fopen(GRAPH_HEADER, "wt"))) exit(-1);
-    if (0 == (graph->ptf_debug = fopen(GRAPH_DEBUG, "wt"))) exit(-1);
+    if (0 == (graph->ptf_graph_bin  = fopen(GRAPH_BIN,  "wt"))) {  fprintf (stderr, "\n init error \n"); exit(-1); }
+    if (0 == (graph->ptf_header = fopen(GRAPH_HEADER, "wt"))) {  fprintf (stderr, "\n init error \n"); exit(-1); }
+    if (0 == (graph->ptf_debug = fopen(GRAPH_DEBUG, "wt"))) {  fprintf (stderr, "\n init error \n"); exit(-1); }
 
 
     read_input_file (GRAPH_ALL_MANIFESTS, all_files);
@@ -125,7 +124,7 @@ void main(void)
        check consistency : formats between nodes/arcs 
        to help the graph designer insert conversion nodes
         - ARCS : does { struct options raw_format_options } matches with { struct formatStruct format; }
-        - NODES : does { struct options raw_format_options } matches with { struct arcStruct arc[MAX_NB_STREAM_PER_SWC].format; }
+        - NODES : does { struct options raw_format_options } matches with { struct arcStruct arc[MAX_NB_STREAM_PER_NODE].format; }
          arm_stream_check_graph(platform, graph); 
        
       @@@  TODO 
@@ -149,5 +148,7 @@ void main(void)
         fclose(ptf_graph_bin); 
 
     }
+
+    fprintf (stderr, "\n graph compilation done \n");
     exit (-3); 
 }

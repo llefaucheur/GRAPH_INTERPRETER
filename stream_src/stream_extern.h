@@ -48,8 +48,6 @@ extern void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_
 
 extern int32_t stream_bitsize_of_raw(uint8_t raw);
 extern void stream_scan_graph (arm_stream_instance_t *stream_instance, int8_t reset_option, uint32_t *data);
-//extern void platform_specific_processor_arch_iomask(struct HW_params **params);
-//extern void platform_al(uint32_t command, void *ptr1, void *ptr2, uint32_t data3);
 extern uint32_t lin2pack (arm_stream_instance_t *S, uint8_t *buffer);
 extern void * pack2linaddr_ptr(uint8_t **long_offset, uint32_t x, uint32_t unit);
 

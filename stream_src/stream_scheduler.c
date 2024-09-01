@@ -29,7 +29,9 @@
  extern "C" {
 #endif
     
-
+#include <stdint.h>
+#include "stream_common_const.h"
+#include "stream_common_types.h"
 #include "stream_const.h"      /* graph list */
 #include "stream_types.h"
 #include "stream_extern.h"
@@ -128,7 +130,7 @@ static intPtr_t pack2linaddr_int(uint8_t **long_offset, uint32_t x, uint32_t uni
     uint8_t *dbg3;
     intPtr_t result;
 
-    dbg1 = long_offset[RD(x,DATAOFF_ARCW0)];    
+    dbg1 = long_offset[RD(x,DATAOFF_ARCW0)];                //@@@ shift  ARCEXTEND_ARCW2
     dbg2 = (intPtr_t)(unit * (intPtr_t)RD((x),BASEIDX_ARCW0));
     dbg3 = &(dbg1[dbg2]);
     result = (intPtr_t)dbg3;
@@ -155,12 +157,10 @@ static intPtr_t arc_extract_info_int (arm_stream_instance_t *S, uint32_t *arc, u
     uint32_t write;
     uint32_t size;
     intPtr_t ret;
-    uint32_t *all_formats;
 
     read =  RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
     size =  RD(arc[1], BUFF_SIZE_ARCW1);
-    all_formats =  S->all_formats;
 
     switch (tag)
     {
@@ -198,7 +198,7 @@ static uint8_t * arc_extract_info_pt (arm_stream_instance_t *S, uint32_t *arc, u
     write = RD(arc[3], WRITE_ARCW3);
 
     long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];                       /* platfom memory offsets */
-    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << LOG2ADDR_UNIT_W32]); /* BASE is in word32 */
+    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << LOG2ADDR_UNIT_W32]); /* BASE is in word32  @@@ shift  ARCEXTEND_ARCW2*/
 
     switch (tag)
     {
@@ -364,7 +364,7 @@ static void arc_data_operations (
     uint8_t* dst;
 
     long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];                       /* platfom memory offsets */
-    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << LOG2ADDR_UNIT_W32]); /* BASE is in word32 */
+    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << LOG2ADDR_UNIT_W32]); /* BASE is in word32 @@@ shift  ARCEXTEND_ARCW2 */
 
     switch (tag)
     {
@@ -1259,7 +1259,7 @@ static void run_node (arm_stream_instance_t *S)
         stream_calls_node (S,
             S->node_instance_addr, xdm_data,  &check);
     } 
-    while ((check == TASKS_NOT_COMPLETED) && ((--loop_counter) > 0));
+    while ((check == NODE_TASKS_NOT_COMPLETED) && ((--loop_counter) > 0));
     
     /*  output FIFO write pointer is incremented AND a check is made for data 
         re-alignment to base adresses (to avoid address looping)

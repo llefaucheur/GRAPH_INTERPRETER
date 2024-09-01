@@ -44,6 +44,8 @@
 //#define PLATFORM_STM32L475EIOT01        //---
 //#define PLATFORM_STM32U585IOT02A        //PACK    Light,TOF,Pressure,IMU,Temp,MIC
 //#define PLATFORM_STEVALMKBOXPRO         //CubeIDE Pressure,IMU,Temp,MIC
+//#define PLATFORM_NUVOTON_M2003          //CM0 24MHz, SAR, PWM, 4kB/32kB
+//#define PLATFORM_RENESAS_RA4M1          //CM4 48MHz, 16kB/256kB
 //#define PLATFORM_ARDU_NANO33SENSEV2     //Arduino 
 //#define PLATFORM_ARDU_RP2040            //Arduino IMU,MIC
 //#define PLATFORM_ARDU_UNOR4W            //Arduino 
@@ -53,7 +55,7 @@
 /*==========================================================================*/
 
 #ifdef PLATFORM_COMPUTER
-#include "windows\platform_computer.h"
+#include "computer/platform_computer.h"
 #endif
 #ifdef PLATFORM_LPC55S69EVK
 #include "lplpc55s69evk\platform_lpc55s69evk.h"
