@@ -1,0 +1,1 @@
+platform abstraction layer and manifest of SeeedStudio WIO terminal

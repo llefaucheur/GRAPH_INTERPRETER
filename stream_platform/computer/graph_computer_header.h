@@ -1,5 +1,5 @@
 //--------------------------------------
-//  DATE Wed Sep 18 08:12:33 2024
+//  DATE Thu Sep 19 19:49:37 2024
 //  AUTOMATICALLY GENERATED CODES
 //  DO NOT MODIFY !
 //--------------------------------------
@@ -30,5 +30,5 @@
 #define sigp_stream_detector_0_mem_0 0x58 // node static memory address
                         // _0_mem_1 OFF 0 BASE 0x0190 PT 0x0190 MAXW 0x0000 SIZE_bytes 0020 
 #define sigp_stream_detector_0_mem_1 0x64 // node static memory address
-                        // _0_mem_1 OFF 2 BASE 0x0000 PT 0x0000 MAXW 0x0000 SIZE_bytes 0008 
+                        // _0_mem_1 OFF 2 BASE 0x0000 PT 0x0000 MAXW 0x0000 SIZE_bytes 0034 
 #define arm_stream_filter_0_mem_1 0x800000 // node scratch memory address offset 2 index 0

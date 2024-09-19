@@ -117,6 +117,140 @@ The bit-field "Node Tag" tells which (or all) parameter will be updated.
 
 Nodes are delivered with a test-bench (code and non-regression database).
 
+# Node example
+
+    typedef struct
+    {   q15_t coefs[MAX_NB_BIQUAD_Q15*6];
+        q15_t state[MAX_NB_BIQUAD_Q15*4];    
+     } arm_filter_memory;
+    
+    typedef struct
+    {   arm_filter_memory *TCM;
+    } arm_filter_instance;
+    	
+    void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+    {
+    	*status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
+    
+    	switch (RD(command,COMMAND_CMD))
+    	{ 
+        /* func(command = (STREAM_RESET, COLD, PRESET, TRACEID tag, NB ARCS IN/OUT)
+                instance = memory_results and all memory banks following
+                data = address of Stream function
+                
+                memresults are followed by 4 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
+                memory pointers are in the same order as described in the NODE manifest
+    
+                memresult[0] : instance of the component
+                memresult[1] : pointer to the allocated memory (biquad states and coefs)
+    
+                memresult[2] : input arc Word 0 SIZSFTRAW_FMT0 (frame size..)
+                memresult[ ] : input arc Word 1 SAMPINGNCHANM1_FMT1 
+                ..
+                memresult[ ] : output arc Word 0 SIZSFTRAW_FMT0 
+                memresult[ ] : output arc Word 1 SAMPINGNCHANM1_FMT1 
+    
+                preset (8bits) : number of biquads in cascade, max = 4, from NODE manifest 
+                tag (8bits)  : unused
+        */
+        case STREAM_RESET: 
+        {   
+            uint8_t *pt8b, i, n;
+            intPtr_t *memreq;
+            arm_filter_instance *pinstance;
+            uint8_t preset = RD(command, PRESET_CMD);
+            uint16_t *pt16dst;
+    
+            /* read memory banks */
+            memreq = (intPtr_t *)instance;
+            pinstance = (arm_filter_instance *) (*memreq++);        /* main instance */
+            pinstance->TCM = (arm_filter_memory *) (*memreq);       /* second bank = fast memory */
+    
+            /* here reset */
+            pt8b = (uint8_t *) (pinstance->TCM->state);
+            n = sizeof(pinstance->TCM->state);
+            for (i = 0; i < n; i++) { pt8b[i] = 0; }
+    
+            /* load presets */
+            pt16dst = (uint16_t *)(&(pinstance->TCM->coefs[0]));
+            switch (preset)
+            {   default: 
+                case 0:     /* by-pass*/
+                    pt16dst[0] = 0x7FFF;
+                    break;
+            }
+            break;
+        }       
+    
+        /* func(command = bitfield (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
+                    TAG of a parameter to set, NODE_ALL_PARAM means "set all the parameters" in a raw
+                *instance, 
+                data = (one or all)
+        */ 
+        case STREAM_SET_PARAMETER:   
+        {   uint8_t *pt8bsrc, i, numStages;
+            uint16_t *pt16src, *pt16dst;
+            int8_t postShift;
+            arm_filter_instance *pinstance = (arm_filter_instance *) instance;
+    
+            pt8bsrc = (uint8_t *) data;
+            numStages = (*pt8bsrc++);
+            postShift = (*pt8bsrc++);
+    
+            pt16src = (uint16_t *)pt8bsrc;
+            pt16dst = (uint16_t *)(&(pinstance->TCM->coefs[0]));
+            for (i = 0; i < numStages; i++)
+            {   /* format:  {b10, 0, b11, b12, a11, a12, b20, 0, b21, b22, a21, a22, ...} */
+                *pt16dst++ = *pt16src++;    // b10
+                *pt16dst++ = 0;             // 0
+                *pt16dst++ = *pt16src++;    // b11    
+                *pt16dst++ = *pt16src++;    // b12
+                *pt16dst++ = *pt16src++;    // a11
+                *pt16dst++ = *pt16src++;    // a12
+            }
+    
+            stream_filter_arm_biquad_cascade_df1_init_q15(
+                &(pinstance->TCM->biquad_casd_df1_inst_q15),
+                numStages,
+                (const q15_t *)&(pinstance->TCM->coefs[0]),
+                (q15_t *)&(pinstance->TCM->state),
+                postShift);
+            break;
+        }
+
+
+        /* func(command = STREAM_RUN, PRESET, TAG, NB ARCS IN/OUT)
+               instance,  
+               data = array of [{*input size} {*output size}]
+    
+               data format is given in the node's manifest used during the YML->graph translation
+               this format can be FMT_INTERLEAVED or FMT_DEINTERLEAVED_1PTR
+        */         
+        case STREAM_RUN:   
+        {
+            arm_filter_instance *pinstance = (arm_filter_instance *) instance;
+            intPtr_t nb_data, stream_xdmbuffer_size;
+            stream_xdmbuffer_t *pt_pt;
+            int16_t *inBuf, *outBuf;
+
+
+            /* the node is declared with node_variable_rxtx_data_rate=0, there is no need to update stream_xdmbuffer_t after processing */
+            pt_pt = data;   inBuf = (int16_t *)pt_pt->address;   
+                            stream_xdmbuffer_size = pt_pt->size;  /* data amount in the input buffer */
+            pt_pt++;        outBuf = (int16_t *)(pt_pt->address); 
+            nb_data = stream_xdmbuffer_size / sizeof(int16_t);
+    
+            /* .. */
+            break;
+        }
+    
+        case STREAM_STOP:
+        case STREAM_READ_PARAMETER:
+        case STREAM_UPDATE_RELOCATABLE:
+        default : break;
+    }
+
+
 # Conformance checks
 
 Purpose: create an automatic process to incorporate new NODE in a large repository and have a scalable mean to check conformance: 

@@ -3,6 +3,7 @@
 -----------------------------------------
 
 # Graph design template
+
 A graph text has several sections :
 - **Control of the scheduler** : debug option, location of the graph in memory
 - **File paths** : to easily incorporate sections of data “included” with files
@@ -380,14 +381,41 @@ node arm_stream_script 1  ; script (instance) index
     script_mem_map     0  ; mapping to VID #0 (default)      
                                                              
     script_code       
-        R1 = 3.141592653589793                              
-           . . .                                             
-        test R1 = 0                                          
-        if yes R2 = R3 + 1e-8                                
-        if no jump L_TEST_R1                                 
-        R2 = min(R1, R4)                                    
-        label L_TEST_R1                                      
-        return                                               
+;   Assembler                            comments 
+;   ---------                          ----------------
+;   "test" operations 
+;     testleq r6 sp                      test r6 <= top of the stack
+;     testgt  r2 max { r4 #float 3.14}	 test r2 > max(r4, 3.14)
+;
+;   "load"
+;     r6 sp                      r6 := top of the stack
+;     r2 mul { r4 #float 3.14}	 r2 := (r4 x 3.14)
+;
+;   "mov"
+;     scatter r2 r3 r4           r2[r4] = r3    indirect, write with indexes 
+;     gather  r2 r3 #k           r2 = r3[k]     indirect, read with indexes 
+;     wr2bf   r2 r3 LEN.POS      r2(bitfield) = r3 
+;
+;   "jump"
+;     if_yes jump L_loop2, r2      jump to label loop2 and push r2 if test=yes
+;     if_not callsys 15            system calls (fifo, time, setparam, io/hw)
+
+;   "system call" use-cases :
+;   - Node Set/ReadParam/Run, patch a field in the header
+;   - FIFO read/set, data amount/free, time-stamp of last access 
+;   - Update Format framesize, FS
+;   - Read Time 16/32/64 from arc/AL, compute differences,
+;   - Jump to +/- N nodes in the list
+;   - Un/Lock a section of the graph
+;   - Select new IO settings (set timer period, change gains)
+;   - AL decides deep sleep with the help of parameters (wake-up in X[s])
+;   - Trace "string" + data
+;   - Callbacks (cmd (cmd+LIbName+Subfunction , X, n) for I2C/Radio .. Libraries 
+;   - Callback returning the current use-case to set parameters
+;   - Call a relocatable binary section in the Param area
+;   - Share Physical HW addresses
+;   - Compute Median from data in a circular buffer + mean/STD    
+
     end                                                      
     node_parameters <ID2>                                    
        include 1 binary_code.txt ; path ID and file name     

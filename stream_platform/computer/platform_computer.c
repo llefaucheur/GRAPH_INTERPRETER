@@ -69,9 +69,9 @@ extern const uint8_t platform_audio_out_bit_fields[];
 */
 
 
-extern p_stream_node arm_stream_null_task;       /*  0  #define arm_stream_script_index 1 */
+extern p_stream_node arm_stream_null_task;       /*  0  */
 extern p_stream_node arm_stream_script;          /*  1  #define arm_stream_script_index 1 */
-extern p_stream_node arm_stream_graph_control;   /*  2*/
+extern p_stream_node arm_stream_format_converter;/*  2*/
 extern p_stream_node arm_stream_router;          /*  3*/
 extern p_stream_node sigp_stream_converter;      /*  4*/
 extern p_stream_node arm_stream_amplifier;       /*  5*/
@@ -91,14 +91,14 @@ extern p_stream_node arm_stream_filter2D;        /* 18*/
 extern p_stream_node arm_stream_analysis;        /* 19*/
 extern p_stream_node bitbank_JPEGENC;            /* 20*/
 extern p_stream_node TjpgDec;                    /* 21*/
-extern p_stream_node arm_stream_format_converter;/* 22*/
+
 #define TBD 0
 
 p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
 {
     /*  0*/ (void *)&arm_stream_null_task,       /* node disabled */
     /*  1*/ (void *)&arm_stream_script,         /* byte-code interpreter, index "arm_stream_script_INDEX" */
-    /*  2*/ (void *)&arm_stream_graph_control,  /* scheduler control : lock, bypass, loop, if-then */
+    /*  2*/ (void *)&arm_stream_format_converter,/* arm_stream_format_converter */  
     /*  3*/ (void *)&arm_stream_router,         /* copy input arcs and subchannel and output arcs and subchannels   */     
     /*  4*/ (void *)&sigp_stream_converter,     /* raw data format converter */
     /*  5*/ (void *)&arm_stream_amplifier,      /* amplifier mute and un-mute with ramp and delay control */
@@ -118,7 +118,7 @@ p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
     /* 19*/ (void *)&arm_stream_analysis,       /* arm_stream_analysis, */
     /* 20*/ (void *)&bitbank_JPEGENC,           /* bitbank_JPEGENC */
     /* 21*/ (void *)&TjpgDec,                   /* TjpgDec */
-    /* 21*/ (void *)&arm_stream_format_converter,/* arm_stream_format_converter */    
+  
 };    
 
 

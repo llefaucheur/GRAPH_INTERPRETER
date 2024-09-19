@@ -1,5 +1,5 @@
 //--------------------------------------
-//  DATE Wed Sep 18 08:12:33 2024
+//  DATE Thu Sep 19 19:49:37 2024
 //  AUTOMATICALLY GENERATED CODES
 //  DO NOT MODIFY !
 //--------------------------------------
@@ -24,7 +24,7 @@
 0x30000048, // 044 011 Nb Memreq-1 1  XDM11_same_rate 1 
 0x0000004C, // 048 012 Reserved static memory bank(0) = bank 0 stat0work1ret2 = 0 size 76  
 0x30800000, // 04C 013  
-0x00000008, // 050 014 Scratch memory bank(1) = bank 2 stat0work1ret2 = 1  size 8  
+0x00000034, // 050 014 Scratch memory bank(1) = bank 2 stat0work1ret2 = 1  size 52  
 0x01000007, // 054 015 ParamLen 6+1 Preset 1 Tag0ALL 0 
 0x02A90102, // 058 016 (0) 
 0x02A901A6, // 05C 017 (1) 

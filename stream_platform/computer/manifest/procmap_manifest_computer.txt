@@ -3,23 +3,23 @@
 ; ------------------------------------------------------------------------------------------------------------
 ;
 
-    1 1 9 4 number of architectures, number of processors, number of memory banks, number of offsets
+    1 1 9 4 number of architectures, processors, memory banks, offsets
 
 ;   memory banks:
 ;   - ID        base offset ID reference above
-;   - VID       virtual ID used in the graph for manual mapping, must stay below 99 for swap controls (see NodeTemplate.txt)
+;   - VID       virtual ID used in the graph for manual mapping, 
 ;   - S         0=any/1=normal/2=fast/3=critical-Fast, 
 ;   - W         static0/working1/retention2
 ;   - P         shared0/private1,
 ;   - H         DMAmemHW1
 ;   - D         Data0/Prog1/Both2 
 ;   - Size      minimum sizes guaranteed per VID starting from @[ID]+offset below
-;   - Offset    maximum offset from the base offset ID, (continuous banks means = previous size + previous offset)
+;   - Offset    maximum offset from the base offset ID,
 
 ;   the memory is further split in the graph "top_memory_mapping" to ease mapping and overlays
 
 ;   ID VID  S W P H D     Size offset from offsetID 
-    0   0   1 0 0 0 0    95526 10       VID0=DEFAULT flat memory bank, can overlap with the others
+    0   0   1 0 0 0 0    95526 10       VID0=DEFAULT flat memory bank, can overlap with others
     0   1   0 0 0 0 0    65526 10       SRAM0 static, hand tuned memory banks
     0   2   0 0 0 0 0    30000 65536    SRAM1 static
     0   3   0 1 0 0 0    15000 95536    SRAM1 working at application level
@@ -41,5 +41,4 @@
     ;   all processors (processor IDs >0)
         ;------------------------------------------------------------
         1 1 15      processor ID, boolean "I am the main processor" allowed to boot the graphs
-        ;           Bit-field computation firmware extensions, on top of the basic one, embedded in Stream services
-        ;                 EXT_SERVICE_MATH 1, EXT_SERVICE_DSPML 2, EXT_SERVICE_AUDIO 3, EXT_SERVICE_IMAGE 4
+        ;           Bit-field computation firmware extensions, 

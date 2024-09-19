@@ -444,7 +444,6 @@
 
 
     OP_MOV family
-        
       cast    r2 #float         OP_MOV R0 OPLD_CAST     R2 #DTYPE   DST_ptr = (DTYPE) 
       castptr r2 #float         OP_MOV R0 OPLD_CASTPTR  R2 #DTYPE   DST_ptr = (POINTER DTYPE) 
       base    r4 r5             OP_MOV R4 OPLD_BASE     R5 R0       R4_PTR.base = R5, base for cicular addressing

@@ -123,9 +123,9 @@ Raw data types
 | STREAM_STRING8    | 49   | UTF-8 string of char terminated by 0                        |
 | STREAM_STRING16   | 50   | UTF-16 string of char terminated by 0                       |
 
------------------------------------------
+------
 
-## 
+
 
 ## Units
 
@@ -261,11 +261,13 @@ Raw data types
 
 -------------------------
 
+# --------------------------------------------
+
 ## IO Controls Bit-fields per domain(to be completed)
 
 
 
-### Domain "general"
+### Domain "general"  (TBC)
 
 ```
 io_analog_scale 0.55           ; 0.55V is corresponding to full-scale (0x7FFF or 1.0f) with the default setting
@@ -276,7 +278,7 @@ io_analog_scale 0.55           ; 0.55V is corresponding to full-scale (0x7FFF or
 --------------------------------------
 
 
-### Domain audio_in  
+### Domain audio_in  (TBC)
 
 domain is using subtype_units "stream_unit_physical"
 
@@ -362,7 +364,7 @@ io_fhigh_filter    {1  4000 8000     }   ; options for frequencies
 --------------------------------------
 
 
-### Domain audio_out          
+### Domain audio_out  (TBC)        
 
 ```
 io_subtype_units   87                    ; Units is [mV] 
@@ -405,7 +407,7 @@ io_fhigh_filter    {1  4000 8000     }   ; options for frequencies
 --------------------------------------
 
 
-### Domain gpio_in            
+### Domain gpio_in   (TBC)         
 
     0                       ; time-stamp (none)
     0   5                   ; samp. rate format (1:Hz 2:s 3:days) accuracy in % 
@@ -423,14 +425,14 @@ io_fhigh_filter    {1  4000 8000     }   ; options for frequencies
 --------------------------------------
 
 
-### Domain gpio_out           
+### Domain gpio_out    (TBC)       
 
     0                       ; time-stamp (none)
 
 --------------------------------------
 
 
-### Domain motion             
+### Domain motion    (TBC)         
 
 ```
 io_sampling_rate        1 16000 44100 48000   ; sampling rate options (enumeration in Hz)  
@@ -468,7 +470,7 @@ io_DC-canceller
 --------------------------------------
 
 
-### Domain 2d_in              
+### Domain 2d_in   (TBC)           
 
 ```
 io_raw_format_2d           (U16 + RGB16) (U8 + Grey) (U8 + YUV422)  
@@ -567,7 +569,7 @@ io_other sensors;          humidity, battery%
 
 --------------------------------------
 
-### Domain analog_in
+### Domain analog_in(TBC)
 
     /* IO_DOMAIN_ANALOG_IN  */ 
             sensitivity / PGA
@@ -576,7 +578,7 @@ io_other sensors;          humidity, battery%
             detection release time
             aging control 
 
-### Domain analog_out         
+### Domain analog_out    (TBC)     
 
             // aging option (usage counter, time)
             // 
@@ -596,17 +598,15 @@ io_other sensors;          humidity, battery%
             //unit_g = 20,        /* Q11.4 :   1g <> 0x0010       Q19.12 :   1g <> 0x0000 1000  */  
 
 
-### Domain rtc                
+### Domain rtc              (TBC)  
 
 ​    
 
 
-### Domain user_interface_in  
+### Domain user_interface_in  (TBC)
 
-​    
+   
 
-
-
-### Domain user_interface_out 
+### Domain user_interface_out (TBC)
 
     0                       ; time-stamp (none)
