@@ -192,37 +192,6 @@ void arm_stream_filter2D (int32_t command, stream_handle_t instance, stream_xdmb
                 *pt16dst++ = *pt16src++;    // a11
                 *pt16dst++ = *pt16src++;    // a12
             }
-
-            //arm_biquad_cascade_df1_init_q15(
-            //    &(pinstance->TCM->biquad_casd_df1_inst_q15),
-            //    numStages,
-            //    (const q15_t *)&(pinstance->TCM->coefs[0]),
-            //    (q15_t *)&(pinstance->TCM->state),
-            //    postShift);
-
-
-            /* optimized kernels INIT */
-            pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_INIT_WAIT_COMP,0,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
-
-            //pinstance->services(
-            //    pinstance->iir_service,
-            //    (uint8_t *)&(pinstance->TCM->biquad_casd_df1_inst_q15),
-            //    (uint8_t *)&(pinstance->TCM->coefs[0]),
-            //    (uint8_t *)&(pinstance->TCM->state),
-            //    postShift | numStages
-            //    );
-
-            /* optimized kernels RUN */
-            pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_CHECK_COPROCESSOR,0,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
-            pinstance->services( pinstance->iir_service, &i, 0, 0, 0 );
-            if (i > 0) 
-            {   pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_CHECK_END_COMP, 
-                    STREAM_SERVICE_NO_INIT,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
-            }
-            else /* there is no coprocessor to check end of compute completion */
-            {   pinstance->iir_service = PACK_SERVICE(0, 
-                    STREAM_SERVICE_NO_INIT,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
-            }
             break;
         }
 
@@ -247,23 +216,8 @@ void arm_stream_filter2D (int32_t command, stream_handle_t instance, stream_xdmb
             pt_pt++;        outBuf = (int16_t *)(pt_pt->address); 
 
             nb_data = stream_xdmbuffer_size / sizeof(int16_t);
-            ST(pinstance->iir_service, FUNCTION_SSRV, STREAM_SERVICE_CASCADE_DF1_Q15);
+            ST(pinstance->iir_service, FUNCTION_SSRV, SERV_CASCADE_DF1_Q15);
 
-            //pinstance->services(
-            //    pinstance->iir_service,
-            //    (uint8_t*)inBuf, 
-            //    (uint8_t*)outBuf,
-            //    (uint8_t*)(&(pinstance->TCM->biquad_casd_df1_inst_q15)),
-            //    (uint32_t)nb_data
-            //    );
-
-            if (STREAM_SERVICE_CHECK_END_COMP == RD(pinstance->iir_service, CONTROL_SSRV))
-            {   uint8_t tmp;   /* return a completion flag */
-                ST(pinstance->iir_service, FUNCTION_SSRV, STREAM_SERVICE_CASCADE_DF1_Q15_CHECK_COMPLETION);
-                do 
-                {   pinstance->services(pinstance->iir_service, &tmp, 0, 0, 0);
-                } while (tmp);
-            }
             break;
         }
 

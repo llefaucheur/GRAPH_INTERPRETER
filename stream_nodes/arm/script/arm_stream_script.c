@@ -39,26 +39,24 @@
 #include <stdint.h>
 #include "stream_common_const.h"
 #include "stream_common_types.h"
+
 #include "arm_stream_script.h"
 
-static intPtr_t pack2linaddr_int(uint8_t **long_offset, uint32_t x, uint32_t unit)
+static intPtr_t pack2linaddr_int(uint8_t **long_offset, uint32_t x, uint8_t extend)
 {
     const uint8_t *dbg1;
     intPtr_t dbg2;
     const uint8_t *dbg3;
-    intPtr_t result;
 
-    dbg1 = long_offset[RD(x,DATAOFF_ARCW0)];      //@@@ shift  ARCEXTEND_ARCW2
-    dbg2 = (intPtr_t)(unit * (intPtr_t)RD((x),BASEIDX_ARCW0));
+    dbg1 = long_offset[RD(x,DATAOFF_ARCW0)]; 
+    dbg2 = ((intPtr_t)RD((x),BASEIDX_ARCW0)) << (2*extend);
     dbg3 = &(dbg1[dbg2]);
-    result = (intPtr_t)dbg3;
-
-    return result;  
+    return (intPtr_t)dbg3;  
 }
 
-static void * pack2linaddr_ptr(uint8_t **long_offset, uint32_t data, uint32_t unit)
+static void * pack2linaddr_ptr(uint8_t **long_offset, uint32_t data, uint8_t extend)
 {
-    return (void *) (pack2linaddr_int(long_offset, data, unit));
+    return (void *) (pack2linaddr_int(long_offset, data, extend));
 }
 
 
@@ -83,11 +81,14 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
                     write index = start of parameters index + synchronization byte
         */
         case STREAM_RESET: 
-        {   stream_al_services *stream_entry = (stream_al_services *)data;
+        {   
             intPtr_t *memresults = (intPtr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
-            arm_stream_instance_t *pinstance = (arm_stream_instance_t *) *memresults++;
+            arm_script_instance_t *pinstance = (arm_script_instance_t *) *memresults++;
+
+            /* "data" is the Stream interpreter instance, for access to the services */
+            pinstance->S = (arm_stream_instance_t *) data;                                  
         }
 
         /* func(command = bitfield (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
@@ -99,9 +100,9 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
         {   uint32_t *pt32bsrc;
             uint32_t *arc_desc = (uint32_t *) instance;
             pt32bsrc = (uint32_t *) data;
-            arc_desc[SCRIPT_UC0_SCRARCW1] = (*pt32bsrc++);       // 2x4-bytes use-case communicated by uper layers
-            arc_desc[SCRIPT_UC1_SCRARCW2] = (*pt32bsrc++);       // 
-            SET_BIT(arc_desc[SCRIPT_PTR_SCRARCW0], NEW_USE_CASE_SCRIPT_LSB);
+            arc_desc[SCRIPT_SCRARCW1] = (*pt32bsrc++);       // 2x4-bytes use-case communicated by uper layers
+            arc_desc[SCRIPT_SCRARCW1] = (*pt32bsrc++);       // 
+//            SET_BIT(arc_desc[SCRIPT_PTR_SCRARCW0], NEW_USE_CASE_SCRIPT_LSB);
         }
 
         /* byte-code execution,                 
@@ -112,25 +113,26 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
         case STREAM_RUN:   
         {   uint32_t clear_size;
             stream_xdmbuffer_t *pt_pt;
-            arm_stream_instance_t *S;
+            arm_script_instance_t *I;
             uint32_t *arc_desc = (uint32_t *) instance;
-            uint16_t *byte_code;
-            uint8_t *src;
+            uint32_t *byte_code, *src;
+            uint8_t **long_offset;
 
-            pt_pt = data;   byte_code = (uint16_t *)pt_pt->address;  
-            pt_pt++;        S = (arm_stream_instance_t *)pt_pt->address; 
-            pt_pt++;        arc_desc = (uint32_t *)pt_pt->address;  
+            pt_pt = data;   byte_code = (intPtr_t *)pt_pt->address;  
+            pt_pt++;        I = (arm_script_instance_t *)pt_pt->address; 
+            pt_pt++;        arc_desc = (intPtr_t *)pt_pt->address;  
 
             /* reset the instance */
-            clear_size =  (SCRIPT_REGSIZE + 1) * RD(arc_desc[SCRIPT_PTR_SCRARCW0], NBREGS_SCRARCW3);
+            clear_size =  (SCRIPT_REGSIZE + 1) * RD(arc_desc[WRIOCOLL_SCRARCW3], NBREGS_SCRARCW3);
             clear_size += (SCRIPT_REGSIZE + 1) * RD(arc_desc[WRIOCOLL_SCRARCW3], NSTACK_SCRARCW3);
-            src = (uint8_t *)pack2linaddr_ptr(S->long_offset, RD(arc_desc[SCRIPT_PTR_SCRARCW0], BASEIDXOFFSCRARCW0), LINADDR_UNIT_W32);
+
+            long_offset = (I->S)->long_offset;
+            src = pack2linaddr_ptr(long_offset, arc_desc[SCRIPT_PTR_SCRARCW0], RD(arc_desc[RDFLOW_ARCW2], ARCEXTEND_ARCW2));
             MEMSET(src, 0, clear_size);
 
-            arm_stream_script_interpreter (S, arc_desc, byte_code, src);
+            arm_stream_script_interpreter (I, arc_desc, byte_code, src);
             break;
         }
-
 
 
         default:

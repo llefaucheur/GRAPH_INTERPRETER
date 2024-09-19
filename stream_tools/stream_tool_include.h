@@ -72,6 +72,8 @@ extern void search_platform_node(char *cstring, struct stream_node_manifest **pl
 extern void search_graph_node(char *cstring, struct stream_node_manifest **graph_node, uint32_t *graph_NODE_idx, struct stream_graph_linkedlist *graph);
 extern void compute_memreq(struct node_memory_bank *m, struct formatStruct *all_format);
 extern void script_memory_consumption(struct stream_script *script);
+extern void stream_tool_read_code(char **pt_line, struct stream_script *script);
+extern void stream_tool_read_assembler(char **pt_line, struct stream_script *script);
 
 #endif /* #ifndef cSTREAM_TOOL_INCLUDE_H */
 

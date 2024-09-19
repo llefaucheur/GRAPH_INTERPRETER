@@ -134,7 +134,8 @@ void data_in_1 (uint32_t command, uint8_t *data, uint32_t size)
     default:
     case STREAM_SET_PARAMETER:
     case STREAM_RESET:
-        if (NULL == (ptf_in_stream_in_0_data = fopen("..\\stream_test\\chirp_imadpcm.wav", "rb")))
+        if (NULL == (ptf_in_stream_in_0_data = fopen("..\\stream_test\\sine_noise_offset.wav", "rb")))
+//        if (NULL == (ptf_in_stream_in_0_data = fopen("..\\stream_test\\chirp_imadpcm.wav", "rb")))
         {   exit (-1); 
         }
         else 

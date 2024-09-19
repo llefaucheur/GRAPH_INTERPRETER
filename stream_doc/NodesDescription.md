@@ -1,38 +1,38 @@
 
 ---------------------------------------------------------------------------------------
-**List of pre-installed nodes**
+**List of pre-installed nodes (<u>in development</u>) ** 
 [TOC]
 ---------------------------------------------------------------------------------------
-```
-  1 arm_stream_script          byte-code interpreter index "arm_stream_script_INDEX" 
-  2 arm_stream_graph_control   scheduler control : lock bypass loop if-then 
-  3 arm_stream_router          copy input arcs and subchannel and output arcs and subchannels        
-  4 arm_stream_converter       raw data interleaving sampling-rate converter 
-  5 arm_stream_amplifier       amplifier mute and un-mute with ramp and delay control 
-  6 arm_stream_mixer           multichannel mixer with mute/unmute and ramp control 
-  7 arm_stream_filter          cascade of DF1 filters 
-  8 sigp_stream_detector       estimates peaks/floor of the mono input and triggers a flag on high SNR 
-  9 arm_stream_rescaler        raw data values remapping using "interp1" 
- 10 arm_stream_compressor      raw data compression with adaptive prediction 
- 11 arm_stream_decompressor    raw data decompression 
- 12 arm_stream_modulator       signal generator with modulation 
- 13 arm_stream_demodulator     signal demodulator frequency estimator 
- 14 arm_stream_resampler       asynchronous high-quality sample-rate converter 
- 15 arm_stream_qos             raw data interpolator with synchronization to one HQoS stream 
- 16 arm_stream_split           let a buffer be used by several nodes 
- 17 arm_stream_analysis        arm_stream_analysis 
- 18 arm_stream_detector2D      activity detection pattern detection 
- 19 arm_stream_filter2D        Filter rescale/zoom/extract rotate exposure compensation 
- 20 arm_stream_mixer2D         add two images with alpha blending 
-      bitbank/node_manifest_bitbank_JPEGENC.txt /* 20 JPG encoder                   */
-    2                         elm-lang/TJpgDec/node_manifest_TjpgDec.txt /* 21 JPG decoder                   */
-    2            arm/format_converter/node_manifest_format_converter.txt /* 22 arm_stream_format_converter raw and format converter */
-    ```
+| ID | Name | Comments |
+| ---- | -- | -- |
+| 1 |arm_stream_script           |byte-code interpreter index "arm_stream_script_INDEX"                   |
+| 2 |arm_stream_graph_control    |scheduler control : lock bypass loop if-then                            |
+| 3 |arm_stream_router           |copy input arcs and subchannel and output arcs and subchannels          |
+| 4 |sigp_stream_converter       |raw data interleaving sampling-rate converter                           |
+| 5 |arm_stream_amplifier        |amplifier mute and un-mute with ramp and delay control                  |
+| 6 |arm_stream_mixer            |multichannel mixer with mute/unmute and ramp control                    |
+| 7 |arm_stream_filter           |cascade of DF1 filters                                                  |
+| 8 |sigp_stream_detector        |estimates peaks/floor of the mono input and triggers a flag on high SNR |
+| 9 |arm_stream_rescaler         |raw data values remapping using "interp1"                               |
+|10 |sigp_stream_compressor      |raw data compression with adaptive prediction                           |
+|11 |sigp_stream_decompressor    |raw data decompression                                                  |
+|12 |arm_stream_modulator        |signal generator with modulation                                        |
+|13 |arm_stream_demodulator      |signal demodulator frequency estimator                                  |
+|14 |sigp_stream_resampler       |asynchronous high-quality sample-rate converter                         |
+|15 |arm_stream_qos              |raw data interpolator with synchronization to one HQoS stream           |
+|16 |arm_stream_split            |let a buffer be used by several nodes                                   |
+|17 |sigp_stream_detector2D      |activity detection pattern detection                                    |
+|18 |arm_stream_filter2D         |filter rescale/zoom/extract rotate exposure compensation                |
+|19 |arm_stream_analysis         |arm_stream_analysis                                                     |
+|20 |bitbank_jpg_encoder         |jpeg encoder                                                    |
+|21 |elm_jpg_decoder                 |TjpgDec                                                                 |
+|22 |arm_stream_format_converter |raw data and frame format converter                                     |
+|      |                             |                                                              |
 
 
 # arm_stream_script
 
-Scripts are special nodes, the byte code in indexed in the SCRIPTS section of the graph data RAM is placed in a shared arc for all script (instance reg+stack parameters) constants are placed after the byte-codes.
+Scripts are nodes interpreted from byte codes, indexed in the SCRIPTS section of the graph data RAM is placed in a shared arc for all script (instance reg+stack parameters) constants are placed after the byte-codes.
 
 The default memory configuration is "shared": the TX_FIFO descriptors associated with   the script are sharing the same memory buffer. 
 
@@ -47,41 +47,27 @@ To have individual static memory associated to a script the "private memory flag
   Its single arc (TX) is always empty
 
 ```  
-    node arm_stream_script 1        ; instance index of arm_stream_script
+    node arm_stream_script 1    ; instance index of arm_stream_script
     
-    script_pointers    2        ; number of pointer (default is max = 6)
+    script_registers   2        ; number of registers in word64 (default is 10, maximum)
     script_stack      12        ; size of the stack in word64 (default = 6)
     script_mem_shared  1        ; Is it a private RAM(0) or can it be shared with other scripts(1)
-    script_mem_map     0        ; Memory mapping to VID #0 (default) this declaration creates the transmit arc of the script-node pointing to the stack/buffer area
-                                ; 
-    script_code 0               ; code of the binary format (0 : default, or native architecture)
-        2 h16; 2002 0001        ; movi int16 r0 1
-        1 h16; e810             ; equ r1,r0
-        1 h16; 0381             ; ccallsys 1
-        1 h16; C000             ; ret
-    _end_                     
-
-    script_assembler            ; start of assembler language (@@@ TBD)
-        pshc int8 1
-        gtr
-        cjmp #1 
-        pshc int16 
-        cals readparam 
-        labl #1
-        ret  
-   _end_
-
-   node_parameters <ID2>        ; node parameters and index to let the code addressing it
-                                ; Set_parameter : the array of parameters starts on 32bits-aligned addresses
-                                ; The programmer arranges the data are aligned with respect to the way parameters are read in 
-                                ;   the node (using pointers to 8/16/32bits fields).
-       1  i8; 0                 ; TAG= 0 "load all parameters"
-       7  i8; 2 3 4 5 6 7 8     ; parameters
-
-   node_parameters <ID2>        ; 
-       include 1 binary_code.txt ; path ID and file name
-   _end_  
-_end_
+    script_mem_map     0        ; Memory mapping to VID #0 of memory instance (default:0) 
+                                
+    script_code                  
+        ld      r6   r3    
+        ld      r2   mul { r4    r6 }	
+        testequ r2   add { r2    #15 }
+        ifyes callsys 14 
+        return
+        
+        data_section
+        label 1
+        1  i8; 0                 ; TAG= 0 "load all parameters"
+        7  i8; 2 3 4 5 6 7 8     ; parameters
+        label 2
+        include 1 binary_code.txt ; path ID and file name
+    end                     
 ```
 
 
@@ -97,6 +83,8 @@ scheduler controls :
  Use-case : 
     - dispatch debug commands and allow a new graph to be downloaded
     - update the graph or an ML model, optional reset 
+    - Jump to +/- N nodes in the list, 
+      Un/Lock a section of the graph
 
 ```
 node
@@ -287,9 +275,10 @@ Option : either the same coefficients for all channels or list of coefficients f
 
 presets:
 #1 : bypass
-#2 : LPF fc=fs/4
-#3 : DC-filter (use-case: audio, XYZ gravity compensation/estimation)
-#4 : long Median filter
+#2 : LPF fc=fs/4 
+#3 : HPF fc=fs/8 
+#4 : DC-filter (use-case: audio, XYZ gravity compensation/estimation)
+#5 : long Median filter
 
 parameter of filter : 
 - number of biquads in cascade (1 or 2)

@@ -91,8 +91,10 @@ static void stream_calls_node (arm_stream_instance_t *S,
 
 /**
   @brief        debug script 
-  @param[in]    offset     table of long offsets of idx_memory_base_offset
-  @param[in]    data       packed address
+  @param[in]    int        index of the script to run
+  @param[in]    int        parameter :
+                    #define SCRIPT_PRERUN 1         executed before calling the node : the Z flag is set
+                    #define SCRIPT_POSTRUN 2        executed after
   @return       inPtr_t    address in the format of the processor
 
   @par          execution depends on "S->script_option" scheduler configuration :
@@ -107,7 +109,6 @@ static void stream_calls_node (arm_stream_instance_t *S,
 /*----------------------------------------------------------*/
 static void script_processing(uint32_t script_index, uint32_t parameter)
 {
-    // call to arm_stream_script, under definition
 }
 
 
@@ -477,7 +478,6 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
         return (ret);
     }
 
-
     xdm11 = TEST_BIT(S->node_header[S->node_memory_banks_offset+ADDR_LW2], XDM11_LW2_LSB);
 
     /*
@@ -566,7 +566,7 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
                 }
 
                 /* check for data flush : done when the consumers are not on the same processor */
-                if (U(0) != TEST_BIT(arc[2], MPFLUSH_ARCW2_LSB))
+                if (TEST_BIT(arc[2], MPFLUSH_ARCW2_LSB))
                 {   DATA_MEMORY_BARRIER
                 }
             }
@@ -729,7 +729,7 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
         
         /* a previous request is in process or if the IO is commander on the interface, then no 
             need to ask again */
-        if ((0u != TEST_BIT(*ongoing, ONGOING_IO_LSB)) ||
+        if ((TEST_BIT(*ongoing, ONGOING_IO_LSB)) ||
             (IO_IS_COMMANDER0 == TEST_BIT(*pio_control, SERVANT1_IOFMT0_LSB)))
         {   continue;
         }
@@ -779,6 +779,14 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
             if (*io_func == 0)
             {   continue;
             }
+
+            /* io_func has its internal buffer, don't give the final destination */
+            //if (IO_COMMAND_SET_BUFFER != RD(*pio_control, SET0COPY1_IOFMT0))
+            //{   buffer = 0;
+            //}
+            //@@@@@@@@@@@@@ UPDATE IO MANIFESTS @@@@@@@@@@@@
+
+            /* io_func : data move + io_stream notification */
             (*io_func)(STREAM_RUN, buffer, size);
 
             /* if this is an input stream : check the buffer needs alignment by the consumer */
@@ -786,7 +794,7 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
             {   //set_alignment_bit (S, arc);
 
                 /* does data realignement must be done ? : realign and clear the bit */
-                if (0u != TEST_BIT (arc[3], ALIGNBLCK_ARCW3_LSB))
+                if (TEST_BIT (arc[3], ALIGNBLCK_ARCW3_LSB))
                 {   arc_data_operations (S, arc, arc_data_realignment_to_base, 0, 0);
                 }
             }
@@ -897,6 +905,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
                 set_new_parameters (S, &((S->node_header)[S->node_parameters_offset]));
             }
 
+            /* a script called scan_graph for a parameter change */
             if (command == STREAM_SET_PARAMETER)
             {   set_new_parameters (S, data);
             }
@@ -907,11 +916,6 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
                 ST(S->pack_command, COMMAND_CMD, STREAM_STOP);
                 stream_calls_node (S,
                     S->node_instance_addr, 0u, &returned);
-            }
-    
-            /* a script called scan_graph for a parameter change */
-            if (command == STREAM_SET_PARAMETER)
-            {   return;
             }
 
             /* if the NODE generating the input data was blocked (ALIGNBLCK_ARCW3=1) 
@@ -927,7 +931,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
                     arcID = (S->arcID[iarc]);
                     if (0 == (ARC_RX0TX1_TEST & arcID))
                     {   arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
-                        if (0u != TEST_BIT (arc[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB))
+                        if (TEST_BIT (arc[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB))
                         {   arc_data_operations (S, arc, arc_data_realignment_to_base, 0, 0);
                         }
                     }
@@ -956,7 +960,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
         if (script_option & STREAM_SCHD_SCRIPT_END_PARSING) {script_processing (S->main_script, 0); }
 
     } while ((return_option == STREAM_SCHD_RET_END_NODE_NODATA) && 
-                (0u != TEST_BIT(S->scheduler_control, STILDATA_SCTRL_LSB)));
+                (TEST_BIT(S->scheduler_control, STILDATA_SCTRL_LSB)));
 }
 
 

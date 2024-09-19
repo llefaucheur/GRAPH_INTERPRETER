@@ -78,48 +78,6 @@
     <Text Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk_debug.txt">
       <Filter>GraphSteps</Filter>
     </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_2d_in_0.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_analog_sensor_0.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_audio_in_0.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_data_in_0.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_data_in_1.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_data_out_0.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_gpio_out_0.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_gpio_out_1.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_imu_temperature_0.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_line_in_0.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_line_out_0.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_motion_in_0.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_node_trace_0.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\windows\manifest\io_platform_stream_in_0.txt">
-      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
-    </Text>
     <Text Include="..\..\stream_platform\lpc55s69evk\manifest\top_manifest_lpc55s69evk.txt">
       <Filter>PlatformsManifests</Filter>
     </Text>
@@ -228,12 +186,6 @@
     <Text Include="..\..\stream_nodes\arm\amplifier\node_manifest_amplifier.txt">
       <Filter>NodesManifests</Filter>
     </Text>
-    <Text Include="..\..\stream_nodes\arm\analysis\node_manifest_analysis.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
-    <Text Include="..\..\stream_nodes\arm\compressor\node_manifest_compressor.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
     <Text Include="..\..\stream_nodes\arm\demodulator\node_manifest_demodulator.txt">
       <Filter>NodesManifests</Filter>
     </Text>
@@ -294,9 +246,6 @@
     <Text Include="..\..\stream_nodes\elm-lang\TJpgDec\node_manifest_TjpgDec.txt">
       <Filter>NodesManifests</Filter>
     </Text>
-    <Text Include="..\..\stream_nodes\bitbank\node_manifest_bitbank_JPEGENC.txt">
-      <Filter>NodesManifests</Filter>
-    </Text>
     <Text Include="..\..\stream_platform\computer\manifest\procmap_manifest_computer.txt">
       <Filter>PlatformsManifests</Filter>
     </Text>
@@ -305,6 +254,58 @@
     </Text>
     <Text Include="..\..\stream_nodes\node_manifest_none.txt">
       <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\signal-processingFR\compressor\node_manifest_compressor.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\bitbank\JPEGENC\node_manifest_bitbank_JPEGENC.txt" />
+    <Text Include="..\..\stream_nodes\arm\analysis\node_manifest_analysis.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\format_converter\node_manifest_format_converter.txt">
+      <Filter>NodesManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_2d_in_0.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_analog_sensor_0.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_audio_in_0.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_data_in_0.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_data_in_1.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_data_out_0.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_gpio_out_0.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_gpio_out_1.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_imu_temperature_0.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_line_in_0.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_line_out_0.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_motion_in_0.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_node_trace_0.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\io_platform_stream_in_0.txt">
+      <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>
@@ -321,6 +322,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\stream_tool_readManifests.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\stream_tool_read_script.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

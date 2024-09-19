@@ -30,8 +30,8 @@
 
 #ifdef PLATFORM_COMPUTER 
 
-//#define STREAM_PLATFORM_SERVICES        /* call the platform service with its fast libraries w/wo accelerators */
-#undef STREAM_PLATFORM_SERVICES        /* call CMSIS libraries */
+#define STREAM_PLATFORM_SERVICES        /* call the platform service with its fast libraries w/wo accelerators */
+//#undef STREAM_PLATFORM_SERVICES        /* call CMSIS libraries */
 
 #define _CRT_SECURE_NO_DEPRECATE
 

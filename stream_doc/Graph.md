@@ -58,6 +58,7 @@ Example `graph_memory_bank 1   ; selection of memory bank 1`
 ## IO control and stream data formats
 There are three data declared in the graph scheduler instance (*arm_stream_instance_t*):
 A - a pointer to a RAM area giving 
+
    - on-going transfer flag
 
 B - a pointer to the list of IOs bit-fields controlling the setting of the IO, the content of which depends on the *Domain*:
@@ -238,7 +239,7 @@ Example :
        3 sub_graph_0.txt           ; path and file name 
        5 i16: 0 1 2 3 4            ; 5 streaming interfaces data_in_0, data_out_0 ..  
        3 i16: 0 0 0                ; 3 partitions for fast/slow/working (identical here) 
- ```
+```
 -----------------------------------------
 
 ## Nodes declarations
@@ -328,8 +329,9 @@ Example:
 ```
 
 ### node_memory_isolation  "0/1"
-Activate (parameter "1") the processor memory protection unit during the execution of this node. 
+Activate (parameter "1") the processor memory protection unit (on code, private memory allocated segments, and stack) during the execution of this node. 
 Example : 
+
 ```
    node_memory_isolation 1 ; activation of the memory protection unit (MPU), default 0 
 ```
@@ -345,6 +347,7 @@ Example :
 ### node_script "index"
 The indexed script is executed before and after the node execution. The conditional is set on the first call and cleared on the second call.
 Example :
+
 ```
   node_script 12 ; call script #12 associated to this node
 ```
@@ -353,6 +356,7 @@ Example :
 This command declares the parameters to share with the node during the RESET sequence. If the "tag" parameter is null is tells the following parameters is a full set. Otherwise it is an index of a subset defined in the node documentation.
 The following declaration is a list of data terminated with the "end".
 Example of a packed structure of 22 bytes of parameters:
+
 ```
      node_parameters     0                   TAG = "all parameters" 
          1  u8;  2                           Two biquads 
@@ -360,7 +364,7 @@ Example of a packed structure of 22 bytes of parameters:
          5 s16; 681   422   681 23853 -15161  elliptic band-pass 1450..1900/16kHz 
          5 s16; 681 -1342   681 26261 -15331 
      end 
-```    
+```
 
 -----------------------------------------
 
@@ -368,13 +372,14 @@ Example of a packed structure of 22 bytes of parameters:
 Scripts are small interpreted byte-codes designed for control and calls to the graph scheduler for node control and parameter settings.
 The declaration is made to tune for a minimum amount of memory consumption : by a limitation of the number of virtual CPU registers, the size of the stack and allowing the same stack memory to be reused for several scripts.
 A script is an instance of the node `arm_stream_script` the parameter of which is holding the byte-codes.
+
 ```
 node arm_stream_script 1  ; script (instance) index           
     script_stack      12  ; size of the stack in word64      
     script_mem_shared  1  ; private memory (0) or shared(1)  
     script_mem_map     0  ; mapping to VID #0 (default)      
                                                              
-    script_language 0     ; start of macro assembler         
+    script_code       
         R1 = 3.141592653589793                              
            . . .                                             
         test R1 = 0                                          
@@ -399,8 +404,11 @@ When the parameter is 1 the data is copied in the FIFO, and the graph compiler w
 
 Example :
 ```
- input arc from graph IO 4 using set0copy1=1 and using format #0       
-           to node xxfilter instance 6 input #0 using format #8       
+; Syntax :
+; arc_input   { io / set0copy1 / fmtProd } + { node / inst / arc / fmtCons }
+; arc_output  { io / set0copy1 / fmtCons } + { node / inst / arc / fmtProd }
+; arc  { node1 / inst / arc / fmtProd } + { node2 / inst / arc / fmtCons }
+
  arc_input 4 1 0    xxfilter 6 0 8                                    
                                                                       
  output arc from node xxdetector instance 5 output #1 using format #2 
@@ -410,7 +418,7 @@ Example :
  arc between nodeAAA instance 1 output #2 using format #0             
      and nodeBBB instance 3 output #4 using format #1                 
  arc nodeAAA 1 2 0   nodeBBB 3 4 1                                    
- ```
+```
 
 ### arc flow control 
 Example
@@ -444,7 +452,7 @@ Example :
     arc_debug_cmd  1  debug action "ARC_INCREMENT_REG"         
     arc_debug_reg  3  index of the 64bits result, default = #0  
     arc_debug_page 0  page of 32 words / page, default = #0    
-```    
+```
 
 ### arc_flush
 ```
@@ -473,4 +481,120 @@ Arcs are used to node parameters when the inlined way (with the node declaration
 -----------------------------------------
 
 
+
+# Example of graph
+
+The graph in text format :
+
+```
+;--------------------------------------------------------------------------
+;   Stream-based processing using a graph interpreter :                    
+;   
+;       - The ADC detection is used to toggle a GPIO
+; 
+;   +----------+     +--------+      +--------+     +--------+
+;   | ADC      +-----> filter +------> detect +-----> GPIO   | 
+;   +----------+     +--------+      +--------+     +--------+
+;                
+;----------------------------------------------------------------------
+format_index            0
+format_frame_length     8
+format_index            1
+format_frame_length     16
+;----------------------------------------------------------------------
+stream_io               0                       ; IO0
+stream_io_hwid          1                       ; io_platform_data_in_1.txt
+stream_io               1                       ; IO1
+stream_io_hwid          9                       ; io_platform_data_out_0.txt
+;----------------------------------------------------------------------
+node arm_stream_filter  0 					    ; first node 
+    node_preset         1                       ; Q15 filter
+    node_map_hwblock    1  5                    ; TCM = VID5
+    node_parameters     0                       ; TAG = "all parameters"
+        1  u8;  2                               ; Two biquads
+        1  u8;  1                               ; postShift
+        5 s16; 681   422   681 23853 -15161     ;  elliptic band-pass 1450..1900/16kHz
+        5 s16; 681 -1342   681 26261 -15331     ; 
+    end
+;----------------------------------------------------------------------
+node sigp_stream_detector 0     				; second node
+    node_preset         3               		; detector preset 
+;----------------------------------------------------------------------
+;  arc connexions between IOs and node and between nodes
+arc_input   0 1 0 arm_stream_filter     0 0 0  ; io0 set0copy1 fmt0     ; DETECT => OUTPUT 
+arc_output  1 1 1 sigp_stream_detector  0 1 1  ; io1 set0copy1 fmt1     ; INPUT => IIR
+
+arc arm_stream_filter 0 1 0 sigp_stream_detector 0 0 1                  ; IIR => DETECT
+    arc_jitter_ctrl  1.5  ; factor to apply to the minimum size between the producer and the consumer
+end
+```
+
+
+
+Platform manifest used for the mapping of IOs in the graph above 
+
+```
+; ------------------------------------------------------------------------------------------------------------
+; TOP MANIFEST :
+;   paths to the files
+;   processors manifests (memory and architecture)
+;   IO manifests to use for stream processing
+;   list of the nodes installed in the platform and their affinities with processors
+; ------------------------------------------------------------------------------------------------------------
+; list of paths for the included files
+    3                                               three file paths
+    ../../stream_platform/                           "" path index 0 
+    ../../stream_platform/computer/manifest/         "" path index 1
+    ../../stream_nodes/                              "" path index 2
+; ------------------------------------------------------------------------------------------------------------
+; PLATFORM DIGITAL, MIXED-SIGNAL AND IO MANIFESTS
+
+    1   procmap_manifest_computer.txt       path index + file name
+
+;   path:       path ID 
+;   Manifest    manifests file 
+;   IO IDX      index of the IO used in the graph 
+;   ProcCtrl    processor affinity bit-field 
+;   ClockDomain provision for insertion of ASRC 
+
+    10  : number of IO streams available
+    
+    ;Path      Manifest         IO_AL_idx ProcCtrl clock-domain     Comments               
+    1   io_platform_data_in_0.txt       0     1        0            application processor  
+    1   io_platform_data_in_1.txt       1     1        0            application processor  
+    1   io_platform_analog_sensor_0.txt 2     1        0            ADC                    
+    1   io_platform_motion_in_0.txt     3     1        0            accelero=gyro          
+    1   io_platform_audio_in_0.txt      4     1        0            microphone             
+    1   io_platform_2d_in_0.txt         5     1        0            camera                 
+    1   io_platform_line_out_0.txt      6     1        0            audio out stereo       
+    1   io_platform_gpio_out_0.txt      7     1        0            GPIO/LED               
+    1   io_platform_gpio_out_1.txt      8     1        0            GPIO/PWM               
+    1   io_platform_data_out_0.txt      9     1        0            application processor    
+; ------------------------------------------------------------------------------------------------------------
+; SOFTWARE COMPONENTS MANIFESTS 
+    2                               node_manifest_none.txt               /*  0 ID0 is reserved for by-passes */
+    2                       arm/script/node_manifest_script.txt          /*  1 arm_stream_script          */
+    2                       arm/script/node_manifest_graph_control.txt   /*  2 arm_stream_graph_control   */
+    2                       arm/router/node_manifest_router.txt          /*  3 arm_stream_router          */
+    2    signal-processingFR/converter/node_manifest_converter.txt       /*  4 sigp_stream_converter      */
+    2                    arm/amplifier/node_manifest_amplifier.txt       /*  5 arm_stream_amplifier       */
+    2                        arm/mixer/node_manifest_mixer.txt           /*  6 arm_stream_mixer           */
+    2                       arm/filter/node_manifest_filter.txt          /*  7 arm_stream_filter          */
+    2     signal-processingFR/detector/node_manifest_detector.txt        /*  8 sigp_stream_detector       */
+    2                     arm/rescaler/node_manifest_rescaler.txt        /*  9 arm_stream_rescaler        */
+    2   signal-processingFR/compressor/node_manifest_compressor.txt      /* 10 sigp_stream_compressor     */
+    2 signal-processingFR/decompressor/node_manifest_decompressor.txt    /* 11 sigp_stream_decompressor   */
+    2                    arm/modulator/node_manifest_modulator.txt       /* 12 arm_stream_modulator       */
+    2                  arm/demodulator/node_manifest_demodulator.txt     /* 13 arm_stream_demodulator     */
+    2    signal-processingFR/resampler/node_manifest_resampler.txt       /* 14 sigp_stream_resampler      */
+    2                          arm/qos/node_manifest_qos.txt             /* 15 arm_stream_qos             */
+    2                        arm/split/node_manifest_split.txt           /* 16 arm_stream_split           */
+    2   signal-processingFR/detector2D/node_manifest_detector2D.txt      /* 17 sigp_stream_detector2D     */
+    2                     arm/filter2D/node_manifest_filter2D.txt        /* 18 arm_stream_filter2D        */
+    2                     arm/analysis/node_manifest_analysis.txt        /* 19 arm_stream_analysis        */
+    2                  bitbank/JPEGENC/node_manifest_bitbank_JPEGENC.txt /* 20 JPG encoder                */
+    2                 elm-lang/TJpgDec/node_manifest_TjpgDec.txt         /* 21 JPG decoder                */
+    2             arm/format_converter/node_manifest_format_converter.txt /* 22 arm_stream_format_converter*/
+; ------------------------------------------------------------------------------------------------------------
+```
 

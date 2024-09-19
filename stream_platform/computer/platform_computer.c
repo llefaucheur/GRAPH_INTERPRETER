@@ -545,7 +545,7 @@ void platform_init_io(arm_stream_instance_t *S)
     /* if cold start : clear the backup area */
     if (TEST_BIT(S->scheduler_control, BOOT_SCTRL_LSB) == STREAM_COLD_BOOT)
     {   al_func = &(S->al_services[0]);
-        (*al_func)(PACK_AL_SERVICE(0,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0,0,0);
+        (*al_func)(PACK_SERVICE(0,0,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0,0,0);
     }
 
     /* wait all the process have initialized the graph */
@@ -592,7 +592,7 @@ void platform_init_io(arm_stream_instance_t *S)
         /* 
             IO-Interface expects the buffer to be declared by the graph 
         */
-        if (0 != TEST_BIT(*pio_control, FROMIOBUFF_IOFMT0_LSB))
+        if (TEST_BIT(*pio_control, FROMIOBUFF_IOFMT0_LSB))
         {
             iarc = RD(*pio_control, IOARCID_IOFMT0);
             iarc = SIZEOF_ARCDESC_W32 * iarc;
@@ -689,8 +689,8 @@ void al_service_mutual_exclusion(uint32_t service_command, uint8_t *pt8b, uint8_
  */
 void al_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n)
 {   
-    /* max 16 groups of commands */
-	switch (RD(service_command, GROUP_AL_SRV))
+    /* max 16 groups of commands {SERV_INTERNAL .. SERV_MM_IMAGE} */
+	switch (RD(service_command, FUNCTION_SSRV))
     {
     case AL_SERVICE_READ_TIME:
         al_service_time_functions(RD(service_command, FUNCTION_SSRV), ptr1, ptr2, ptr3, n);

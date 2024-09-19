@@ -171,7 +171,7 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_script.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_script_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\split\arm_stream_split.c" />
-    <ClCompile Include="..\..\..\stream_nodes\bitbank\bitbank_JPEGENC.c" />
+    <ClCompile Include="..\..\..\stream_nodes\bitbank\JPEGENC\bitbank_JPEGENC.c" />
     <ClCompile Include="..\..\..\stream_nodes\elm-lang\TJpgDec\TjpgDec.c" />
     <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor.c" />
     <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor_imadpcm.c" />
@@ -219,7 +219,6 @@
     <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_stream_script.h" />
     <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_stream_script_instructions.h" />
     <ClInclude Include="..\..\..\stream_nodes\arm\split\arm_stream_split.h" />
-    <ClInclude Include="..\..\..\stream_nodes\bitbank\bitbank_JPEGENC.h" />
     <ClInclude Include="..\..\..\stream_nodes\elm-lang\TJpgDec\TjpgDec.h" />
     <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor.h" />
     <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor_imadpcm.h" />
@@ -241,7 +240,7 @@
     <ClInclude Include="..\..\platform.h" />
     <ClInclude Include="..\graph_computer_header.h" />
     <ClInclude Include="..\platform_computer.h" />
-    <ClInclude Include="..\stream_libraries\CMSIS-DSP\Include\dsp\filtering_functions.h" />
+    <ClInclude Include="..\stream_libraries\CMSIS-DSP\Include\dsp\Computer_filtering_functions.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\lp-mspm0l1306\graph_lp-mspm0l1306.txt" />

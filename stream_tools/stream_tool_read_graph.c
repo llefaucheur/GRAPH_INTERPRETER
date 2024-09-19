@@ -30,6 +30,7 @@
 #endif
 
 #include "stream_tool_include.h"
+#include "../stream_nodes/arm/script/arm_stream_script_instructions.h"
 
 struct stream_graph_linkedlist *dbggraph;
 #define DBGG(mem,c) {dbggraph->dbg[dbggraph->idbg].address=mem; strcpy(dbggraph->dbg[dbggraph->idbg].toprint, c);(dbggraph->idbg)++;}
@@ -101,31 +102,6 @@ void read_top_graph_interface (char **pt_line, struct stream_platform_manifest* 
 
 }
 
-
-/* ====================================================================================   
-    Read and pack the script until finding "end" / SECTION_END
-
-    script_byte_codes
-    ....
-    end               end of byte codes  
-*/
-void stream_tool_read_script(char **pt_line, struct stream_script *script)
-{
-    uint8_t raw_type;
-    uint32_t nb_raw, nbytes, nbits;
-
-    while (1)
-    {
-        read_binary_param(pt_line, &(script->script_bytecode[script->script_nb_byte_code]), &raw_type, &nb_raw);
-        if (nb_raw == 0)
-            break;
-        nbits = stream_bitsize_of_raw(raw_type);
-        nbytes = (nbits * nb_raw)/8;
-        script->script_nb_byte_code += nbytes;
-    }
-
-    script->script_nb_byte_code = (3+(script->script_nb_byte_code)) & 0xFFFFFFFC;   // round it to W32
-}
 
 
 /*
@@ -343,7 +319,7 @@ void LoadPlatformNode(struct stream_node_manifest *graph_node, struct stream_nod
     graph_node->masklib            = platform_node->masklib;              
     graph_node->codeVersion        = platform_node->codeVersion;          
     graph_node->arc_parameter      = platform_node->arc_parameter;        
-    graph_node->same_data_rate     = platform_node->same_data_rate;       
+    graph_node->variable_data_rate = platform_node->variable_data_rate;       
     graph_node->using_arc_format   = platform_node->using_arc_format;       
     graph_node->mask_library       = platform_node->mask_library;         
     graph_node->subtype_units      = platform_node->subtype_units;        
@@ -592,10 +568,13 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         {  fields_extract(&pt_line, "CI", ctmp, &i); 
             graph->all_scripts[graph->idx_script].mem_VID = i; 
         }
-        if (COMPARE(script_code))           // script_code 0               ; code of the binary format (0 : default, or native architecture)
+        if (COMPARE(script_code))           // script_code 
+        {   stream_tool_read_code(&pt_line, &(graph->all_scripts[graph->idx_script]));  // macro assembler
+        }
+        if (COMPARE(script_assembler))           // script_code 0               ; code of the binary format (0 : default, or native architecture)
         {   fields_extract(&pt_line, "CI", ctmp, &(graph->all_scripts[graph->idx_script].script_format));  
             //jump2next_valid_line(&pt_line);
-            stream_tool_read_script(&pt_line, &(graph->all_scripts[graph->idx_script]));
+            stream_tool_read_assembler(&pt_line, &(graph->all_scripts[graph->idx_script]));
         }
         
         /* --------------------------------------------- ARCS ----------------------------------------------------------------------*/

@@ -187,7 +187,7 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
             ST(arc[2], READ_ARCW2, read);   /* update the read index */
 
             /* check need for alignement */
-            if (0u != TEST_BIT (arc[3], ALIGNBLCK_ARCW3_LSB))
+            if (TEST_BIT (arc[3], ALIGNBLCK_ARCW3_LSB))
             {   src = &(long_base[read]);
                 dst =  long_base;
                 MEMCPY (dst, src, (uint32_t)(write-read))

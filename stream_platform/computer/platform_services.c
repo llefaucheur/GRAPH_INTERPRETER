@@ -36,7 +36,7 @@
 #include "stream_const.h" 
 #include "stream_types.h"
 #include "stream_extern.h"
-#include "stream_libraries/CMSIS-DSP/Include/dsp/filtering_functions.h"
+#include "stream_libraries/CMSIS-DSP/Include/dsp/Computer_filtering_functions.h"
 
 
 
@@ -119,7 +119,7 @@ uint8_t itoab(char *s, int32_t n, int base)
 static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t* ptr3, uint32_t n)
 {
     switch (command)
-    {   case STREAM_SERVICE_INTERNAL_NODE_REGISTER: /* called during STREAM_NODE_DECLARATION to register the NODE callback */
+    {   case SERV_INTERNAL_NODE_REGISTER: /* called during STREAM_NODE_DECLARATION to register the NODE callback */
         {   
             #ifndef _MSC_VER 
             //rtn_addr = __builtin_return_address(0); // check the lr matches with the node 
@@ -128,24 +128,24 @@ static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_
         }
 
         /* ----------------------------------------------------------------------------------
-            arm_stream_services(PACK_SERVICE(instance index, STREAM_SERVICE_INTERNAL_DEBUG_TRACE), *int8_t, 0, nb bytes);
+            arm_stream_services(PACK_SERVICE(instance index, SERV_INTERNAL_DEBUG_TRACE), *int8_t, 0, nb bytes);
                 the Stream instance index
             arm_stream_services(DEBUG_TRACE_STAMPS, disable_0 / enable_1 time stamps);
 
             used to share the NODE version numbers, authors, .., real-time trace data
          */
-        case STREAM_SERVICE_INTERNAL_DEBUG_TRACE:
+        case SERV_INTERNAL_DEBUG_TRACE:
         {   break;
         }
 
         /* toggle a flag to insert/remove the time-stamps on each data pushed in the debug trace */
-        case STREAM_SERVICE_INTERNAL_DEBUG_TRACE_STAMPS:
+        case SERV_INTERNAL_DEBUG_TRACE_STAMPS:
         {   break;
         }
 
         /* stream format of an OUTPUT arc is changed on-the-fly : 
             update bit-fields of nchan, FS, units, interleaving, audio mapping, RAW format */
-        case STREAM_SERVICE_INTERNAL_FORMAT_UPDATE:
+        case SERV_INTERNAL_FORMAT_UPDATE:
         {   /* checks the index of the NODE arc and update the format for the format converter or the next consumer */ 
             break;
         }
@@ -153,7 +153,7 @@ static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_
         /* at reset time : key exchanges to deobfuscate node's firmware (TBD) + 
             graph/user activation key to activate specific features  
          */
-        case STREAM_SERVICE_INTERNAL_KEYEXCHANGE : 
+        case SERV_INTERNAL_KEYEXCHANGE : 
         {   break;
         }
     }
@@ -199,7 +199,7 @@ static void arm_stream_services_conversion (uint32_t command, uint8_t* ptr1, uin
 
     switch (command)
     {
-    case STREAM_SERVICE_CONVERSION_INT16_FP32: 
+    case SERV_CONVERSION_INT16_FP32: 
     {
         /* convert ptr1 => ptr2 [ndata3] */
         break;
@@ -221,7 +221,7 @@ static void arm_stream_services_conversion (uint32_t command, uint8_t* ptr1, uin
  */
 void arm_stream_services_stdlib (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
-#if STREAM_SERVICE_STDLIB
+#if SERV_STDLIB
 	switch (RD(command, FUNCTION_SSRV))
     {
     case STREAM_FREE:
@@ -258,7 +258,7 @@ void arm_stream_services_stdlib (uint32_t command, uint8_t* ptr1, uint8_t* ptr2,
 void arm_stream_services_math (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
     /* 
-        Permanent APIs whatever "STREAM_SERVICE_EXTMATH" are 
+        Permanent APIs whatever "SERV_EXTMATH" are 
     //STREAM_SIN_Q15 STREAM_COS_Q15 STREAM_LOG10_Q15, STREAM_SQRT_Q15,
     */
     /* From Android CHRE  https://source.android.com/docs/core/interaction/contexthub
@@ -268,7 +268,7 @@ void arm_stream_services_math (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, u
     Exponential/power functions: expf, log2f, powf, sqrtf
     Trigonometric/hyperbolic functions: sinf, cosf, tanf, asinf, acosf, atan2f, tanhf
     */
-#if STREAM_SERVICE_EXTMATH
+#if SERV_EXTMATH
     //STREAM_SIN_FP32,  STREAM_COS_FP32, STREAM_ASIN_FP32, STREAM_ACOS_FP32, 
     //STREAM_TAN_FP32,  STREAM_ATAN_FP32, STREAM_ATAN2_FP32, 
     //STREAM_LOG10_FP32,STREAM_LOG2_FP32, STREAM_POW_FP32, STREAM_SQRT_FP32, 
@@ -290,7 +290,7 @@ void arm_stream_services_math (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, u
  */
 void arm_stream_services_mm_audio (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
-#if STREAM_SERVICE_EXTAUDIO
+#if SERV_EXTAUDIO
 
 #endif
 }
@@ -310,7 +310,7 @@ void arm_stream_services_mm_audio (uint32_t command, uint8_t* ptr1, uint8_t* ptr
  */
 void arm_stream_services_mm_image (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
-#if STREAM_SERVICE_EXTIMAGE
+#if SERV_EXTIMAGE
 
 #endif
 }
@@ -373,12 +373,17 @@ void arm_stream_command_interpreter (uint32_t command, uint8_t* ptr1, uint8_t* p
 
                 Compute services can be called from any place in the code
                 Sensitive services (data moves, key exchanges, spinlock access, ..) must be called from 
-                    the same placed registered at reset time with STREAM_SERVICE_INTERNAL_SECURE_ADDRESS
+                    the same placed registered at reset time with SERV_INTERNAL_SECURE_ADDRESS
 
   @remark
  */
 
-void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n)
+void arm_stream_services (
+    uint32_t command, 
+    uint8_t *ptr1, 
+    uint8_t *ptr2, 
+    uint8_t *ptr3, 
+    uint32_t n)
 {   
     //arm_stream_instance_t *pinst;
 
@@ -386,37 +391,37 @@ void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_
 	switch (RD(command, GROUP_SSRV))
     {
     //enum stream_service_group
-    case STREAM_SERVICE_INTERNAL:
+    case SERV_INTERNAL:
         
-        if ((RD(command, GROUP_SSRV)) == STREAM_SERVICE_INTERNAL_RESET)
-        {   // arm_stream_services(*ID, STREAM_SERVICE_INTERNAL_RESET, stream_instance, 0, 0); 
-            //#define   OPTION_SSRV_MSB U(31)       
-            //#define   OPTION_SSRV_LSB U(14) /* 18   compute accuracy, in-place processing, frame size .. */
-            //#define FUNCTION_SSRV_MSB U( 9)       
-            //#define FUNCTION_SSRV_LSB U( 4) /* 6    64 functions/group  */
-            //#define    GROUP_SSRV_MSB U( 3)       
-            //#define    GROUP_SSRV_LSB U( 0) /* 4    16 groups */
-            //stream_instance = *(arm_stream_instance_t*)ptr1;
-        } 
-        else
-        {   /* arm_stream_services(*ID, PACK_COMMAND(TAG,PRESET,NARC,INST,STREAM_SERVICE_INTERNAL_XXXXX), pta, ptb); */
+        //if ((RD(command, FUNCTION_SSRV)) == FUNCTION_SSRV)
+        //{   // arm_stream_services(*ID, SERV_INTERNAL_RESET, stream_instance, 0, 0); 
+        //    //#define   OPTION_SSRV_MSB U(31)       
+        //    //#define   OPTION_SSRV_LSB U(14) /* 18   compute accuracy, in-place processing, frame size .. */
+        //    //#define FUNCTION_SSRV_MSB U( 9)       
+        //    //#define FUNCTION_SSRV_LSB U( 4) /* 6    64 functions/group  */
+        //    //#define    GROUP_SSRV_MSB U( 3)       
+        //    //#define    GROUP_SSRV_LSB U( 0) /* 4    16 groups */
+        //    //stream_instance = *(arm_stream_instance_t*)ptr1;
+        //} 
+        //else
+        {   /* arm_stream_services(*ID, PACK_COMMAND(TAG,PRESET,NARC,INST,SERV_INTERNAL_XXXXX), pta, ptb); */
             arm_stream_services_internal(RD(command, FUNCTION_SSRV), ptr1, ptr2, ptr3, n);
         }
         break;
-    case STREAM_SERVICE_FLOW:
+    case SERV_SCRIPT:
         arm_stream_services_flow (command, ptr1, ptr2, ptr3, n);
         break;
-    case STREAM_SERVICE_CONVERSION:
+    case SERV_CONVERSION:
         arm_stream_services_conversion(command, ptr1, ptr2, ptr3, n);
         break;
-    case STREAM_SERVICE_STDLIB:
+    case SERV_STDLIB:
         arm_stream_services_stdlib(command, ptr1, ptr2, ptr3, n);
         break;
-    case STREAM_SERVICE_MATH:
+    case SERV_MATH:
         arm_stream_services_math(command, ptr1, ptr2, ptr3, n);
         break;
 
-    case STREAM_SERVICE_DSP_ML:
+    case SERV_DSP_ML:
             /*  
                 - IIR-DF1 biquad filter cascade, Cortex-M0's CMSIS-DSP arm_biquad_cascade_df1_q15
                 - The spectral comuputation (cFFT, rFFT, DFT, window, module, dB)
@@ -425,55 +430,92 @@ void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_
             */
             switch (RD(command, FUNCTION_SSRV))
             {
-            case STREAM_SERVICE_CASCADE_DF1_Q15:          /* IIR filters arm_biquad_cascade_df1_fast_q15*/
-                Computer_arm_biquad_cascade_df1_fast_q15(
-                    (const arm_biquad_casd_df1_inst_q15 *) ptr3,
-                    (const q15_t *) ptr1,
-                    (q15_t *) ptr2,
-                    (uint32_t)n);
+            case SERV_CHECK_END_COMP:
+                *ptr1 = 1;                      /* return a completion flag */
                 break;
-            case STREAM_SERVICE_CASCADE_DF1_F32:          /* IIR filters arm_biquad_cascade_df1_f32*/
+
+            case SERV_CASCADE_DF1_Q15:          /* IIR filters arm_biquad_cascade_df1_fast_q15*/
+                if (RD(command,  CONTROL_SSRV) == SERV_INIT)
+                {
+
+                    //pinstance->services(                <<<========>>>          void arm_stream_services (
+                    //    pinstance->iir_service,                                      uint32_t command, 
+                    //    (uint8_t *)&(pinstance->TCM->biquad_casd_df1_inst_q15),      uint8_t *ptr1, 
+                    //    (uint8_t *)&(pinstance->TCM->coefs[0]),                      uint8_t *ptr2, 
+                    //    (uint8_t *)&(pinstance->TCM->state),                         uint8_t *ptr3, 
+                    //    (postShift << 8) | numStages                                 uint32_t n)
+                    //    );
+
+                    Computer_arm_biquad_cascade_df1_init_q15(                   // void Computer_arm_biquad_cascade_df1_init_q15(
+                        (const Computer_arm_biquad_casd_df1_inst_q15 *) ptr1,   //         Computer_arm_biquad_casd_df1_inst_q15 * S,
+                        n & 0xFF,                                               //         uint8_t numStages,
+                        (const q15_t *) ptr2,                                   //   const q15_t * pCoeffs,
+                        (q15_t *) ptr3,                                         //         q15_t * pState,
+                        n >> 8);                                                //         int8_t postShift)
+
+                } else //(RD(command,  CONTROL_SSRV) == SERV_RUN)
+                {
+                    // pinstance->services(                                        void arm_stream_services (
+                    //     pinstance->iir_service,                                             uint32_t command, 
+                    //     (uint8_t*)inBuf,                                              uint8_t *ptr1, 
+                    //     (uint8_t*)outBuf,                                             uint8_t *ptr2, 
+                    //     (uint8_t*)(&(pinstance->TCM->biquad_casd_df1_inst_q15)),      uint8_t *ptr3, 
+                    //     (uint32_t)nb_data                                             uint32_t n)
+                    //     );
+
+                    Computer_arm_biquad_cascade_df1_fast_q15(                    // void stream_filter_arm_biquad_cascade_df1_fast_q15(
+                        (const Computer_arm_biquad_casd_df1_inst_q15 *) ptr3,    //   const arm_biquad_casd_df1_inst_q15 * S,
+                        (const q15_t *) ptr1,                                    //   const q15_t * pSrc,
+                        (q15_t *) ptr2,                                          //         q15_t * pDst,
+                        (uint32_t)n);                                            //         uint32_t blockSize)
+                }
+                break;
+            case SERV_CASCADE_DF1_F32:          /* IIR filters arm_biquad_cascade_df1_f32*/
                 break;
             /* ------------------------- */
             case 0:              
-                // STREAM_SERVICE_LOW_MEMORY_rFFT      /* inplace RFFT with sin/cos recomputed in each loop */
+                // SERV_LOW_MEMORY_rFFT      /* inplace RFFT with sin/cos recomputed in each loop */
                 // 
-                // STREAM_SERVICE_INIT_rFFT_Q15        /* RFFT + windowing, module, dB */
-                // STREAM_SERVICE_rFFT_Q15
-                // STREAM_SERVICE_INIT_rFFT_F32        
-                // STREAM_SERVICE_rFFT_F32
+                // SERV_INIT_rFFT_Q15        /* RFFT + windowing, module, dB */
+                // SERV_rFFT_Q15
+                // SERV_INIT_rFFT_F32        
+                // SERV_rFFT_F32
                 // 
-                // STREAM_SERVICE_INIT_cFFT_Q15        /* cFFT + windowing, module, dB */
-                // STREAM_SERVICE_cFFT_Q15
-                // STREAM_SERVICE_INIT_cFFT_F32             
-                // STREAM_SERVICE_cFFT_F32
+                // SERV_INIT_cFFT_Q15        /* cFFT + windowing, module, dB */
+                // SERV_cFFT_Q15
+                // SERV_INIT_cFFT_F32             
+                // SERV_cFFT_F32
                 // 
-                // STREAM_SERVICE_INIT_DFT_Q15         /* DFT/Goertzel + windowing, module, dB */
-                // STREAM_SERVICE_DFT_Q15
-                // STREAM_SERVICE_INIT_DFT_F32             
-                // STREAM_SERVICE_DFT_F32
+                // SERV_INIT_DFT_Q15         /* DFT/Goertzel + windowing, module, dB */
+                // SERV_DFT_Q15
+                // SERV_INIT_DFT_F32             
+                // SERV_DFT_F32
             /* ------------------------- */
-                // STREAM_SERVICE_SQRT_Q15 
-                // STREAM_SERVICE_SQRT_F32 
-                // STREAM_SERVICE_LOG_Q15  
-                // STREAM_SERVICE_LOG_F32  
+                // SERV_SQRT_Q15 
+                // SERV_SQRT_F32 
+                // SERV_LOG_Q15  
+                // SERV_LOG_F32  
             /* ------------------------- */
-                // STREAM_SERVICE_SINE_Q15 
-                // STREAM_SERVICE_SINE_F32 
-                // STREAM_SERVICE_COS_Q15  
-                // STREAM_SERVICE_COS_F32  
-                // STREAM_SERVICE_ATAN2_Q15
-                // STREAM_SERVICE_ATAN2_F32
+                // SERV_SINE_Q15 
+                // SERV_SINE_F32 
+                // SERV_COS_Q15  
+                // SERV_COS_F32  
+                // SERV_ATAN2_Q15
+                // SERV_ATAN2_F32
             /* ------------------------- */
 
             default: 
                 break;
             }
         break;
-    case STREAM_SERVICE_MM_AUDIO:
+    case SERV_DEEPL:
         arm_stream_services_mm_audio(command, ptr1, ptr2, ptr3, n);
         break;
-    case STREAM_SERVICE_MM_IMAGE:
+        
+    case SERV_MM_AUDIO:
+        arm_stream_services_mm_audio(command, ptr1, ptr2, ptr3, n);
+        break;
+    case SERV_MM_IMAGE:
         arm_stream_services_mm_image(command, ptr1, ptr2, ptr3, n);
         break;
 

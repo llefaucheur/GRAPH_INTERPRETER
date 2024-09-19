@@ -35,7 +35,8 @@
 
 #include "stream_tool_include.h"
 
-/* ===================================================================================================== */
+
+
 
 //;--------------------------------------------------------------------------OPTIONS SYNTAX --------------------------
 //;   options sets : { index  list } { index  list } 
@@ -359,8 +360,8 @@ struct stream_node_manifest
     uint32_t deliveryMode;               /* 0:source, 1:binary 2:2 binaries (fat binary)*/
 
     uint32_t arc_parameter;             // SWC with extra-large amount of parameters (NN models) will declare it with extra arcs
-    uint32_t same_data_rate;            // (0) the arcs have different data rates, (1) all arcs have the same data rate  (0) the data flow is variable (or constant, default value :1) on all input and output arcs
-    uint32_t using_arc_format;            // default 0 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
+    uint32_t variable_data_rate;        // (1) the arcs have different data rates, (0 DEFAULT) all arcs have the same data rate on all input and output arcs
+    uint32_t using_arc_format;          // default 0 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
     uint32_t mask_library;              // default 0 bit-field of dependencies to computing libraries
     uint32_t subtype_units;             // triggers the need for rescaling and data conversion
     uint32_t architecture;              // arch compatible with (default: 0 = source code) to merge and sort for ARCHID_LW0
@@ -425,10 +426,10 @@ typedef struct processing_architecture processing_architecture_t;
 struct stream_script 
 {
     #define AVG_SCRIPT_LEN 80
-    char script_bytecode[AVG_SCRIPT_LEN];
+    uint32_t script_program[AVG_SCRIPT_LEN];
     uint32_t script_instance27b, nbw32_allocated;           // static address, size
     uint32_t stack_memory_shared;                           // flag
-    uint32_t script_nb_byte_code, nb_reg, nb_stack; // memory allocation parameters
+    uint32_t script_nb_instruction, nb_reg, nb_stack; // memory allocation parameters
     uint32_t stack_memory_script, mem_VID;
     uint32_t script_offset;
     uint32_t script_format;     /* 0 : interpreted byte code, or architecture native code */

@@ -2,33 +2,30 @@
 ; SOFTWARE COMPONENT MANIFEST - "arm_stream_filter"
 ; ------------------------------------------------------------------------------------------------------------
 ;
-node_developer_name      ARM                     ; developer name
-node_name                arm_stream_filter       ; node name
+node_developer_name   ARM                    ; developer name
+node_name             arm_stream_filter      ; node name
 
-node_using_arc_format  1 
-node_mask_library    15
+node_using_arc_format  1           ; to let filter manage q15 and fp32
+node_mask_library     64           ; dependency with DSP services
 
 ;----------------------------------------------------------------------------------------
 ;   MEMORY ALLOCATIONS
 
-node_mem                0
-node_mem_alloc         76
+node_mem                0		    ; first memory bank (node instance)
+node_mem_alloc         76			; amount of bytes
 
-node_mem                1
-node_mem_alloc          6
+node_mem                1			; second memory bank (node fast working area)
+node_mem_alloc         52           ;
 node_mem_type           1           ; working memory
 node_mem_speed          2           ; critical fast 
-
-
 ;--------------------------------------------------------------------------------------------
-;    ARC CONFIGURATION
-
+;    ARCS CONFIGURATION
 node_arc            0
-node_arc_nb_channels      {1 1 2}   {  -1   1  1  2 }   ; arc, intleaved,  options for the number of channels
-node_arc_raw_format     {1 17 27}   ; arc, options for the raw arithmetics STREAM_S16, STREAM_FP32
+node_arc_nb_channels      {1 1 2}   {-1 1 1 2 }   ; arc intleaved,  options for the number of channels
+node_arc_raw_format     {1 17 27}   ; options for the raw arithmetics STREAM_S16, STREAM_FP32
 
 node_arc            1
-node_arc_nb_channels    {1 1 2}     ; arc, intleaved,  options for the number of channels
-node_arc_raw_format     {1 17 27}   ; arc, options for the raw arithmetics STREAM_S16, STREAM_FP32
+node_arc_nb_channels    {1 1 2}     ; options for the number of channels
+node_arc_raw_format     {1 17 27}   ; options for the raw arithmetics STREAM_S16, STREAM_FP32
 
 end

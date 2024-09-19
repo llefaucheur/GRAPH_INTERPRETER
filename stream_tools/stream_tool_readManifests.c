@@ -394,8 +394,7 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
     idx_mem = 0;
 
     for (i = 0; i < MAX_NB_MEM_REQ_PER_NODE; i++) node->memreq[i].alignmentBytes = 4;
-    node->nbInputArc = node->nbOutputArc = node->same_data_rate = 
-        node->arc[1].rx0tx1 = node->locking_arc = 1;
+    node->nbInputArc = node->nbOutputArc = node->arc[1].rx0tx1 = node->locking_arc = 1;
 
     jump2next_valid_line(&pt_line);
 
@@ -416,8 +415,8 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         if (COMPARE(node_arc_parameter))              
         {   fields_extract(&pt_line, "CI", ctmp, &(node->nbParamArc)); 
         }
-        if (COMPARE(node_same_rxtx_data_rate))     // (default 0) the arcs have different data rates, (1) all arcs have the same data rate 
-        {   fields_extract(&pt_line, "CI", ctmp, &(node->same_data_rate)); 
+        if (COMPARE(node_variable_rxtx_data_rate))     // (default 0)  all arcs have the same data rate (1) the arcs have different data rates
+        {   fields_extract(&pt_line, "CI", ctmp, &(node->variable_data_rate)); 
         }
         if (COMPARE(node_use_mpdtcm))                
         {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
@@ -488,7 +487,10 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         if (COMPARE(node_mem_data0prog1))
         {   fields_extract(&pt_line, "CI", ctmp, &i); // TBC
         }
-        
+        if (COMPARE(node_not_reentrant))
+        {   fields_extract(&pt_line, "CI", ctmp, &i); // default : node_not_reentrant = 0  all nodes are reentrant
+        }
+
         if (COMPARE(node_new_arc))
         {   fields_extract(&pt_line, "CI", ctmp, &idx_arc);  
         }
@@ -553,8 +555,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     char paths[MAX_NB_PATH][NBCHAR_LINE];
     int32_t nb_paths, ipath, fw_io_idx, processorBitFieldAffinity, clockDomain;
     extern uint8_t globalEndFile;
-    uint8_t end_of_nodes;
-
+    
 #define MAXINPUT 100000
     char *inputFile;
 

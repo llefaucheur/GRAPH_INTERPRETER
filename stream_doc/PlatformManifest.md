@@ -1,6 +1,39 @@
 [TOC]
 --------------------------------------
-An example of computing graph is given in the picture below. The “nodes” (or called “nanoApps”) are processing data provided through “arcs”. Each arc’s stream is characterized by its conveyed data format (raw format, number of channels, interleaving options, time-stamps, sampling-rate, frame size). 
+# Introduction 
+
+The Graph-Interpreter is scheduling a linked-list of computing nodes using arcs. Nodes descriptors tell which processor can execute the code, which arc it is connected to. The arcs descriptors tell the base address of the buffers, read/write indexes, debug/trace information to log and a flag to tell the consumer node to wrap data to the base addresses. The buffers base address are portable using 6-bits "offset" and 22-bits "index". The offset is translated by each graph interpreter instance of each processor in a physical address given in the Platform-Manifest. 
+
+The graph is placed in a shared memory for all processors, there is no message passing scheme, the Graph-Interpreter scheduler’s instances and doing the same estimations in parallel, deciding which node needs to be executed in priority. 
+
+The application is connected to the boundary of the graph, also looking to the same graph structure, the data moves are identical with hardware peripherals and the data flow is an "IO" of the graph. When data is exchanged with the graph (from the application or a DMA device driver) and API 
+
+## Binary format of the graph 
+
+| Graph section name                                           | Description                                                  |
+| ------------------------------------------------------------ | :----------------------------------------------------------- |
+| ------ next sections can either be in RAM or Flash           |                                                              |
+| Header (7 words)                                             | The header tells where the graph will be in RAM the size of the following sections, the processors allowed to use it, the percentage of memory consumed in the memory banks |
+| IO description and links to the device-driver abstraction (4 words/IO) | Each IO descriptor tell if data will be copied in the arc buffers or if the arc descriptor will be set to point directly to the data. |
+| Scripts byte code and parameters                             | Scripts are made to update parameters, interface with the application's callbacks, implement simple state-machines, interface with the IOs of the graph |
+| List of Nodes instance and their parameters to use at reset time | This section is the translation of the node manifests with additional information from the graph : memory mapping of the node data banks and parameters (preset and specific paremeters) |
+| ------ graph sections in RAM area starts here                |                                                              |
+| List of flags telling if data requests are on-going on the IOs (1 byte/IO) | The flags "on-going" are set by the scheduler and reset upon data transfer completion |
+| List of debug/trace registers used by arcs (2 words/debug register) | Basic programmable data stream analysis (time of last access, average values, estimated data rate) |
+| List of Formats, max 256, 4 words/format                     | Frame length, number of channels, interleaving scheme, specific data of the domain |
+| List of arc descriptors (5 words/arc)                        | Base address in the portable format (6bits offset 22bits index in words), read/write indexes with Byte accuracy. The descriptor has an "extension" factor to scale all parameter up to 64GB addressing space. |
+
+## **Reset sequence**
+
+Each Node is define by an index on 10 bits and a "synchronization Byte" with 3-bits defining the architecture it made for (from 1 to 7, "0" means any architecture), 3-Bits defining the processor index within this architecture (from 1 to 7, "0" means any processor), and 2-bits for thread instance ("0" means any thread, "1, 2, 3" respectively for low-latency, normal latency, and background tasks. At reset time processor 1, of architecture 1 is allowed to copy the graph from Flash to RAM and unlock the others.
+
+Then each processor parses the graph looking nodes associated to him, resets it and updates the parameters from graph data. When all the nodes have been set the application is notified and the graph switches to "run" mode. Each graph scheduler instance takes care input and output streams are not blocked : each IOs is associated to a processor. Most of the time a single processor is in charge of all.
+
+The multiprocessor synchronization mechanisms are abstracted outside of the graph interpreter (in the platform abstraction layer), a software-based lock is proposed by default.
+
+
+
+
 
 
 

@@ -151,9 +151,6 @@
     <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler_process.c">
       <Filter>stream_nodes\resampler</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\bitbank\bitbank_JPEGENC.c">
-      <Filter>stream_nodes\JPEGENC</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_graph_control.c">
       <Filter>stream_nodes\graph_control</Filter>
     </ClCompile>
@@ -174,6 +171,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\arm\format_converter\arm_stream_format_converter_process.c">
       <Filter>stream_nodes\format_converter</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\bitbank\JPEGENC\bitbank_JPEGENC.c">
+      <Filter>stream_nodes\JPEGENC</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -201,7 +201,7 @@
     <ClInclude Include="..\..\lp-mspm0l1306\graph_lp-mspm0l1306_header.h">
       <Filter>platform_main\MSP1306</Filter>
     </ClInclude>
-    <ClInclude Include="..\stream_libraries\CMSIS-DSP\Include\dsp\filtering_functions.h">
+    <ClInclude Include="..\stream_libraries\CMSIS-DSP\Include\dsp\Computer_filtering_functions.h">
       <Filter>platform_main\Computer\library-cmsis-dsp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier.h">
@@ -266,9 +266,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler.h">
       <Filter>stream_nodes\resampler</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\stream_nodes\bitbank\bitbank_JPEGENC.h">
-      <Filter>stream_nodes\JPEGENC</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\stream_nodes\stream_common_const.h">
       <Filter>stream_nodes</Filter>

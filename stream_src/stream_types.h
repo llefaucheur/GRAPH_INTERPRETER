@@ -65,7 +65,7 @@ struct {
     unsigned m : 23;        /* Mantissa */
     unsigned e : 8;         /* Exponent */
     unsigned s : 1;         /* Sign bit */
-} floatb;
+} sfloat_struct;
 
 //union doubleb {
 //    uint64_t i;
@@ -82,7 +82,7 @@ struct {
     unsigned mh: 20;        /* Mantissa high */
     unsigned e : 11;        /* Exponent */
     unsigned s : 1;         /* Sign bit */
-} sdouble;
+} sdouble_struct;
 
 typedef uint32_t sfloat;
 typedef uint64_t sdouble;

@@ -192,7 +192,7 @@ void sigp_stream_converter (int32_t command, stream_handle_t instance, stream_xd
                 pinstance->buff2, outBuf);
 
             /* the node is producing an amount of data different from the consumed one 
-                see node_same_rxtx_data_rate = 0 in the manifest */
+                see node_variable_rxtx_data_rate = 1 in the manifest */
             pt_pt = data;   *(&(pt_pt->size)) = nb_data_read;   /* amount of data consumed */
             pt_pt ++;       *(&(pt_pt->size)) = nb_data_write;  /* amount of data produced */
             break;

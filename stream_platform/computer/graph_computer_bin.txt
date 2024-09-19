@@ -1,27 +1,27 @@
 //--------------------------------------
-//  DATE Sun Sep  1 20:35:29 2024
+//  DATE Wed Sep 18 08:12:33 2024
 //  AUTOMATICALLY GENERATED CODES
 //  DO NOT MODIFY !
 //--------------------------------------
-0x0000003C, // ------- Graph size = Flash=36[W]+RAM24[W]  +Buffers=32[B] 8[W] 
+0x0000003C, // ------- Graph size = Flash=36[W]+RAM24[W]  +Buffers=48[B] 12[W] 
 0x00000000, // 000 000 [0] Destination in RAM 0, and RAM split 0 
 0x00000042, // 004 001 [1] Number of IOs 2, Formats 2, Scripts 0 
-0x00000015, // 008 002 [2] LinkedList size 21, Collision table 0, Arc debug 0 
+0x00000015, // 008 002 LinkedList size = 21, ongoing IO bytes, Arc debug table size 0 
 0x00000003, // 00C 003 [3] Nb arcs 3  SchedCtrl 0 ScriptCtrl 0   
 0x00000001, // 010 004 [4] Processors allowed 
 0x00000000, // 014 005 [5] memory consumed 0,1,2,3 
 0x00000000, // 018 006 [6] memory consumed 4,5,6,7 ...  
 0x00083000, // 01C 007 IO(graph0) 1 arc 0 set0copy1=1 rx0tx1=0 servant1 1 shared 0 domain 0 
-0x00000000, // 020 008 IO(settings) 0 
+0x00000000, // 020 008 IO(settings 0, fmtProd 0 (L=8) fmtCons 0 (L=8) 
 0x00000000, // 024 009  
 0x00000000, // 028 00A  
 0x00483801, // 02C 00B IO(graph1) 9 arc 1 set0copy1=1 rx0tx1=1 servant1 1 shared 0 domain 0 
-0x00000000, // 030 00C IO(settings) 0 
+0x00000000, // 030 00C IO(settings 0, fmtProd 1 (L=16) fmtCons 1 (L=16) 
 0x00000000, // 034 00D  
 0x00000000, // 038 00E  
 0x00C04807, // 03C 00F -----  arm_stream_filter(0) idx:7 Nrx 1 Ntx 1 ArcFmt 1 lockArc 1 
-0x08020000, // 040 010 ARC 0 Rx0Tx1 0 dbgpage0 -- ARC 2 Rx0Tx1 1 dbgpage0 
-0x30000044, // 044 011 Nb Memreq-1 1  XDM11 same data rate 1 
+0x08020000, // 040 010 ARC 0 Rx0Tx1 0 L=8 dbgpage0 -- ARC 2 Rx0Tx1 1 L=16 dbgpage0     
+0x30000048, // 044 011 Nb Memreq-1 1  XDM11_same_rate 1 
 0x0000004C, // 048 012 Reserved static memory bank(0) = bank 0 stat0work1ret2 = 0 size 76  
 0x30800000, // 04C 013  
 0x00000008, // 050 014 Scratch memory bank(1) = bank 2 stat0work1ret2 = 1  size 8  
@@ -32,15 +32,15 @@
 0xFAC202A9, // 064 019 (3) 
 0x669502A9, // 068 01A (4) 
 0x0000C41D, // 06C 01B (5) 
-0x00404808, // 070 01C -----  sigp_stream_detector(0) idx:8 Nrx 1 Ntx 1 ArcFmt 0 lockArc 1 
-0x08010002, // 074 01D ARC 2 Rx0Tx1 0 dbgpage0 -- ARC 1 Rx0Tx1 1 dbgpage0 
-0x20000054, // 078 01E Nb Memreq-1 1  XDM11 same data rate 0 
+0x00C04808, // 070 01C -----  sigp_stream_detector(0) idx:8 Nrx 1 Ntx 1 ArcFmt 1 lockArc 1 
+0x08010002, // 074 01D ARC 2 Rx0Tx1 0 L=8 dbgpage0 -- ARC 1 Rx0Tx1 1 L=16 dbgpage0     
+0x30000058, // 078 01E Nb Memreq-1 1  XDM11_same_rate 1 
 0x00000034, // 07C 01F Reserved static memory bank(0) = bank 0 stat0work1ret2 = 0 size 52  
-0x20000060, // 080 020  
+0x30000064, // 080 020  
 0x00000020, // 084 021 Reserved static memory bank(1) = bank 0 stat0work1ret2 = 2 size 32  
 0x03000001, // 088 022 ParamLen 0+1 Preset 3 Tag0ALL 0 
-0x000003FF, // 08C 023 -------------------  vvvvvvvvv RAM vvvvvvvvv 
-0xFFFF7F7F, // 090 024 [2] LinkedList size 21, Collision table 0, Arc debug 0 
+0x000003FF, // 08C 023 ^^^^^^^^^ LINKED-LIST END ^^^^^^^^^ vvvvvvvvvvv RAM vvvvvvvvvvv 
+0xFFFF7F7F, // 090 024 LinkedList size = 21, ongoing IO bytes, Arc debug table size 0 
 0x00000008, // 094 025 Format  0 frameSize 8  
 0x00004400, // 098 026           nchan 1 raw 17 
 0x00000000, // 09C 027           domain-dependent 
@@ -50,17 +50,17 @@
 0x00000000, // 0AC 02B           domain-dependent 
 0x00000000, // 0B0 02C           domain-dependent 
 0x0000003C, // 0B4 02D IO-ARC descriptor(0) Base 3Ch (Fh words) fmtProd_0 frameL 8.0 
-0x00000008, // 0B8 02E     Size 8h[B] fmtCons_0 FrameL 8.0 
+0x00000008, // 0B8 02E     Size 8h[B] fmtCons_0 FrameL 8.0 jitterScaling 1.0 
 0x00000000, // 0BC 02F  
 0x00000000, // 0C0 030  
-0x00000000, // 0C4 031  
-0x0000003E, // 0C8 032 IO-ARC descriptor(1) Base 3Eh (Fh words) fmtProd_0 frameL 8.0 
-0x00000008, // 0CC 033     Size 8h[B] fmtCons_0 FrameL 8.0 
+0x00000000, // 0C4 031     fmtCons 0 fmtProd 0 dbgreg 0 dbgcmd 0 
+0x0000003E, // 0C8 032 IO-ARC descriptor(1) Base 3Eh (Fh words) fmtProd_1 frameL 16.0 
+0x00000010, // 0CC 033     Size 10h[B] fmtCons_1 FrameL 16.0 jitterScaling 1.0 
 0x00000000, // 0D0 034  
 0x00000000, // 0D4 035  
-0x00000000, // 0D8 036  
-0x00000040, // 0DC 037 ARC descriptor(2) Base 40h (10h words) fmtProd_1 frameL 16.0 
-0x00000010, // 0E0 038     Size 10h[B] fmtCons_1 FrameL 16.0 
+0x00000101, // 0D8 036     fmtCons 1 fmtProd 1 dbgreg 0 dbgcmd 0 
+0x00000042, // 0DC 037 ARC descriptor(2) Base 42h (10h words) fmtProd_0 frameL 8.0 
+0x00000018, // 0E0 038     Size 18h[B] fmtCons_1 FrameL 16.0 jitterScaling 1.5 
 0x00000000, // 0E4 039  
 0x00000000, // 0E8 03A  
-0x00000101, // 0EC 03B  
+0x00000100, // 0EC 03B     fmtCons 1 fmtProd 0 dbgreg 0 dbgcmd 0 

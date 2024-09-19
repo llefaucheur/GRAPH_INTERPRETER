@@ -5,7 +5,7 @@
  *
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
- * -------------------------------------------------------------------- */
+ * --------------------------------------------------------------------
 /*
  * Copyright (C) 2010-2023 ARM Limited or its affiliates. All rights reserved.
  *
@@ -37,10 +37,7 @@
 #include "stream_const.h"      
 #include "stream_types.h"  
 
-/*
-    content of registers[0] / stack[0]
-    SCRIPT_REGSIZE=8
-*/
+
 
 typedef union
 {   char    c;       char v_c[8];
@@ -48,18 +45,49 @@ typedef union
     int16_t i16;  int16_t v_i16[4];
     int32_t i32;  int32_t v_i32[2];
     int64_t i64;
-    sfloat  f32;    sfloat v_f32[2]; 
+    sfloat  f32;   sfloat v_f32[2]; 
+    #define REGS_DATA 0
+    #define REGS_TYPE 1
     sdouble f64;
 } regdata_t;
 
 
-extern void arm_stream_script_interpreter (
-    arm_stream_instance_t *S,
-    uint32_t *descriptor,
-    uint16_t *byte_code,
-    uint8_t *ram);
+/*
+*       THIS GOES IN ARC DESC 
+*/
+            typedef struct
+            {
+                arm_stream_instance_t *S;   
 
-#endif
+                uint32_t *byte_code, PC, SP;
+                regdata_t *REGS;
+                uint32_t simulation_cycle_counter;
+
+                #define ______CTRL_MSB  U(31) 
+                #define ______CTRL_LSB  U(12) /* 20   */
+                #define CTRL_TESTF_MSB  U(11) 
+                #define CTRL_TESTF_LSB  U(11) /*  1   */
+                #define CTRL_MODPTR_MSB U(10)         
+                #define CTRL_MODPTR_LSB U( 0) /* 11   */
+
+                struct
+                {   
+                    unsigned int test_flag : 1;
+                    unsigned int modulo    :11;
+                } script_ctrl;
+
+            } arm_script_instance_t;
+
+
+
+extern void arm_stream_script_interpreter (
+    arm_script_instance_t *I,
+    int32_t *descriptor,
+    int32_t *byte_code,
+    int32_t *ram);
+
+
+#endif  // if carm_stream_script_H
 
 #ifdef __cplusplus
 }

@@ -60,7 +60,8 @@ int stream_bitsize_of_raw(uint8_t raw)
 
 void script_memory_consumption(struct stream_script *script)
 {
-    /* minimum state memory = (0 register + 0 pointer + 1 special) x 8 Bytes = 8 Bytes + stack  */
+    /* minimum state memory = (0 register + 1 special (R0) + stack ) x 8 Bytes */
+
     script->nbw32_allocated = SCRIPT_REGSIZE;   /* special registers */
     script->nbw32_allocated += script->nb_reg * SCRIPT_REGSIZE;
     script->nbw32_allocated += script->nb_stack * SCRIPT_REGSIZE;

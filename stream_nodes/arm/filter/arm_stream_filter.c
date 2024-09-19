@@ -119,15 +119,17 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
                 instance = memory_results and all memory banks following
                 data = address of Stream function
                 
-                memresults are followed by 2 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
+                memresults are followed by 4 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
                 memory pointers are in the same order as described in the NODE manifest
 
                 memresult[0] : instance of the component
                 memresult[1] : pointer to the allocated memory (biquad states and coefs)
+
                 memresult[2] : input arc Word 0 SIZSFTRAW_FMT0 (frame size..)
-                memresult[3] : input arc Word 1 SAMPINGNCHANM1_FMT1 
-                memresult[4] : output arc Word 0 SIZSFTRAW_FMT0 
-                memresult[5] : output arc Word 1 SAMPINGNCHANM1_FMT1 
+                memresult[ ] : input arc Word 1 SAMPINGNCHANM1_FMT1 
+                ..
+                memresult[ ] : output arc Word 0 SIZSFTRAW_FMT0 
+                memresult[ ] : output arc Word 1 SAMPINGNCHANM1_FMT1 
 
                 preset (8bits) : number of biquads in cascade, max = 4, from NODE manifest 
                 tag (8bits)  : unused
@@ -200,6 +202,16 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
 
 #ifdef STREAM_PLATFORM_SERVICES
 
+            /* optimized kernels INIT */
+            pinstance->iir_service = PACK_SERVICE(SERV_INIT,NOOPTION_SSRV,SERV_CASCADE_DF1_Q15,SERV_DSP_ML);
+
+            pinstance->services(                                            // void arm_stream_services (      
+                pinstance->iir_service,                                     //      uint32_t command, 
+                (uint8_t *)&(pinstance->TCM->biquad_casd_df1_inst_q15),     //      uint8_t *ptr1, 
+                (uint8_t *)&(pinstance->TCM->coefs[0]),                     //      uint8_t *ptr2, 
+                (uint8_t *)&(pinstance->TCM->state),                        //      uint8_t *ptr3, 
+                (postShift << 8) | numStages                                //      uint32_t n)
+                );
 #else
             stream_filter_arm_biquad_cascade_df1_init_q15(
                 &(pinstance->TCM->biquad_casd_df1_inst_q15),
@@ -208,34 +220,6 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
                 (q15_t *)&(pinstance->TCM->state),
                 postShift);
 #endif
-
-            /* optimized kernels INIT */
-            //pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_INIT_WAIT_COMP,0,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
-
-            //pinstance->services(
-            //    pinstance->iir_service,
-            //    (uint8_t *)&(pinstance->TCM->biquad_casd_df1_inst_q15),
-            //    (uint8_t *)&(pinstance->TCM->coefs[0]),
-            //    (uint8_t *)&(pinstance->TCM->state),
-            //    postShift | numStages
-            //    );
-
-            /* optimized kernels RUN */
-            //pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_CHECK_COPROCESSOR,0,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
-            //pinstance->services( pinstance->iir_service, &i, 0, 0, 0 );
-            //if (i > 0) 
-            //{   pinstance->iir_service = PACK_SERVICE(STREAM_SERVICE_CHECK_END_COMP, 
-            //        STREAM_SERVICE_NO_INIT,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
-            //}
-            //else /* there is no coprocessor to check end of compute completion */
-            //{   pinstance->iir_service = PACK_SERVICE(0, 
-            //        STREAM_SERVICE_NO_INIT,STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
-            //}
-#ifdef STREAM_PLATFORM_SERVICES
-#else
-            pinstance->iir_service = PACK_SERVICE(NOCONTROL_SSRV, NOOPTION_SSRV,
-                STREAM_SERVICE_CASCADE_DF1_Q15,STREAM_SERVICE_DSP_ML);
-#endif            
             break;
         }
 
@@ -255,13 +239,16 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
             int16_t *inBuf, *outBuf;
 
 
-            /* the node is declared with node_same_rxtx_data_rate=1 , there is no need to update stream_xdmbuffer_t after processing */
+            /* the node is declared with node_variable_rxtx_data_rate=0, there is no need to update stream_xdmbuffer_t after processing */
             pt_pt = data;   inBuf = (int16_t *)pt_pt->address;   
                             stream_xdmbuffer_size = pt_pt->size;  /* data amount in the input buffer */
             pt_pt++;        outBuf = (int16_t *)(pt_pt->address); 
             nb_data = stream_xdmbuffer_size / sizeof(int16_t);
 
 #ifdef STREAM_PLATFORM_SERVICES
+            /* optimized kernels RUN */
+            pinstance->iir_service = PACK_SERVICE(SERV_RUN,NOOPTION_SSRV,SERV_CASCADE_DF1_Q15,SERV_DSP_ML);
+
             pinstance->services(
                 pinstance->iir_service,
                 (uint8_t*)inBuf, 
@@ -269,17 +256,19 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
                 (uint8_t*)(&(pinstance->TCM->biquad_casd_df1_inst_q15)),
                 (uint32_t)nb_data
                 );
+
+            //pinstance->iir_service = PACK_SERVICE(NOCONTROL_SSRV,NOOPTION_SSRV, SERV_CHECK_END_COMP, SERV_DSP_ML);
+            //{   uint8_t tmp;   /* return a completion flag */
+            //    do 
+            //    {   pinstance->services(pinstance->iir_service, &tmp, 0, 0, 0);
+            //    } while (tmp);
+            //}
+
+            break;
 #else
        //  #error call CMSIS-DSP
 #endif
-            if (STREAM_SERVICE_CHECK_END_COMP == RD(pinstance->iir_service, CONTROL_SSRV))
-            {   uint8_t tmp;   /* return a completion flag */
-                ST(pinstance->iir_service, FUNCTION_SSRV, STREAM_SERVICE_CASCADE_DF1_Q15_CHECK_COMPLETION);
-                do 
-                {   pinstance->services(pinstance->iir_service, &tmp, 0, 0, 0);
-                } while (tmp);
-            }
-            break;
+
         }
 
         case STREAM_READ_PARAMETER:

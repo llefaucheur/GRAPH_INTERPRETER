@@ -419,7 +419,7 @@
             ptr2 = list of XDM arc buffers (X,n) , the size field means :
                  rx arc . size = amount of data available for processing
                  tx arc . size = amount of free area in the buffer 
-                when XDM11=0 (node_same_rxtx_data_rate=0) NODE updates the XDM size fields with :
+                when XDM11=0 (node_variable_rxtx_data_rate=1) NODE updates the XDM size fields with :
                  rx arc . size = amount of data consumed
                  tx arc . size = amount of data produced
         -  (STREAM_STOP, ptr1, ptr2, ptr3); 
@@ -466,30 +466,11 @@
 
 /*================================================================================================================*/    
 /*
-    "stream_service_command"  from the nodes, to "arm_stream_services"
+    "SERV_command"  from the nodes, to "arm_stream_services"
 
     void arm_stream_services (uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n)
-*/
 
-#define NOOPTION_SSRV 0
-#define NOCONTROL_SSRV 0
-
-/* arm_stream_services COMMAND */
-#define  CONTROL_SSRV_MSB U(31)       
-#define  CONTROL_SSRV_LSB U(24) /* 8   set/init/wait completion, in case of coprocessor usage */
-#define   OPTION_SSRV_MSB U(23)       
-#define   OPTION_SSRV_LSB U(20) /* 4   compute accuracy, in-place processing, frame size .. */
-#define FUNCTION_SSRV_MSB U(19)       
-#define FUNCTION_SSRV_LSB U( 4) /* 16   64K functions/group  */
-#define    GROUP_SSRV_MSB U( 3)       
-#define    GROUP_SSRV_LSB U( 0) /* 4    16 groups */
-
-
-/* clears the MALLOC_SSRV field */
-#define PACK_SERVICE(CTRL,OPTION,FUNC,GROUP) (((CTRL)<<CONTROL_SSRV_LSB)|((OPTION)<<OPTION_SSRV_LSB)|((FUNC)<<FUNCTION_SSRV_LSB)|(GROUP)<<GROUP_SSRV_LSB)
-
-/*
-    commands from the NODE to Stream
+   commands from the NODE to Stream
     16 family of commands:
     - 1 : internal to Stream, reset, debug trace, report errors
     - 2 : arc access for scripts : pointer, last data, debug fields, format changes
@@ -504,79 +485,60 @@
 
     each family can define 256 operations (TAG_CMD_LSB)
 */
-//enum stream_service_group     
 
-                /* needs a registered return address (Y/N)  (TBD @@@) */
-#define STREAM_SERVICE_INTERNAL     1   /* Y */
-#define STREAM_SERVICE_FLOW         2   /* Y */
-#define STREAM_SERVICE_CONVERSION   3   /* N */
-#define STREAM_SERVICE_STDLIB       4   /* Y */
-#define STREAM_SERVICE_MATH         5   /* N */
-#define STREAM_SERVICE_DSP_ML       6   /* N */
-#define STREAM_SERVICE_DEEPL        7   /* N */
-#define STREAM_SERVICE_MM_AUDIO     8   /* Y */
-#define STREAM_SERVICE_MM_IMAGE     9   /* Y */
+#define NOCONTROL_SSRV 0
+#define NOOPTION_SSRV 0
+
+/* arm_stream_services COMMAND */
+#define  CONTROL_SSRV_MSB U(31)       
+#define  CONTROL_SSRV_LSB U(28) /* 4   set/init/run w/wo wait completion, in case of coprocessor usage */
+#define   OPTION_SSRV_MSB U(27)       
+#define   OPTION_SSRV_LSB U(24) /* 4   compute accuracy, in-place processing, frame size .. */
+#define FUNCTION_SSRV_MSB U(23)       
+#define FUNCTION_SSRV_LSB U( 4) /* 20   1M functions/group  */
+#define    GROUP_SSRV_MSB U( 3)       
+#define    GROUP_SSRV_LSB U( 0) /* 4    16 groups */
+
+#define PACK_SERVICE(CTRL,OPTION,FUNC,GROUP) (((CTRL)<<CONTROL_SSRV_LSB)|((OPTION)<<OPTION_SSRV_LSB)|((FUNC)<<FUNCTION_SSRV_LSB)|(GROUP)<<GROUP_SSRV_LSB)
+
+/* mask for node_mask_library, is there a need for a registered return address (Y/N)  (TBD @@@) */
+#define SERV_INTERNAL     1   /* 1   N internal */
+#define SERV_SCRIPT       2   /* 2   N script  */
+#define SERV_CONVERSION   3   /* 4   N */
+#define SERV_STDLIB       4   /* 8   Y */
+#define SERV_MATH         5   /* 16  N */
+#define SERV_DSP_ML       6   /* 32  N */
+#define SERV_DEEPL        7   /* 64  N */
+#define SERV_MM_AUDIO     8   /* 128 Y */
+#define SERV_MM_IMAGE     9   /* 256 Y */
 
 
-//{
-/* 1/STREAM_SERVICE_INTERNAL ------------------------------------------------ */
 
-#define STREAM_SERVICE_INTERNAL_RESET 1u
-#define STREAM_SERVICE_INTERNAL_NODE_REGISTER 2u
 
-/* change stream format from NODE media decoder, script applying change of use-case (IO_format, vocoder frame-size..): sampling, nb of channel, 2D frame size */
-#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE 3u      
-
-//#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_FS 3u       /* NODE information for a change of stream format, sampling, nb of channel */
-//#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_NCHAN 4u     /* raw data sample, mapping of channels, (web radio use-case) */
-//#define STREAM_SERVICE_INTERNAL_FORMAT_UPDATE_RAW 5u
-
-#define STREAM_SERVICE_INTERNAL_SECURE_ADDRESS 6u       /* this call is made from the secured address */
-#define STREAM_SERVICE_INTERNAL_AUDIO_ERROR 7u          /* PLC applied, Bad frame (no header, no synchro, bad data format), bad parameter */
-#define STREAM_SERVICE_INTERNAL_DEBUG_TRACE 8u          /* 1b, 1B, 16char */
-#define STREAM_SERVICE_INTERNAL_DEBUG_TRACE_STAMPS 9u
-#define STREAM_SERVICE_INTERNAL_AVAILABLE 10u
-#define STREAM_SERVICE_INTERNAL_SETARCDESC 11u          /* buffers holding MP3 songs.. rewind from script, 
-                                                            switch a NN model to another, change a parameter-set using arcs */
-#define STREAM_SERVICE_INTERNAL_KEYEXCHANGE 12          /* at reset time : key exchanges */
-
-#define STREAM_SERVICE_CPU_CLOCK_UPDATE 13              /* notification from the application of the CPU clock setting (TBD @@@) */
-
-//STREAM_SERVICE_INTERNAL_DEBUG_TRACE, STREAM_SERVICE_INTERNAL_DEBUG_TRACE_1B, STREAM_SERVICE_INTERNAL_DEBUG_TRACE_DIGIT, 
-// 
-//STREAM_SERVICE_INTERNAL_DEBUG_TRACE_STAMPS, STREAM_SERVICE_INTERNAL_DEBUG_TRACE_STRING,
-// 
-//STREAM_SAVE_HOT_PARAMETER, 
-
-//STREAM_LOW_POWER,     /* interface to low-power platform settings, "wake-me in 24h with deep-sleep in-between" */
-//                          " I have nothing to do most probably for the next 100ms, do what is necessary "
-
- 
-//STREAM_PROC_ARCH,     /* returns the processor architecture details, used before executing specific assembly codes */
-
-/* 2/STREAM_SERVICE_FLOW ------------------------------------------------ */
+/* GROUP_SSRV = 2/SERV_SCRIPT ------------------------------------------------ */
 //for scripts:
-    #define STREAM_SERVICE_FLOW_ARC_RWPTR 1 
-    #define STREAM_SERVICE_FLOW_ARC_DATA 2 
-    #define STREAM_SERVICE_FLOW_ARC_FILLING 3
+    #define SERV_SCRIPT_ARC_RWPTR 1 
+    #define SERV_SCRIPT_ARC_DATA 2 
+    #define SERV_SCRIPT_ARC_FILLING 3
 
 //for scripts/Nodes: fast data moves
-    #define STREAM_SERVICE_FLOW_DMA_SET 4       /* set src/dst/length */
-    #define STREAM_SERVICE_FLOW_DMA_START 5
-    #define STREAM_SERVICE_FLOW_DMA_STOP 6
-    #define STREAM_SERVICE_FLOW_DMA_CHECK 7
-
-/* 3/STREAM_SERVICE_CONVERSION ------------------------------------------------ */
-    #define STREAM_SERVICE_CONVERSION_INT16_FP32 1
+    #define SERV_SCRIPT_DMA_SET 4       /* set src/dst/length */
+    #define SERV_SCRIPT_DMA_START 5
+    #define SERV_SCRIPT_DMA_STOP 6
+    #define SERV_SCRIPT_DMA_CHECK 7
 
 
-/* 4/STREAM_SERVICE_STDLIB ------------------------------------------------ */
+
+/* GROUP_SSRV = 3/SERV_CONVERSION ------------------------------------------------ */
+    #define SERV_CONVERSION_INT16_FP32 1
+
+
+/* GROUP_SSRV = 4/SERV_STDLIB ------------------------------------------------ */
+
     /* stdlib.h */
     /* string.h */
     //STREAM_MEMSET, STREAM_STRCHR, STREAM_STRLEN,
     //STREAM_STRNCAT, STREAM_STRNCMP, STREAM_STRNCPY, STREAM_STRSTR, STREAM_STRTOK,
-    #define STREAM_RAND     1 /* (STREAM_RAND + OPTION_SSRV(seed), *ptr1, 0, 0, n) */
-    #define STREAM_SRAND    2
     #define STREAM_ATOF     3
     #define STREAM_ATOI     4
     #define STREAM_MEMSET   5
@@ -587,15 +549,25 @@
     #define STREAM_STRNCPY  10
     #define STREAM_STRSTR   11
     #define STREAM_STRTOK   12
-    //STREAM_RAND, STREAM_SRAND, STREAM_ATOF, STREAM_ATOI
+    //STREAM_ATOF, STREAM_ATOI
     #define STREAM_FREE     13
     #define STREAM_MALLOC   14
 
 
-/* 5/STREAM_SERVICE_MATH ------------------------------------------------ */
+/* GROUP_SSRV = 5/SERV_MATH ------------------------------------------------ */
+
+    /* minimum service : tables of 64 data RAND, SRAND */
+    #define STREAM_RAND     1 /* (STREAM_RAND + OPTION_SSRV(seed), *ptr1, 0, 0, n) */
+    #define STREAM_SRAND    2
+    #define SERV_TABLE_SIN      
+    #define SERV_TABLE_TAN      
+    #define SERV_TABLE_ATAN      
+    #define SERV_TABLE_SQRT      
+    #define SERV_TABLE_LOG
+
 
     /* returns a code corresponding to the processor architecture and its FPU options */
-#define STREAM_SERVICE_CHECK_ARCHITECTURE 2
+#define SERV_CHECK_ARCHITECTURE 2
     /* time.h */
     //STREAM_ASCTIMECLOCK, STREAM_DIFFTIME, STREAM_SYS_CLOCK (ms since reset), STREAM_TIME (linux seconds)
     //STREAM_READ_TIME (high-resolution timer), STREAM_READ_TIME_FROM_START, 
@@ -610,67 +582,79 @@
     Exponential/power functions: expf, log2f, powf, sqrtf
     Trigonometric/hyperbolic functions: sinf, cosf, tanf, asinf, acosf, atan2f, tanhf
     */
-#define STREAM_SERVICE_SQRT_Q15       15
-#define STREAM_SERVICE_SQRT_F32       16
-#define STREAM_SERVICE_LOG_Q15        17
-#define STREAM_SERVICE_LOG_F32        18
+    #define SERV_SQRT_Q15       15
+    #define SERV_SQRT_F32       16
+    #define SERV_LOG_Q15        17
+    #define SERV_LOG_F32        18
 
-#define STREAM_SERVICE_SINE_Q15       19
-#define STREAM_SERVICE_SINE_F32       20
-#define STREAM_SERVICE_COS_Q15        21
-#define STREAM_SERVICE_COS_F32        22
-#define STREAM_SERVICE_ATAN2_Q15      23
-#define STREAM_SERVICE_ATAN2_F32      24
+    #define SERV_SINE_Q15       19
+    #define SERV_SINE_F32       20
+    #define SERV_COS_Q15        21
+    #define SERV_COS_F32        22
+    #define SERV_ATAN2_Q15      23
+    #define SERV_ATAN2_F32      24
 
-#define STREAM_SERVICE_SORT 3
-
-
-/* 6/STREAM_SERVICE_DSP_ML ------------------------------------------------ */
-
-#define STREAM_SERVICE_NO_INIT         0    /* CONTROL_SSRV_LSB field*/
-#define STREAM_SERVICE_INIT_RETASAP    1    /* return even when computation is not finished */
-#define STREAM_SERVICE_INIT_WAIT_COMP  2    /* tell to return when processing completed */
-#define STREAM_SERVICE_CHECK_COPROCESSOR 3  /* check for services()*/
-#define STREAM_SERVICE_CHECK_END_COMP  4    /* check completion for the caller */
+    #define SERV_SORT           3 
 
 
-#define STREAM_SERVICE_CASCADE_DF1_Q15 1    /* IIR filters, use STREAM_SERVICE_CHECK_COPROCESSOR */
-#define STREAM_SERVICE_CASCADE_DF1_Q15_CHECK_COMPLETION 2    
-#define STREAM_SERVICE_CASCADE_DF1_F32 3         
-#define STREAM_SERVICE_CASCADE_DF1_F32_CHECK_COMPLETION 4
+/* GROUP_SSRV = 6/SERV_DSP_ML ------------------------------------------------ */
 
-#define STREAM_SERVICE_rFFT_Q15        5    /* RFFT windowing, module, dB , use STREAM_SERVICE_CHECK_COPROCESSOR */
-#define STREAM_SERVICE_rFFT_Q15_CHECK_COMPLETION        6
-#define STREAM_SERVICE_rFFT_F32        7
-#define STREAM_SERVICE_rFFT_F32_CHECK_COMPLETION        8
+    /* minimum service : IIRQ15/FP32, DFTQ15/FP32 */
+            /* FUNCTION_SSRV */
+    #define SERV_CHECK_COPROCESSOR  1   /* check for services() */
+    #define SERV_CHECK_END_COMP     2   /* check completion for the caller */
+    #define SERV_DFT_Q15            9   /* DFT/Goertzel windowing, module, dB */
+    #define SERV_DFT_F32            10
+    #define SERV_CASCADE_DF1_Q15    3   /* IIR filters, use SERV_CHECK_COPROCESSOR */
+    #define SERV_CASCADE_DF1_F32    4         
+
+            /* CONTROL_SSRV */
+    #define SERV_RUN                0   /* run = default */
+    #define SERV_INIT               1   /* */
+    #define SERV_WINDOW             2    
+    #define SERV_WINDOW_DB          3    
+
+            /* OPTION_SSRV */
+    #define SERV_WAIT_COMP          0   /* tell to return when processing completed (default) */
+    #define SERV_RETASAP            1   /* return even when init/computation is not finished */
+
+            /* FFT with tables rebuilded */
+    #define SERV_rFFT_Q15           5   /* RFFT windowing, module, dB , use SERV_CHECK_COPROCESSOR */
+    #define SERV_rFFT_F32           6
                                        
-#define STREAM_SERVICE_cFFT_Q15        8    /* cFFT windowing, module, dB */
-#define STREAM_SERVICE_cFFT_F32       10
+    #define SERV_cFFT_Q15           7   /* cFFT windowing, module, dB */
+    #define SERV_cFFT_F32           8
                                        
-#define STREAM_SERVICE_DFT_Q15        12    /* DFT/Goertzel windowing, module, dB */
-#define STREAM_SERVICE_DFT_F32        14
-
-#define STREAM_WINDOWS                /* windowing for spectral estimations */
-#define STREAM_FIR                    
-#define STREAM_FC                     /* fully connected layer Mat x Vec */
-#define STREAM_CNN                    /* convolutional NN : 3x3 5x5 fixed-weights */
-#define STREAM_CONV2D                 /* Sobel */
-
-#define   OPTION_AL_SRV_MSB U(25)       
-#define   OPTION_AL_SRV_LSB U(10) /* 16   .. */
-#define FUNCTION_AL_SRV_MSB U( 9)       
-#define FUNCTION_AL_SRV_LSB U( 4) /* 6    64 functions/group  */
-#define    GROUP_AL_SRV_MSB U( 3)       
-#define    GROUP_AL_SRV_LSB U( 0) /* 4    16 groups */  
-#define PACK_AL_SERVICE(OPTION,FUNC,GROUP) (((OPTION)<<OPTION_AL_SRV_LSB)|((FUNC)<<FUNCTION_AL_SRV_LSB)|(GROUP)<<GROUP_AL_SRV_LSB)
 
 
-/* 7/STREAM_SERVICE_DEEPL ------------------------------------------------ */
 
-/* 8/STREAM_SERVICE_MM_AUDIO ------------------------------------------------ */
+/* GROUP_SSRV = 7/SERV_DEEPL ------------------------------------------------ */
 
-/* 9/STREAM_SERVICE_MM_IMAGE ------------------------------------------------ */
+        /* CONTROL_SSRV */
 
+        /* OPTION_SSRV */
+
+        /* FUNCTION_SSRV */
+    #define STREAM_FC                   /* fully connected layer Mat x Vec */
+    #define STREAM_CNN                  /* convolutional NN : 3x3 5x5 fixed-weights */
+
+
+/* GROUP_SSRV = 8/SERV_MM_AUDIO ------------------------------------------------ */
+
+        /* CONTROL_SSRV */
+
+        /* OPTION_SSRV */
+
+        /* FUNCTION_SSRV */
+
+/* GROUP_SSRV = 9/SERV_MM_IMAGE ------------------------------------------------ */
+
+        /* CONTROL_SSRV */
+
+        /* OPTION_SSRV */
+
+        /* FUNCTION_SSRV */
+            // SOBEL
 
 /*
 * system subroutines : 
@@ -856,14 +840,50 @@
 
 // Time constants for algorithm
 // MiniFloat 76543210
-//           MMMEEEEE x= MMM(0..7) << EEEEE(0..31) =[0..15e9] +/-1
-// just for information: OFP8_E4M3 SEEEEMMM x= (sign).(1 + M/8).(2<<(E-7)) =[-8..+8] +/-1e-6
+//           MMMEEEEE x= MMM(0..7) << EEEEE(0..31) = [0..15e9] +/-1
+// just for information: OFP8_E4M3 SEEEEMMM x= (sign).(1 + M/8).(2<<(E-7)) =[+/- 240] +/- 0.015625 (2^-6)
 #define MINIF(m,exp) ((uint8_t)((m)<<5 | (exp)))
 #define MINIFLOAT2Q31(x) ((((x) & 0xE0)>>5) << ((x) & 0x1F))
 #define MULTIPLIER_MSB 7     
 #define MULTIPLIER_LSB 5
 #define EXPONENT_MSB 4     
 #define EXPONENT_LSB 0
+
+
+// https://en.wikipedia.org/wiki/Minifloat
+// … 000	… 001	… 010	… 011	… 100	… 101	… 110	… 111
+// 0 0000 …	0	0.001953125	0.00390625	0.005859375	0.0078125	0.009765625	0.01171875	0.013671875
+// 0 0001 …	0.015625	0.017578125	0.01953125	0.021484375	0.0234375	0.025390625	0.02734375	0.029296875
+// 0 0010 …	0.03125	0.03515625	0.0390625	0.04296875	0.046875	0.05078125	0.0546875	0.05859375
+// 0 0011 …	0.0625	0.0703125	0.078125	0.0859375	0.09375	0.1015625	0.109375	0.1171875
+// 0 0100 …	0.125	0.140625	0.15625	0.171875	0.1875	0.203125	0.21875	0.234375
+// 0 0101 …	0.25	0.28125	0.3125	0.34375	0.375	0.40625	0.4375	0.46875
+// 0 0110 …	0.5	0.5625	0.625	0.6875	0.75	0.8125	0.875	0.9375
+// 0 0111 …	1	1.125	1.25	1.375	1.5	1.625	1.75	1.875
+// 0 1000 …	2	2.25	2.5	2.75	3	3.25	3.5	3.75
+// 0 1001 …	4	4.5	5	5.5	6	6.5	7	7.5
+// 0 1010 …	8	9	10	11	12	13	14	15
+// 0 1011 …	16	18	20	22	24	26	28	30
+// 0 1100 …	32	36	40	44	48	52	56	60
+// 0 1101 …	64	72	80	88	96	104	112	120
+// 0 1110 …	128	144	160	176	192	208	224	240
+// 0 1111 …	Inf	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+// 1 0000 …	?0	?0.001953125	?0.00390625	?0.005859375	?0.0078125	?0.009765625	?0.01171875	?0.013671875
+// 1 0001 …	?0.015625	?0.017578125	?0.01953125	?0.021484375	?0.0234375	?0.025390625	?0.02734375	?0.029296875
+// 1 0010 …	?0.03125	?0.03515625	?0.0390625	?0.04296875	?0.046875	?0.05078125	?0.0546875	?0.05859375
+// 1 0011 …	?0.0625	?0.0703125	?0.078125	?0.0859375	?0.09375	?0.1015625	?0.109375	?0.1171875
+// 1 0100 …	?0.125	?0.140625	?0.15625	?0.171875	?0.1875	?0.203125	?0.21875	?0.234375
+// 1 0101 …	?0.25	?0.28125	?0.3125	?0.34375	?0.375	?0.40625	?0.4375	?0.46875
+// 1 0110 …	?0.5	?0.5625	?0.625	?0.6875	?0.75	?0.8125	?0.875	?0.9375
+// 1 0111 …	?1	?1.125	?1.25	?1.375	?1.5	?1.625	?1.75	?1.875
+// 1 1000 …	?2	?2.25	?2.5	?2.75	?3	?3.25	?3.5	?3.75
+// 1 1001 …	?4	?4.5	?5	?5.5	?6	?6.5	?7	?7.5
+// 1 1010 …	?8	?9	?10	?11	?12	?13	?14	?15
+// 1 1011 …	?16	?18	?20	?22	?24	?26	?28	?30
+// 1 1100 …	?32	?36	?40	?44	?48	?52	?56	?60
+// 1 1101 …	?64	?72	?80	?88	?96	?104	?112	?120
+// 1 1110 …	?128	?144	?160	?176	?192	?208	?224	?240
+// 1 1111 …	?Inf	NaN	NaN	NaN	NaN	NaN	NaN	NaN
 
 /*============================ BIT-FIELDS MANIPULATIONS ============================*/
 /*
@@ -916,7 +936,7 @@
 
 #define SET_BIT(arg, bit)   ((arg) |= (U(1) << U(bit)))
 #define CLEAR_BIT(arg, bit) ((arg) = U(arg) & U(~(U(1) << U(bit))))
-#define TEST_BIT(arg, bit)  (U(arg) & (U(1) << U(bit)))
+#define TEST_BIT(arg, bit)  (0 != (U(arg) & (U(1) << U(bit))))
 
 #define FLOAT_TO_INT(x) ((x)>=0.0f?(int)((x)+0.5f):(int)((x)-0.5f))
 
@@ -924,7 +944,7 @@
 #define samp_t int16_t  /* default size of input samples = 16bits */
 #define coef_t int16_t
 #define accu_t int32_t  /* accumulator with software pre-shifter */
-#define data_t int32_t+
+#define data_t int32_t 
 #define iidx_t int32_t  /* index of the loop */
 
 #define samp_f float
