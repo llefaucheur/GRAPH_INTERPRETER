@@ -39,7 +39,7 @@
 #include <stdint.h>
 #include "stream_common_const.h"
 #include "stream_common_types.h"
-
+#include "arm_stream_script_instructions.h"
 #include "arm_stream_script.h"
 
 static intPtr_t pack2linaddr_int(uint8_t **long_offset, uint32_t x, uint8_t extend)
@@ -122,14 +122,34 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
             pt_pt++;        I = (arm_script_instance_t *)pt_pt->address; 
             pt_pt++;        arc_desc = (intPtr_t *)pt_pt->address;  
 
-            /* reset the instance */
-            clear_size =  (SCRIPT_REGSIZE + 1) * RD(arc_desc[WRIOCOLL_SCRARCW3], NBREGS_SCRARCW3);
-            clear_size += (SCRIPT_REGSIZE + 1) * RD(arc_desc[WRIOCOLL_SCRARCW3], NSTACK_SCRARCW3);
+            /* reset the instance (arc buffer address) */
+            I->ctrl.nregs = RD(arc_desc[WRIOCOLL_SCRARCW3], NREGS_SCRARCW3);
+            I->ctrl.SP = I->ctrl.nregs + 1;     /* +1 for RegK(13) */
+            I->ctrl.PC = 0;         // PC pre-incremented before read
+            I->ctrl.test_flag = 0;
+            I->ctrl.cycle_downcounter = MAXCYCLES;
 
+            clear_size =  (SCRIPT_REGSIZE) * I->ctrl.nregs;
+            clear_size += (SCRIPT_REGSIZE) * RD(arc_desc[WRIOCOLL_SCRARCW3], NSTACK_SCRARCW3);
             long_offset = (I->S)->long_offset;
             src = pack2linaddr_ptr(long_offset, arc_desc[SCRIPT_PTR_SCRARCW0], RD(arc_desc[RDFLOW_ARCW2], ARCEXTEND_ARCW2));
             MEMSET(src, 0, clear_size);
 
+            /*
+            *  BYTECODE 
+            *         v
+            *         XXXXXXXXXXXXXXX
+            * 
+            *  INSTANCE (arc descriptor address = *script_instance
+            *         |   
+            *         v                    <--- nStack + 1 ------->
+            *         R0 R1 R2 ..  nregs   R13  R14 R15             
+            *         <--- registers--->   RegK SP  SP+1
+            *  STACK                            [.................]
+            *                                   SP init = nregs+2                  
+            *                             
+            *  HEAP / PARAM (4bytes/words)                                [............]
+            */
             arm_stream_script_interpreter (I, arc_desc, byte_code, src);
             break;
         }

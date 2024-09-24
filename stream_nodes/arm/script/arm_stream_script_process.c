@@ -45,9 +45,87 @@
 static int32_t search_label(arm_script_instance_t *I, int32_t label_to_seach);
 static uint8_t JMP_operation(arm_script_instance_t *I, int32_t opar, int32_t dst, int32_t src1, int32_t src2, int32_t K11);
 static void LD_operation(arm_script_instance_t *I, int32_t opar, int32_t dst, int32_t src1, int32_t src2);
-static void arithmetic_operation(arm_script_instance_t *I, int32_t opar, int32_t dst, int32_t src1, int32_t src2);
+static void arithmetic_operation(arm_script_instance_t *I, int32_t opcode, int32_t opar, int32_t dst, int32_t src1, int32_t src2);
 static void read_register(arm_script_instance_t *I, int32_t *dst, int32_t src);
 static void read_constant(arm_script_instance_t *I, int32_t k11);
+
+
+
+/**
+  @brief  ALU
+*/
+static void arithmetic_operation(arm_script_instance_t *I, int32_t opcode, int32_t opar, int32_t dst, int32_t src1, int32_t src2)
+{
+    int32_t *DST , *SRC1, *SRC2, *TMP, t;
+    int8_t DSTtype, SRC1type, SRC2type;
+    regdata_t tmp; 
+
+
+    /* ---------------------------------------- ONLY INT32 DTYPE    No pointer No stack ---------------------------- */
+    TMP  = &(tmp.v_i32[REGS_DATA]);       
+    DST  = &(I->REGS[dst].v_i32[REGS_DATA]);      
+    SRC1 = &(I->REGS[src1].v_i32[REGS_DATA]);       
+    SRC2 = &(I->REGS[src2].v_i32[REGS_DATA]);
+
+    DSTtype  = RD((I->REGS[dst].v_i32[REGS_TYPE]), DTYPE_REGS1);        
+    SRC1type = RD((I->REGS[src1].v_i32[REGS_DATA]), DTYPE_REGS1);      
+    SRC2type = RD((I->REGS[src2].v_i32[REGS_DATA]), DTYPE_REGS1);
+    t = I->ctrl.test_flag;
+
+    switch (opar)
+    {
+    case OPAR_ADD  : *TMP = *SRC1 + (*SRC2);                   break; //  ADD     SRC1 + SRC2 (or K) PUSH: S=R+0  POP:R=S+R0   DUP: S=S+R0  DEL: R0=S+R0  DEL2: R0=S'+R0
+    case OPAR_SUB  : *TMP = *SRC1 - (*SRC2);                   break; //  SUB     SRC1 - SRC2 (or K)     MOVI #K: R=R0+K
+    case OPAR_MUL  : *TMP = *SRC1 * (*SRC2);                   break; //  MUL     SRC1 * SRC2 (or K)
+    case OPAR_DIV  : *TMP = (*SRC2 == 0) ? 0 : *SRC1 / *SRC2;  break; //  DIV     SRC1 / SRC2 (or K) DIV  
+                  
+    case OPAR_MAX  : *TMP = MAX(*SRC2, *SRC1);                 break; //  MAX     MAX (SRC1, SRC2)           
+    case OPAR_MIN  : *TMP = MIN(*SRC2, *SRC1);                 break; //  MIN     MIN (SRC1, SRC2)           
+    case OPAR_AMAX : *TMP = MAX(ABS(*SRC2), ABS(*SRC1));       break; //  AMAX    AMAX (abs(SRC1), abs(SRC2))
+    case OPAR_AMIN : *TMP = MIN(ABS(*SRC2), ABS(*SRC1));       break; //  AMIN    AMIN (abs(SRC1), abs(SRC2))
+                  
+    case OPAR_OR   : *TMP = *SRC1 | *SRC2;                     break; //  OR      SRC1 | SRC2 (or K)        if SRC is a pointer then it is decoded as *(SRC)
+    case OPAR_NOR  : *TMP = !(*SRC1 | *SRC2);                  break; //  NOR     !(SRC1 | SRC2) (or K)         example TEST (*R1) > (*R2) + 3.14   or   R1 = (*R2) + R4
+    case OPAR_AND  : *TMP = *SRC1 & *SRC2;                     break; //  AND     SRC1 & SRC2 (or K)        
+    case OPAR_XOR  : *TMP = *SRC1 ^ *SRC2;                     break; //  XOR     SRC1 ^ SRC2 (or K)        
+    case OPAR_SHR  : *TMP = *SRC1 >> *SRC2;                    break; //  SHR     SRC1 << SRC2 (or K)       SHIFT   
+    case OPAR_SHL  : *TMP = *SRC1 << *SRC2;                    break; //  SHL     SRC1 >> SRC2 (or K)       
+    case OPAR_SET  : *TMP = *SRC1 | (1<<*SRC2);                break; //  SET     SRC1 | (1 << SRC2 (or K)) BSET      
+    case OPAR_CLR  : *TMP = *SRC1 & (~(1<<*SRC2));             break; //  CLR     SRC1 & (1 << SRC2 (or K)) BCLR     TESTBIT 0/R0 OPAR_SHIFT(SRC1, 1<<K5)
+    case OPAR_NORM    :                                               //NORM *DST = normed on MSB(*SRC1), applied shift in *SRC2 
+         {   uint32_t count = 0U, mask = 1L << 31;  
+             while ((*SRC1 & mask) == 0U)
+             { count += 1U;
+               mask = mask >> 1U;
+             }
+             *DST = *SRC1 << count;
+             I->REGS[*SRC2].v_i32[REGS_DATA] = count;
+             break;
+         }
+    default: break;
+    }    
+
+    switch (opcode)
+    {
+    case OP_TESTEQU :  case OP_TESTEQUK :  t = (*TMP == *DST); break;
+    case OP_TESTLEQ :  case OP_TESTLEQK :  t = (*TMP <= *DST); break;
+    case OP_TESTLT  :  case OP_TESTLTK  :  t = (*TMP  < *DST); break;
+    case OP_TESTNEQ :  case OP_TESTNEQK :  t = (*TMP != *DST); break;
+    case OP_TESTGEQ :  case OP_TESTGEQK :  t = (*TMP >= *DST); break;
+    case OP_TESTGT  :  case OP_TESTGTK  :  t = (*TMP  > *DST); break;
+    }
+
+    if (opcode > LAST_TEST_OPCODE)
+    {   *DST = *TMP;    //@@@
+    }
+
+    /* Reg0 is used as dst with OPC_TESTxxx instructions */
+    if (dst != Reg0) 
+    {   I->REGS[dst].v_i32[REGS_DATA] = *DST;
+    }
+    
+    I->ctrl.test_flag = t;
+}
 
 
 /**
@@ -93,8 +171,8 @@ static int32_t search_label(arm_script_instance_t *I, int32_t label_to_seach)
 */
 static void optional_push (arm_script_instance_t *I, int32_t src1, int32_t src2)
 {
-    if (src1 != Reg0) { I->REGS[I->SP++] = I->REGS[src1]; }
-    if (src1 != Reg0) { I->REGS[I->SP++] = I->REGS[src2]; }
+    if (src1 != Reg0) { I->REGS[I->ctrl.SP++] = I->REGS[src1]; }
+    if (src1 != Reg0) { I->REGS[I->ctrl.SP++] = I->REGS[src2]; }
 }
 
 /**
@@ -107,86 +185,83 @@ static uint8_t JMP_operation(arm_script_instance_t *I, int32_t opar, int32_t dst
 
     return_operation = 0;
 
-    //switch (opar)
-    //{
-    //case OPBR_JUMP    : I->PC = search_label(I, K11);   // JMP label_K11, PUSH SRC1/SRC2
-    //                    optional_push(I, src1, src2);  
-    //                    break;
+    switch (opar)
+    {
+    case OPBR_JUMP    : I->ctrl.PC = search_label(I, K11);   // JMP label_K11, PUSH SRC1/SRC2
+                        optional_push(I, src1, src2);  
+                        break;
 
-    //case OPBR_JUMPA   : I->PC = I->REGS[dst].v_i32[REGS_DATA];    // JMPA  jump to computed address DST, PUSH SRC1/2
-    //                    optional_push(I, src1, src2);  
-    //                    break;
+    case OPBR_JUMPA   : I->ctrl.PC = I->REGS[dst].v_i32[REGS_DATA];    // JMPA  jump to computed address DST, PUSH SRC1/2
+                        optional_push(I, src1, src2);  
+                        break;
 
-    //case OPBR_JUMPOFF : I->PC += K11;                   // JMP  Label_K11 signed offset  
-    //                    break;
+    case OPBR_JUMPOFF : I->ctrl.PC += K11;                   // JMP  Label_K11 signed offset  
+                        break;
 
-    //case OPBR_BANZ    : I->REGS[src1].v_i32[REGS_DATA] --;  // BANZ SRC1 Label_K11  "branch and decrement while non-zero 
-    //                    if (I->REGS[src1].v_i32[REGS_DATA] != 0)             // see ti.com/lit/ds/symlink/tms320c25.pdf
-    //                    {   I->PC = search_label(I, K11);
-    //                    }
-    //                    break;
+    case OPBR_BANZ    : I->REGS[src1].v_i32[REGS_DATA] --;  // BANZ SRC1 Label_K11  "branch and decrement while non-zero 
+                        if (I->REGS[src1].v_i32[REGS_DATA] != 0)             // see ti.com/lit/ds/symlink/tms320c25.pdf
+                        {   I->ctrl.PC = search_label(I, K11);
+                        }
+                        break;
 
-    //case OPBR_CALL    : r = &(I->REGS[I->SP]);          // CALL Label_K11  and optional push 2 registers
-    //                    r->v_i32[REGS_DATA] = (1+ I->PC);         
-    //                    ST(r->v_i32[REGS_TYPE], REGS_DTYPE, DTYPE_INT32); 
-    //                    I->SP ++;                       // push return address
+    case OPBR_CALL    : r = &(I->REGS[I->ctrl.SP]);          // CALL Label_K11  and optional push 2 registers
+                        r->v_i32[REGS_DATA] = (1+ I->ctrl.PC);         
+                        ST(r->v_i32[REGS_TYPE], DTYPE_REGS1, DTYPE_INT32); 
+                        I->ctrl.SP ++;                       // push return address
 
-    //                    I->PC = search_label(I, K11);   // branch to the new address
-    //                    optional_push(I, src1, src2);  
-    //                    break;
+                        I->ctrl.PC = search_label(I, K11);   // branch to the new address
+                        optional_push(I, src1, src2);  
+                        break;
 
-    //case OPBR_CALA    : r = &(I->REGS[I->SP]);
-    //                    ST(r->v_i32[REGS_TYPE], REGS_DTYPE, DTYPE_INT32);
-    //                    r->v_i32[REGS_DATA] = (1+ I->PC);         // CALA  call computed address DST, PUSH SRC1/2
-    //                    I->SP++;
+    case OPBR_CALA    : r = &(I->REGS[I->ctrl.SP]);
+                        ST(r->v_i32[REGS_TYPE], DTYPE_REGS1, DTYPE_INT32);
+                        r->v_i32[REGS_DATA] = (1+ I->ctrl.PC);         // CALA  call computed address DST, PUSH SRC1/2
+                        I->ctrl.SP++;
 
-    //                    I->PC = I->REGS[dst].v_i32[REGS_DATA];    // branch (dst)
-    //                    optional_push(I, src1, src2);  
-    //                    break;
+                        I->ctrl.PC = I->REGS[dst].v_i32[REGS_DATA];    // branch (dst)
+                        optional_push(I, src1, src2);  
+                        break;
 
-    //case OPBR_CALLSYS : // CALLSYS  {K11} system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW, Pointers)  
-    //                    {   const p_stream_al_services *al_func;
-    //                        al_func = &(I->S->al_services[0]);
-    //                        (*al_func)(PACK_SERVICE(0,0,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0,0,0);
-    //                    }
-    //                    break;
+    case OPBR_CALLSYS : // CALLSYS  {K11} system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW, Pointers)  
+                        {   const p_stream_al_services *al_func;
+                            al_func = &(I->S->al_services[0]);
+                            (*al_func)(PACK_SERVICE(0,0,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0,0,0);
+                        }
+                        break;
 
-    //case OPBR_CALLSCRIPT : // CALLSCRIPT {K11} common scripts and node control   
-    //                    {   const p_stream_al_services *al_func;
-    //                        al_func = &(I->S->al_services[0]);
-    //                        (*al_func)(PACK_SERVICE(0,0,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0,0,0);
-    //                    }
-    //                    break;
+    case OPBR_CALLSCRIPT : // CALLSCRIPT {K11} common scripts and node control   
+                        {   const p_stream_al_services *al_func;
+                            al_func = &(I->S->al_services[0]);
+                            (*al_func)(PACK_SERVICE(0,0,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0,0,0);
+                        }
+                        break;
 
-    ////case OPBR_PUSHCTRL: I->REGS[I->SP].v_i32[REGS_DATA] = I->script_ctrl.test_flag; // PUSH CONTROL (flag and control bits) 
-    ////                    ST(I->REGS[I->SP].v_i32[REGS_TYPE], REGS_DTYPE, DTYPE_CONTROL);
-    ////                    I->SP++;
-    ////                    break;
+    case OPBR_CALLAPP : // CALLAPP  {K11} 0K6=64 local callbacks 1K6= 64 global callbacks    
+                        {   const p_stream_al_services *al_func;
+                            al_func = &(I->S->al_services[0]);
+                            (*al_func)(PACK_SERVICE(0,0,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0,0,0);
+                        }
+                        break;
 
-    //case OPBR_CALLAPP : // CALLAPP  {K11} 0K6=64 local callbacks 1K6= 64 global callbacks    
-    //                    {   const p_stream_al_services *al_func;
-    //                        al_func = &(I->S->al_services[0]);
-    //                        (*al_func)(PACK_SERVICE(0,0,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0,0,0);
-    //                    }
-    //                    break;
+    case OPBR_SAVEREG : break;
 
-    //case OPBR_SAVEREG : break;
+    case OPBR_RESTOREREG : break;
 
-    //case OPBR_RETURN  : // RETURN  
-    //                    if (I->SP == RegSP) // is it a return to the graph scheduler ?
-    //                    {   return_operation = OPBR_RETURN;
-    //                    } else
-    //                    {   I->SP --; 
-    //                        I->PC = (int32_t)I->REGS[I->SP].v_i32[REGS_DATA];
-    //                    }
-    //                    break;
-    //default:
-    //case OPBR_LABEL    : I->REGS[I->SP].v_i32[REGS_DATA] = search_label(I, K11); // PUSHLABEL  Label_K11 address on the stack
-    //                    ST(I->REGS[I->SP].v_i32[REGS_TYPE], REGS_DTYPE, DTYPE_INT32);
-    //                    I->SP++;
-    //                    break;
+    case OPBR_RETURN  : // RETURN  
+                        if (I->ctrl.SP == RegSP) // is it a return to the graph scheduler ?
+                        {   return_operation = OPBR_RETURN;
+                        } else
+                        {   I->ctrl.SP --; 
+                            I->ctrl.PC = (int32_t)I->REGS[I->ctrl.SP].v_i32[REGS_DATA];
+                        }
+                        break;
+    default:
+    case OPBR_LABEL    : I->REGS[I->ctrl.SP].v_i32[REGS_DATA] = search_label(I, K11); // DST = Label_K11 (code, parameter area (flash), heap (RAM))
+                        ST(I->REGS[I->ctrl.SP].v_i32[REGS_TYPE], DTYPE_REGS1, DTYPE_INT32);
+                        I->ctrl.SP++;
+                        break;
 
-    //}
+    }
     return (return_operation);
 }
 
@@ -196,124 +271,75 @@ static uint8_t JMP_operation(arm_script_instance_t *I, int32_t opar, int32_t dst
 /**
   @brief  LOAD / STORE
 */
-static void LD_operation(arm_script_instance_t *I, int32_t opar, int32_t dst, int32_t src1, int32_t src2)
-{
-    //int32_t *DST , *SRC1, *SRC2, t;
-
-    //DST  = &(I->REGS[dst].v_i32[REGS_DATA]);
-    //SRC1 = &(I->REGS[src1].v_i32[REGS_DATA]);
-    //SRC2 = &(I->REGS[src2].v_i32[REGS_DATA]);
-    //t = I->script_ctrl.test_flag;
-
-    //switch (opar)
-    //{
-    //case OPLD_WR_BITF : // *DST (bitfield) = *SRC1 
-    //                    {   uint32_t mask = (1 << I->script_ctrl.len) -1;  
-    //                        *DST &= ~mask;
-    //                        *DST |= (*SRC1 & mask) << I->script_ctrl.lsb;
-    //                        break;
-    //                    }
-    //                   
-    //case OPLD_RD_BITF : // *DST = *SRC (bitfield) 
-    //                        *SRC1 >>= I->script_ctrl.lsb;
-    //                        *DST = (*SRC1 & ((1 << I->script_ctrl.len) -1));
-    //                        break;
-
-    //case OPLD_BITFLD  : // BITFIELD START,STOP loads 12bits in "control" for *DST = *SRC (bitfield) 
-    //                        I->script_ctrl.len = RD(*SRC2, CTRL_LEN);
-    //                        I->script_ctrl.lsb = RD(*SRC2, CTRL_LSB);
-    //                        break;
- 
-    //case OPLD_PTRINC  : // PTRINC *DST *SRC1 K11 = +/-1 +/-inc 
-    //                        *DST = *SRC1 + *SRC2;
-    //                        break;
-    //                    
-    //case OPLD_PTRMOD :  // PTRINC *DST +/-1 +/-inc +/-inc_modulo 
-    //                    {   int32_t base = RD(I->REGS[dst].v_i32[REGS_DATA], PTR28BBASE_REGS);
-    //                        int32_t size = RD(I->REGS[dst].v_i32[REGS_DATA], PTR28BSIZE_REGS);
-    //                        *DST = *SRC1 + *SRC2;
-    //                        while (*DST >  base + size)
-    //                        {   *DST -= size;
-    //                        }
-    //                        break;
-    //                    }
-    //case OPLD_MODSET  : // SET PTRMOD *DST K11      set base6b/size5b of a PTR
-    //                    {   int32_t base = RD(*SRC2, OP_K11_BASE);
-    //                        int32_t size = RD(*SRC2, OP_K11_SIZE);
-    //                        ST(I->REGS[dst].v_i32[REGS_TYPE], PTR28BBASE_REGS, base);
-    //                        ST(I->REGS[dst].v_i32[REGS_TYPE], PTR28BSIZE_REGS, size);
-    //                        break;
-    //                    }
-    //case OPLD_NORM    : //NORM *DST = normed on MSB(*SRC1), applied shift in *SRC2 
-    //                    {   uint32_t count = 0U, mask = 1L << 31;  
-    //                        while ((*SRC1 & mask) == 0U)
-    //                        {
-    //                          count += 1U;
-    //                          mask = mask >> 1U;
-    //                        }
-    //                        *DST = *SRC1 << count;
-    //                        I->REGS[*SRC2].v_i32[REGS_DATA] = count;
-    //                        break;
-    //                    }
-
-    //case OPLD_WR_SP   : I->REGS[I->SP + *SRC2].v_i32[REGS_DATA] = *DST; break;     // WRSP *SP[*SRC2/K] = *DST 
-
-    //case OPLD_RD_SP   : *DST = I->REGS[I->SP + *SRC2].v_i32[REGS_DATA]; break;     // RDSP *DST = *SP[*SRC2/K] 
-
-    //case OPLD_SWAP    : I->REGS[*SRC1].v_i32[REGS_DATA] = *DST; *DST = *SRC1; break; // SWAP *SRC1, *DST 
-
-    //default:    break;
-    //}
-
-    ///* Reg0 is used as *DST with OPC_TESTxxx instructions */
-    //if (*DST != Reg0) 
-    //{   I->REGS[*DST].v_i32[REGS_DATA] = *DST;
-    //}
-}
-
-
-
-/**
-  @brief  ALU
-*/
-static void arithmetic_operation(arm_script_instance_t *I, int32_t opar, int32_t dst, int32_t src1, int32_t src2)
+static void MOV_operation(arm_script_instance_t *I, int32_t opar, int32_t dst, int32_t src1, int32_t src2)
 {
     int32_t *DST , *SRC1, *SRC2, t;
 
-    DST  = &(I->REGS[dst].v_i32[REGS_DATA]);        // @@@@ check dst/src are pointers and read their pointed data instead
-    SRC1 = &(I->REGS[src1].v_i32[REGS_DATA]);       // @@@@ if DST/SRC = SP then apply stack rules 
+    DST  = &(I->REGS[dst].v_i32[REGS_DATA]);
+    SRC1 = &(I->REGS[src1].v_i32[REGS_DATA]);
     SRC2 = &(I->REGS[src2].v_i32[REGS_DATA]);
-    t = I->script_ctrl.test_flag;
+    t = I->ctrl.test_flag;
 
     switch (opar)
     {
-    case  OPAR_ADD  : *DST = *SRC1 + *SRC2;                     break;
-    case  OPAR_SUB  : *DST = *SRC1 - *SRC2;                     break;
-    case  OPAR_MUL  : *DST = *SRC1 * *SRC2;                     break;
-    case  OPAR_DIV  : *DST = (*SRC2 == 0) ? 0 : *SRC1 / *SRC2;  break;
+    case OPMV_CAST    : break;   // DST_ptr = (DTYPE) 
+    case OPMV_CASTPTR : break;   // DST_ptr = (POINTER DTYPE) 
+    case OPMV_BASE    : break;   // R4_PTR.base = R5, base for cicular addressing
+                        {   ST(I->REGS[dst].v_i32[REGS_TYPE], BASE_REGS1, I->REGS[RegK].v_i32[REGS_DATA]);
+                            break;
+                        }
+    case OPMV_SIZE    : break;   // R4_PTR.size = R5, size for cicular addressing
+                        {   ST(I->REGS[dst].v_i32[REGS_TYPE], SIZE_REGS1, I->REGS[RegK].v_i32[REGS_DATA]);
+                            break;
+                        }
+    case OPMV_PTRINC  : break;   // R4_PTR = R5_PTR +/-1 +/-INCTYPE +/-inc_modulo 
+                        {   int32_t inc = RD(I->REGS[RegK].v_i32[REGS_DATA], OP_K11_SINCK);
+                            int32_t inctype = RD(I->REGS[RegK].v_i32[REGS_DATA], OP_K11_INCTYPE);
+                            if (PTR_INCK == inctype)
+                            {   *DST += inc;
+                            }
+                            else
+                            {   /* cicular increment */
+                                int32_t base, size;
+                                base = RD(I->REGS[RegK].v_i32[REGS_TYPE], BASE_REGS1);
+                                size = RD(I->REGS[RegK].v_i32[REGS_TYPE], SIZE_REGS1);
+                                *DST += inc;
+                                if (*DST > base) {*DST -= inc; }
+                                if (*DST < base) {*DST += inc; }
+                            }
+                        }
+    case OPMV_SCATTER : break;   // R2[R4] = R3    indirect, write with indexes 
+    case OPMV_SCATTERK: break;   // R2[K] = R3     indirect, write with indexes 
+    case OPMV_GATHER  : break;   // R2 = R3[R4]    indirect, read with indexes 
+    case OPMV_GATHERK : break;   // R2 = R3[K]     indirect, read with indexes 
+    case OPMV_WR2BF   : break;   // R2(bitfield) = R3 
+                        {   uint32_t pos, len, mask, masklsb;
+                            pos = RD(I->REGS[RegK].v_i32[REGS_TYPE], BITFIELD_POS);
+                            len = RD(I->REGS[RegK].v_i32[REGS_TYPE], BITFIELD_LEN);
+                            masklsb = (1 << len) -1;  
+                            mask <<= pos;
+                            *DST &= ~mask;
+                            *DST |= (*SRC1 & masklsb) << pos;
+                            break;
+                        }
+    case OPMV_RDBF    :     // R2 = R3(bitfield)
+                        {   uint32_t pos, len, masklsb;
+                            pos = RD(I->REGS[RegK].v_i32[REGS_TYPE], BITFIELD_POS);
+                            len = RD(I->REGS[RegK].v_i32[REGS_TYPE], BITFIELD_LEN);
+                            masklsb = (1 << len) -1;  
+                            *SRC1 >>= pos;
+                            *DST = (*SRC1 & masklsb);
+                            break;
+                        }
+    case OPMV_SWAP    : I->REGS[*SRC1].v_i32[REGS_DATA] = *DST; *DST = *SRC1; break;   // SWAP SRC1, DST 
 
-    case  OPAR_MAX  : *DST = MAX(*SRC2, *SRC1);                 break;
-    case  OPAR_MIN  : *DST = MIN(*SRC2, *SRC1);                 break;
-    case  OPAR_AMAX : *DST = MAX(ABS(*SRC2), ABS(*SRC1));       break;
-    case  OPAR_AMIN : *DST = MIN(ABS(*SRC2), ABS(*SRC1));       break;
-
-    case  OPAR_OR   : *DST = *SRC1 | *SRC2;                     break;
-    case  OPAR_NOR  : *DST = !(*SRC1 | *SRC2);                  break;
-    case  OPAR_AND  : *DST = *SRC1 & *SRC2;                     break;
-    case  OPAR_XOR  : *DST = *SRC1 ^ *SRC2;                     break;
-    case  OPAR_SHR  : *DST = *SRC1 >> *SRC2;                    break;
-    case  OPAR_SHL  : *DST = *SRC1 << *SRC2;                    break;
-    case  OPAR_SET  : *DST = *SRC1 | (1<<*SRC2);                break;
-    case  OPAR_CLR  : *DST = *SRC1 & (~(1<<*SRC2));             break;
-    default: break;
-    }    
-
-    /* Reg0 is used as dst with OPC_TESTxxx instructions */
-    if (dst != Reg0) 
-    {   I->REGS[dst].v_i32[REGS_DATA] = *DST;
+    default:    break;
     }
-    
-    I->script_ctrl.test_flag = t;
+
+    /* Reg0 is used as *DST with OPC_TESTxxx instructions */
+    if (*DST != Reg0) 
+    {   I->REGS[*DST].v_i32[REGS_DATA] = *DST;
+    }
 }
 
 
@@ -323,10 +349,10 @@ static void arithmetic_operation(arm_script_instance_t *I, int32_t opar, int32_t
 static void read_register(arm_script_instance_t *I, int32_t *dst, int32_t src)
 {
     if (src == RegSP)           // access to the stack
-    {   *dst = I->SP;
+    {   *dst = I->ctrl.SP;
     }
     else if (src == RegSP1)    // access to stack -1
-    {   *dst = (I->SP) + 1;
+    {   *dst = (I->ctrl.SP) + 1;
     }
     else 
     {   *dst = src; 
@@ -336,35 +362,41 @@ static void read_register(arm_script_instance_t *I, int32_t *dst, int32_t src)
 
 /**
   @brief  read constant  (K)
+
+  registers format :                      DTYPE
+              <---- MSB word ----------------> <---- LSB word ---------------->  
+              FEDCBA9876543210FEDCBA987654____ FEDCBA9876543210FEDCBA987654321|  
+  uint8       ____________________________   0 <------------------------------>  
+  int32       ____________________________   4 <------------------------------>  used for R0 = 0
+  int64-4bits <-------------------------->   5 <------------------------------>  LSB are patched
+   
 */
 static void read_constant(arm_script_instance_t *I, int32_t k11)
 {
     if (k11 < K_MAX)            /* little constants */
     {   I->REGS[RegK].v_i32[REGS_DATA] = k11;
-        I->REGS[RegK].v_i32[REGS_TYPE] = DTYPE_INT;
+        I->REGS[RegK].v_i32[REGS_TYPE] = DTYPE_INT32;
     }
     else
     {   switch (k11)            /* several words for long constants */
         {
-        case K_TIME64 : case K_FP64   : case K_INT64  :
-          {
-           //@@@@@@ Patch mantissa
-            break;
-          }
-        case K_INT  : case K_UINT  : case K_FP32   : case K_TIME16 :
-        case K_TIME32 : case K_PTR28B : case K_CHAR   : case K_CONTROL:
-          {
-            I->REGS[RegK].v_i32[REGS_DATA] = I->byte_code[I->PC++];
-            I->REGS[RegK].v_i32[REGS_TYPE] = k11 - K_MAX;
-            break;
-          }
+            case K_TIME64 : case K_FP64   : case K_INT64  :
+            {
+              I->REGS[RegK].v_i32[REGS_DATA] = I->byte_code[I->ctrl.PC++];
+              I->REGS[RegK].v_i32[REGS_TYPE] = I->byte_code[I->ctrl.PC++];
+              ST(I->REGS[RegK].v_i32[REGS_TYPE], DTYPE_REGS1, k11 - K_MAX);
+              break;
+            }
+            case K_INT32  : case K_UINT32  : case K_FP32   : case K_TIME16 :
+            case K_TIME32 : case K_PTR28B :
+            {
+              I->REGS[RegK].v_i32[REGS_DATA] = I->byte_code[I->ctrl.PC++];
+              I->REGS[RegK].v_i32[REGS_TYPE] = k11 - K_MAX;
+              break;
+            }
         }
     }
 }
-
-
-
-
 
 
 /**
@@ -389,36 +421,14 @@ void arm_stream_script_interpreter (
     int32_t  cond, opcode, opar, k11, dst, src1, src2;
     int32_t instruction;
 
-    int32_t time, timeMax;
     extern void arm_stream_services (int32_t service_command, int32_t *ptr1, int32_t *ptr2, int32_t *ptr3, int32_t n);
     extern void * pack2linaddr_ptr(const intPtr_t *long_offset, int32_t data, int32_t unit);
 
-    I->PC = 0;     // PC pre-incremented before read
-    I->script_ctrl.test_flag = 0;
-    time = 0;
-    timeMax = 0xFFFFL;
-
-    /*
-    *  BYTECODE 
-    *         v
-    *         XXXXXXXXXXXXXXX
-    * 
-    *  INSTANCE (arc descriptor address = *script_instance
-    *         |   
-    *         v                    <--- nStack + 1 ------->
-    *         R0 R1 R2 ..  nregs   R13  R14 R15             
-    *         <--- registers--->   RegK SP  SP+1
-    *  STACK                            [.................]
-    *                                   SP init = nregs+2                  
-    *                             
-    *  HEAP / PARAM (4bytes/words)                                [............]
-    */
-    I->SP = RegSP;
-
-
-    while (time++ < timeMax)
+    while (I->ctrl.cycle_downcounter-- > 0)
     {
-        instruction = I->byte_code[I->PC++];
+        // if (I->ctrl.cycle_downcounte == 1) { LOG ERROR "CYCLE OVERFLOW " }
+
+        instruction = I->byte_code[I->ctrl.PC++];
         cond = RD(instruction, OP_COND);
         opcode = RD(instruction, OP_INST);
         opar = RD(instruction, OP_OPAR);
@@ -428,12 +438,11 @@ void arm_stream_script_interpreter (
         read_register(I, &src2, RD(instruction, OP_SRC2));  /* src2 */
         read_constant(I, k11);  /* load RegK */
 
-
         /* conditional execution applies to all instructions */
-        if ((cond == IF_YES) && (I->script_ctrl.test_flag == 0))
+        if ((cond == IF_YES) && (I->ctrl.test_flag == 0))
         {   continue;
         } else 
-        if ((cond == IF_NOT) && (I->script_ctrl.test_flag == 1))
+        if ((cond == IF_NOT) && (I->ctrl.test_flag == 1))
         {   continue;
         }
 
@@ -442,7 +451,7 @@ void arm_stream_script_interpreter (
         {   if (opcode < LAST_TEST_OPCODE_WITH_K)
             {   src2 = RegK;
             } 
-            arithmetic_operation(I, opar, dst, src1, src2);
+            arithmetic_operation(I, opcode, opar, dst, src1, src2);
         }
 
         /* LD/ST operations */
@@ -450,7 +459,7 @@ void arm_stream_script_interpreter (
         {   if (opcode == OP_LDK) 
             {   src2 = RegK;
             }
-            LD_operation(I, opar, dst, src1, src2);
+            MOV_operation(I, opar, dst, src1, src2);
         }
 
         /* LD/ST operations */

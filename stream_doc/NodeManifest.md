@@ -57,7 +57,7 @@ node_mem_speed          2           ; critical fast
 ;--------------------------------------------------------------------------------------------
 ;    ARCS CONFIGURATION
 node_arc            0
-node_arc_nb_channels      {1 1 2}   {-1 1 1 2 }   ; arc intleaved,  options for the number of channels
+node_arc_nb_channels      {1 1 2}   ; arc intleaved,  options for the number of channels
 node_arc_raw_format     {1 17 27}   ; options for the raw arithmetics STREAM_S16, STREAM_FP32
 
 node_arc            1

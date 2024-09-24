@@ -447,7 +447,7 @@ void arm_stream_services (
                     //    );
 
                     Computer_arm_biquad_cascade_df1_init_q15(                   // void Computer_arm_biquad_cascade_df1_init_q15(
-                        (const Computer_arm_biquad_casd_df1_inst_q15 *) ptr1,   //         Computer_arm_biquad_casd_df1_inst_q15 * S,
+                        (Computer_arm_biquad_casd_df1_inst_q15 *) ptr1,         //         Computer_arm_biquad_casd_df1_inst_q15 * S,
                         n & 0xFF,                                               //         uint8_t numStages,
                         (const q15_t *) ptr2,                                   //   const q15_t * pCoeffs,
                         (q15_t *) ptr3,                                         //         q15_t * pState,

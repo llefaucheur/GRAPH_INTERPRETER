@@ -350,181 +350,6 @@
 
 /*================================= SCRIPTS =======================================
 
-    W32 script offset table[6b = 64 SCRIPT_LW0] to the byte codes 
-        [SCRIPTSSZW32_GR1] = 
-        |    nb_script x { word offset, byteCode Format, shared RAM, ARC } 
-        |
-        |    Flash at the offset position :
-        |        { nb Label W32, nb data index W32, nregs }
-        |        [ Labels offset in the code and parameters ]
-        |        [ Data index in the RAM buffer ]
-        |        Byte codes
-        |        Parameters 
-
-        RAM ARC descriptor 5 words
-            
-        ARC buffer 
-        |    Registers 8 Bytes : R0 (state) .. R(nregs)
-        |    Stack 8 Bytes 
-        |    Heap 4 Bytes
-
-    before/after nodes (can be reused for several nodes)
-
-
-
-    Script instance = 
-       
-    
-    
-    BYTECODE XXXXXXXXXXXXXXX
-    
-    INSTANCE (arc descriptor address = *script_instance
-           |   
-           v                    <--- nStack + 1 ------->
-           R0 R1 R2 ..  nregs   R13  R14 R15             
-           <--- registers--->   RegK SP  SP+1
-    STACK                            [.................]
-                                     SP init = nregs+2                  
-                               
-    HEAP / PARAM (4bytes/words)                                [............]
-
-    III_____________________________ if yes, if not, no test, break-point (+ margin)
-    ___yyyyy________________________ 32 op-code 
-    ________-OPAR___________________ 32 arithmetic op
-    _____________DST.SRC1SRC2_______ 10 Registers(r1..r10) + sp(r14) + sp1(r15) + ctrl(r0) + rK(r13)
-    _____________________xxxxxxxxxxx 11-bits Constant = +/- 0 .. 1000 / Bit field for {1000 < K < 1024}
-    _________________xxxxxxxxxxxxxxx 15-bits Constant 
-    
-    
-    registers format :                      DTYPE
-                <---- MSB word ----------------> <---- LSB word ---------------->  
-                FEDCBA9876543210FEDCBA987654____ FEDCBA9876543210FEDCBA987654321|  
-    int32       ____________________________   0 <------------------------------>  used for R0 = 0
-    uint32      ____________________________   1 <------------------------------>  
-    q15         ____________________________   2 <------------------------------>  
-    fp32        ____________________________   3 <------------------------------>  
-    TIME64      <-------------------------->   4 <------------------------------>    
-    fp64        <-------------------------->   5 <------------------------------>  mantissa is patched
-    int64-4bits <-------------------------->   6 <------------------------------>  LSB are patched
-    TIME16      ____________________________   7 ________________<-------------->  
-    TIME32      ____________________________   8 <------------------------------>  
-    28b + DTYPE ---BASE------SIZE-18------__   9 DTYPE<------ 28bits address---->  typed pointer + circular option (10+18)
-    char /0     ____________________________  10 ________________________<------>  
-    Control     <-------------------------->  11 <------------------------------>   
-    
-    
-    
-                              
-     Encoded instructions : 
-     COND   INST    DST  LD-TST/ JMP  / MOV     SRC1  SRC2/#K
-     0      1       2     ------- 3 -------     4     5  : field index
-     ifyes  ld/k    0     add    jmp    wr2bf   0     0   + #iufdptc and constant 
-     ifno   test/k  r1    min    cal    ptrinc  r1    r1
-            jmp     r10   set                   r10   r10
-            mov     sp           ret            sp    sp
-            label   sp1                         sp1   sp1
-                                                rk    rk
-
-    Assembler                          Binary encoding 
-    ---------                          ----------------
-    OP_LD/OP_LDK family
-      testleq r6 sp                      OP_TESTLEQ  R6 NOP R14 R0        decode OP_TEST
-      testleq r2 mul { r4 r6 }	         OP_TESTLEQ  R2 MUL R4 R6 
-      testleq r2 add { r4 #int 15}	     OP_TESTLEQK R2 ADD R4 #15        decode RK=15
-      testleq r2 max { r4 #float 3.14}	 OP_TESTLEQK R2 MAX R4 DTYPE_W32  >RK=float on extra word
-      testleq r2 max { r4 #double 3.141} OP_TESTLEQK R2 MAX R4 DTYPE_W64  >RK=double on two extra words
-
-    OP_LD/OP_LDK family
-      ld r2 add { r4 r6 }                OP_LD R2 ADD R4 R6          R2_ptr = R4_ptr [R6]  DTYPE of R4
-      ld r6 sp                           OP_LD R6 NOP R14 R0         decode OP_LD + decode NOP
-      ld r2 mul { r4 r6 }	             OP_LD R2 MUL R4 R6          R2 = R4 + R6
-      ld r2 add { r4 #int 15}	         OP_LDK R2 ADD R4 #15        decode OP_LDK : RK=15 + decode MUL
-      ld r2 max { r4 #float 3.14}	     OP_LDK R2 MAX R4 DTYPE_W32  OP_LDK1 : RK=float on extra word
-      ld r2 max { r4 #double 3.14159}    OP_LDK R2 MAX R4 DTYPE_W64  OP_LDK1 : RK=double on two extra words
-
-
-    OP_MOV family
-      cast    r2 #float         OP_MOV R0 OPLD_CAST     R2 #DTYPE   DST_ptr = (DTYPE) 
-      castptr r2 #float         OP_MOV R0 OPLD_CASTPTR  R2 #DTYPE   DST_ptr = (POINTER DTYPE) 
-      base    r4 r5             OP_MOV R4 OPLD_BASE     R5 R0       R4_PTR.base = R5, base for cicular addressing
-      size    r4 r5             OP_MOV R4 OPLD_SIZE     R5 R0       R4_PTR.size = R5, size for cicular addressing
-      ptrinc  r4, r5, #inc      OP_MOV R4 OPLD_PTRINC   R5 #INCTYPE R4_PTR = R5_PTR +/-1 +/-inc +/-inc_modulo 
-      scatter r2 r3 r4          OP_MOV R2 OPLD_SCATTER  R3 R4       R2[R4] = R3    indirect, write with indexes 
-      scatter r2 r3 #k          OP_MOV R2 OPLD_SCATTERK R3 #K       R2[K] = R3     indirect, write with indexes 
-      gather  r2 r3 r4          OP_MOV R2 OPLD_GATHER   R3 R4       R2 = R3[R4]    indirect, read with indexes 
-      gather  r2 r3 #k          OP_MOV R2 OPLD_GATHERK  R3 #K       R2 = R3[K]     indirect, read with indexes 
-      wr2bf   r2 r3 LEN.POS     OP_MOV R2 OPLD_WR2BF    R3 #LEN.POS R2(bitfield) = R3 
-      rdbf    r2 r3 LEN.POS     OP_MOV R2 OPLD_RDBF     R3 #LEN.POS R2 = R3(bitfield)
-      norm    r2 r3             OP_MOV R2 OPLD_NORM     R3 R4       R2 = normed on MSB(R3), applied shift in R4
-      swap    r2 r3             OP_MOV R0 OPLD_SWAP     R2 R3       SWAP SRC1, DST 
-
-    OP_JMP family
-      jump L15              OP_JUMP R0 OPBR_JUMP       R0 #15      JMP LABEL K11 and PUSH SRC1/SRC2
-      jump r4               OP_JUMP R4 OPBR_JUMPA      R0 R0       JMPA  jump to computed address DST, PUSH SRC1/SRC2
-      jump -14              OP_JUMP R0 OPBR_JUMPOFF    R0 #-14     JMP signed_K11  signed word32 offset  and push 3 registers 
-      banz r4 L15           OP_JUMP R4 OPBR_BANZ       R0 #15      BANZ SRC1   Label_K11    
-      call L15              OP_JUMP R0 OPBR_CALL       R0 #15      CALL LABEL K11 and PUSH SRC1/SRC2
-      cala r4               OP_JUMP R4 OPBR_CALA       R0 R0       CALA  call computed address DST, PUSH SRC1/SRC2
-      callsys 15            OP_JUMP R0 OPBR_CALLSYS    R0 #15      CALLSYS   {K11} system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW, Pointers)  
-      script 15             OP_JUMP R0 OPBR_CALLSCRIPT R0 #15      CALLSCRIPT{K11} common scripts and node control   
-      callapp 15            OP_JUMP R0 OPBR_CALLAPP    R0 #15      CALLAPP   {K11} 0K6=64 local callbacks 1K6= 64 global callbacks    
-      save 3,4,5            OP_JUMP R0 OPBR_SAVEREG    R0 #1Ch     push K11 registers
-      restore 3,4,5         OP_JUMP R0 OPBR_RESTOREREG R0 #1Ch     pop k11 registers
-      return                OP_JUMP R0 OPBR_RETURN     R0 R0       RETURN {keep registers 
-      label R4 L11          OP_JUMP R4 OPBR_LABEL      R0 #K       DST = Label_K15 (offset in code/parameter area (flash) or heap (RAM))
-
-    Labels = L_<symbol> (no instruction)    
-
-    SYSCALLS
-    --------
-  SYSCALL : 
-    - Node Set/ReadParam/Run, patch a field in the header
-    - FIFO read/set, data amount/free, debug reg read/set, time-stamp of last access (ASRC use-case)
-    - Script TX buffer is starting with a table of indexes (Labels) to the data to address (SYSCALL return the address)
-    - Update Format framesize, FS
-    - Read Time 16/32/64 from arc/AL, compute differences,
-    - Jump to +/- N nodes in the list,      => read HEADER + test fields + jump
-      Un/Lock a section of the graph
-    - Select new IO settings (set timer period, change gains)
-    - AL decides deep sleep with the help of parameters (wake-up in X[s])
-    - Trace "string" + data
-    - Callbacks (cmd (cmd+LIbName+Subfunction , X, n) for I2C/Radio .. Libraries 
-    - Callback returning the current use-case to set parameters
-    - Call a relocatable binary section in the Param area
-    - Share Physical HW addresses
-    - Compute Median from data in a circular buffer + mean/STD
-
-        reprogram the setting of stream_format_io[]
-        //  format 6b control + 2b register
-        //  load "t", from stack(i) = R(i) or #const
-        //  move R(i) to/from arc FIFOdata / debugReg / with/without read index update
-        //  compare R(i) with "t" : <> = != and skip next instruction
-        //  jump to #label
-        //  dsz decrement and jump on non-zero
-        //  arithmetic add,sub,(AND,shift), #const/R(j)
-        //  Basic DSP: moving average, median(5), Max(using VAD's forgetting factors).
-        //  time difference, time comparison, change the setting of the timer (stop/restart)
-        //  time elapsed from today, from a reference, from reset, UTC/local time
-        //  computations on time-stamps
-        //  default implementation with SYSTICK
-        //  convert in ASCII format ISO 8601
-        //  Modulo 60 function for the translation to mn. Wake me at 5AM.
-        //  Activate timer 0.1s , 1s, 10s 1h 1D 1M
-        //  Registers : 64bits(addressable in int8/16/32) + 8bits (type: time, temperature, pressure, 4xint16, counter-current-max)
-        //  if {data arrived from the button queue}
-        //  Registered callback for low-level operations for one or all instances
-        //    fixed format f(cmd,ptr,x,n)
-        //    example specific : IP address, password to share, Ping IP to blink the LED, read RSSI, read IP@
-        //  Default callbacks: sleep/deep-sleep activation, timer control, who am I
-        //    DAC/PWM/GPIO controlled with standard stream Arcs
-        //  Low-level interface : Fill the I2C control string and callback
-        //  Minimum services : average, timer, data formating/rescale/Interp, polling IOs
-        //  Power meter process is using 3 phases x voltage, current, reactive power
-        //  Save the state of a button (shutter button)
-        //Command from arm_stream_command_interpreter() : return the code version number, ..
-*/
-
-#define SCRIPT_REGSIZE 8            /* 8 bytes per register */
 
 #define INDEX_SCRIPT_STRUCT_SIZE 2
 #define INDEX_SCRIPT_OFFSET 0
@@ -533,9 +358,9 @@
 #define     ARC_SCROFF0_MSB U(31) /* 11 arc descriptor */
 #define     ARC_SCROFF0_LSB U(21) /*                   */
 #define  FORMAT_SCROFF0_MSB U(20) /* 3  byte codes format = 0, 7 binary native architecture ARCHID_LW0 */
-#define  FORMAT_SCROFF0_LSB U(18) /*       ARMv6-M */
-#define  SHARED_SCROFF0_MSB U(23) /* 1  shareable memory for the script with other scripts in mono processor platforms */
-#define  SHARED_SCROFF0_LSB U(23) /*                                    */
+#define  FORMAT_SCROFF0_LSB U(19) /*       ARMv6-M */
+#define  SHARED_SCROFF0_MSB U(18) /* 1  shareable memory for the script with other scripts in mono processor platforms */
+#define  SHARED_SCROFF0_LSB U(18) /*                                    */
 #define  OFFSET_SCROFF0_MSB U(17) /* 17 offset to the W32 script table */
 #define  OFFSET_SCROFF0_LSB U( 0) /*                                   */
 
@@ -576,8 +401,8 @@
 #define LOG2MAXCYCLE_SCRARCW3_LSB U(16) /*     */ 
 #define    __________SCRARCW3_MSB U(15) /*  1  */
 #define    __________SCRARCW3_LSB U(15) /*     */
-#define       NBREGS_SCRARCW3_MSB U(14) /*  4   number of registers used in this script */ 
-#define       NBREGS_SCRARCW3_LSB U(11) /*     */
+#define        NREGS_SCRARCW3_MSB U(14) /*  4   number of registers used in this script */ 
+#define        NREGS_SCRARCW3_LSB U(11) /*     */
 #define       NSTACK_SCRARCW3_MSB U(10) /* 11   max size of the FIFO/stack in W32 */
 #define       NSTACK_SCRARCW3_LSB U( 0) /*     */
 

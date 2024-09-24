@@ -37,7 +37,14 @@
 #include "stream_const.h"      
 #include "stream_types.h"  
 
-
+    
+/*  registers format :                      DTYPE
+                <---- MSB word ----------------> <---- LSB word ---------------->  
+                FEDCBA9876543210FEDCBA987654____ FEDCBA9876543210FEDCBA987654321|  
+    uint8       ____________________________   0 <------------------------------>  
+    int32       ____________________________   4 <------------------------------>  used for R0 = 0
+    int64-4bits <-------------------------->   5 <------------------------------>  LSB are patched
+*/    
 
 typedef union
 {   char    c;       char v_c[8];
@@ -58,23 +65,20 @@ typedef union
             typedef struct
             {
                 arm_stream_instance_t *S;   
-
-                uint32_t *byte_code, PC, SP;
-                regdata_t *REGS;
-                uint32_t simulation_cycle_counter;
-
-                #define ______CTRL_MSB  U(31) 
-                #define ______CTRL_LSB  U(12) /* 20   */
-                #define CTRL_TESTF_MSB  U(11) 
-                #define CTRL_TESTF_LSB  U(11) /*  1   */
-                #define CTRL_MODPTR_MSB U(10)         
-                #define CTRL_MODPTR_LSB U( 0) /* 11   */
+                uint32_t *byte_code;
+                regdata_t *REGS;              /* registers and stack */
 
                 struct
                 {   
+                    unsigned int free : 3;
+                    unsigned int nregs : 4;
                     unsigned int test_flag : 1;
-                    unsigned int modulo    :11;
-                } script_ctrl;
+                    unsigned int PC : 8;
+                    unsigned int SP : 8;       /* in REGS unit */
+
+#define MAXCYCLES 255
+                    unsigned int cycle_downcounter : 8;
+                } ctrl;
 
             } arm_script_instance_t;
 

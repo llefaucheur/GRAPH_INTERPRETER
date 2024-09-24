@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\analysis\arm_stream_analysis.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\analysis\arm_stream_analysis_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\demodulator\arm_stream_demodulator.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\demodulator\arm_stream_demodulator_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\filter2D\arm_stream_filter2D.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\filter\arm_stream_filter.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\filter\CMSIS-DSP\Source\FilteringFunctions\arm_biquad_cascade_df1_fast_q15.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\filter\CMSIS-DSP\Source\FilteringFunctions\arm_biquad_cascade_df1_init_q15.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\format_converter\arm_stream_format_converter.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\format_converter\arm_stream_format_converter_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\mixer\arm_stream_mixer.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\mixer\arm_stream_mixer_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\qos\arm_stream_qos.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\qos\arm_stream_qos_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\rescaler\arm_stream_rescaler.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\rescaler\arm_stream_rescaler_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\router\arm_stream_router.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\router\arm_stream_router_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_graph_control.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_script.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_script_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\split\arm_stream_split.c" />
+    <ClCompile Include="..\..\..\stream_nodes\bitbank\JPEGENC\bitbank_JPEGENC.c" />
+    <ClCompile Include="..\..\..\stream_nodes\elm-lang\TJpgDec\tjpgd3\src\tjpgd.c" />
+    <ClCompile Include="..\..\..\stream_nodes\elm-lang\TJpgDec\TjpgDec.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor_imadpcm.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\converter\sigp_stream_converter.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\converter\sigp_stream_converter_coefs.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\converter\sigp_stream_converter_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor_imadpcm.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector2D\sigp_stream_detector2D.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector2D\sigp_stream_detector2D_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler_process.c" />
+    <ClCompile Include="..\..\..\stream_src\stream_graph_interpreter.c" />
+    <ClCompile Include="..\..\..\stream_src\stream_io.c" />
+    <ClCompile Include="..\..\..\stream_src\stream_scheduler.c" />
+    <ClCompile Include="..\main.c" />
+    <ClCompile Include="..\main_call_computer.c" />
+    <ClCompile Include="..\platform_computer.c" />
+    <ClCompile Include="..\platform_computer_io_services.c" />
+    <ClCompile Include="..\platform_services.c" />
+    <ClCompile Include="..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_fast_q15.c" />
+    <ClCompile Include="..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_init_q15.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_stream_script.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_stream_script_instructions.h" />
+    <ClInclude Include="..\..\..\stream_nodes\stream_common_const.h" />
+    <ClInclude Include="..\..\..\stream_nodes\stream_common_types.h" />
+    <ClInclude Include="..\..\..\stream_src\stream_const.h" />
+    <ClInclude Include="..\..\..\stream_src\stream_types.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{4f4c6829-4c0a-4883-bc42-5b00e40b85f5}</ProjectGuid>
+    <RootNamespace>vcpp2019</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>..\..\..\stream_platform;..\..\..\stream_nodes;..\..\..\stream_src;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
