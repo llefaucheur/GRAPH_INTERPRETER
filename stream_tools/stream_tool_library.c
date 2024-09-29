@@ -30,6 +30,7 @@
 #endif
 
 #include "stream_tool_include.h"
+#include "../stream_nodes/arm/script/arm_stream_script_instructions.h"
 
 uint8_t globalEndFile;
 uint8_t FoundEndSection;

@@ -315,7 +315,7 @@ static void MOV_operation(arm_script_instance_t *I, int32_t opar, int32_t dst, i
     case OPMV_WR2BF   : break;   // R2(bitfield) = R3 
                         {   uint32_t pos, len, mask, masklsb;
                             pos = RD(I->REGS[RegK].v_i32[REGS_TYPE], BITFIELD_POS);
-                            len = RD(I->REGS[RegK].v_i32[REGS_TYPE], BITFIELD_LEN);
+                            len = 1+ RD(I->REGS[RegK].v_i32[REGS_TYPE], BITFIELD_LENM1);
                             masklsb = (1 << len) -1;  
                             mask <<= pos;
                             *DST &= ~mask;
@@ -325,7 +325,7 @@ static void MOV_operation(arm_script_instance_t *I, int32_t opar, int32_t dst, i
     case OPMV_RDBF    :     // R2 = R3(bitfield)
                         {   uint32_t pos, len, masklsb;
                             pos = RD(I->REGS[RegK].v_i32[REGS_TYPE], BITFIELD_POS);
-                            len = RD(I->REGS[RegK].v_i32[REGS_TYPE], BITFIELD_LEN);
+                            len = 1+ RD(I->REGS[RegK].v_i32[REGS_TYPE], BITFIELD_LENM1);
                             masklsb = (1 << len) -1;  
                             *SRC1 >>= pos;
                             *DST = (*SRC1 & masklsb);

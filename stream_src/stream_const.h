@@ -348,30 +348,18 @@
 #define ____UNUSED_IO_MSB 6u  
 #define ____UNUSED_IO_LSB 0u  /* 7 */
 
-/*================================= SCRIPTS =======================================
+/*================================= SCRIPTS ======================================= */
 
 
-#define INDEX_SCRIPT_STRUCT_SIZE 2
-#define INDEX_SCRIPT_OFFSET 0
-#define INDEX_SCRIPT_LABELS 1
-
-#define     ARC_SCROFF0_MSB U(31) /* 11 arc descriptor */
-#define     ARC_SCROFF0_LSB U(21) /*                   */
+//#define     ARC_SCROFF0_MSB U(31) /* 11 arc descriptor */
+//#define     ARC_SCROFF0_LSB U(21) /*                   */
 #define  FORMAT_SCROFF0_MSB U(20) /* 3  byte codes format = 0, 7 binary native architecture ARCHID_LW0 */
 #define  FORMAT_SCROFF0_LSB U(19) /*       ARMv6-M */
 #define  SHARED_SCROFF0_MSB U(18) /* 1  shareable memory for the script with other scripts in mono processor platforms */
 #define  SHARED_SCROFF0_LSB U(18) /*                                    */
-#define  OFFSET_SCROFF0_MSB U(17) /* 17 offset to the W32 script table */
-#define  OFFSET_SCROFF0_LSB U( 0) /*                                   */
+//#define  OFFSET_SCROFF0_MSB U(17) /* 17 offset to the W32 script table */
+//#define  OFFSET_SCROFF0_LSB U( 0) /*                                   */
 
-#define     ARC_SCROFF1_MSB U(31) /* 11 arc descriptor */
-#define     ARC_SCROFF1_LSB U(21) /*                   */
-#define  FORMAT_SCROFF1_MSB U(20) /* 3  byte codes format = 0, 7 binary native architecture ARCHID_LW0 */
-#define  FORMAT_SCROFF1_LSB U(18) /*       ARMv6-M */
-#define  SHARED_SCROFF1_MSB U(23) /* 1  shareable memory for the script with other scripts in mono processor platforms */
-#define  SHARED_SCROFF1_LSB U(23) /*                                    */
-#define  OFFSET_SCROFF1_MSB U(17) /* 17 offset to the W32 script table */
-#define  OFFSET_SCROFF1_LSB U( 0) /*                                   */
          
 /* =================
     arc descriptors used to address the working area : registers and stack

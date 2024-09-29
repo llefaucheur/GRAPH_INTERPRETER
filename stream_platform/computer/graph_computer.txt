@@ -31,6 +31,21 @@ node arm_stream_filter  0
 ;----------------------------------------------------------------------
 node sigp_stream_detector 0     
     node_preset         3               detector preset 
+;----------------------------------------------------------------------------------------
+node arm_stream_script 1  ; script (instance) index           
+    script_stack      12  ; size of the stack in word64      
+    script_mem_shared  1  ; private memory (0) or shared(1)  
+    script_mem_map     0  ; mapping to VID #0 (default)      
+                                                             
+    script_code       
+        ld r1 #int 12
+        callapp 15
+        return
+    end                                                      
+    node_parameters 0                                    
+       ;include 1 binary_code.txt ; path ID and file name     
+        5 s16; 681 -1342   681 26261 -15331     
+    end          
 ;----------------------------------------------------------------------
 arc_input   0 1 0 arm_stream_filter     0 0 0  ; io0 set0copy1 fmt0     ; DETECT => OUTPUT 
 arc_output  1 1 1 sigp_stream_detector  0 1 1  ; io1 set0copy1 fmt1     ; INPUT => IIR

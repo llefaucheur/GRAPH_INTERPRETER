@@ -427,6 +427,7 @@ struct stream_script
 {
     #define AVG_SCRIPT_LEN 80
     uint32_t script_program[AVG_SCRIPT_LEN];
+    char  script_comments[AVG_SCRIPT_LEN][NBCHAR_LINE];
     uint32_t script_instance27b, nbw32_allocated;           // static address, size
     uint32_t stack_memory_shared;                           // flag
     uint32_t script_nb_instruction, nb_reg, nb_stack; // memory allocation parameters

@@ -571,9 +571,9 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(script_code))           // script_code 
         {   stream_tool_read_code(&pt_line, &(graph->all_scripts[graph->idx_script]));  // macro assembler
         }
-        if (COMPARE(script_assembler))           // script_code 0               ; code of the binary format (0 : default, or native architecture)
+        if (COMPARE(script_assembler))           // script_assembler 0      ; code of the binary format (0 : default, or native architecture)
         {   fields_extract(&pt_line, "CI", ctmp, &(graph->all_scripts[graph->idx_script].script_format));  
-            //jump2next_valid_line(&pt_line);
+
             stream_tool_read_assembler(&pt_line, &(graph->all_scripts[graph->idx_script]));
         }
         

@@ -61,11 +61,11 @@
     <ClInclude Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_header.h">
       <Filter>GraphSteps</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\stream_nodes\stream_common.h">
-      <Filter>Stream</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\stream_platform\computer\graph_computer_header.h">
       <Filter>GraphSteps</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\stream_nodes\arm\script\arm_stream_script_instructions.h">
+      <Filter>Stream</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

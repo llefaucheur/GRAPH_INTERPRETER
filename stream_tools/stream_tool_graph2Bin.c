@@ -172,9 +172,12 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         ST(FMT0, OFFSET_SCROFF0, offsetW);
 
         GTEXT(tmpstring); GWORDINC(FMT0);
+        
+        //@@@@ copy GWORDINC script codes 
 
         offsetW = offsetW + (3 + graph->all_scripts[i].script_nb_instruction)/4;
     }
+    
     FMT0 = graph->binary_graph[GR1_INDEX];
     ST(FMT0, SCRIPTSSZW32_GR1, offsetW);
     graph->nb_formats ++ ; // nb_formats is an index = MAX(current_format_index, nb_format)

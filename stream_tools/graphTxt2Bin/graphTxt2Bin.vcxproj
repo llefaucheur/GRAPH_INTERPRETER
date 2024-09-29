@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\stream_nodes\stream_common.h" />
+    <ClInclude Include="..\..\stream_nodes\arm\script\arm_stream_script_instructions.h" />
     <ClInclude Include="..\..\stream_platform\computer\graph_computer_header.h" />
     <ClInclude Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_header.h" />
     <ClInclude Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk_header.h" />
