@@ -1,0 +1,20 @@
+; ------------------------------------------------------------------------------------------------------------
+; SOFTWARE COMPONENT MANIFEST - "sigp_stream_detector"
+; ------------------------------------------------------------------------------------------------------------
+;
+node_developer_name      signal-processing.fr   ; developer name
+node_name                sigp_stream_detector   ; node name
+
+node_using_arc_format  1                        ; manage different format
+
+;----------------------------------------------------------------------------------------
+;   MEMORY ALLOCATIONS
+
+node_mem                0
+node_mem_alloc         50                       ; filter static
+
+node_mem                1
+node_mem_alloc         30
+node_mem_type           2                       ; backup memory (Z7..)
+
+end

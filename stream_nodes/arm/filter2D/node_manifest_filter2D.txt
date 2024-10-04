@@ -1,0 +1,22 @@
+; ------------------------------------------------------------------------------------------------------------
+; SOFTWARE COMPONENT MANIFEST - "arm_stream_filter2D"
+; ------------------------------------------------------------------------------------------------------------
+;
+node_developer_name      ARM                    ; developer name
+node_name                arm_stream_filter2D    ; node name
+
+node_variable_rxtx_data_rate   1                ; 1 the data flow is variable 
+node_using_arc_format  1                        ; will manage different formats
+
+;----------------------------------------------------------------------------------------
+;   MEMORY ALLOCATIONS
+
+node_mem                0
+node_mem_alloc         32
+
+;--------------------------------------------------------------------------------------------
+;    ARC CONFIGURATION
+
+
+ 
+end

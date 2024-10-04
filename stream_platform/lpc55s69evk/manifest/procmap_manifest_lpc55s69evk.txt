@@ -1,0 +1,46 @@
+; ------------------------------------------------------------------------------------------------------------
+; Processor and memory configuration + default memory mapping of LPC55S69EVK
+; ------------------------------------------------------------------------------------------------------------
+;
+
+    1 1 9 4 number of architectures, number of processors, number of memory banks, number of offsets
+
+;   memory banks:
+;   - ID        base offset ID reference above
+;   - VID       virtual ID used in the graph for manual mapping, must stay below 99 for swap controls (see NodeTemplate.txt)
+;   - S         0=any/1=normal/2=fast/3=critical-Fast, 
+;   - W         static0/working1/retention2
+;   - P         shared0/private1,
+;   - H         DMAmemHW1
+;   - D         Data0/Prog1/Both2 
+;   - Size      minimum sizes guaranteed per VID starting from @[ID]+offset below
+;   - Offset    maximum offset from the base offset ID, (continuous banks means = previous size + previous offset)
+
+;   the memory is further split in the graph "top_memory_mapping" to ease mapping and overlays
+
+;   ID VID  S W P H D     Size offset from offsetID 
+    0   0   1 0 0 0 0   278528 0        VID0=DEFAULT flat memory bank, can overlap with the others
+    0   1   0 0 0 0 0    65536 0        SRAM0 
+    0   1   0 0 0 0 0    65536 65536    SRAM1
+    0   1   0 0 0 0 0    65536 131072   SRAM2 
+    0   1   0 0 0 0 0    65536 196608   SRAM3 
+    0   1   0 0 0 0 0    16384 262144   SRAM4 
+    1   5   3 1 1 0 0    32768 0        SRAMX_0 
+    1   5   3 1 1 0 0     1024 32768    SRAMX_1 
+    1   1   0 2 0 0 0     8192 65536    SRAMX_2 Retention memory
+    3   0   0 0 0 0 0   200000 10       Data in Flash
+  
+
+;   memory offsets ID used by all processors and physical address seen from the main processor
+;   0       h20000000   image of "platform_specific_long_offset(intPtr_t long_offset[])" 
+;   1       h14000000   image of "platform_specific_long_offset(intPtr_t long_offset[])" 
+;   2       h18000000   image of "platform_specific_long_offset(intPtr_t long_offset[])" 
+;   3       h00000000   Internal Flash   
+
+;----------------------------------------------------------------------------------------
+; all architectures
+    ;   all processors (processor IDs >0)
+        ;------------------------------------------------------------
+        1 1 15      processor ID, boolean "I am the main processor" allowed to boot the graphs
+        ;           Bit-field computation firmware extensions, on top of the basic one, embedded in Stream services
+        ;                 EXT_SERVICE_MATH 1, EXT_SERVICE_DSPML 2, EXT_SERVICE_AUDIO 3, EXT_SERVICE_IMAGE 4

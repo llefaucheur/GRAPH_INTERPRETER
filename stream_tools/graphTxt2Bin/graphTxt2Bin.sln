@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33529.622
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "graphTxt2Bin", "graphTxt2Bin.vcxproj", "{EC41F3B2-FE8A-4497-812D-20B1F5DB4D8D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EC41F3B2-FE8A-4497-812D-20B1F5DB4D8D}.Debug|x64.ActiveCfg = Debug|x64
+		{EC41F3B2-FE8A-4497-812D-20B1F5DB4D8D}.Debug|x64.Build.0 = Debug|x64
+		{EC41F3B2-FE8A-4497-812D-20B1F5DB4D8D}.Debug|x86.ActiveCfg = Debug|Win32
+		{EC41F3B2-FE8A-4497-812D-20B1F5DB4D8D}.Debug|x86.Build.0 = Debug|Win32
+		{EC41F3B2-FE8A-4497-812D-20B1F5DB4D8D}.Release|x64.ActiveCfg = Release|x64
+		{EC41F3B2-FE8A-4497-812D-20B1F5DB4D8D}.Release|x64.Build.0 = Release|x64
+		{EC41F3B2-FE8A-4497-812D-20B1F5DB4D8D}.Release|x86.ActiveCfg = Release|Win32
+		{EC41F3B2-FE8A-4497-812D-20B1F5DB4D8D}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1C759FA1-D628-442A-8BA6-1D21EF05F6D6}
+	EndGlobalSection
+EndGlobal

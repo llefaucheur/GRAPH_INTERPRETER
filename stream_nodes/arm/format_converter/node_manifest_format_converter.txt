@@ -1,0 +1,29 @@
+; ------------------------------------------------------------------------------------------------------------
+; SOFTWARE COMPONENT MANIFEST - "arm_stream_format_converter"
+; ------------------------------------------------------------------------------------------------------------
+;
+node_developer_name      ARM                    ; developer name
+node_name         arm_stream_format_converter   ; node name
+
+node_variable_rxtx_data_rate   1                ; 1 the data flow is variable 
+node_using_arc_format  0                        ; default 1 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
+
+;----------------------------------------------------------------------------------------
+;   MEMORY ALLOCATIONS
+node_mem                0
+node_mem_alloc         76           ; static memory
+node_mem_speed          1           ; fast
+node_mem_nbchan        16 0         ; add in Bytes : 8 samples q15 x nb of channels of arc 1 (memory of the interpolator)
+
+node_mem                1
+node_mem_frame_size     4 1         ; add in Bytes : (q15-size * 2 buffers) x frame size of arc 1
+node_mem_type           1           ; working memory
+node_mem_speed          2           ; critical fast 
+
+;--------------------------------------------------------------------------------------------
+;    ARC CONFIGURATION
+
+end
+
+;--------------------------------------------------------------------------------------------
+

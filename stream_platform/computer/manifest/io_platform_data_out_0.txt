@@ -1,0 +1,12 @@
+; ------------------------------------------------------------------------------------------------------------
+; Manifest of generic data_out (to the application)
+; ------------------------------------------------------------------------------------------------------------
+                                                                       
+io_platform_data_out_0 ; name for the tools                            
+data_out               ; domain name,   no specific field
+
+io_direction_rx0tx1 1
+
+io_frame_length        {1 64 128}
+
+    end

@@ -1,0 +1,55 @@
+;--------------------------------------------------------------------------
+;   Stream-based processing using a graph interpreter :                    
+;   
+;   The main script receives a code for the implementation of a use-case :
+;       - The ADC detection is used to toggle a GPIO
+; 
+;   +----------+     +--------+      +--------+     +--------+
+;   | ADC      +-----> filter +------> detect +-----> GPIO   | 
+;   +----------+     +--------+      +--------+     +--------+
+;                
+;----------------------------------------------------------------------
+format_index            0
+format_frame_length     8
+format_index            1
+format_frame_length     16
+;----------------------------------------------------------------------
+stream_io               0                       ;
+stream_io_hwid          1                       ; io_platform_data_in_1.txt
+stream_io               1                       ;
+stream_io_hwid          9                       ; io_platform_data_out_0.txt
+;----------------------------------------------------------------------
+node arm_stream_filter  0 
+    node_preset         1                       ; Q15 filter
+    node_map_hwblock    1  5                    ; TCM = VID5
+    node_parameters     0                       ; TAG = "all parameters"
+        1  u8;  2                               ; Two biquads
+        1  u8;  1                               ; postShift
+        5 s16; 681   422   681 23853 -15161     ;  elliptic band-pass 1450..1900/16kHz
+        5 s16; 681 -1342   681 26261 -15331     ; 
+    end
+;----------------------------------------------------------------------
+node sigp_stream_detector 0     
+    node_preset         3               detector preset 
+;----------------------------------------------------------------------------------------
+node arm_stream_script 1  ; script (instance) index           
+    script_stack      12  ; size of the stack in word64      
+    script_mem_shared  1  ; private memory (0) or shared(1)  
+    script_mem_map     0  ; mapping to VID #0 (default)      
+                                                             
+    script_code       
+        ld r1 #int 12
+        callapp 15
+        return
+    end                                                      
+    node_parameters 0                                    
+       ;include 1 binary_code.txt ; path ID and file name     
+        5 s16; 681 -1342   681 26261 -15331     
+    end          
+;----------------------------------------------------------------------
+arc_input   0 1 0 arm_stream_filter     0 0 0  ; io0 set0copy1 fmt0     ; DETECT => OUTPUT 
+arc_output  1 1 1 sigp_stream_detector  0 1 1  ; io1 set0copy1 fmt1     ; INPUT => IIR
+
+arc arm_stream_filter 0 1 0 sigp_stream_detector 0 0 1                  ; IIR => DETECT
+    arc_jitter_ctrl  1.5  ; factor to apply to the minimum size between the producer and the consumer
+end
