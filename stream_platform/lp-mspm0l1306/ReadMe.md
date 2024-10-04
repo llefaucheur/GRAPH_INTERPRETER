@@ -1,1 +1,0 @@
-platform abstraction layer and manifest of Texas Instruments MSPM0L1306

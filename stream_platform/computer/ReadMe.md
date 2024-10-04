@@ -1,1 +1,0 @@
-platform abstraction layer and manifest of Windows computers (32/64bits)
