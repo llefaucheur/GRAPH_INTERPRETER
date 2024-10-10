@@ -52,14 +52,14 @@
 
 #define NBCHAR_LINE 200
 #define NBCHAR_NAME 120
-#define NBCHAR_STREAM_NAME 32   /* name of the HW IO streams and graph interfaces */
+#define NBCHAR_STREAM_NAME 40   /* name of the HW IO streams and graph interfaces */
 
 #define MAXPARAMETERSIZE ((int64_t)1e4)  /* in word32 */
 
 #define MAX_NBOPTIONS_SETS 8
 #define MAX_NBOPTIONS 256 
 
-#define MAX_PROC_MEMBANK 256     /* number of physical memory banks of the processor, for the graph processing */
+#define MAX_PROC_MEMBANK 63     /* number of physical memory banks of the processor, for the graph processing */
 
 #define MAXNB_WORD32_BOOT_KEY 32    /* 1024 bits boot key */
 #define MAXNB_WORD32_USER_KEY 32    /* 1024 bits user key */
@@ -172,7 +172,7 @@
 #define node_use_boot_key               "node_use_boot_key"
 #define node_node_version               "node_node_version"
 #define node_stream_version             "node_stream_version"
-#define node_mem                        "node_mem"
+#define node_mem                        "node_mem "
 #define node_mem_alloc                  "node_mem_alloc"
 #define node_mem_nbchan                 "node_mem_nbchan"
 #define node_mem_sampling_rate          "node_mem_sampling_rate"
@@ -183,7 +183,7 @@
 #define node_mem_relocatable            "node_mem_relocatable"
 #define node_mem_data0prog1             "node_mem_data0prog1"
 #define node_not_reentrant              "node_not_reentrant"
-#define node_new_arc                    "node_arc"
+#define node_new_arc                    "node_arc "
 #define node_arc_rx0tx1                 "node_arc_rx0tx1"
 #define node_arc_sampling_rate          "node_arc_sampling_rate"
 #define node_arc_nb_channels            "node_arc_nb_channels"
@@ -234,7 +234,7 @@
 #define format_2d_border                "format_2d_border"
 
 /*----------------------------------------------------------------------- GRAPH NODES ------------- */
-#define node_new                        "node"
+#define node_new                        "node "
 #define node_preset                     "node_preset"
 #define node_map_hwblock                "node_map_hwblock"
 #define node_malloc_add                 "node_malloc_add"
@@ -248,11 +248,13 @@
 #define node_memory_isolation           "node_memory_isolation"
 #define node_memory_clear               "node_memory_clear"
 #define node_parameters                 "node_parameters"
+#define node_script_code                "node_script_code"
 
 /*----------------------------------------------------------------------- GRAPH SCRIPTS ------------- */
-#define common_script                   "script"
-#define script_pointers                 "script_pointers"
+#define common_script                   "script "
+#define script_register                 "script_register"
 #define script_stack                    "script_stack"
+#define script_parameter                "script_parameter"
 #define script_mem_shared               "script_mem_shared"
 #define script_mem_map                  "script_mem_map"
 #define script_code                     "script_code"
@@ -267,7 +269,7 @@
 #define arc_debug_reg                   "arc_debug_reg"
 #define arc_debug_page                  "arc_debug_page"
 #define arc_flush                       "arc_flush"
-#define arc_extend_address                 "arc_extend_address"
+#define arc_extend_address              "arc_extend_address"
 #define arc_map_hwblock                 "arc_map_hwblock"
 #define arc_jitter_ctrl                 "arc_jitter_ctrl"
 

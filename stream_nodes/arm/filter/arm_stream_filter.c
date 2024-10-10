@@ -207,9 +207,9 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
 
             pinstance->services(                                            // void arm_stream_services (      
                 pinstance->iir_service,                                     //      uint32_t command, 
-                (uint8_t *)&(pinstance->TCM->biquad_casd_df1_inst_q15),     //      uint8_t *ptr1, 
-                (uint8_t *)&(pinstance->TCM->coefs[0]),                     //      uint8_t *ptr2, 
-                (uint8_t *)&(pinstance->TCM->state),                        //      uint8_t *ptr3, 
+                (intPtr_t)&(pinstance->TCM->biquad_casd_df1_inst_q15),     //      uint8_t *ptr1, 
+                (intPtr_t)&(pinstance->TCM->coefs[0]),                     //      uint8_t *ptr2, 
+                (intPtr_t)&(pinstance->TCM->state),                        //      uint8_t *ptr3, 
                 (postShift << 8) | numStages                                //      uint32_t n)
                 );
 #else
@@ -251,10 +251,10 @@ void arm_stream_filter (int32_t command, stream_handle_t instance, stream_xdmbuf
 
             pinstance->services(
                 pinstance->iir_service,
-                (uint8_t*)inBuf, 
-                (uint8_t*)outBuf,
-                (uint8_t*)(&(pinstance->TCM->biquad_casd_df1_inst_q15)),
-                (uint32_t)nb_data
+                (intPtr_t)inBuf, 
+                (intPtr_t)outBuf,
+                (intPtr_t)(&(pinstance->TCM->biquad_casd_df1_inst_q15)),
+                nb_data
                 );
 
             //pinstance->iir_service = PACK_SERVICE(NOCONTROL_SSRV,NOOPTION_SSRV, SERV_CHECK_END_COMP, SERV_DSP_ML);

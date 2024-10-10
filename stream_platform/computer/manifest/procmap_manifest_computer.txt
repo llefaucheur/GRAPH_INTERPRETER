@@ -24,8 +24,8 @@
     0   2   0 0 0 0 0    30000 65536    SRAM1 static
     0   3   0 1 0 0 0    15000 95536    SRAM1 working at application level
     0   4   0 1 0 0 0   256000 262144   DDR working at application level
-    2   5   3 1 1 0 0     1024 262144   DTCM Private memory of processor 1 
-    1  10   0 2 0 0 0     1024 524288   Retention memory
+    2   5   3 1 1 0 0     8192 262144   DTCM Private memory of processor 1 
+    1  10   0 2 0 0 0     8192 524288   Retention memory
     3  20   0 0 0 0 0   200000 10       Data in Flash
     2   8   3 1 1 0 1    16384 0        ITCM Private memory of processor 1 
   

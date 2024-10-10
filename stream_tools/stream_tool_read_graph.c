@@ -111,7 +111,8 @@ void stream_tool_read_parameters(
         char **pt_line, 
         struct stream_platform_manifest *platform, 
         struct stream_graph_linkedlist *graph, 
-        struct stream_node_manifest *node)
+        uint32_t *ParameterSizeW32,
+        uint32_t *PackedParameters)
 {
     uint8_t raw_type;
     uint32_t nb_raw, nbytes, nbits;
@@ -120,10 +121,13 @@ void stream_tool_read_parameters(
     //node->ParameterSizeW32 = 1;
     //ST(node->PackedParameters[0], W32LENGTH_LW3, node->ParameterSizeW32);
             
-    pt0 = ptr_param = (uint8_t *)(node->PackedParameters);
+    pt0 = ptr_param = (uint8_t *)(PackedParameters);
     while (1)
     {
         read_binary_param(pt_line, ptr_param, &raw_type, &nb_raw);
+        //if (0 != strstr(script_label, *pt_line))
+        //{   fields_extract(&pt_line, "CI", ctmp, &i);
+        //}
         if (nb_raw == 0)
             break;
         nbits = stream_bitsize_of_raw(raw_type);
@@ -133,8 +137,8 @@ void stream_tool_read_parameters(
 
     nbytes = (int)(ptr_param - pt0); 
 
-    node->ParameterSizeW32 = (3 + nbytes) /4;   // n parameters in w32, one byte will consume one w32
-    memcpy ((uint8_t *)(node->PackedParameters), pt0, 4*(node->ParameterSizeW32));
+    *ParameterSizeW32 = (3 + nbytes) /4;   // n parameters in w32, one byte will consume one w32
+    memcpy ((uint8_t *)(PackedParameters), pt0, 4*(*ParameterSizeW32));
 
     
     while (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
@@ -492,6 +496,16 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             fields_extract(&pt_line, "CCI", ctmp, cstring1, &instance);
             search_platform_node(cstring1, &platform_node, &platform_NODE_idx, platform, graph);
 
+            if (arm_stream_script_index == platform_NODE_idx)                 /* is it arm_stream_script ? */
+            {
+                graph->all_nodes[graph->nb_nodes].node_script.nb_reg = 6;       /* default number of registers and stack size */
+                graph->all_nodes[graph->nb_nodes].node_script.nb_stack = 6;
+                graph->all_nodes[graph->nb_nodes].node_script.param_size = 0;
+                graph->all_nodes[graph->nb_nodes].node_script.arc_script = graph->nb_arcs;
+                graph->nb_arcs++;
+                graph->nb_scripts++;
+            }
+
             graph->all_nodes[graph->nb_nodes].platform_NODE_idx = platform_NODE_idx;
             graph_node = &(graph->all_nodes[graph->nb_nodes]);
             LoadPlatformNode(graph_node, platform_node);
@@ -544,37 +558,50 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         {   uint32_t TAG; 
             fields_extract(&pt_line, "CI", ctmp, &TAG);
             graph->all_nodes[graph->nb_nodes -1].TAG = TAG; /* selection of parameters to load "0" means all */ 
-            stream_tool_read_parameters(&pt_line, platform, graph, &(graph->all_nodes[graph->nb_nodes -1])); 
+            stream_tool_read_parameters(&pt_line, platform, graph, 
+                &(graph->all_nodes[graph->nb_nodes -1].ParameterSizeW32), &(graph->all_nodes[graph->nb_nodes -1].PackedParameters[0])); 
         }
-
+        if (COMPARE(node_script_code))
+        {   stream_tool_read_code(&pt_line, platform, graph, &(graph->all_nodes[graph->nb_nodes -1].node_script));  // macro assembler
+        }
         /* ----------------------------------------------- SCRIPTS ----------------------------------------------------------*/
         if (COMPARE(common_script))
-        {   fields_extract(&pt_line, "CI", ctmp, &(graph->idx_script));  
-            if (graph->nb_scripts < graph->idx_script)
-            {   graph->nb_scripts = graph->idx_script;
-            }
+        {   fields_extract(&pt_line, "CI", ctmp, &(graph->all_scripts[graph->idx_script].script_ID)); /* instance number (its identification) */
+            graph->idx_script = graph->nb_scripts;
             graph->all_scripts[graph->idx_script].nb_reg = 6;       /* default number of registers and stack size */
             graph->all_scripts[graph->idx_script].nb_stack = 6;
+            graph->all_scripts[graph->idx_script].param_size = 0;
+            graph->all_scripts[graph->idx_script].arc_script = graph->nb_arcs;
+            graph->nb_arcs++;
+            graph->nb_scripts++;
         }
-        if (COMPARE(script_stack))          // script_stack        6       ; size of the stack in word64 (default = 6)
+        if (COMPARE(script_register))           // script_register  6       numer of registers
+        {  fields_extract(&pt_line, "CI", ctmp, &i); 
+            graph->all_scripts[graph->idx_script].nb_reg = i; 
+        }
+        if (COMPARE(script_stack))              // script_stack        6    size of the stack in word64 (default = 6)
         {  fields_extract(&pt_line, "CI", ctmp, &i); 
             graph->all_scripts[graph->idx_script].nb_stack = i; 
         }
-        if (COMPARE(script_mem_shared))     // script_mem_shared 1         ; Is it a private RAM(0) or can it be shared with other scripts(1)
+        if (COMPARE(script_parameter))          // script_parameter 50    size of the heap
+        {  fields_extract(&pt_line, "CI", ctmp, &i); 
+            graph->all_scripts[graph->idx_script].param_size = i; 
+        }
+        if (COMPARE(script_mem_shared))         // script_mem_shared 1      Is it a private RAM(0) or can it be shared with other scripts(1)
         {  fields_extract(&pt_line, "CI", ctmp, &i); 
             graph->all_scripts[graph->idx_script].stack_memory_shared = i; 
         }
-        if (COMPARE(script_mem_map))        // script_mem_map    0         ; Memory mapping to VID #0 (default) 
+        if (COMPARE(script_mem_map))            // script_mem_map    0      Memory mapping to VID #0 (default) 
         {  fields_extract(&pt_line, "CI", ctmp, &i); 
             graph->all_scripts[graph->idx_script].mem_VID = i; 
         }
-        if (COMPARE(script_code))           // script_code 
-        {   stream_tool_read_code(&pt_line, &(graph->all_scripts[graph->idx_script]));  // macro assembler
+        if (COMPARE(script_code))               // script_code
+        {   stream_tool_read_code(&pt_line, platform, graph, &(graph->all_scripts[graph->idx_script]));  // macro assembler
         }
-        if (COMPARE(script_assembler))           // script_assembler 0      ; code of the binary format (0 : default, or native architecture)
+        if (COMPARE(script_assembler))          // script_assembler 0      ; code of the binary format (0 : default, or native architecture)
         {   fields_extract(&pt_line, "CI", ctmp, &(graph->all_scripts[graph->idx_script].script_format));  
 
-            stream_tool_read_assembler(&pt_line, &(graph->all_scripts[graph->idx_script]));
+            stream_tool_read_assembler(&pt_line, platform, graph, &(graph->all_scripts[graph->idx_script]));
         }
         
         /* --------------------------------------------- ARCS ----------------------------------------------------------------------*/

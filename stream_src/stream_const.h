@@ -67,11 +67,12 @@
      
   *- LINKED-LIST of SWC
        minimum 5 words/SWC
-       Word0  : header processor/architecture, nb arcs, SWCID, arc
-       Word1+n: arcs * 2  + debug page
-       Word2+n: 2xW32 : ADDR + SIZE + nb of memory segments
-       Word3+n: Preset, New param!, Skip length, 
+       Word0   : header processor/architecture, nb arcs, SWCID, arc
+       Word1+n : arcs * 2  + debug page
+       Word2+2n: ADDR + SIZE of memory segments
+       Word4+n : 1+data Preset, New param!, Skip length, 
           byte stream: nbparams (ALLPARAM), {tag, nbWord32, params}
+
        list Ends with the NODE ID 0x03FF 
     
     -----------------SHARED RAM-------------------------------  OFFSET 0
@@ -350,18 +351,17 @@
 
 /*================================= SCRIPTS ======================================= */
 
-
-//#define     ARC_SCROFF0_MSB U(31) /* 11 arc descriptor */
-//#define     ARC_SCROFF0_LSB U(21) /*                   */
+#define     ARC_SCROFF0_MSB U(31) /* 11 associated arc descriptor */
+#define     ARC_SCROFF0_LSB U(21) /*                   */
 #define  FORMAT_SCROFF0_MSB U(20) /* 3  byte codes format = 0, 7 binary native architecture ARCHID_LW0 */
 #define  FORMAT_SCROFF0_LSB U(19) /*       ARMv6-M */
 #define  SHARED_SCROFF0_MSB U(18) /* 1  shareable memory for the script with other scripts in mono processor platforms */
 #define  SHARED_SCROFF0_LSB U(18) /*                                    */
-//#define  OFFSET_SCROFF0_MSB U(17) /* 17 offset to the W32 script table */
-//#define  OFFSET_SCROFF0_LSB U( 0) /*                                   */
+#define  OFFSET_SCROFF0_MSB U(17) /* 17 offset in the W32 script table */
+#define  OFFSET_SCROFF0_LSB U( 0) /*    placed at                                */
 
          
-/* =================
+/* 
     arc descriptors used to address the working area : registers and stack
 */
 #define      SCRIPT_PTR_SCRARCW0  U( 0) /* Base address + NREGS + new UC */
@@ -378,10 +378,13 @@
 #define    BASEIDXOFFSCRARCW0_MSB U(27)    
 #define    BASEIDXOFFSCRARCW0_LSB U( 0) /* 28  base address of the script memory (regs + state + stack)  */
 
+#define    _______SCRARCW1_MSB U(31) 
+#define    _______SCRARCW1_LSB U(21) /* 10 */
+#define BUFF_SIZE_SCRARCW1_MSB U(21) /*    */
+#define BUFF_SIZE_SCRARCW1_LSB U( 0) /* 22 BYTE-acurate up to 4MBytes (up to 128GB with ARCEXTEND_ARCW2 */
 // duplicate : 
 //#define       ARCEXTEND_ARCW2_MSB U(31) /*    Size/Read/Write are used with <<(2x{0..7}) to extend base/size/read/write arc */
 //#define       ARCEXTEND_ARCW2_LSB U(29) /* 3  to  256MB, 4GB, 64GB , for use-cases with NN models, video players, etc */
-
 
 #define    COLLISION_SCRARCW3_MSB U(31) /*  8  */
 #define    COLLISION_SCRARCW3_LSB U(24) /*     */
@@ -470,7 +473,7 @@
 #if IOARCID_IOFMT0_MSB != (ARC0D_LW1_MSB-1)
 #error "IOFORMAT ARC SIZE"
 #endif
-        /* word 2+n - FIRST WORD : memory banks address + size */
+        /* word 2+2n - FIRST WORD : memory banks address + size */
 
 #define NBW32_MEMREQ_LW2  2     /* there are two words per memory segments, to help programing the memory protection unit (MPU) */
 #define ADDR_LW2 0              /*      one for the address */ 
@@ -521,7 +524,7 @@
 #define SWAPBUFID_LW2S_LSB  ARC0_LW1_LSB /* 12  ARC0, (11 + 1) up to 2K FIFO */
 
 
-  /* word 3+n - parameters 
+  /* word 4+n - parameters 
     NODE header can be in RAM (to patch the parameter area, cancel the component..)
 
   BOOTPARAMS (if W32LENGTH_LW3>0 )

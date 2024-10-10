@@ -687,13 +687,13 @@ void al_service_mutual_exclusion(uint32_t service_command, uint8_t *pt8b, uint8_
                 
   @remark       
  */
-void al_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n)
+void al_services (uint32_t service_command, intPtr_t ptr1, intPtr_t ptr2, intPtr_t ptr3, uint32_t n)
 {   
     /* max 16 groups of commands {SERV_INTERNAL .. SERV_MM_IMAGE} */
 	switch (RD(service_command, FUNCTION_SSRV))
     {
     case AL_SERVICE_READ_TIME:
-        al_service_time_functions(RD(service_command, FUNCTION_SSRV), ptr1, ptr2, ptr3, n);
+        al_service_time_functions(RD(service_command, FUNCTION_SSRV), (uint8_t *)ptr1, (uint8_t *)ptr2, (uint8_t *)ptr3, n);
         break;
     case AL_SERVICE_SLEEP_CONTROL:
         break;
@@ -703,7 +703,7 @@ void al_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_
         break;
     //enum stream_service_group
     case AL_SERVICE_MUTUAL_EXCLUSION:
-        al_service_mutual_exclusion(RD(service_command, FUNCTION_SSRV), ptr1, ptr2, ptr3, n);
+        al_service_mutual_exclusion(RD(service_command, FUNCTION_SSRV), (uint8_t *)ptr1, (uint8_t *)ptr2, (uint8_t *)ptr3, n);
         break;
     case AL_SERVICE_CHANGE_IO_SETTING:
         break;

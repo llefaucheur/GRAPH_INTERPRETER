@@ -40,7 +40,7 @@ stream_io_hwid          1                       ; io_platform_data_in_1.txt
 stream_io               1                       ; IO1
 stream_io_hwid          9                       ; io_platform_data_out_0.txt
 ;----------------------------------------------------------------------
-node arm_stream_filter  0                         ; first node 
+node arm_stream_filter  0                       ; first node 
     node_preset         1                       ; Q15 filter
     node_map_hwblock    1  5                    ; TCM = VID5
     node_parameters     0                       ; TAG = "all parameters"
@@ -58,7 +58,7 @@ arc_input   0 1 0 arm_stream_filter     0 0 0  ; io0 set0copy1 fmt0     ; DETECT
 arc_output  1 1 1 sigp_stream_detector  0 1 1  ; io1 set0copy1 fmt1     ; INPUT => IIR
 
 arc arm_stream_filter 0 1 0 sigp_stream_detector 0 0 1                  ; IIR => DETECT
-    arc_jitter_ctrl  1.5  ; factor to apply to the minimum size between the producer and the consumer
+    arc_jitter_ctrl  1.5  ; increase the buffer size between the producer and the consumer
 end
 ```
 
@@ -569,6 +569,7 @@ The virtual engine has 20 instructions. There are 12 registers, 2 indexes to the
 r6 = 3                   ; r6 = 3  (the default litterals type is int32)
 r6 = add r5 3            ; r6 = ( r5 + 3 )
 r6 = sub r5 r4           ; r6 = ( r5 - r4 )
+if_yes r6 = add r5 3     ; conditional addition of r5 with 3 saved in r6
 ```
 
 **Tests**, the syntax is : {test type) {register to compare}  {optional arithmetic operator} {register 2} {register 3 or a constants}. Examples
@@ -577,10 +578,9 @@ r6 = sub r5 r4           ; r6 = ( r5 - r4 )
 testlt r6 3                ; test r6 < 3
 testlt r6 add r5 3         ; test r6 < ( r5 + 3 )
 testlt r6 sub r5 r4        ; test r6 < ( r5 - r4 )
-if_yes r6 = #float 3       ; conditional load of r6 with 3.0
 ```
 
-The last family are a controls (circular addressing, jumps, calls, loops, bit-field extraction, scatter/gather load). Examples
+The last family are controls (circular addressing, jumps, calls, loops, bit-field extraction, scatter/gather load). Examples :
 
 ```
 Example of instructions        Comments
@@ -613,7 +613,7 @@ The "callsys" instruction gives access to :
 The graph declares the script like standard nodes :
 
 ```
-node arm_stream_script 1  ; script (instance) index           
+script 1  			      ; script (instance) index           
     script_stack      12  ; size of the stack in word64      
     script_mem_shared  1  ; default is private memory (0) or shared (1)  
     script_mem_map     0  ; mapping of the working memory to VID #0 (default)      
@@ -622,7 +622,7 @@ node arm_stream_script 1  ; script (instance) index
     ...
     return                ; return to the graph scheduler
     end                                                      
-    node_parameters <ID2>                                    
+    script_parameters                                    
        include 1 binary_code.txt ; path ID and file name     
     end                                                     
 ```

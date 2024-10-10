@@ -1098,7 +1098,7 @@ static uint8_t unlock_this_component (arm_stream_instance_t *S)
     uint8_t tmp = 0;
 
     (*al_func)(PACK_SERVICE(0,0,AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP,AL_SERVICE_MUTUAL_EXCLUSION), 
-        S->pt8b_collision_arc, &tmp, 0, 0);
+        (intPtr_t)(S->pt8b_collision_arc), (intPtr_t)&tmp, 0, 0);
 
     return 1;
 }

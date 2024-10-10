@@ -29,23 +29,13 @@
  extern "C" {
 #endif
    
-
 #ifndef carm_stream_script_H
 #define carm_stream_script_H
-
 
 #include "stream_const.h"      
 #include "stream_types.h"  
 
     
-/*  registers format :                      DTYPE
-                <---- MSB word ----------------> <---- LSB word ---------------->  
-                FEDCBA9876543210FEDCBA987654____ FEDCBA9876543210FEDCBA987654321|  
-    uint8       ____________________________   0 <------------------------------>  
-    int32       ____________________________   4 <------------------------------>  used for R0 = 0
-    int64-4bits <-------------------------->   5 <------------------------------>  LSB are patched
-*/    
-
 typedef union
 {   char    c;       char v_c[8];
     int8_t  i8;    int8_t v_i8[8];
@@ -59,36 +49,58 @@ typedef union
 } regdata_t;
 
 
+typedef union
+{   int32_t i32;  
+    sfloat  f32;   
+} regdata32_t;
+
+
 /*
-*       THIS GOES IN ARC DESC 
+    THIS GOES IN ARC DESC 
+
+    ARC buffer 
+    |    Registers 8 Bytes :  R0 .. r11
+    |    Stack 8 Bytes 
+    |    Heap 4 Bytes
+
+    BYTECODE XXXXXXXXXXXXXXX
+    
+    INSTANCE (arc descriptor address = *script_instance
+           |   
+           v                  <---- nStack  ---->
+           R0 R1 R2 ..   r11  R13 R14
+           <---registers--->  SP SP+1
+                    STACK :   [..................]
+                              SP init = nregs
+                    HEAP / PARAM (4bytes/words)  [............]
 */
-            typedef struct
-            {
-                arm_stream_instance_t *S;   
-                uint32_t *byte_code;
-                regdata_t *REGS;              /* registers and stack */
 
-                struct
-                {   
-                    unsigned int free : 3;
-                    unsigned int nregs : 4;
-                    unsigned int test_flag : 1;
-                    unsigned int PC : 8;
-                    unsigned int SP : 8;       /* in REGS unit */
+    typedef struct
+    {
+        arm_stream_instance_t *S;   
+        uint32_t *byte_code;
+        int32_t *heap;                  /* working area */
+        regdata_t *REGS;                /* registers and stack */
+        uint32_t instruction;
 
+        struct
+        {   unsigned int free : 3;
+            unsigned int nregs : 4;
+            unsigned int test_flag : 1;
+            unsigned int PC : 8;        /* in uint32 */
+            unsigned int SP : 8;        /* in REGS unit */
+    
 #define MAXCYCLES 255
-                    unsigned int cycle_downcounter : 8;
-                } ctrl;
-
-            } arm_script_instance_t;
-
+            unsigned int cycle_downcounter : 8;
+        } ctrl;
+    
+    } arm_script_instance_t;
 
 
 extern void arm_stream_script_interpreter (
     arm_script_instance_t *I,
     int32_t *descriptor,
-    int32_t *byte_code,
-    int32_t *ram);
+    int32_t *byte_code);
 
 
 #endif  // if carm_stream_script_H

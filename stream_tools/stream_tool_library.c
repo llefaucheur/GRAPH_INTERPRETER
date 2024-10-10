@@ -55,18 +55,6 @@ int stream_bitsize_of_raw(uint8_t raw)
 }
 
 
-/**
-  @brief            compute the memory consumption of a script => ARC buffer size in Bytes
- */
-
-void script_memory_consumption(struct stream_script *script)
-{
-    /* minimum state memory = (0 register + 1 special (R0) + stack ) x 8 Bytes */
-
-    script->nbw32_allocated = SCRIPT_REGSIZE;   /* special registers */
-    script->nbw32_allocated += script->nb_reg * SCRIPT_REGSIZE;
-    script->nbw32_allocated += script->nb_stack * SCRIPT_REGSIZE;
-}
 
 
 /**

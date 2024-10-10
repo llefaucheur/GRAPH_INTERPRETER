@@ -46,7 +46,7 @@
 
     ;  p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
     2                               node_manifest_none.txt               /*  0 ID0 is reserved for by-passes */
-    2                       arm/script/node_manifest_script.txt          /*  1 arm_stream_script          */
+    2                       arm/script/node_manifest_script.txt          /*  1 arm_stream_script number 1 */
     2            arm/format_converter/node_manifest_format_converter.txt /*  2 arm_stream_format_converter*/
     2                       arm/router/node_manifest_router.txt          /*  3 arm_stream_router          */
     2    signal-processingFR/converter/node_manifest_converter.txt       /*  4 sigp_stream_converter      */

@@ -1,0 +1,96 @@
+//--------------------------------------
+//  DATE Wed Oct  9 18:52:55 2024
+//  AUTOMATICALLY GENERATED CODES
+//  DO NOT MODIFY !
+//--------------------------------------
+0x0000005A, // ------- Graph size = Flash=56[W]+RAM34[W]  +Buffers=48[B] 12[W] 
+0x00000000, // 000 000 [0] Destination in RAM 0, and RAM split 0 
+0x00004042, // 004 001 [1] Number of IOs 2, Formats 2, Scripts 4 
+0x00000023, // 008 002 LinkedList size = 35, ongoing IO bytes, Arc debug table size 0 
+0x00000005, // 00C 003 [3] Nb arcs 5  SchedCtrl 0 ScriptCtrl 0   
+0x00000001, // 010 004 [4] Processors allowed 
+0x00000000, // 014 005 [5] memory consumed 0,1,2,3 
+0x00000000, // 018 006 [6] memory consumed 4,5,6,7 ...  
+0x00083000, // 01C 007 IO(graph0) 1 arc 0 set0copy1=1 rx0tx1=0 servant1 1 shared 0 domain 0 
+0x00000000, // 020 008 IO(settings 0, fmtProd 0 (L=8) fmtCons 0 (L=8) 
+0x00000000, // 024 009  
+0x00000000, // 028 00A  
+0x00483801, // 02C 00B IO(graph1) 9 arc 1 set0copy1=1 rx0tx1=1 servant1 1 shared 0 domain 0 
+0x00000000, // 030 00C IO(settings 0, fmtProd 1 (L=16) fmtCons 1 (L=16) 
+0x00000000, // 034 00D  
+0x00000000, // 038 00E  
+0x00000002, // 03C 00F Script 0 CodeSize 0 (11h) shared0 format0 arc 0 
+0x00600002, // 040 010 Script 1 CodeSize 4 (11h) shared0 format0 arc 3 
+0x3044A003, // 044 011 ; r1 = add r2 3 
+0x30080004, // 048 012 ; r2 = -9000 
+0xFFFFDCD8, // 04C 013  
+0x3C000000, // 050 014 ; return 
+0x00C04807, // 054 015 -----  arm_stream_filter(0) idx:7 Nrx 1 Ntx 1 ArcFmt 1 lockArc 1 
+0x08040000, // 058 016 ARC 0 Rx0Tx1 0 L=8 dbgpage0 -- ARC 4 Rx0Tx1 1 L=16 dbgpage0     
+0x300000B4, // 05C 017 Nb Memreq-1 1  XDM11_same_rate 1 
+0x0000004C, // 060 018 Reserved static memory bank(0) = bank 0 stat0work1ret2 = 0 size 76  
+0x30800000, // 064 019  
+0x00000034, // 068 01A Scratch memory bank(1) = bank 2 stat0work1ret2 = 1  size 52  
+0x01000007, // 06C 01B ParamLen 6+1 Preset 1 Tag0ALL 0 
+0x02A90102, // 070 01C (0) 
+0x02A901A6, // 074 01D (1) 
+0xC4C75D2D, // 078 01E (2) 
+0xFAC202A9, // 07C 01F (3) 
+0x669502A9, // 080 020 (4) 
+0x0000C41D, // 084 021 (5) 
+0x00C04808, // 088 022 -----  sigp_stream_detector(0) idx:8 Nrx 1 Ntx 1 ArcFmt 1 lockArc 1 
+0x08010004, // 08C 023 ARC 4 Rx0Tx1 0 L=8 dbgpage0 -- ARC 1 Rx0Tx1 1 L=16 dbgpage0     
+0x300000C4, // 090 024 Nb Memreq-1 1  XDM11_same_rate 1 
+0x00000034, // 094 025 Reserved static memory bank(0) = bank 0 stat0work1ret2 = 0 size 52  
+0x300000D0, // 098 026  
+0x00000020, // 09C 027 Reserved static memory bank(1) = bank 0 stat0work1ret2 = 2 size 32  
+0x03000001, // 0A0 028 ParamLen 0+1 Preset 3 Tag0ALL 0 
+0x00402401, // 0A4 029 -----  arm_stream_script(0) idx:1 Nrx 0 Ntx 1 ArcFmt 0 lockArc 1 
+0x00000000, // 0A8 02A ARC 0 Rx0Tx1 0 L=8 dbgpage0 
+0x100000D8, // 0AC 02B Nb Memreq-1 0  XDM11_same_rate 1 
+0x00000020, // 0B0 02C Reserved static memory bank(0) = bank 0 stat0work1ret2 = 0 size 32  
+0x0000000A, // 0B4 02D ParamLen 0+1 Preset 0 Tag0ALL 0 
+0x30080004, // 0B8 02E ; r1 = CCC table of parameters 
+0xCCCCCCCC, // 0BC 02F  
+0x39448000, // 0C0 030 ; r1 = r2 [ 3 ]  
+0x10040004, // 0C4 031 ; AAA : test_lt r1 #0 
+0xCCCCCCCC, // 0C8 032  
+0x78000000, // 0CC 033 ; if_yes jump AAA 
+0x3B48C0F4, // 0D0 034 ; callsys 15 r2 r3 r4 
+0x3C000000, // 0D4 035 ; return 
+0x00000002, // 0D8 036 (0) 
+0x000003FF, // 0DC 037 ^^^^^^^^^ LINKED-LIST END ^^^^^^^^^ vvvvvvvvvvv RAM vvvvvvvvvvv 
+0xFFFF7F7F, // 0E0 038 LinkedList size = 35, ongoing IO bytes, Arc debug table size 0 
+0x00000008, // 0E4 039 Format  0 frameSize 8  
+0x00004400, // 0E8 03A           nchan 1 raw 17 
+0x00000000, // 0EC 03B           domain-dependent 
+0x00000000, // 0F0 03C           domain-dependent 
+0x00000010, // 0F4 03D Format  1 frameSize 16  
+0x00004400, // 0F8 03E           nchan 1 raw 17 
+0x00000000, // 0FC 03F           domain-dependent 
+0x00000000, // 100 040           domain-dependent 
+0x0000005A, // 104 041 ARC from script0-ARC0  sizeW32 36h 
+0x000000D8, // 108 042     nregs 5   stack 7   time 255 
+0x00000000, // 10C 043  
+0x00FF2807, // 110 044  
+0x00000000, // 114 045  
+0x00000090, // 118 046 IO-ARC descriptor(1) Base 90h (4h words) fmtProd_1 frameL 16.0 
+0x00000010, // 11C 047     Size 10h[B] fmtCons_1 FrameL 16.0 jitterScaling 1.0 
+0x00000000, // 120 048     sigp_stream_detector ===> IO 9 
+0x00000000, // 124 049     fmtCons 1 fmtProd 1 dbgreg 0 dbgcmd 0 
+0x00000101, // 128 04A  
+0x00000094, // 12C 04B ARC descriptor(2) Base 94h (2h words) fmtProd_0 frameL 8.0 
+0x00000008, // 130 04C     Size 8h[B] fmtCons_0 FrameL 8.0 jitterScaling 1.0 
+0x00000000, // 134 04D     arm_stream_filter ===> arm_stream_filter 
+0x00000000, // 138 04E     fmtCons 0 fmtProd 0 dbgreg 0 dbgcmd 0 
+0x00000000, // 13C 04F  
+0x00000096, // 140 050 ARC from script0-ARC3  sizeW32 18h 
+0x00000060, // 144 051     nregs 6   stack 6   time 255 
+0x00000000, // 148 052  
+0x00FF3006, // 14C 053  
+0x00000000, // 150 054  
+0x000000AE, // 154 055 ARC descriptor(4) Base AEh (6h words) fmtProd_0 frameL 8.0 
+0x00000018, // 158 056     Size 18h[B] fmtCons_1 FrameL 16.0 jitterScaling 1.5 
+0x00000000, // 15C 057     arm_stream_filter ===> sigp_stream_detector 
+0x00000000, // 160 058     fmtCons 1 fmtProd 0 dbgreg 0 dbgcmd 0 
+0x00000100, // 164 059  

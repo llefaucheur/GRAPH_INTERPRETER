@@ -33,7 +33,9 @@
 
 # arm_stream_script
 
-Scripts are nodes interpreted from byte codes, indexed in the SCRIPTS section of the graph. The data RAM is placed in a shared arc for all script (instance registers+stack parameters) constants are placed after the byte-codes.
+Scripts are nodes interpreted from byte codes declared in the indexed SCRIPTS section of the graph, or inlined in the parameter section of the node "arm_stream_script". The first one are simple code sequences used as subroutines or called in the "node_script "index".
+
+The nodes can manage the data RAM location in a shared arc for all script (instance registers+stack parameters) constants are placed after the byte-codes.
 
 The default memory configuration is "shared" meaning the buffers associated with the script are sharing the same memory buffer. 
 
@@ -42,17 +44,43 @@ To have individual static memory associated to a script the "script_mem_shared" 
 Special functions activated with callsys and conditional instructions:
       - lock   : a block of nodes to a processor to have good cache performance, 
             - if-then: a block of nodes based on script decision (FIFO content/debug registers, ..)
+
    - loop   : repeat a list of node several time for cache efficiency and small frame size
    - Checks if the data it needs is available and returns to the scheduler
 
 ```
 node arm_stream_script 1  ; script (instance) index           
     script_stack      12  ; size of the stack in word64      
+    script_register    6  ; number of registers in word64      
+    script_parameter  30  ; size of the parameter/heap in word32
     script_mem_shared  1  ; private memory (0) or shared(1)  
     script_mem_map     0  ; mapping to VID #0 (default)      
 
     script_code  
-    
+        r1 = add r2 3       ; r1 = add r2 3
+      label AAA         
+        r2 = -9000          ; r2 = -9000
+        call AAA r1 r2      ; call l_AAA r1 r2
+        callsys 15 r2 r3 r4 ; callsys 15 r2 r3 r4
+        return              ; return
+    end
+        
+    node_parameters                         
+        ;include 1 binary_code.txt ; path ID and file name     
+        5 s16; 681 -1342   681 26261 -15331  
+    end
+------------------------------------------------------------------
+script  0                   ; script index           
+; recommendation for the caller: use script_stack > 4 and script_nreg > 6 
+    script_code       
+        r1 = add r2 3       ; r1 = add r2 3
+      label AAA         
+        r2 = -9000          ; r2 = -9000
+        call AAA r1 r2      ; call l_AAA r1 r2
+        callsys 15 r2 r3 r4 ; callsys 15 r2 r3 r4
+        return              ; return
+    end
+------------------------------------------------------------------
 ;   Assembler                            comments 
 ;   ---------                          ----------------
 ;   "test" operations 

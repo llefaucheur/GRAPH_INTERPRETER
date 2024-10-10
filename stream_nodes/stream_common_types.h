@@ -65,8 +65,8 @@ struct stream_xdmbuffer
 
 typedef struct stream_xdmbuffer stream_xdmbuffer_t;
 
-typedef void    (stream_al_services) (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n); 
-typedef void (*p_stream_al_services) (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n); 
+typedef void    (stream_al_services) (uint32_t service_command, intPtr_t ptr1, intPtr_t ptr2, intPtr_t ptr3, uint32_t n); 
+typedef void (*p_stream_al_services) (uint32_t service_command, intPtr_t ptr1, intPtr_t ptr2, intPtr_t ptr3, uint32_t n); 
 
 
 #endif /* cSTREAM_COMMON_TYPES_H */

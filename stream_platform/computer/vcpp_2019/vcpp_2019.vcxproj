@@ -82,6 +82,10 @@
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\..\stream_src\stream_types.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\graph_computer.txt" />
+    <Text Include="..\graph_computer_bin.txt" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

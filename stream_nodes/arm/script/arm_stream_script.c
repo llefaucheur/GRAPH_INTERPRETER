@@ -118,6 +118,10 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
             uint32_t *byte_code, *src;
             uint8_t **long_offset;
 
+            //xdm_data[0].address = (intPtr_t)byte_codes;
+            //xdm_data[1].address = (intPtr_t)S;
+            //xdm_data[2].address = (intPtr_t)arc_descriptor;
+
             pt_pt = data;   byte_code = (intPtr_t *)pt_pt->address;  
             pt_pt++;        I = (arm_script_instance_t *)pt_pt->address; 
             pt_pt++;        arc_desc = (intPtr_t *)pt_pt->address;  
@@ -150,7 +154,7 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
             *                             
             *  HEAP / PARAM (4bytes/words)                                [............]
             */
-            arm_stream_script_interpreter (I, arc_desc, byte_code, src);
+            arm_stream_script_interpreter (I, arc_desc, byte_code);
             break;
         }
 

@@ -238,7 +238,7 @@ struct processor_memory_bank
     intPtr_t max_working_alignement; /* during init: worst-case of memory alignement */
     intPtr_t max_working_booking;
 
-    char comments[MAXCHAR_NAME]; /* comments used when printing the memory map listing */
+    char comments[NBCHAR_LINE]; /* comments used when printing the memory map listing */
 };
 typedef struct processor_memory_bank processor_memory_bank_t;
 
@@ -307,7 +307,6 @@ struct arcStruct
     uint32_t flush;                     // control of register "MPFLUSH_ARCW1" : forced flush of data in MProcessing and shared tasks
     uint32_t extend_addr;               // address range extension-mode of the arc descriptor "EXTEND_ARCW2" for large NN models, default = #0 (no extension)
     uint32_t map_hwblock;               // mapping VID index from "procmap_manifest_xxxx.txt" to map the buffer, default = #0 (VID0)
-    uint32_t jitter_ctrl;               // factor to apply to the minimum size between the producer and the consumer, default = 1.0 (no jitter)
     uint32_t SwcProdGraphIdx, fmtProd;  // index to the producer node graph->all_nodes[IDX], index format of the producer
     uint32_t SwcConsGraphIdx, fmtCons;  // index to the consumer node graph->all_nodes[IDX], index format of the consumer
 
@@ -324,21 +323,45 @@ struct arcStruct
     /* ----- graph data ----- */    
     uint32_t memVID;
     uint32_t graph_base;
+    uint32_t I[SIZEOF_ARCDESC_W32];     /* temporary buffer used when printing the script */
 
     /* ------ COMPILATION RESULT-- */
-    //uint32_t ioarc;                    /* arc index used in the graph description */
+    //uint32_t ioarc;                   /* arc index used in the graph description */
     //uint32_t ioarc_buffer;
-    uint32_t arcID;                      /* arc index used in the graph description */
-    float sizeFactor;
+    uint32_t arcID;                     /* arc index used in the graph description */
+    float sizeFactor;                   /* factor to apply to the minimum size between the producer and the consumer, default = 1.0 (no jitter) */
 
     // specific to SWC
-    uint32_t inPlaceProcessing;          /* SWCONLY flag buffer overlay with another arcID, 0=none*/
-    uint32_t arcIDbufferOverlay;         /* SWCONLY   arcID being overlaid */
+    uint32_t inPlaceProcessing;         /* SWCONLY flag buffer overlay with another arcID, 0=none*/
+    uint32_t arcIDbufferOverlay;        /* SWCONLY   arcID being overlaid */
     uint32_t src_instanceid, dst_instanceid; /* for information during graph reading */
     //uint32_t platform_NODE_idx_src, platform_NODE_idx_dst;    /* SWC */
 };
 
 /*----------------------------------------------------------------------------------------------------*/
+
+
+/* ----------------------------------------------------------------------
+    PLATFORM = PROCESSOR + IO + NODES
+* ---------------------------------------------------------------------- */
+struct stream_script 
+{
+    #define AVG_SCRIPT_LEN 80
+    uint32_t script_program[AVG_SCRIPT_LEN];
+    char  script_comments[AVG_SCRIPT_LEN][NBCHAR_LINE];
+    uint32_t script_ID;                                     // script instance from the graph
+    uint32_t arc_script;                                    // arc descriptor used for the state and pointer to the instance
+    uint32_t script_instance27b, nbw32_allocated;           // static address, size
+    uint32_t stack_memory_shared, param_size;               // flag, heap size
+    uint32_t script_nb_instruction, nb_reg, nb_stack;       // memory allocation parameters
+    uint32_t stack_memory_script, mem_VID;
+    uint32_t script_offset;
+    uint32_t script_format;     /* 0 : interpreted byte code, or architecture native code */
+    uint32_t ParameterSizeW32;          /* size of the array below */
+    uint32_t PackedParameters[MAXPARAMETERSIZE]; /* words32 PACK */
+};
+
+typedef struct stream_script stream_script_t;
 
 
 /* ----------------------------------------------------------------------
@@ -391,7 +414,8 @@ struct stream_node_manifest
     uint32_t preset;                     /* default "preset value" */
     uint32_t TAG;                     
     uint32_t trace_ID;                     
-    uint32_t local_script_index;
+    uint32_t local_script_index;        /* call simple scripts */
+    stream_script_t node_script;        /* node arm_stream_script */
     uint32_t ParameterSizeW32;          /* size of the array below */
     uint32_t PackedParameters[MAXPARAMETERSIZE]; /* words32 PACK */
 
@@ -420,23 +444,6 @@ struct processing_architecture
 };
 typedef struct processing_architecture processing_architecture_t;
 
-/* ----------------------------------------------------------------------
-    PLATFORM = PROCESSOR + IO + NODES
-* ---------------------------------------------------------------------- */
-struct stream_script 
-{
-    #define AVG_SCRIPT_LEN 80
-    uint32_t script_program[AVG_SCRIPT_LEN];
-    char  script_comments[AVG_SCRIPT_LEN][NBCHAR_LINE];
-    uint32_t script_instance27b, nbw32_allocated;           // static address, size
-    uint32_t stack_memory_shared;                           // flag
-    uint32_t script_nb_instruction, nb_reg, nb_stack; // memory allocation parameters
-    uint32_t stack_memory_script, mem_VID;
-    uint32_t script_offset;
-    uint32_t script_format;     /* 0 : interpreted byte code, or architecture native code */
-};
-
-typedef struct stream_script stream_script_t;
 
 /* ----------------------------------------------------------------------
     PLATFORM = PROCESSOR + IO + NODES
