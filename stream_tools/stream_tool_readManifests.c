@@ -555,6 +555,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     char paths[MAX_NB_PATH][NBCHAR_LINE];
     int32_t nb_paths, ipath, fw_io_idx, processorBitFieldAffinity, clockDomain;
     extern uint8_t globalEndFile;
+    int forScanf;
     
 #define MAXINPUT 100000
     char *inputFile;
@@ -564,16 +565,16 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     */
     pt_line = all_files;
     jump2next_valid_line(&pt_line);
-    sscanf(pt_line, "%d", &nb_paths);        /* read the PATH directory name */
+    forScanf = sscanf(pt_line, "%d", &nb_paths);        /* read the PATH directory name */
     jump2next_line(&pt_line);
     for (ipath  = 0; ipath < nb_paths; ipath++)
     {
-        sscanf(pt_line, "%s", paths[ipath]);        
+        forScanf = sscanf(pt_line, "%s", paths[ipath]);        
         jump2next_line(&pt_line);
     }
 
     jump2next_valid_line(&pt_line);
-    sscanf(pt_line, "%d %s", &ipath, graph_platform_manifest_name); /* read the platform_manifest name*/
+    forScanf = sscanf(pt_line, "%d %s", &ipath, graph_platform_manifest_name); /* read the platform_manifest name*/
 
     strcpy(file_name, paths[ipath]);
     strcat(file_name, graph_platform_manifest_name);
@@ -588,7 +589,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
         STEP 2 : loop on all the list of IO stream manifests
     */
     jump2next_valid_line(&pt_line);
-    sscanf(pt_line, "%d", &nb_stream);  /* read the number of streams in this plaform */
+    forScanf = sscanf(pt_line, "%d", &nb_stream);  /* read the number of streams in this plaform */
 
     platform->nb_hwio_stream = nb_stream;
 
@@ -596,7 +597,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     {
         jump2next_valid_line(&pt_line);
         /* read the number of node's manifest name */
-        sscanf (pt_line, "%d %s %d %d %d", &ipath, IO_name, &fw_io_idx, &processorBitFieldAffinity, &clockDomain); 
+        forScanf = sscanf (pt_line, "%d %s %d %d %d", &ipath, IO_name, &fw_io_idx, &processorBitFieldAffinity, &clockDomain); 
         strcpy(file_name, paths[ipath]);
         strcat(file_name, IO_name);
 

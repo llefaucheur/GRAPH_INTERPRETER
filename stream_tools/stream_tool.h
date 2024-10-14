@@ -352,7 +352,7 @@ struct stream_script
     uint32_t script_ID;                                     // script instance from the graph
     uint32_t arc_script;                                    // arc descriptor used for the state and pointer to the instance
     uint32_t script_instance27b, nbw32_allocated;           // static address, size
-    uint32_t stack_memory_shared, param_size;               // flag, heap size
+    uint32_t stack_memory_shared, ram_heap_size;               // flag, heap size
     uint32_t script_nb_instruction, nb_reg, nb_stack;       // memory allocation parameters
     uint32_t stack_memory_script, mem_VID;
     uint32_t script_offset;

@@ -153,12 +153,13 @@
 
     Assembler                          Binary encoding of the 19 instructions
     ---------                          -------------------------------------
-    OP_TEST family                             OPAR   DST  SRC1 SRC2 /RK
+    OP_TEST family                             OPAR   DST  SRC1 SRC2/RK
       test r1 op r2 r3/type k         ; OP_TEST  OP.. R1   R2   R3/RK=0x1Exx immediate_xx or RK=0x1Fxx long immediate
                                       
-    OP_LD family                                 OPAR DST  SRC1 SRC2 /RK
+    OP_LD family                                 OPAR DST  SRC1 SRC2/RK
       r1 = op r2 r3/type K            ; OP_LD    OP.. R1   R2   R3/RK=0x1Exx immediate_xx or RK=0x1Fxx long immediate
-      predefined "K" : r2 = L_xxx (for OPLJ_LABEL)
+    
+    predefined "K" : r2 = L_xxx (for OPLJ_LABEL)
         L_BASE_PARAM_SET  H1C0 = 0
         L_BASE_PARAM_RAM  H1C0 = 1
                                       
@@ -167,8 +168,8 @@
  -    set r2 typeptr #float           ; OP_JMOV CASTPTR   R2   ___  RK=0x1E07  1E=immediate => DTYPE_FP32=7
  -    set r4 base r5/k                ; OP_JMOV BASE      R4   ___  R5/RK=0x1Exx  1E=immediate => xx base for cicular addressing / loops
  -    set r4 size r5/k                ; OP_JMOV SIZE      R4   ___  R5/RK=0x1Exx  1E=immediate => xx
- -    st r2 [r4/k] r3                 ; OP_JMOV SCATTER   R2   R3   R4/RK=0x1Exx  1E=immediate => xx  R2[R4] = R3 
- -    ld r2 r3 [r4/k]                 ; OP_JMOV GATHER    R2   R3   R4/RK=0x1Exx  1E=immediate => xx  R2 = R3[R4]
+ -    r2 [r4/k] = r3                  ; OP_JMOV SCATTER   R2   R3   R4/RK=0x1Exx  1E=immediate => xx  R2[R4] = R3 
+ -    r2 = r3 [r4/k]                  ; OP_JMOV GATHER    R2   R3   R4/RK=0x1Exx  1E=immediate => xx  R2 = R3[R4]
       move r2 | lenK posK | r3        ; OP_JMOV WR2BF     R2   R3   K12 6b + 6b   bit-field
       move r2 r3 | lenK posK |        ; OP_JMOV RDBF      R2   R3   K12 6b + 6b   bit-field
 -     swap sp r3                      ; OP_JMOV SWAP      SP   R3   
@@ -326,7 +327,7 @@
 /* OPLJ_LABEL */
 #define         H0C1_INST_MSB 14
 #define         H0C1_INST_LSB 14  
-#define        LABEL_INST_MSB 13
+#define        LABEL_INST_MSB 13        // K14
 #define        LABEL_INST_LSB  0  
 
 /*-------------------------------------------------------------------------------OP_ALU_TEST_/K--------*/

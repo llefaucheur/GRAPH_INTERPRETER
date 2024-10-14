@@ -348,7 +348,7 @@ int search_word(char line[], char word[])
     L = L - (int)strlen(word);
     for (i = 0; i <= L; i++) {
         found = 1;
-        for (j = 0; j < strlen(word); j++) {
+        for (j = 0; j < (int)strlen(word); j++) {
             if (line[i + j] != word[j]) {
                 found = 0;
                 break;
@@ -397,7 +397,7 @@ int search_word(char line[], char word[])
 
 int fields_options_extract(char **pt_line, struct options *opt)
 {
-    int i, iBrace, nBrace, option_index;
+    int i, iBrace, nBrace, option_index, forScanf;
     char *p;
     int bracePositions[MAX_NBOPTIONS_SETS * 2]; // open and close braces
     float A, B, C;
@@ -425,14 +425,14 @@ int fields_options_extract(char **pt_line, struct options *opt)
         p = p + bracePositions[iBrace++] + 1;       /* p { x   idx */ 
 
         NON_BLKSPACE()  
-        sscanf(p, "%d", &option_index);  BLKSPACE() NON_BLKSPACE()   
+        forScanf = sscanf(p, "%d", &option_index);  BLKSPACE() NON_BLKSPACE()   
         opt->default_index[opt->nb_option] = option_index;
 
         if (option_index < 0)   /* is it an option range ? */
         {   
-            sscanf(p, "%f", &A);    BLKSPACE() NON_BLKSPACE()   
-            sscanf(p, "%f", &B);    BLKSPACE() NON_BLKSPACE()   
-            sscanf(p, "%f", &C);    BLKSPACE() NON_BLKSPACE()   
+            forScanf = sscanf(p, "%f", &A);    BLKSPACE() NON_BLKSPACE()   
+            forScanf = sscanf(p, "%f", &B);    BLKSPACE() NON_BLKSPACE()   
+            forScanf = sscanf(p, "%f", &C);    BLKSPACE() NON_BLKSPACE()   
             opt->optionRange[opt->nb_option][0] = A;
             opt->optionRange[opt->nb_option][1] = B;
             opt->optionRange[opt->nb_option][2] = C;
@@ -440,7 +440,7 @@ int fields_options_extract(char **pt_line, struct options *opt)
 
         if (option_index > 0)       /* is it an option list ? */
         {   do {   
-            sscanf(p, "%f", &A);    BLKSPACE() NON_BLKSPACE()   
+            forScanf = sscanf(p, "%f", &A);    BLKSPACE() NON_BLKSPACE()   
             
             opt->optionList[opt->nb_option][opt->nbElementsInList[opt->nb_option]] = A;
             opt->nbElementsInList[opt->nb_option] ++;

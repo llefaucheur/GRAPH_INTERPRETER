@@ -78,29 +78,28 @@ typedef union
     typedef struct
     {
         arm_stream_instance_t *S;   
-        uint32_t *byte_code;
-        int32_t *heap;                  /* working area */
+        uint32_t *arc_desc;
+        stream_al_services *services;
         regdata_t *REGS;                /* registers and stack */
-        uint32_t instruction;
+        uint32_t *byte_code;            /* program to run */
+        uint32_t instruction;           /* current instruction */
 
         struct
-        {   unsigned int free : 3;
-            unsigned int nregs : 4;
-            unsigned int test_flag : 1;
-            unsigned int PC : 8;        /* in uint32 */
+        {   
             unsigned int SP : 8;        /* in REGS unit */
+            unsigned int PC : 8;        /* in uint32 */
+            unsigned int test_flag : 1;
+            unsigned int nstack : 7;
+            unsigned int nregs : 4;
     
-#define MAXCYCLES 255
-            unsigned int cycle_downcounter : 8;
+#define MAXCYCLES 15
+            unsigned int cycle_downcounter : 4;
         } ctrl;
-    
+
     } arm_script_instance_t;
 
 
-extern void arm_stream_script_interpreter (
-    arm_script_instance_t *I,
-    int32_t *descriptor,
-    int32_t *byte_code);
+extern void arm_stream_script_interpreter (arm_script_instance_t *I);
 
 
 #endif  // if carm_stream_script_H

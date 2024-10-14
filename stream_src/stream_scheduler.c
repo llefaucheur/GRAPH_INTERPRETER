@@ -465,16 +465,13 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
     /* if this is a call to a script : XDM is bytes code + Stream instance + arc */
     if (arm_stream_script_index == (uint16_t)RD(S->node_header[0], NODE_IDX_LW0))
     {   uint32_t *byte_codes;
-        uint32_t *script_offsets;
-        uint32_t *arc;
+        uint32_t *arc, *buffer;
 
-        script_offsets = S->script_offsets;
         arc =  &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & (S->arcID[0]))]);
-        byte_codes = &(script_offsets[RD(S->node_header[0], SCRIPT_LW0)]);
-
-        xdm_data[0].address = (intPtr_t)byte_codes;
-        xdm_data[1].address = (intPtr_t)S;
-        xdm_data[2].address = (intPtr_t)arc;
+        buffer = (uint32_t *)arc_extract_info_pt(S, arc, arc_read_address);
+        xdm_data[0].address = (intPtr_t)S;      xdm_data[0].size = 0;
+        xdm_data[1].address = (intPtr_t)arc;    xdm_data[1].size = 0;
+        xdm_data[2].address = (intPtr_t)buffer; xdm_data[2].size = 0;
         return (ret);
     }
 

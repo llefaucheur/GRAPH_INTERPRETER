@@ -52,7 +52,7 @@
 
 #define NBCHAR_LINE 200
 #define NBCHAR_NAME 120
-#define NBCHAR_STREAM_NAME 40   /* name of the HW IO streams and graph interfaces */
+#define NBCHAR_STREAM_NAME 44   /* name of the HW IO streams and graph interfaces */
 
 #define MAXPARAMETERSIZE ((int64_t)1e4)  /* in word32 */
 
@@ -259,6 +259,7 @@
 #define script_mem_map                  "script_mem_map"
 #define script_code                     "script_code"
 #define script_assembler                "script_assembler"
+#define script_parameters               "script_parameters"
 
 /*----------------------------------------------------------------------- GRAPH ARCS ------------- */
 #define arc_input                       "arc_input"

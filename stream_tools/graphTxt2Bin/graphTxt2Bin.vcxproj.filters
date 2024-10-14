@@ -258,7 +258,6 @@
     <Text Include="..\..\stream_nodes\signal-processingFR\compressor\node_manifest_compressor.txt">
       <Filter>NodesManifests</Filter>
     </Text>
-    <Text Include="..\..\stream_nodes\bitbank\JPEGENC\node_manifest_bitbank_JPEGENC.txt" />
     <Text Include="..\..\stream_nodes\arm\analysis\node_manifest_analysis.txt">
       <Filter>NodesManifests</Filter>
     </Text>
@@ -306,6 +305,9 @@
     </Text>
     <Text Include="..\..\stream_platform\computer\manifest\io_platform_stream_in_0.txt">
       <Filter>PlatformsManifests\Computer PlatformManifests</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\bitbank\JPEGENC\node_manifest_bitbank_JPEGENC.txt">
+      <Filter>NodesManifests</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>

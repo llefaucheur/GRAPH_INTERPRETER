@@ -88,7 +88,8 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
             arm_script_instance_t *pinstance = (arm_script_instance_t *) *memresults++;
 
             /* "data" is the Stream interpreter instance, for access to the services */
-            pinstance->S = (arm_stream_instance_t *) data;                                  
+            pinstance->services = (stream_al_services *)(intPtr_t)data;
+            break;
         }
 
         /* func(command = bitfield (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
@@ -97,47 +98,32 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
                 data = (one or all)
         */ 
         case STREAM_SET_PARAMETER:  
-        {   uint32_t *pt32bsrc;
-            uint32_t *arc_desc = (uint32_t *) instance;
-            pt32bsrc = (uint32_t *) data;
-            arc_desc[SCRIPT_SCRARCW1] = (*pt32bsrc++);       // 2x4-bytes use-case communicated by uper layers
-            arc_desc[SCRIPT_SCRARCW1] = (*pt32bsrc++);       // 
-//            SET_BIT(arc_desc[SCRIPT_PTR_SCRARCW0], NEW_USE_CASE_SCRIPT_LSB);
+        {   arm_script_instance_t *pinstance = (arm_script_instance_t *) instance;
+            pinstance->byte_code = (uint32_t *) data;
+            break;
         }
 
         /* byte-code execution,                 
-            xdm_data[0].address = (intPtr_t)byte_codes;
-            xdm_data[1].address = (intPtr_t)S;
-            xdm_data[2].address = (intPtr_t)arc;
+        xdm_data[0].address = (intPtr_t)S;
+        xdm_data[1].address = (intPtr_t)arc;
+        xdm_data[2].address = (intPtr_t)buffer;
         */
         case STREAM_RUN:   
-        {   uint32_t clear_size;
+        {   
             stream_xdmbuffer_t *pt_pt;
-            arm_script_instance_t *I;
-            uint32_t *arc_desc = (uint32_t *) instance;
-            uint32_t *byte_code, *src;
-            uint8_t **long_offset;
+            arm_script_instance_t *pinstance = (arm_script_instance_t *) instance;
 
-            //xdm_data[0].address = (intPtr_t)byte_codes;
-            //xdm_data[1].address = (intPtr_t)S;
-            //xdm_data[2].address = (intPtr_t)arc_descriptor;
-
-            pt_pt = data;   byte_code = (intPtr_t *)pt_pt->address;  
-            pt_pt++;        I = (arm_script_instance_t *)pt_pt->address; 
-            pt_pt++;        arc_desc = (intPtr_t *)pt_pt->address;  
+            pt_pt = data;   pinstance->S = (arm_script_instance_t *)pt_pt->address;  
+            pt_pt++;        pinstance->arc_desc = (uint32_t *)pt_pt->address; 
+            pt_pt++;        pinstance->REGS = (regdata_t *)pt_pt->address;  
 
             /* reset the instance (arc buffer address) */
-            I->ctrl.nregs = RD(arc_desc[WRIOCOLL_SCRARCW3], NREGS_SCRARCW3);
-            I->ctrl.SP = I->ctrl.nregs + 1;     /* +1 for RegK(13) */
-            I->ctrl.PC = 0;         // PC pre-incremented before read
-            I->ctrl.test_flag = 0;
-            I->ctrl.cycle_downcounter = MAXCYCLES;
-
-            clear_size =  (SCRIPT_REGSIZE) * I->ctrl.nregs;
-            clear_size += (SCRIPT_REGSIZE) * RD(arc_desc[WRIOCOLL_SCRARCW3], NSTACK_SCRARCW3);
-            long_offset = (I->S)->long_offset;
-            src = pack2linaddr_ptr(long_offset, arc_desc[SCRIPT_PTR_SCRARCW0], RD(arc_desc[RDFLOW_ARCW2], ARCEXTEND_ARCW2));
-            MEMSET(src, 0, clear_size);
+            pinstance->ctrl.nstack = RD(pinstance->arc_desc[DBGFMT_SCRARCW4], NSTACK_SCRARCW4);
+            pinstance->ctrl.nregs = RD(pinstance->arc_desc[DBGFMT_SCRARCW4], NREGS_SCRARCW4);
+            pinstance->ctrl.SP = pinstance->ctrl.nregs;     // after { R0 .. R(nregs),R12 }
+            pinstance->ctrl.PC = 0;         // PC pre-incremented before read
+            pinstance->ctrl.test_flag = 0;
+            pinstance->ctrl.cycle_downcounter = MAXCYCLES;
 
             /*
             *  BYTECODE 
@@ -154,7 +140,7 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
             *                             
             *  HEAP / PARAM (4bytes/words)                                [............]
             */
-            arm_stream_script_interpreter (I, arc_desc, byte_code);
+            arm_stream_script_interpreter (pinstance);
             break;
         }
 

@@ -45,8 +45,8 @@
 static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, sfloat *dst, sfloat src1, sfloat src2);
 static void int_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, int32_t *dst, int32_t src1, int32_t src2);
 static void test_arithmetic_operation(arm_script_instance_t *I);
-static void readreg(arm_script_instance_t *I, int32_t *dst, int32_t src, uint8_t K);
-static void writreg(arm_script_instance_t *I, int32_t dst, int32_t src);
+static void readreg(arm_script_instance_t *I, regdata32_t *data, int32_t srcID, uint8_t K);
+static void writreg(arm_script_instance_t *I, int32_t dstID, regdata32_t src);
 static void jmov_operation(arm_script_instance_t *I);
 
 
@@ -105,42 +105,45 @@ static void int_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, i
 {
     int32_t tmp; 
 
+    tmp = 0xFFFFFFFF;
     switch (opar)
     {
-    case OPAR_ADD  : tmp = src1 + (src2);                    break;
-    case OPAR_SUB  : tmp = src1 - (src2);                    break;
-    case OPAR_MUL  : tmp = src1 * (src2);                    break;
-    case OPAR_DIV  : tmp = (src2 == 0) ? 0 : src1 / src2;    break;
+    case OPAR_NOP  : tmp = src2;                            break;
+    case OPAR_ADD  : tmp = src1 + (src2);                   break;
+    case OPAR_SUB  : tmp = src1 - (src2);                   break;
+    case OPAR_MUL  : tmp = src1 * (src2);                   break;
+    case OPAR_DIV  : tmp = (src2 == 0) ? 0 : src1 / src2;   break;
                   
-    case OPAR_MAX  : tmp = MAX(src2, src1);                  break;
-    case OPAR_MIN  : tmp = MIN(src2, src1);                  break;
-    case OPAR_AMAX : tmp = MAX(ABS(src2), ABS(src1));        break;
-    case OPAR_AMIN : tmp = MIN(ABS(src2), ABS(src1));        break;
+    case OPAR_MAX  : tmp = MAX(src2, src1);                 break;
+    case OPAR_MIN  : tmp = MIN(src2, src1);                 break;
+    case OPAR_AMAX : tmp = MAX(ABS(src2), ABS(src1));       break;
+    case OPAR_AMIN : tmp = MIN(ABS(src2), ABS(src1));       break;
                    
-    case OPAR_OR   : tmp = src1 | src2;                      break;
-    case OPAR_NOR  : tmp = !(src1 | src2);                   break;
-    case OPAR_AND  : tmp = src1 & src2;                      break;
-    case OPAR_XOR  : tmp = src1 ^ src2;                      break;
-    case OPAR_SHR  : tmp = src1 >> src2;                     break;
-    case OPAR_SHL  : tmp = src1 << src2;                     break;
-    case OPAR_SET  : tmp = src1 | (1<<src2);                 break;
-    case OPAR_CLR  : tmp = src1 & (~(1<<src2));              break;
+    case OPAR_OR   : tmp = src1 | src2;                     break;
+    case OPAR_NOR  : tmp = !(src1 | src2);                  break;
+    case OPAR_AND  : tmp = src1 & src2;                     break;
+    case OPAR_XOR  : tmp = src1 ^ src2;                     break;
+    case OPAR_SHR  : tmp = src1 >> src2;                    break;
+    case OPAR_SHL  : tmp = src1 << src2;                    break;
+    case OPAR_SET  : tmp = src1 | (1<<src2);                break;
+    case OPAR_CLR  : tmp = src1 & (~(1<<src2));             break;
     case OPAR_NORM :  //  NORM *iDST = normed on MSB(*iSRC1), applied shift in *iSRC2 
             {   uint32_t count = 0U, mask = 1L << 31;  
                 while ((src1 & mask) == 0U) { count += 1U; mask = mask >> 1U; }
                 tmp = src1 << count; src2 = count;
             }
-            break;
+                                                            break;
     }
 
+    *t = 0;
     switch (opcode)
     {
-    case OP_TESTEQU : *t = (tmp == *dst); break;
-    case OP_TESTLEQ : *t = (tmp <= *dst); break;
-    case OP_TESTLT  : *t = (tmp  < *dst); break;
-    case OP_TESTNEQ : *t = (tmp != *dst); break;
-    case OP_TESTGEQ : *t = (tmp >= *dst); break;
-    case OP_TESTGT  : *t = (tmp  > *dst); break;
+    case OP_TESTEQU : if (*dst == tmp ) *t = 1; break;
+    case OP_TESTLEQ : if (*dst <= tmp ) *t = 1; break;
+    case OP_TESTLT  : if (*dst  < tmp ) *t = 1; break;
+    case OP_TESTNEQ : if (*dst != tmp ) *t = 1; break;
+    case OP_TESTGEQ : if (*dst >= tmp ) *t = 1; break;
+    case OP_TESTGT  : if (*dst  > tmp ) *t = 1; break;
     }
 
     if (opcode == OP_LD)
@@ -156,7 +159,9 @@ static void int_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, i
 */
 static void optional_push (arm_script_instance_t *I, int32_t src1)
 {
-    if (src1 != RegNone) { I->REGS[I->ctrl.SP++] = I->REGS[src1]; }
+    if (src1 != RegNone) 
+    { I->REGS[I->ctrl.SP++] = I->REGS[src1]; 
+    }
 }
 
 
@@ -164,15 +169,16 @@ static void optional_push (arm_script_instance_t *I, int32_t src1)
 
 /**
   @brief  read register
+          *data <- *(srcID)
 */
-static void readreg(arm_script_instance_t *I, int32_t *dst, int32_t src, uint8_t K)
+static void readreg(arm_script_instance_t *I, regdata32_t *data, int32_t srcID, uint8_t K)
 {
     uint32_t instruction = I->instruction;
 
     if (K)
     {   if (0 == RD(instruction, SRC2LONGK_PATTERN_INST))
-        {   if (1 == RD(instruction, OP_RKEXT_INST))        // extended constant
-            {   *dst = I->byte_code[I->ctrl.PC++];
+        {   if (1 == RD(instruction, OP_RKEXT_INST))    // extended constant
+            {   data->i32 = I->byte_code[I->ctrl.PC++];
                 switch (RD(instruction, DTYPE_REGS1))
                 {
                 case DTYPE_UINT8 : case DTYPE_UINT16: case DTYPE_INT16 : case DTYPE_UINT32: 
@@ -184,50 +190,57 @@ static void readreg(arm_script_instance_t *I, int32_t *dst, int32_t src, uint8_t
                     break;
                 case DTYPE_INT64 : case DTYPE_TIME64: 
                     /* read one more word */
-                    *dst = I->byte_code[I->ctrl.PC++];
+                    data->i32 = I->byte_code[I->ctrl.PC++];
                     break;
                 }
             } 
-            else                                            // register SRC2 
+            else                                        // use register src2 
             {   
-                if (src == RegSP0)                          // simple stack read
-                {   *dst = I->REGS[I->ctrl.SP].v_i32[REGS_DATA];
+                if (srcID == RegSP0)                    // simple stack read
+                {   data->i32 = I->REGS[I->ctrl.SP].v_i32[REGS_DATA];
                 }
-                else if (src == RegSP1)                     // pop data 
-                {   *dst = I->REGS[I->ctrl.SP].v_i32[REGS_DATA]; 
+                else if (srcID == RegSP1)               // pop data (SP --)
+                {   data->i32 = I->REGS[I->ctrl.SP].v_i32[REGS_DATA]; 
                     I->ctrl.SP --;
                 }
-                else                                        // read register data
-                {   *dst = I->REGS[src].v_i32[REGS_DATA];
+                else                                    // read register data
+                {   data->i32 = I->REGS[srcID].v_i32[REGS_DATA];
                 }
             }
         }
         else 
-        {   *dst = RD(instruction, OP_K_INST);      // 14bits signed short constant
-            *dst = (*dst) - 8192;                   // [8191 .. -8160]
+        {   data->i32 = RD(instruction, OP_K_INST);     // 14bits signed short constant
+            data->i32 = (data->i32) - 8192;             // [8191 .. -8160]
         }        
+    }
+    /* read src1 */
+    else
+    {
+        data->i32 = I->REGS[srcID].v_i32[REGS_DATA];
     }
 }
 
-static void writreg(arm_script_instance_t *I, int32_t dst, int32_t src)
+
+/**
+  @brief  read register
+          *dstID <- *(src data)
+*/
+static void writreg(arm_script_instance_t *I, int32_t dstID, regdata32_t src)
 {
     int32_t *pdst;
-    int8_t incSP_write;
 
-    incSP_write = 0;
-    if (dst == RegSP0)
+    if (dstID == RegSP0)
     {   pdst = &(I->REGS[I->ctrl.SP].v_i32[REGS_DATA]);
     }
-    else if (dst == RegSP1)
-    {   incSP_write = 1;
-        pdst = &(I->REGS[I->ctrl.SP].v_i32[REGS_DATA]);
+    else if (dstID == RegSP1)
+    {   pdst = &(I->REGS[I->ctrl.SP].v_i32[REGS_DATA]);
+        I->ctrl.SP ++;
     }
     else
-    {   pdst = &(I->REGS[dst].v_i32[REGS_DATA]);
+    {   pdst = &(I->REGS[dstID].v_i32[REGS_DATA]);
     }
 
-    *pdst = src;
-    I->ctrl.SP += I->ctrl.SP + incSP_write;
+    *pdst = src.i32;
 }
 
 
@@ -265,7 +278,8 @@ static void jmov_operation(arm_script_instance_t *I)
 
     if (opar == OPLJ_JUMP || opar == OPLJ_BANZ || opar == OPLJ_CALL)      
     {   k = RD(instruction, JUMPIDX_INST);      // 10bits signed extended 
-        k = (k << (32-JUMPIDX_INST_MSB)) >> (32-JUMPIDX_INST_MSB);        
+        k = k << (31-JUMPIDX_INST_MSB + JUMPIDX_INST_LSB); 
+        k = k >> (31-JUMPIDX_INST_MSB + JUMPIDX_INST_LSB);        
     } else                                                                    
     if (opar == OPLJ_CALLSYS)                                             
     {   k = RD(instruction, CALLSYSIDX_INST);   // 6bits unsigned         
@@ -274,7 +288,7 @@ static void jmov_operation(arm_script_instance_t *I)
     {   k = RD(instruction, SCGA_K11_INST);     // 10bits signed    
         k = (k << (32-SCGA_K11_INST_MSB)) >> (32-SCGA_K11_INST_MSB);     
     } else
-    {  readreg(I, &(src2_K.i32), src2, 1);
+    {  readreg(I, &src2_K, src2, 1);
     }
 
     switch (opar)
@@ -296,18 +310,24 @@ static void jmov_operation(arm_script_instance_t *I)
 
     // IIyyy-OPARDST_SRC10#________SRC2  OPLJ_SCATTER  : st r2 [r4/k] r3  => R2[R4] = R3 
     case OPLJ_SCATTER:
+        {   int32_t *heap;                  /* working area */
+        heap = (uint32_t *)&I->REGS[0];
+        heap = &heap[(I->ctrl.nregs + I->ctrl.nstack)*2];   // 2 words per register
         tmp = I->REGS[dst].v_i32[REGS_DATA];
-        tmp = tmp + src2_K.i32;
-        I->heap[tmp] = I->REGS[src1].v_i32[REGS_DATA];  // [tmp = dst+K] = src1
+        tmp = tmp + k;
+        heap[tmp] = I->REGS[src1].v_i32[REGS_DATA];  // [tmp = dst+K] = src1
         break;
-
+        }
     // IIyyy-OPARDST_SRC11#_<---K11--->  OPLJ_GATHER  : ld r2 r3 [r4/k] =>  R2 = R3[R4]
     case OPLJ_GATHER:
+        {   int32_t *heap;                  /* working area */
+        heap = (uint32_t *)&I->REGS[0];
+        heap = &heap[(I->ctrl.nregs + I->ctrl.nstack)*2];   // 2 words per register
         tmp = I->REGS[src1].v_i32[REGS_DATA];
-        tmp = tmp + src2_K.i32;
-        I->REGS[dst].v_i32[REGS_DATA] = I->heap[tmp];  // dst = [tmp = src1+K]
+        tmp = tmp + k;
+        I->REGS[dst].v_i32[REGS_DATA] = heap[tmp];  // dst = [tmp = src1+K]
         break;
-
+        }
     // IIyyy-OPARDST_SRC1__LLLLLLPPPPPP  OPLJ_WR2BF     move r2 | lenK posK | r3 
     case OPLJ_WR2BF:
         {
@@ -341,12 +361,12 @@ static void jmov_operation(arm_script_instance_t *I)
 
     // IIyyy-OPARDST______________YYYYY  OPLJ_DELETE 
     case OPLJ_DELETE:
-        I->ctrl.SP -= src2_K.i32;
+        I->ctrl.SP -= k;
         break;
 
     // IIyyy-OPARSRC0SRC1SRC3######SRC2  OPLJ_JUMP   
     case OPLJ_JUMP    : 
-        I->ctrl.PC += src2_K.i32;   // JMP offset_K8, PUSH SRC1/SRC2/SRC3
+        I->ctrl.PC += k-1;   // JMP offset_K8, PUSH SRC1/SRC2/SRC3, PC was already post incremented
         optional_push(I, dst); optional_push(I, src1); optional_push(I, src2); 
         break;
 
@@ -354,7 +374,7 @@ static void jmov_operation(arm_script_instance_t *I)
     case OPLJ_BANZ    : 
         I->REGS[RD(instruction,OP_SRC0_INST)].v_i32[REGS_DATA] --; // decrement loop counter
         if (I->REGS[src1].v_i32[REGS_DATA] != 0)             // see ti.com/lit/ds/symlink/tms320c25.pdf
-        {   I->ctrl.PC += src2_K.i32;
+        {   I->ctrl.PC += k-1;
         }
         break;
 
@@ -363,7 +383,7 @@ static void jmov_operation(arm_script_instance_t *I)
         reg.v_i32[REGS_DATA] = (1+ I->ctrl.PC);
         I->REGS[I->ctrl.SP] = reg;
         I->ctrl.SP ++;                      // push return address
-        I->ctrl.PC += src2_K.i32;           // call
+        I->ctrl.PC += k-1;           // call
         optional_push(I, dst);  optional_push(I, src1); optional_push(I, src2); optional_push(I, src3); 
         break;
 
@@ -372,7 +392,7 @@ static void jmov_operation(arm_script_instance_t *I)
         {   
         const p_stream_al_services *al_func;
         al_func = &(I->S->al_services[0]);
-        (*al_func)(PACK_SERVICE(0,0,PLATFORM_CLEAR_BACKUP_MEM,src2_K.i32), 
+        (*al_func)(PACK_SERVICE(0,0,PLATFORM_CLEAR_BACKUP_MEM, k), 
             (intPtr_t)(I->REGS[dst].v_i32[REGS_DATA]),  
             (intPtr_t)(I->REGS[src1].v_i32[REGS_DATA]),
             (intPtr_t)(I->REGS[src2].v_i32[REGS_DATA]), 
@@ -381,8 +401,8 @@ static void jmov_operation(arm_script_instance_t *I)
         break;
 
     case OPLJ_LABEL    : 
-        I->REGS[dst].v_i32[REGS_DATA] = src2_K.i32;
-        ST(I->REGS[dst].v_i32[REGS_TYPE], DTYPE_REGS1, DTYPE_INT32);
+        I->REGS[dst].v_i32[REGS_DATA] = RD(I->instruction, LABEL_INST); // read K14 
+        ST(I->REGS[dst].v_i32[REGS_TYPE], DTYPE_REGS1, DTYPE_INT32);    // uint32
         break;
 
     default:
@@ -403,19 +423,26 @@ static void jmov_operation(arm_script_instance_t *I)
 */
 static void test_arithmetic_operation(arm_script_instance_t *I)
 {
-    int32_t dst, src1, src2;
+    regdata32_t dst, src1, src2;
     uint8_t t = I->ctrl.test_flag; 
     int32_t instruction = I->instruction;
     int32_t opcode = RD(instruction, OP_INST);
     int32_t opar = RD(instruction, OP_OPAR_INST);
 
-
     /* ONLY INTEGERS */
+    {   uint8_t db1, db2, dbdst;
+        db1 = RD(instruction, OP_SRC1_INST);
+        db2 = RD(instruction, OP_SRC2_INST);
+        dbdst=RD(instruction, OP_DST_INST);
+        db2 = db2;
 
-    readreg(I, &src2, RD(instruction, OP_SRC2_INST), 1);
-    readreg(I, &src1, RD(instruction, OP_SRC1_INST), 0);
-    int_arithmetic_operation(opcode, opar, &t, &dst, src1, src2);
-    writreg(I, RD(instruction, OP_DST_INST), dst);
+        readreg(I, &src1, RD(instruction, OP_SRC1_INST), 0);
+        readreg(I, &src2, RD(instruction, OP_SRC2_INST), 1);
+        readreg(I, &dst,  RD(instruction, OP_DST_INST) , 0);
+
+        int_arithmetic_operation(opcode, opar, &t, &(dst.i32), src1.i32, src2.i32);
+        writreg(I, RD(instruction, OP_DST_INST), dst);
+    }
 
     I->ctrl.test_flag = t;
 }
@@ -444,14 +471,12 @@ static void test_arithmetic_operation(arm_script_instance_t *I)
                     HEAP / PARAM (4bytes/words)  [............]
 */
 
-void arm_stream_script_interpreter (
-    arm_script_instance_t *I,
-    int32_t *descriptor,
-    int32_t *bytecode)
+void arm_stream_script_interpreter (arm_script_instance_t *I)
 {
-    int32_t  cond, opcode, opar;
+    int32_t  cond, opcode, opar, count;
+    count = 1 << I->ctrl.cycle_downcounter;
 
-    while (I->ctrl.cycle_downcounter-- > 0)
+    while (count-- > 0)
     {
         // if (I->ctrl.cycle_downcounte == 1) { LOG ERROR "CYCLE OVERFLOW " }
 
@@ -470,11 +495,13 @@ void arm_stream_script_interpreter (
         opar = RD(I->instruction, OP_OPAR_INST);
 
         if (opcode == OP_JMOV && opar == OPLJ_RETURN)
-        {    I->ctrl.SP --; 
-             I->ctrl.PC = (int32_t)I->REGS[I->ctrl.SP].v_i32[REGS_DATA];
-             if (I->ctrl.PC == 0)
-             {  return;
-             }
+        {   if (I->ctrl.SP == I->ctrl.nregs)
+            {  return;
+            }
+            else 
+            {  I->ctrl.SP--; 
+               I->ctrl.PC = (int32_t)I->REGS[I->ctrl.SP].v_i32[REGS_DATA];
+            }
         }
 
         if (opcode == OP_JMOV)

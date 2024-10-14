@@ -170,13 +170,13 @@ void compute_memreq(struct node_memory_bank *m, struct formatStruct *all_format)
     size = m->size0;                    // A
     
     nchan = all_format[m->iarcChannelI].nchan;          // nchan-1 only when building thr binary graph 
-    size += (intPtr_t) (0.5 + (m->sizeNchan * nchan));  // + B x nb_channels_arc(i)
+    size += (uint32_t) (0.5 + (m->sizeNchan * nchan));  // + B x nb_channels_arc(i)
     
     FS = all_format[m->iarcSamplingJ].samplingRate;
-    size += (intPtr_t) (0.5 + (m->sizeFS * FS));        // + C x samplingHz_arc(j)
+    size += (uint32_t) (0.5 + (m->sizeFS * FS));        // + C x samplingHz_arc(j)
     
     frame_length = all_format[m->iarcFrameK].frame_length;
-    size += (intPtr_t) (0.5 + (m->sizeFrame * frame_length));  // + D x frame_size_arc(k)
+    size += (uint32_t) (0.5 + (m->sizeFrame * frame_length));  // + D x frame_size_arc(k)
     
     size = ((size+3)>>2)<<2;
     m->graph_memreq_size = size;
@@ -188,15 +188,16 @@ void compute_memreq(struct node_memory_bank *m, struct formatStruct *all_format)
 */
 void stream_tool_read_subgraph (char **pt_line, struct stream_platform_manifest* platform,struct stream_graph_linkedlist *graph)
 {   
-    char *new_ggraph, file_name[NBCHAR_NAME], file_name2[NBCHAR_NAME], *subName, paths[MAX_NB_PATH][NBCHAR_LINE];
+    char *new_ggraph, file_name[NBCHAR_NAME], file_name2[NBCHAR_NAME], *subName, paths[MAX_NB_PATH][NBCHAR_LINE], dbg;
     uint32_t ipath, i;
     extern void arm_stream_read_graph (struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph, char *ggraph_txt);
     
+    strcpy(file_name, ""); strcpy(file_name2, "");
     new_ggraph = calloc (MAXINPUT, 1);
     
     jump2next_valid_line(pt_line);
     subName = &(graph->mangling[graph->subg_depth][0]);
-    sscanf (*pt_line, "%s", subName); jump2next_valid_line(pt_line);
+    dbg = sscanf (*pt_line, "%s", subName); jump2next_valid_line(pt_line);
     
     graph->subg_depth++;
     
@@ -208,8 +209,9 @@ void stream_tool_read_subgraph (char **pt_line, struct stream_platform_manifest*
     }
     
     /* read subgraph as a recursion */ 
-    sscanf (*pt_line, "%d %s", &ipath, file_name2); jump2next_valid_line(pt_line);
-    strcpy(file_name, paths[ipath]); strcat(file_name, file_name2);
+    dbg = sscanf (*pt_line, "%d %s", &ipath, file_name2); jump2next_valid_line(pt_line);
+    strncpy(file_name, paths[ipath], NBCHAR_NAME); 
+    strcat(file_name, file_name2);
     read_input_file (file_name, new_ggraph);
 
     /* recursion starts here */
@@ -359,12 +361,14 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 #define COMPARE(x) (0==strncmp(pt_line, x, strlen(x)))
 
     char* pt_line, ctmp[NBCHAR_LINE], paths[MAX_NB_PATH][NBCHAR_LINE];
-    int32_t idx_format, idx_node, idx_stream_io, idx_path, i, j, platform_NODE_idx;
+    int32_t idx_format, idx_node, idx_stream_io, idx_path, i, j, platform_NODE_idx, idx_node_script;
     
     pt_line = ggraph_txt;
     idx_path = idx_format = idx_node = idx_stream_io = 0;
     graph->procid_allowed_gr4 = 1;          // default values : main proc = #0
-    for (i = 0; i< MAX_NB_NODES; i++) graph->arc[i].sizeFactor = 1.0;
+    for (i = 0; i< MAX_NB_NODES; i++) 
+    {   graph->arc[i].sizeFactor = 1.0;
+    }
 
 
     jump2next_valid_line(&pt_line);
@@ -495,15 +499,17 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
             fields_extract(&pt_line, "CCI", ctmp, cstring1, &instance);
             search_platform_node(cstring1, &platform_node, &platform_NODE_idx, platform, graph);
-
+            idx_node_script = -1;
             if (arm_stream_script_index == platform_NODE_idx)                 /* is it arm_stream_script ? */
-            {
-                graph->all_nodes[graph->nb_nodes].node_script.nb_reg = 6;       /* default number of registers and stack size */
-                graph->all_nodes[graph->nb_nodes].node_script.nb_stack = 6;
-                graph->all_nodes[graph->nb_nodes].node_script.param_size = 0;
-                graph->all_nodes[graph->nb_nodes].node_script.arc_script = graph->nb_arcs;
+            {   
+                idx_node_script = graph->nb_nodes;
+                graph->all_nodes[idx_node_script].node_script.nb_reg = 6;       /* default number of registers + R12 + stack size */
+                graph->all_nodes[idx_node_script].node_script.nb_stack = 6;
+                graph->all_nodes[idx_node_script].node_script.ram_heap_size = 0;
+                graph->all_nodes[idx_node_script].node_script.arc_script = graph->nb_arcs;
+                graph->all_nodes[idx_node_script].arc[0].arcID = graph->nb_arcs;   /* dummy arc used for regsiters */
+                
                 graph->nb_arcs++;
-                graph->nb_scripts++;
             }
 
             graph->all_nodes[graph->nb_nodes].platform_NODE_idx = platform_NODE_idx;
@@ -568,32 +574,52 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(common_script))
         {   fields_extract(&pt_line, "CI", ctmp, &(graph->all_scripts[graph->idx_script].script_ID)); /* instance number (its identification) */
             graph->idx_script = graph->nb_scripts;
-            graph->all_scripts[graph->idx_script].nb_reg = 6;       /* default number of registers and stack size */
+            graph->all_scripts[graph->idx_script].nb_reg = 6+1;       /* default number of registers  + R12 + stack size */
             graph->all_scripts[graph->idx_script].nb_stack = 6;
-            graph->all_scripts[graph->idx_script].param_size = 0;
+            graph->all_scripts[graph->idx_script].ram_heap_size = 0;
             graph->all_scripts[graph->idx_script].arc_script = graph->nb_arcs;
             graph->nb_arcs++;
             graph->nb_scripts++;
         }
         if (COMPARE(script_register))           // script_register  6       numer of registers
-        {  fields_extract(&pt_line, "CI", ctmp, &i); 
-            graph->all_scripts[graph->idx_script].nb_reg = i; 
+        {   fields_extract(&pt_line, "CI", ctmp, &i); 
+            if (idx_node_script >= 0)
+            {  graph->all_nodes[idx_node_script].node_script.nb_reg = i + 1; // R12 added
+            } else
+            {   graph->all_scripts[graph->idx_script].nb_reg = i + 1;       // R12 added
+            }
         }
         if (COMPARE(script_stack))              // script_stack        6    size of the stack in word64 (default = 6)
-        {  fields_extract(&pt_line, "CI", ctmp, &i); 
-            graph->all_scripts[graph->idx_script].nb_stack = i; 
+        {   fields_extract(&pt_line, "CI", ctmp, &i); 
+            if (idx_node_script >= 0)
+            {   graph->all_nodes[idx_node_script].node_script.nb_stack = i; 
+            } else
+            {   graph->all_scripts[graph->idx_script].nb_stack = i;
+            }
         }
         if (COMPARE(script_parameter))          // script_parameter 50    size of the heap
-        {  fields_extract(&pt_line, "CI", ctmp, &i); 
-            graph->all_scripts[graph->idx_script].param_size = i; 
+        {   fields_extract(&pt_line, "CI", ctmp, &i); 
+            if (idx_node_script >= 0)
+            {   graph->all_nodes[idx_node_script].node_script.ram_heap_size = i; 
+            } else
+            {   graph->all_scripts[graph->idx_script].ram_heap_size = i;
+            }
         }
         if (COMPARE(script_mem_shared))         // script_mem_shared 1      Is it a private RAM(0) or can it be shared with other scripts(1)
-        {  fields_extract(&pt_line, "CI", ctmp, &i); 
-            graph->all_scripts[graph->idx_script].stack_memory_shared = i; 
+        {   fields_extract(&pt_line, "CI", ctmp, &i); 
+            if (idx_node_script >= 0)
+            {   graph->all_nodes[idx_node_script].node_script.stack_memory_shared = i; 
+            } else
+            {   graph->all_scripts[graph->idx_script].stack_memory_shared = i;
+            }
         }
         if (COMPARE(script_mem_map))            // script_mem_map    0      Memory mapping to VID #0 (default) 
-        {  fields_extract(&pt_line, "CI", ctmp, &i); 
-            graph->all_scripts[graph->idx_script].mem_VID = i; 
+        {   fields_extract(&pt_line, "CI", ctmp, &i); 
+            if (idx_node_script >= 0)
+            {   graph->all_nodes[idx_node_script].node_script.mem_VID = i; 
+            } else
+            {   graph->all_scripts[graph->idx_script].mem_VID = i;
+            }
         }
         if (COMPARE(script_code))               // script_code
         {   stream_tool_read_code(&pt_line, platform, graph, &(graph->all_scripts[graph->idx_script]));  // macro assembler

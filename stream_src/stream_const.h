@@ -365,9 +365,9 @@
     arc descriptors used to address the working area : registers and stack
 */
 #define      SCRIPT_PTR_SCRARCW0  U( 0) /* Base address + NREGS + new UC */
-#define          SCRIPT_SCRARCW1  U( 1) /* use case UC0 */
-#define          RDFLOW_SCRARCW2  U( 2) /* use-case UC1 + ARCEXTEND_ARCW2  */
-#define        WRIOCOLL_SCRARCW3  U( 3) /* synchro byte + STACK LENGTH + Flag logMaxCycles8b */
+#define          SCRIPT_SCRARCW1  U( 1) /* LENGTH use case UC0 */
+#define          RDFLOW_SCRARCW2  U( 2) /* READ use-case UC1 + ARCEXTEND_ARCW2  */
+#define        WRIOCOLL_SCRARCW3  U( 3) /* WRITE + STACK LENGTH + Flag logMaxCycles8b */
 #define          DBGFMT_SCRARCW4  U( 4) /*  */
 
           
@@ -378,24 +378,25 @@
 #define    BASEIDXOFFSCRARCW0_MSB U(27)    
 #define    BASEIDXOFFSCRARCW0_LSB U( 0) /* 28  base address of the script memory (regs + state + stack)  */
 
-#define    _______SCRARCW1_MSB U(31) 
-#define    _______SCRARCW1_LSB U(21) /* 10 */
-#define BUFF_SIZE_SCRARCW1_MSB U(21) /*    */
-#define BUFF_SIZE_SCRARCW1_LSB U( 0) /* 22 BYTE-acurate up to 4MBytes (up to 128GB with ARCEXTEND_ARCW2 */
-// duplicate : 
-//#define       ARCEXTEND_ARCW2_MSB U(31) /*    Size/Read/Write are used with <<(2x{0..7}) to extend base/size/read/write arc */
-//#define       ARCEXTEND_ARCW2_LSB U(29) /* 3  to  256MB, 4GB, 64GB , for use-cases with NN models, video players, etc */
+#define       _______SCRARCW1_MSB U(31) 
+#define       _______SCRARCW1_LSB U(21) /* 10 */
+#define    BUFF_SIZE_SCRARCW1_MSB U(21) /*    */
+#define    BUFF_SIZE_SCRARCW1_LSB U( 0) /* 22 BYTE-acurate up to 4MBytes (up to 128GB with ARCEXTEND_ARCW2 */
+
+//#define          READ_ARCW2_MSB U(21) /*    data read index  Byte-acurate up to 4MBytes starting from base address */
+//#define          READ_ARCW2_LSB U( 0) /* 22 this is incremented by "frame_size" FRAMESIZE_FMT0  */
 
 #define    COLLISION_SCRARCW3_MSB U(31) /*  8  */
 #define    COLLISION_SCRARCW3_LSB U(24) /*     */
-#define LOG2MAXCYCLE_SCRARCW3_MSB U(23) /*  8  minifloat: reset and return when reaching this number of decoded instructions */ 
-#define LOG2MAXCYCLE_SCRARCW3_LSB U(16) /*     */ 
-#define    __________SCRARCW3_MSB U(15) /*  1  */
-#define    __________SCRARCW3_LSB U(15) /*     */
-#define        NREGS_SCRARCW3_MSB U(14) /*  4   number of registers used in this script */ 
-#define        NREGS_SCRARCW3_LSB U(11) /*     */
-#define       NSTACK_SCRARCW3_MSB U(10) /* 11   max size of the FIFO/stack in W32 */
-#define       NSTACK_SCRARCW3_LSB U( 0) /*     */
+//#define         WRITE_ARCW3_MSB U(21) /*    write pointer is incremented by FRAMESIZE_FMT0 */
+//#define         WRITE_ARCW3_LSB U( 0) /* 22 write read index  Byte-acurate up to 4MBytes starting from base address */
+
+#define  RAMTOTALW32_SCRARCW4_MSB U(23) /*  13  Total in words = 2*(regs + stack) + heap size = 8k W32*/
+#define  RAMTOTALW32_SCRARCW4_LSB U(11) /*     */
+#define        NREGS_SCRARCW4_MSB U(10) /*  4   number of registers used in this script */ 
+#define        NREGS_SCRARCW4_LSB U( 7) /*     */
+#define       NSTACK_SCRARCW4_MSB U( 6) /*  7   max size of the FIFO/stack in register size:  128 registers */
+#define       NSTACK_SCRARCW4_LSB U( 0) /*     */
 
 /* =================
     script (SCRIPT_LW0) used to copy input test-patterns, set-parameters from the global use-case or from information 

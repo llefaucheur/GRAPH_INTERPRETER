@@ -262,6 +262,7 @@ void K_register (uint32_t *INST, char S[cNFIELDS][cASM], int offset, uint32_t ms
     /* default = long constant */
     ST(INST[0], SRC2LONGK_PATTERN_INST, 0);     /* 0 = decoded pattern for SRC2 / long_K */ 
     ST(INST[0], OP_K_DTYPE_INST, type);         /* DTYPE coded on 4 bits */
+    ST(INST[0], OP_RKEXT_INST, 1);              /* default = extended constant */
 
     switch (type)
     {
@@ -381,7 +382,8 @@ void clean_line (char **pt_line, uint32_t *INST,
     pch = strchr(current_line,';');
     if (0 != pch)   // search ';' copy comments 
     {   strncpy(comments, pch, line_length);
-        memset(pch, '\n', line_length);
+        pch[0] = '\0';
+        pch[1] = '\n';
     }
 
     /* -------------------- CLEAN THE LINE FROM { } \ /  and detect '#' '[' ----- */
@@ -389,7 +391,11 @@ void clean_line (char **pt_line, uint32_t *INST,
     *thereAreBrackets = (0 != strchr(current_line,'['));   
     *thereAreVerticals = (0 != strchr(current_line,'|'));   
 
-    test = '{'; pch = strchr(current_line,test); while (pch != NULL) { *pch = ' ';  pch = strchr(current_line, test); }
+    test = '{'; pch = strchr(current_line,test); 
+    while (pch != NULL) 
+    { *pch = ' ';  
+     pch = strchr(current_line, test); 
+    }
     test = '}'; pch = strchr(current_line,test); while (pch != NULL) { *pch = ' ';  pch = strchr(current_line, test); }
     test = '\\';pch = strchr(current_line,test); while (pch != NULL) { *pch = ' ';  pch = strchr(current_line, test); }
     test = '/'; pch = strchr(current_line,test); while (pch != NULL) { *pch = ' ';  pch = strchr(current_line, test); }
@@ -420,17 +426,19 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
                             struct stream_graph_linkedlist *graph, 
                             struct stream_script *script)
 {
-    char s[cNFIELDS][cASM];
+    char s[cNFIELDS][cASM], *pdbg, dbg;
     uint32_t INST[INST_WORDS], nWord;
     uint8_t thereIsHash, thereAreBrackets, thereAreVerticals;
     char script_comment[NBCHAR_LINE];
     int idx_label;
-    struct { int position; char symbol[NBCHAR_STREAM_NAME]; int Label0Jump1;} Label_positions[100];
+    struct { int position; int Label0Jump1; int lbl; char symbol[NBCHAR_STREAM_NAME]; } Label_positions[100];
     char LabelName[NBCHAR_STREAM_NAME];
     int oparf, opar0src1orKm1, dtype, tmp;
 
     jump2next_valid_line(pt_line);                  // remove   "script_code"
     idx_label = 0;
+    strcpy(LabelName, "");
+    memset(&(Label_positions[0]), 0, sizeof(Label_positions));
 
     while (1)
     {
@@ -454,9 +462,10 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
         {   // Save the instruction offset and the Symbol
             tmp = sscanf(s[1], "%s", LabelName);
             Label_positions[idx_label].position = script->script_nb_instruction;
-            strcpy(Label_positions[idx_label].symbol, LabelName);
+            pdbg = strncpy((char *)&(Label_positions[idx_label].symbol[0]), LabelName, NBCHAR_STREAM_NAME);
             Label_positions[idx_label].Label0Jump1 = 0;
             idx_label++;
+            INST[INST_WORDS-1] = 0;
             continue;
         } 
             
@@ -467,8 +476,8 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
             if (0 == strchr(s[0],'y')) { ST(INST[0], OP_COND_INST, IF_NOT); }   // "if_yes"
             else                       { ST(INST[0], OP_COND_INST, IF_YES); }   // "if_not"
 
-            for (i = cNFIELDS-1; i > 0; i--)      // all the instruction fields are left-shifted
-            {   strcpy (s[i], s[i-1]);            //  so next field starts on s[0]
+            for (i = 0; i < cNFIELDS-1; i++)      // all the instruction fields are left-shifted
+            {   strcpy (s[i], s[i+1]);            //  so next field starts on s[0]
             }
         }
 
@@ -533,25 +542,45 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
                 if (0 == strstr(s[1], "="))  
                 {   fprintf(stderr, "LD missing '='  !"); exit(-4);
                 } 
-                
-                check_alu_opar (s[2], &oparf, &opar0src1orKm1);                     /* does s[2] is a Register or ALU */
-                if (opar0src1orKm1 == opar_reg)
-                {   dst_srcx_register(INST, s[2], OP_SRC2_INST_MSB, OP_SRC2_INST_LSB); /* s[2] = SRC2 */
-                }
-                else if (opar0src1orKm1 == opar_K)
-                {   K_register (INST, s, 2,  OP_SRC2_INST_MSB,  OP_SRC2_INST_LSB); /* s[2] = K */
-                }
-                else
-                {   ST(INST[0], OP_OPAR_INST, oparf);                               /* LD DST ALU SRC1 + SRC2/K */
-                    check_alu_opar (s[3], &oparf, &opar0src1orKm1);                
-                    dst_srcx_register(INST, s[3], OP_SRC1_INST_MSB, OP_SRC1_INST_LSB); 
-                    check_alu_opar (s[4], &oparf, &opar0src1orKm1);
 
-                    if (opar0src1orKm1 == opar_reg)  
-                    {   dst_srcx_register(INST, s[4], OP_SRC2_INST_MSB, OP_SRC2_INST_LSB); /* reg SRC2 */
-                    } else
-                    {   K_register (INST, s, 4, OP_SRC2_INST_MSB, OP_SRC2_INST_LSB);    /* constant */
-                    }                
+    //predefined "K" : r2 = L_xxx (for OPLJ_LABEL)
+    //    L_BASE_PARAM_SET  H1C0 = 0
+    //    L_BASE_PARAM_RAM  H1C0 = 1
+#define L_BASE_PARAM_SET "L_BASE_PARAM_SET"             // TODO
+#define L_BASE_PARAM_RAM "L_BASE_PARAM_RAM"             // TODO
+#define LABEL_TAG "L_"                
+
+                if (0 != strncmp(LABEL_TAG, s[2], 2))
+                {
+                    check_alu_opar (s[2], &oparf, &opar0src1orKm1);                     /* does s[2] is a Register or ALU */
+                    if (opar0src1orKm1 == opar_reg)
+                    {   dst_srcx_register(INST, s[2], OP_SRC2_INST_MSB, OP_SRC2_INST_LSB); /* s[2] = SRC2 */
+                    }
+                    else if (opar0src1orKm1 == opar_K)
+                    {   K_register (INST, s, 2,  OP_SRC2_INST_MSB,  OP_SRC2_INST_LSB); /* s[2] = K */
+                    }
+                    else
+                    {   ST(INST[0], OP_OPAR_INST, oparf);                               /* LD DST ALU SRC1 + SRC2/K */
+                        check_alu_opar (s[3], &oparf, &opar0src1orKm1);                
+                        dst_srcx_register(INST, s[3], OP_SRC1_INST_MSB, OP_SRC1_INST_LSB); 
+                        check_alu_opar (s[4], &oparf, &opar0src1orKm1);
+
+                        if (opar0src1orKm1 == opar_reg)  
+                        {   dst_srcx_register(INST, s[4], OP_SRC2_INST_MSB, OP_SRC2_INST_LSB); /* reg SRC2 */
+                        } else
+                        {   K_register (INST, s, 4, OP_SRC2_INST_MSB, OP_SRC2_INST_LSB);    /* constant */
+                        }                
+                    }
+                } else
+                {   // Save the instruction offset and the Symbol
+                    Label_positions[idx_label].position = script->script_nb_instruction;
+                    dbg = sscanf(s[2], "%s", LabelName);
+                    strcpy(Label_positions[idx_label].symbol, LabelName);
+                    Label_positions[idx_label].Label0Jump1 = 1;
+                    Label_positions[idx_label].lbl = 1;
+                    ST(INST[0], OP_INST, OP_JMOV); 
+                    ST(INST[0], OP_OPAR_INST, OPLJ_LABEL); 
+                    idx_label++;
                 }
             }
             else
@@ -632,24 +661,27 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
             //"call"      <Label>    <register> <register> <register> 
             //"callsys"   K          <register> <register> <register> 
             if (OPLJ_JUMP == oparf || OPLJ_BANZ == oparf || OPLJ_CALL == oparf || OPLJ_CALLSYS == oparf)
-            {   // Save the instruction offset and the Symbol
-                Label_positions[idx_label].position = script->script_nb_instruction;
-                tmp = sscanf(s[1], "%s", LabelName);
-                strcpy(Label_positions[idx_label].symbol, LabelName);
-                Label_positions[idx_label].Label0Jump1 = 1;
-                idx_label++;
-                if ('\n' == s[2][0]) { strcpy(s[2], RN); }
-                if ('\n' == s[3][0]) { strcpy(s[3], RN); }
-                if ('\n' == s[4][0]) { strcpy(s[4], RN); }
+            {   
+                if ('\n' == s[2][0] || '\0' == s[2][0]) { strcpy(s[2], RN); }
+                if ('\n' == s[3][0] || '\0' == s[3][0]) { strcpy(s[3], RN); }
+                if ('\n' == s[4][0] || '\0' == s[4][0]) { strcpy(s[4], RN); }
                 dst_srcx_register (INST, s[2], OP_DST_INST_MSB,  OP_DST_INST_LSB );
                 dst_srcx_register (INST, s[3], OP_SRC1_INST_MSB, OP_SRC1_INST_LSB);
                 dst_srcx_register (INST, s[4], OP_SRC2_INST_MSB, OP_SRC2_INST_LSB);
 
                 if (OPLJ_CALLSYS == oparf)
                 {   int service;
-                    idx_label --;   // there was no label
                     tmp = sscanf(s[1], "%d", &service);         /* 6bits service */
                     ST(INST[0], CALLSYSIDX_INST, service);
+                }
+                else
+                {
+                    // Save the instruction offset and the Symbol
+                    Label_positions[idx_label].position = script->script_nb_instruction;
+                    tmp = sscanf(s[1], "%s", LabelName);
+                    strcpy(Label_positions[idx_label].symbol, LabelName);
+                    Label_positions[idx_label].Label0Jump1 = 1;
+                    idx_label++;
                 }
             }
             
@@ -679,8 +711,18 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
                 {   if (s[3][0] != ']' || s[4][0] != '=')  
                     {   fprintf(stderr, " missing ']' or '='  !"); exit(-4);
                     }
-                    dst_srcx_register (INST, s[5],  OP_SRC2_INST_MSB, OP_SRC2_INST_LSB); 
+                    // R [ n ]+ = R   DST [SRC2/K] = SRC1 
+                    // 0 1 2 3  4 5
                     ST(INST[0], OP_OPAR_INST, OPLJ_SCATTER);
+                    dst_srcx_register (INST, s[5],  OP_SRC1_INST_MSB, OP_SRC1_INST_LSB); 
+
+                    check_alu_opar (s[2], &oparf, &opar0src1orKm1);
+                    if (opar0src1orKm1 == opar_reg)  
+                    {   dst_srcx_register (INST, s[2], OP_SRC2_INST_MSB, OP_SRC2_INST_LSB); 
+                    } else
+                    {   K_register (INST, s, 2, OP_SRC2_INST_MSB, OP_SRC2_INST_LSB);  
+                    }
+
                     if (s[3][1] == '+')
                     {   ST(INST[0], SCGA_POSTINC_INST, 1);
                     }
@@ -689,8 +731,18 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
                 {   if (s[3][0] != '[')  
                     {   fprintf(stderr, " missing ']' or '='  !"); exit(-4);
                     }
-                    dst_srcx_register (INST, s[4],  OP_SRC2_INST_MSB, OP_SRC2_INST_LSB); 
+                    // R = R [ n ]+    DST = SRC1 [SRC2/K]
+                    // 0 1 2 3 4 5
                     ST(INST[0], OP_OPAR_INST, OPLJ_GATHER);
+                    dst_srcx_register (INST, s[2],  OP_SRC1_INST_MSB, OP_SRC1_INST_LSB); 
+
+                    check_alu_opar (s[4], &oparf, &opar0src1orKm1);
+                    if (opar0src1orKm1 == opar_reg)  
+                    {   dst_srcx_register (INST, s[4], OP_SRC2_INST_MSB, OP_SRC2_INST_LSB); 
+                    } else
+                    {   K_register (INST, s, 4, OP_SRC2_INST_MSB, OP_SRC2_INST_LSB);
+                    }
+
                     if (s[5][1] == '+')
                     {   ST(INST[0], SCGA_POSTINC_INST, 1);
                     }
@@ -729,23 +781,79 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
 
         // save byte-codes and corresponding comments        
         strcpy(script->script_comments[script->script_nb_instruction], script_comment);
-        if (INST[INST_WORDS-1] >= 1)
-        {   script->script_program[script->script_nb_instruction] = INST[0];  script->script_nb_instruction += 1;
-        }
-        if (INST[INST_WORDS-1] >= 2)
-        {   script->script_program[script->script_nb_instruction] = INST[1];  script->script_nb_instruction += 1;
-        }
-        if (INST[INST_WORDS-1] >= 3)
-        {   script->script_program[script->script_nb_instruction] = INST[2];  script->script_nb_instruction += 1;
-        }
+
+        tmp = INST[INST_WORDS-1];
+        memcpy (&(script->script_program[script->script_nb_instruction]), INST, tmp*4);
+        script->script_nb_instruction += tmp;
 
         if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))    /* end */
         {   jump2next_valid_line(pt_line);
             break;
         }
-        if (0 == strncmp (*pt_line,node_parameters,strlen(node_parameters)))    /* node_parameters */
+        if (0 == strncmp (*pt_line,script_parameters,strlen(script_parameters)))    /* node_parameters */
         {   jump2next_valid_line(pt_line);
-            stream_tool_read_parameters(pt_line, platform, graph, &(script->ParameterSizeW32), &(script->PackedParameters[0])); 
+            {
+                uint8_t raw_type, *ptr_param;
+                uint32_t nb_raw, nbytes, nbits, byte_position;
+                char *pt0, *ptstart, *ptend, inputchar[200];
+
+                byte_position = 4 * script->script_nb_instruction;
+                pt0 = ptr_param = (uint8_t *)&(script->PackedParameters[0]);
+                while (1)
+
+                {   char *Label, c[10], *p; 
+                    int i;
+
+                    /* read the header of the line : number of fields and type */
+                    ptstart = *pt_line;   
+                    ptend = strchr(ptstart, '\n');
+                    i = ptend - ptstart;
+                    strncpy(inputchar, ptstart, (int)i); inputchar[i] = '\0'; inputchar[i+1] = '\n';
+                    
+                    Label = strstr(inputchar, script_label);
+
+                    if (Label)
+                    {   tmp = sscanf(Label, "%s %s", c, LabelName);
+                        Label_positions[idx_label].position = byte_position/4;
+                        strcpy(Label_positions[idx_label].symbol, LabelName);
+                        Label_positions[idx_label].Label0Jump1 = 0;
+                        idx_label++;
+                    L_jump2next_valid_line:
+                        jump2next_line(pt_line);
+
+                        p = *pt_line;
+                        for (i = 0; i < NBCHAR_LINE; i++)
+                        {   if (' ' != (*p)) break;
+                            p++;
+                        }
+
+                        if ((*p) == ';' || (*p) == '\n')
+                        {   goto L_jump2next_valid_line;
+                        }
+                        *pt_line = p;
+                    } 
+
+                    read_binary_param(pt_line, ptr_param, &raw_type, &nb_raw);
+                    if (nb_raw == 0)
+                        break;
+                    nbits = stream_bitsize_of_raw(raw_type);
+                    nbytes = (nbits * nb_raw)/8;
+                    byte_position = byte_position + nbytes;
+                    ptr_param = &(ptr_param[nbytes]);
+
+                    if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
+                    {   break;
+                    }
+                    
+                }
+
+                nbytes = (int)(ptr_param - pt0); 
+                script->ParameterSizeW32 = (3 + nbytes) /4;   // n parameters in w32, one byte will consume one w32
+    
+                while (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
+                {   jump2next_valid_line(pt_line);
+                }
+            }
             break;
         }
     }
@@ -772,7 +880,11 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
                         {   label_position = Label_positions[ilabel].position;
                             instruction_position = Label_positions[ijump].position;
                             instruction = &(script->script_program[instruction_position]);
-                            ST(*instruction, JUMPIDX_INST, label_position - instruction_position);
+                            if (0 == Label_positions[ijump].lbl)
+                            {   ST(*instruction, JUMPIDX_INST, label_position - instruction_position);  // 10bits for jumps
+                            } else
+                            {   ST(*instruction, OP_K_INST, label_position - instruction_position);     // 14bits for labels
+                            }
                         }
                     }
                 }
