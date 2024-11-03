@@ -32,41 +32,72 @@ node arm_stream_filter  0
 node sigp_stream_detector 0     
     node_preset         3               detector preset 
 ;----------------------------------------------------------------------
-node arm_stream_script  0     
-    node_preset         0
+node arm_stream_script     0     
+    node_preset            0
 
-    script_register    4  ; number of word64 registers
-    script_stack       2  ; size of the stack in word64      
-    script_parameter  60  ; size of the parameters in word32
-    script_mem_shared  0  ; private memory (0) or shared(1)  
-    script_mem_map     0  ; mapping to VID #0 (default)      
+    script_register       10    ; number of word64 registers
+    script_stack           6    ; size of the stack in word64      
+    script_mem_shared      0    ; private memory (0) or shared(1)  
+    script_mem_map         0    ; mapping to VID #0 (default)      
                                                              
     node_script_code       
-        r1 =  -3                ; r1 =  -3
-      label L_AAA                
-        r1 = add r1 1           ; L_A : r1 = add r1 1
-        test_gt r1 1            ; test_gt r1 1 
-        if_no jump L_AAA        ; if_NO jump L_A
-        callsys 15 r2 r3 r4     ; callsys 15 r2 r3 r4
-        return                  ; return
+        r5 =  0xFF              ; r5 =  0xFF   
+;       CALLSYS NODE r-CMD r-Param r-ADDR r-N
+;               FUNC   SET arcID addr   n 
+        r3 | 1 10 | = r5        ; r3 |1 10| = r5
+        r4 = r3 | 3 5 |         ; r4 = r3 |3 5|
+;
+        set r2 graph sigp_stream_detector_0 ; r2 = sigp_stream_detector_0         
+        r0 = 0x412              ; r0 = TAG(4) + RESET(1) + STREAM_SET_PARAMETER(2)
+        set r3 param BBB        ; set r3 param BBB 
+        sp0 = 1                 ; push 1 Byte (threshold size in BBB)
+;       callsys 1 (1 = node = FUNCTION_SSRV)
+;           r-node      node address of sigp_stream_detector
+;           r-cmd       tag(0=none, 4=THR(doc)) + reset id + set_param
+;           r-addr      data address
+;           r-n         nbbytes
+        callsys 1 r2 r0 r3 sp0  ; callsys NODE(1) r2(cmd=set_param) r0(set) r3(data) sp0(1 bytes)
+      label AAA                
+        r1 = add r1 1           ; r1 = add r1 1      Label AAA 
+        r2 = xor r2 r3          ; r2 = xor r2 r3      
+        test_gt r1 1            ; test_gt r1 1        
+        if_no jump AAA          ; if_no jump AAA      
+        callsys 15 r2 r3 r4     ; callsys 15 r2 r3 r4 
+        set r0 param CCC        ; set r0 CCC          
+        set r3 heap EEE         ; set r3 EEE          
+        set r0 type uint8       ; set r0 type uint8   
+        r2 = [ r0 ]+ 1          ; r2 = [ r0 ]+ 1      
+        [ r3 ]+ 1 = r2          ; [ r3 ]+ 1 = r2      
+        set r0 type uint32      ; set r0 type uint32  
+        r2 = [ r0 ]+ 4          ; r2 = [ r0 ]+ 4      
+        [ r3 ]+ 4 = r2          ; [ r3 ]+ 4 = r2        
+        return                  ; return              
                                  
     script_parameters      0    ;TAG = "all parameters"
-        1  u32;  22             ;                
-        label L_BBB              
-        1  u32;  333            ;
-        label L_CCC              
-        1  u32;  4444           ;
+        1  u8 ;  34             ; ROM   h22            
+        label BBB              
+        2  u32; 0x33333333 0x444444444 ; ROM   h33333333 h444444444
+        label CCC              
+        1  u8 ;  ox55           ; ROM   h55      
+        1  u32;  0x66666666     ; ROM   66666666
+
+    script_heap
+        1  u8 ;  0              ; RAM               
+        label DDD              
+        4  u32;  0 0 0 0        ; RAM
+        label EEE              
+        1  u8 ;  0              ; RAM
+        1  u32;  0              ; RAM
     end
 ;----------------------------------------------------------------------
-script  0                 ; script index           
-; use R[k]=R to the heap of the caller
-; recommendation for the caller : use script_stack > 4 and script_nreg > 6 
+script  0                   ; script name           
 
     script_code       
         r1 = add r2 3       ; r1 = add r2 3
         r2 = -9000          ; r2 = -9000
+        callsys 11          ; callsys 11
         return              ; return
-    end
+    end                     ; end script 0
 ;----------------------------------------------------------------------
 arc_input   0 1 0 arm_stream_filter     0 0 0  ; io0 set0copy1 fmt0     ; DETECT => OUTPUT 
 arc_output  1 1 1 sigp_stream_detector  0 1 1  ; io1 set0copy1 fmt1     ; INPUT => IIR

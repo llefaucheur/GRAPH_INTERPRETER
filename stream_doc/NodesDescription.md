@@ -124,6 +124,8 @@ script  0                   ; script index
 ----------------------------------------------------------------------------------------
 # arm_stream_format_converter (TBD)
 
+
+
 ```
 node arm_stream_format_converter 0
 
@@ -305,11 +307,11 @@ Operation : receives one multichannel stream and produces one filtered multichan
 Parameters : biquad filters coefficients used in cascade. Implementation is 2 Biquads max.
 (see www.w3.org/TR/audio-eq-cookbook)
 Presets:
-#1 : bypass
-#2 : LPF fc=fs/4 
-#3 : HPF fc=fs/8 
-#4 : DC-filter (use-case: audio, XYZ gravity compensation/estimation)
-#5 : long Median filter
+#0 : bypass
+#1 : LPF fc=fs/4 
+#2 : HPF fc=fs/8 
+#3 : DC-filter (use-case: audio, XYZ gravity compensation/estimation)
+#4 : long Median filter
 
 parameter of filter : 
 - number of biquads in cascade (1 or 2)

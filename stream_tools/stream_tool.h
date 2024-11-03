@@ -344,9 +344,25 @@ struct arcStruct
 /* ----------------------------------------------------------------------
     PLATFORM = PROCESSOR + IO + NODES
 * ---------------------------------------------------------------------- */
+#define MAXNBLABELS 40
+
+#define LABEL_HEAP_DECLARE 1    // label placed in heap         32b "set R heap label"
+#define LABEL_PARAM_DECLARE 2   // label placed in parameters   32b "set R param label"
+#define LABEL_CODE_DECLARE 3    // label placed in the code 
+#define LABEL_HEAP_USE 4        // set Ri heap Label  32b (extra word)
+#define LABEL_PARAM_USE 5       // set Ri param Label  32b (extra word)
+#define LABEL_CODE_USE 6        // jump call banz to label placed in the code  (SRC2K +/-2K)
+#define LABEL_GRAPH_USE 7       // offset declared in the graph (node) 32b "set R graph label"
+
+typedef struct 
+{   int label_type;         // see above
+    int offset;             // offset from the start of param, heap in BYTES, start of code in words
+    char symbol[NBCHAR_STREAM_NAME]; 
+} labelPos_t; 
+
 struct stream_script 
 {
-    #define AVG_SCRIPT_LEN 80
+    #define AVG_SCRIPT_LEN 512
     uint32_t script_program[AVG_SCRIPT_LEN];
     char  script_comments[AVG_SCRIPT_LEN][NBCHAR_LINE];
     uint32_t script_ID;                                     // script instance from the graph
@@ -354,11 +370,12 @@ struct stream_script
     uint32_t script_instance27b, nbw32_allocated;           // static address, size
     uint32_t stack_memory_shared, ram_heap_size;               // flag, heap size
     uint32_t script_nb_instruction, nb_reg, nb_stack;       // memory allocation parameters
+    uint32_t code_param32;                                  // size of code + parameters in w32
     uint32_t stack_memory_script, mem_VID;
     uint32_t script_offset;
     uint32_t script_format;     /* 0 : interpreted byte code, or architecture native code */
-    uint32_t ParameterSizeW32;          /* size of the array below */
-    uint32_t PackedParameters[MAXPARAMETERSIZE]; /* words32 PACK */
+    labelPos_t Label_positions[MAXNBLABELS];
+    uint32_t idx_label;
 };
 
 typedef struct stream_script stream_script_t;
@@ -424,6 +441,9 @@ struct stream_node_manifest
     uint32_t inPlaceProcessing, arcIDbufferOverlay;
     //uint16_t nb_arcs;
     struct arcStruct arc[MAX_NB_STREAM_PER_NODE]; /* loaded with default data */
+
+    uint32_t node_position_in_graph;    /* for script callsys */
+    uint32_t script_position_in_graph;  /* for script callsys */
 };
 
 typedef struct stream_node_manifest stream_node_manifest_t;
@@ -535,6 +555,8 @@ struct stream_graph_linkedlist
     FILE *ptf_header;   /* list of labels to do "set_parameter" from scripts (script compilation step)
                            address of NODEs on the binary graph, location of debug result of ARCs  */
 };
+
+
 
 #endif /* #ifndef cSTREAM_TOOL_H */
 #ifdef __cplusplus

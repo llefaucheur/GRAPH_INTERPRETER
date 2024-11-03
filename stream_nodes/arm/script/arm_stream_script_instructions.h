@@ -65,37 +65,27 @@
 
     BYTECODE XXXXXXXXXXXXXXX
     
+
     INSTANCE (arc descriptor address = *script_instance
            |   
-           v                  <---- nStack  ---->
-           R0 R1 R2 ..   r11  R13 R14
-           <---registers--->  SP SP+1
-                    STACK :   [..................]
-                              SP init = nregs
-                    HEAP / PARAM (4bytes/words)  [............]
+           v                 <---- nStack  ----> <--- heap --->
+           R0 R1 R2 ..   r11 
+           <---registers---> [..................][............]
+                               SP init = nregs
+
 
     FEDCBA9876543210FEDCBA9876543210
     II______________________________ if yes, if not, no test, break-point (+ margin)
     __yyy___________________________  8 op-code (eq,le,lt,ne,ge,gt) + ldjmp  + xxx 
-    _____-OPARDST_SRC1xxxxxxxxxxxxxx  OPLJ_BASE OPLJ_SIZE OP_LD OP_TEST  K= unsigned_K14(>32)-8192 = [8191 .. -8160]
-    __________________0000000000SRC2  detection of 00.0000.000_.____ = (X & 0x3FE0) => either SRC2 or K-long
-    __________________0000000001TTTT  DTYPE + extra word (and DTYPE of OPLJ_CAST)
-    _____-OPARDST___OOxxxxxxxxxxxxxx  LABELs : K14 word32 offset, C0B1 =0 for code, =1 for heap/arc_buffer
-
-    FEDCBA9876543210FEDCBA9876543210
-    __________SRC0SRC1##########SRC2  10-bits Jump for JUMP/BANZ/CALL  #+/-512 + 3 registers pushed before jump
-    __________SRC0SRC1SRC3######SRC2  CALLSYS #6bits + (r1,r2,r3,r4)
-    EEEEmmmmmmmm22222222223333333333  CALLSYS second word if SRC3=RK   FP12 I10 I10 (node/arc)
-    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  CALLSYS second word if SRC2=RK   SRC2=DTYPE of the 2nd word
-
-    __________DST_SRC10#________SRC2  SCATTER/GATHER DST[SRC2]= SRC1 selection with bit14=0
-    __________DST_SRC11#_<---K11--->  SCATTER/GATHER DST[K11 +/-1024] = SRC1 '#' = post-increment + circular
-
-    __________DST_SRC1SRC3SRC4__SRC2  SAVE/RESTORE 5 Registers(r0..r11)
+    _____-OPARDST_SRC1xxxxxxxxxxxxxx  OPLJ_HEAP OPLJ_PARAM OPLJ_BASE OPLJ_SIZE OP_LD OP_TEST OPLJ_SCATTER OPLJ_GATHER OPLJ_CAST OPLJ_JUMP OPLJ_BANZ OPLJ_CALL OPLJ_CALLSYS (save 2 regs)
+                      xx<----K12--->  signed_K(sw) = unsigned_K12(32..4095)-2048 = [2048 .. -2016]
+    __________________0000000000SRC2  detection of 0000.000_.____ = (X & FE0) => either SRC2 or K-long
+    __________________0000000001TTTT  DTYPE + extra word (and DTYPE
+    )
     __________DST_SRC1__LLLLLLPPPPPP  OPLJ_WR2BF OPLJ_RDBF 6+6-bits(Len Pos) 
-    FEDCBA9876543210FEDCBA9876543210
+    __________SRC0SRC1SRC3SRC4__SRC2  SAVE/RESTORE 5 Registers(r0..r11)
 
-
+    IIyyy-OPARDST_SRC1__<--K12-0SRC2
 
                 <---- MSB word ----------------> <---- LSB word ---------------->  
                 FEDCBA9876543210FEDCBA987654TYPE FEDCBA9876543210FEDCBA987654321|  
@@ -104,10 +94,10 @@
     int16       _______H<---BASE----SIZE--->   2 ssssssssssssssss<-------------->  
     uint32      _______H<---BASE----SIZE--->   3 <------------------------------>  computed as int32 !
     int32       _______H<---BASE----SIZE--->   4 <------------------------------>  
-    int64       _______H<---BASE----SIZE--->   5 <------------------------------>  
+    int64       unused
     fp16        _______H<---BASE----SIZE--->   6 <------------------------------>  translated to FP32
     fp32        _______H<---BASE----SIZE--->   7 <------------------------------>  
-    fp64        _______H<---BASE----SIZE--->   8 <------------------------------>  translated to FP32
+    fp64        unused
     TIME16      0000000000000000000000000000   9 0000000000000000<-------------->  
     TIME32      0000000000000000000000000000  10 <------------------------------>  
     TIME64      <-------------------------->  11 <------------------------------> DTYPE moved to MSB
@@ -129,10 +119,10 @@
 
 /* ------------ MSB REGISTERS --------------*/
 
-#define  _____REGS1_MSB U(31) /* 7  unused  */
+#define  _____REGS1_MSB U(31) /*  7 unused  */
 #define  _____REGS1_LSB U(25) 
-#define  C0B1_REGS1_MSB U(24) /* 1  R2[5] = R4 : tells if the offset is to code 0 or heap 1 (arc buffer) */
-#define  C0B1_REGS1_LSB U(24) 
+#define  H1C0_REGS1_MSB U(24) /*  1 R2[5] = R4 : tells if the offset is to code 0 or heap 1 (arc buffer) */
+#define  H1C0_REGS1_LSB U(24) 
 #define  BASE_REGS1_MSB U(23) /* 10 Base */
 #define  BASE_REGS1_LSB U(14) 
 #define  SIZE_REGS1_MSB U(13) /* 10 Size */
@@ -151,37 +141,44 @@
     ALU     nop add addmod sub submod mul duv or nor and xor shr shl set clr max min amax amin norm 
     type    int8 int16 int32 float16 float double ptrfloat ptruint8 ptrint32.. 
 
-    Assembler                          Binary encoding of the 19 instructions
+    Assembler                          Binary encoding 
     ---------                          -------------------------------------
-    OP_TEST family                             OPAR   DST  SRC1 SRC2/RK
-      test r1 op r2 r3/type k         ; OP_TEST  OP.. R1   R2   R3/RK=0x1Exx immediate_xx or RK=0x1Fxx long immediate
+    OP_TESTxx family                   
+    test_equ r1 nop    r3/type k      ; OP_TESTEQU OPAR_NOP  R1   R2   R3/RK                         
+    test_leq r1 add r2 r3/type k      ; OP_TESTLEQ OPAR_ADD 
+    test_lt  r1 sub r2 r3/type k      ; OP_TESTLT  OPAR_SUB 
+    test_neq r1 mul r2 r3/type k      ; OP_TESTNEQ OPAR_MUL 
+    test_geq r1 div r2 r3/type k      ; OP_TESTGEQ OPAR_DIV 
+    test_gt  r1 or  r2 r3/type k      ; OP_TESTGT  OPAR_OR  
+                      
+    OP_LD family                   
+    r1 =        r3/type k             ; OP_LD      OPAR_NOP  R1   R2   R3                          
+    r1 = add r2 r3/type k             ; OP_LD      OPAR_ADD 
+    r1 = sub r2 r3/type k             ; OP_LD      OPAR_SUB 
+    r1 = mul r2 r3/type k             ; OP_LD      ..etc..
                                       
-    OP_LD family                                 OPAR DST  SRC1 SRC2/RK
-      r1 = op r2 r3/type K            ; OP_LD    OP.. R1   R2   R3/RK=0x1Exx immediate_xx or RK=0x1Fxx long immediate
-    
-    predefined "K" : r2 = L_xxx (for OPLJ_LABEL)
-        L_BASE_PARAM_SET  H1C0 = 0
-        L_BASE_PARAM_RAM  H1C0 = 1
-                                      
-    OP_JMOV family                              OPAR      DST  SRC1 SRC2 /RK
- -    set r2 type #float              ; OP_JMOV CAST      R2   ___  RK=0x1E07  1E=immediate => DTYPE_FP32=7
- -    set r2 typeptr #float           ; OP_JMOV CASTPTR   R2   ___  RK=0x1E07  1E=immediate => DTYPE_FP32=7
- -    set r4 base r5/k                ; OP_JMOV BASE      R4   ___  R5/RK=0x1Exx  1E=immediate => xx base for cicular addressing / loops
- -    set r4 size r5/k                ; OP_JMOV SIZE      R4   ___  R5/RK=0x1Exx  1E=immediate => xx
- -    r2 [r4/k] = r3                  ; OP_JMOV SCATTER   R2   R3   R4/RK=0x1Exx  1E=immediate => xx  R2[R4] = R3 
- -    r2 = r3 [r4/k]                  ; OP_JMOV GATHER    R2   R3   R4/RK=0x1Exx  1E=immediate => xx  R2 = R3[R4]
-      move r2 | lenK posK | r3        ; OP_JMOV WR2BF     R2   R3   K12 6b + 6b   bit-field
-      move r2 r3 | lenK posK |        ; OP_JMOV RDBF      R2   R3   K12 6b + 6b   bit-field
--     swap sp r3                      ; OP_JMOV SWAP      SP   R3   
--     delete r4/K                     ; OP_JMOV DELETE    ___  ___  R4/RK=0x1Exx        pop stack without saving in registers
-      save r3 r0 r11                  ; OP_JMOV SAVE      R1   R2   R3   R4   R5        push up to 5 registers  FEDCBA9876543210FEDCBA9876543210
-      restore r3 r0 r11               ; OP_JMOV RESTORE   R1   R2   R3   R4   R5        pop up to 5 registers   ___________DST_SRC1SRC2SRC3SRC4_
-      jump k r1,2,3                   ; OP_JMOV JUMP      R1/none   R2   R3 + K +/-128
-      banz L_replaced_Label r1        ; OP_JMOV BANZ      R--  R2   R3 + K +/-128
-      call L_replaced_Label r1        ; OP_JMOV CALL      R1   R2   R3 + K +/-128
-      callsys 63 r1 r2 r3 r4          ; OP_JMOV CALLSYS   R1/none   R2   R3  R4 + #63  
-      return                          ; OP_JMOV RETURN    ___  ___  ___
-                                      
+    OP_JMOV family                            OPAR      DST  SRC1 SRC2 /RK
+ -    set r2 type #float            0 OP_JMOV OPLJ_CAST     R2   ___  RK=DTYPE_FP32=7
+ -    set r2 typeptr #float         1 OP_JMOV OPLJ_CASTPTR  R2   ___  RK=DTYPE_FP32=7
+ -    set r4 base r5/k              2 OP_JMOV OPLJ_BASE     R4   ___  RK=base for circular addressing / loops
+ -    set r4 size r5/k              3 OP_JMOV OPLJ_SIZE     R4   ___  RK=size for circular addressing
+      set r4 param K12              4 OP_JMOV OPLJ_PARAM    R4   ___  RK  set H1C0=0
+      set r4 heap K12               5 OP_JMOV OPLJ_HEAP     R4   ___  RK  set H1C0=1
+      set r4 graph K12              6 OP_JMOV OPLJ_GRAPH    R4   ___  RK  set H1C0=1
+      [r2 r4/k]+ = r3               7 OP_JMOV OPLJ_SCATTER  R2   R3   R4/RK=immediate R2[R4] = R3 cast to destination format 
+      r2 = [r3]+ r4/k               8 OP_JMOV OPLJ_GATHER   R2   R3   R4/RK=immediate R2 = R3[R4] cast from source format
+      move r2 | lenK posK | r3      9 OP_JMOV OPLJ_WR2BF    R2   R3   K12 6b + 6b   bit-field
+      move r2 r3 | lenK posK |     10 OP_JMOV OPLJ_RDBF     R2   R3   K12 6b + 6b   bit-field
+-     swap sp r3                   11 OP_JMOV OPLJ_SWAP     SP   R3   
+-     delete r4/K                  12 OP_JMOV OPLJ_DELETE   ___  ___  R4/RK move SP
+      jump k r1 r2                 13 OP_JMOV OPLJ_JUMP     R1/N R2/N RK  
+      banz L_replaced_Label r1 r2  14 OP_JMOV OPLJ_BANZ     R1/N R2/N RK
+      call L_replaced_Label r1 r2  15 OP_JMOV OPLJ_CALL     R1/N R2/N RK
+      callsys 63 r1 r2 r3 r4       16 OP_JMOV OPLJ_CALLSYS  R1/N R2/N R3/N R4/N K6
+      save r3 r0 r11               17 OP_JMOV OPLJ_SAVE     R1/N R2/N R3/N R4/N R5/N push up to 5 registers 
+      restore r3 r0 r11            18 OP_JMOV OPLJ_RESTORE  R1/N R2/N R3/N R4/N R5/N pop up to 5 registers 
+      return                       19 OP_JMOV OPLJ_RETURN   ___  ___  ___
+                       
       Examples :                      
                                       
       test_leq r6 sp                  ; OP_TESTLEQ  NOP   R6   ___  R14      
@@ -212,7 +209,6 @@
       r2 = addmod r4 3                ; OP_LD    ADDMOD  R2    R4   RK=0x1E03  1E=immediate => K +/-127
       r2 = add { r4 r5 }              ; OP_LD       ADD  R2    R4   R5         R2 = R4_ptr_28b [r5]  DTYPE of R4
 
-      r2 = Label                      ; OP_LD    NOP  R2   RK=0x1E03  1E=immediate => K +/-127
     Labels = <symbol, not Rii, not a number> (no instruction)    
 */
 
@@ -225,7 +221,6 @@
 #define RegNone     12 
 #define RN          "r12"
 
-/*#define RegK        13 */ 
 #define RegSP0      14  // [SP]     keep SP at its position after read/write
 #define RegSP1      15  // [SP++]   post-increment SP after write and post-decrement after read
 
@@ -236,6 +231,7 @@
 #define NO_TEST 0
 #define IF_YES 1
 #define IF_NOT 2
+#define IF_EXTRA 3  
 /*---------------------------------------------------------------------------------------------------------*/
 
 /* DTYPE int64 translated to fp32 in source code */
@@ -244,10 +240,10 @@
 #define DTYPE_INT16     2
 #define DTYPE_UINT32    3
 #define DTYPE_INT32     4
-#define DTYPE_INT64     5
+//#define DTYPE_INT64     5
 #define DTYPE_FP16      6
 #define DTYPE_FP32      7
-#define DTYPE_FP64      8
+//#define DTYPE_FP64      8
 #define DTYPE_TIME16    9
 #define DTYPE_TIME32   10
 #define DTYPE_TIME64   11
@@ -255,122 +251,119 @@
                        
 /*---------------------------------------------------------------------------------------------------------*/
 /*----- MAIN OPCODES ----   SYNTAX EXAMPLES   */
-#define OP_TESTEQU    0  // TESTEQU DST OPAR SRC1 SRC2  TEST DST =  SRC1 OPAR SRC2
-#define OP_TESTLEQ    1  //                             TEST DST <= SRC1 OPAR SRC2
-#define OP_TESTLT     2  //                             if SRC2 = 15 then SRC2 = K13
-#define OP_TESTNEQ    3  //                             
-#define OP_TESTGEQ    4  //                             
-#define OP_TESTGT     5  //                             
-#define OP_LD         6  // LD 
-#define OP_JMOV       7  // MOV JUMP ST 
+#define OP_TESTEQU         0  // TESTEQU DST OPAR SRC1 SRC2  TEST DST =  SRC1 OPAR SRC2
+#define OP_TESTLEQ         1  //                             TEST DST <= SRC1 OPAR SRC2
+#define OP_TESTLT          2  //                             if SRC2 = 15 then SRC2 = K13
+#define OP_TESTNEQ         3  //                             
+#define OP_TESTGEQ         4  //                             
+#define OP_TESTGT          5  //                             
+#define OP_LD              6  // LD 
+#define OP_JMOV            7  // MOV JUMP ST 
 
 
 /*---------------------------------------------------------------- BYTE-CODE INSTRUCTIONS FIELDS------*/
-#define      OP_COND_INST_MSB 31 
-#define      OP_COND_INST_LSB 30 /*  2 conditional fields */
-#define           OP_INST_MSB 29 
-#define           OP_INST_LSB 27 /*  3 instruction code TEST, LDJUMP, xx */
-#define      OP_OPAR_INST_MSB 26 
-#define      OP_OPAR_INST_LSB 22 /*  5 operand */
-#define       OP_DST_INST_MSB 21 
-#define       OP_DST_INST_LSB 18 /*  4 DST field */
-#define      OP_SRC0_INST_MSB OP_DST_INST_MSB
-#define      OP_SRC0_INST_LSB OP_DST_INST_LSB
-#define      OP_SRC1_INST_MSB 17 
-#define      OP_SRC1_INST_LSB 14 /*  4 SRC1 field */          
-#define      OP_SRC3_INST_MSB 13                                        // ^ ^  K10:  -512 .. +511 (JUMPIDX_INST)
-#define      OP_SRC3_INST_LSB 10 /*  4 SRC3 field */                    // | |   
-#define      OP_SRC4_INST_MSB  9                                        // |^|^
-#define      OP_SRC4_INST_LSB  6 /*  4 SRC4 field */                    // |||| K6 :  0 .. 63 (CALLSYSIDX_INST)
-#define     _________INST_MSB  5                                        // ||||
-#define     _________INST_LSB  5 /*  1 unused  */                       // ||||
-#define     OP_RKEXT_INST_MSB  4                                        // ||||
-#define     OP_RKEXT_INST_LSB  4 /*  1 RK is on the following words */  // ||vv
-#define      OP_SRC2_INST_MSB  3                                        // ||   K10: -512 .. +512 (SCGA_K11_INST)
-#define      OP_SRC2_INST_LSB  0 /*  4 SRC2 field / RK */               // vv   K14: -8160 .. +8191 (OP_K_INST, OPLJ_LABEL)
-        
-#define         OP_K_INST_MSB 13
-#define         OP_K_INST_LSB  0  
-#define UNSIGNED_K_OFFSET 8192
-#define  MAX_LITTLE_K 8191          /* coded as 8191 + 8192 = 3FFF */
-#define  MIN_LITTLE_K (-8160)       /* coded as -8160 + 8192 = 20 */
-#define SRC2LONGK_PATTERN_INST_MSB 13  /* 0 <=> PATTERN_SRC2_LONGK */
-#define SRC2LONGK_PATTERN_INST_LSB  5 
-#define   OP_K_DTYPE_INST_MSB  3 
-#define   OP_K_DTYPE_INST_LSB  0  /* 4 DTYPE */
+/*                    xx<----K12--->
+    __________________0000000000SRC2
+    __________DST_SRC1SRC3SRC4__SRC2
+*/
+#define  OP_COND_INST_MSB 31u 
+#define  OP_COND_INST_LSB 30u /*  2 conditional fields */
+#define       OP_INST_MSB 29u 
+#define       OP_INST_LSB 27u /*  3 instruction code TEST, LDJUMP, xx */
+#define  OP_OPAR_INST_MSB 26u 
+#define  OP_OPAR_INST_LSB 22u /*  5 operand */
+#define   OP_DST_INST_MSB 21u 
+#define   OP_DST_INST_LSB 18u /*  4 DST field */
+#define  OP_SRC1_INST_MSB 17u 
+#define  OP_SRC1_INST_LSB 14u /*  4 SRC1 field */          
+#define  OP_SRC3_INST_MSB 13u                                       
+#define  OP_SRC3_INST_LSB 10u /*  4 SRC3 field */                   
+#define  OP_SRC4_INST_MSB  9u                                       
+#define  OP_SRC4_INST_LSB  6u /*  4 SRC4 field */                   
+                           
+#define OP_RKEXT_INST_MSB  4u                                       
+#define OP_RKEXT_INST_LSB  4u /*  1 RK is on the following words */ 
+#define  OP_SRC2_INST_MSB  3u                                       
+#define  OP_SRC2_INST_LSB  0u /*  4 SRC2 field / RK */              
+                            
+#define  OP_EXT1_INST_MSB 13u /* OPLJ_SCATTER index update yes=1 */
+#define  OP_EXT1_INST_LSB 13u  
+#define  OP_EXT0_INST_MSB 12u /* OPLJ_SCATTER pre-increment yes=1 otherwise pre-increment */
+#define  OP_EXT0_INST_LSB 12u  
+                            
+#define      INDEX_UPDATE  1u /* OP_EXT1_INST=1 for SCATTER/GATHER + index update */
+#define     PRE_INCREMENT  1u /* OP_EXT0_INST=1 for SCATTER/GATHER + pre-increment */
+                            
+#define     OP_K_INST_MSB 11u
+#define     OP_K_INST_LSB  0u  
 
-
-        
-#define LABEL_OFFSET_INST_MSB  1 /* 2  C0B1=0 for code, =1 for heap/arc_buffer */
-#define LABEL_OFFSET_INST_LSB  0 /*    moved to bit24 of MSB word of the register */
-
+#define UNSIGNED_K_OFFSET 2048u         /* ST(INST[0], OP_K_INST, iK + UNSIGNED_K_OFFSET); */
+#define     MAX_LITTLE_K 2047           /* coded as 2047 + 2048 = 3FFF */
+#define     MIN_LITTLE_K (-2016)        /* coded as -2016 + 2048 = 20 */
+#define SRC2LONGK_PATTERN_INST_MSB 11u  /* 0 <=> PATTERN_SRC2_LONGK */
+#define SRC2LONGK_PATTERN_INST_LSB  5u 
+                            
+#define CALLSYS_K_INST_MSB 5u
+#define CALLSYS_K_INST_LSB 0u  
+ 
         /* OP_JMOV */
-#define SCGA_POSTINC_INST_MSB 12 /* 1  SCATTER/GATHER post-increment */
-#define SCGA_POSTINC_INST_LSB 11
-#define  SCGA_unused_INST_MSB 11 
-#define  SCGA_unused_INST_LSB 11
-#define     SCGA_K11_INST_MSB 10 /* 11 SCATTER/GATHER immediate index */
-#define     SCGA_K11_INST_LSB  0
-
-#define BITFIELD_LEN_INST_MSB 11 /* 6  OPLJ_WR2BF OPLJ_RDBF length 0..63 */
-#define BITFIELD_LEN_INST_LSB  6
-#define BITFIELD_POS_INST_MSB  5 /* 6  position 0..63 */
-#define BITFIELD_POS_INST_LSB  0
+#define BITFIELD_MSB_INST_MSB 11 /* 6  OPLJ_WR2BF OPLJ_RDBF MSB 0..63 */
+#define BITFIELD_MSB_INST_LSB  6
+#define BITFIELD_LSB_INST_MSB  5 /* 6  LSB 0..63 */
+#define BITFIELD_LSB_INST_LSB  0
 
 //__________SRC0SRC1##########SRC2  10-bits Jump for JUMP/BANZ/CALL  #+/-512 
 //__________SRC0SRC1SRC3######SRC2  CALLSYS #6bits + 4 Registers(r0..r11)
-#define    JUMPIDX_INST_MSB 13 /* 10  signed offset for JUMP/CALL */
-#define    JUMPIDX_INST_LSB  4
-#define CALLSYSIDX_INST_MSB  9 /*  6  unsigned CALLSYS */
-#define CALLSYSIDX_INST_LSB  4
+//#define    JUMPIDX_INST_MSB 13 /* 10  signed offset for JUMP/CALL */
+//#define    JUMPIDX_INST_LSB  4
+//#define CALLSYSIDX_INST_MSB  9 /*  6  unsigned CALLSYS */
+//#define CALLSYSIDX_INST_LSB  4
 
-/* OPLJ_LABEL */
-#define         H0C1_INST_MSB 14
-#define         H0C1_INST_LSB 14  
-#define        LABEL_INST_MSB 13        // K14
-#define        LABEL_INST_LSB  0  
 
 /*-------------------------------------------------------------------------------OP_ALU_TEST_/K--------*/
-#define OPAR_NOP      0     //  ---     SRC2/K                          Ri = #K                            
-#define OPAR_ADD      1     //  add     SRC1 + SRC2 (or K)              PUSH: S=R+0  POP:R=S+R0   DUP: S=S+R0  DEL: R0=S+R0  DEL2: R0=S'+R0
-#define OPAR_SUB      2     //  sub     SRC1 - SRC2 (or K)                  MOVI #K: R=R0+K
-#define OPAR_MUL      3     //  mul     SRC1 * SRC2 (or K)
-#define OPAR_DIV      4     //  div     SRC1 / SRC2 (or K)              DIV  
-#define OPAR_OR       5     //  or      SRC1 | SRC2 (or K)              if SRC is a pointer then it is decoded as *(SRC)
-#define OPAR_NOR      6     //  nor     !(SRC1 | SRC2) (or K)               example TEST (*R1) > (*R2) + 3.14   or   R1 = (*R2) + R4
-#define OPAR_AND      7     //  and     SRC1 & SRC2 (or K)
-#define OPAR_XOR      8     //  xor     SRC1 ^ SRC2 (or K)
-#define OPAR_SHR      9     //  shr     SRC1 << SRC2 (or K)             SHIFT   
-#define OPAR_SHL     10     //  shl     SRC1 >> SRC2 (or K)
-#define OPAR_SET     11     //  set     SRC1 | (1 << SRC2 (or K))       BSET      
-#define OPAR_CLR     12     //  clr     SRC1 & (1 << SRC2 (or K))       BCLR     TESTBIT 0/R0 OPAR_SHIFT(SRC1, 1<<K5)
-#define OPAR_MAX     13     //  max     MAX (SRC1, SRC2)                     
-#define OPAR_MIN     14     //  min     MIN (SRC1, SRC2)                      
-#define OPAR_AMAX    15     //  amax    AMAX (abs(SRC1), abs(SRC2)) 
-#define OPAR_AMIN    16     //  amin    AMIN (abs(SRC1), abs(SRC2))
-#define OPAR_NORM    17     //  norm    normed on MSB(SRC1), applied shift in SRC2
-#define OPAR_ADDMOD  18     //  addmod  SRC1 + SRC2 (or K) MODULO_DST   DST = OPAR SRC1 SRC2/K      
-#define OPAR_SUBMOD  19     //  submod  SRC1 - SRC2 (or K) MODULO_DST   works for PTR    
+#define OPAR_NOP          0 // ---     SRC2/K                          Ri = #K                            
+#define OPAR_ADD          1 // add     SRC1 + SRC2 (or K)              PUSH: S=R+0  POP:R=S+R0   DUP: S=S+R0  DEL: R0=S+R0  DEL2: R0=S'+R0
+#define OPAR_SUB          2 // sub     SRC1 - SRC2 (or K)                  MOVI #K: R=R0+K
+#define OPAR_MUL          3 // mul     SRC1 * SRC2 (or K)
+#define OPAR_DIV          4 // div     SRC1 / SRC2 (or K)              DIV  
+#define OPAR_OR           5 // or      SRC1 | SRC2 (or K)              if SRC is a pointer then it is decoded as *(SRC)
+#define OPAR_NOR          6 // nor     !(SRC1 | SRC2) (or K)               example TEST (*R1) > (*R2) + 3.14   or   R1 = (*R2) + R4
+#define OPAR_AND          7 // and     SRC1 & SRC2 (or K)
+#define OPAR_XOR          8 // xor     SRC1 ^ SRC2 (or K)
+#define OPAR_SHR          9 // shr     SRC1 << SRC2 (or K)             SHIFT   
+#define OPAR_SHL         10 // shl     SRC1 >> SRC2 (or K)
+#define OPAR_SET         11 // set     SRC1 | (1 << SRC2 (or K))       BSET      
+#define OPAR_CLR         12 // clr     SRC1 & (1 << SRC2 (or K))       BCLR     TESTBIT 0/R0 OPAR_SHIFT(SRC1, 1<<K5)
+#define OPAR_MAX         13 // max     MAX (SRC1, SRC2)                     
+#define OPAR_MIN         14 // min     MIN (SRC1, SRC2)                      
+#define OPAR_AMAX        15 // amax    AMAX (abs(SRC1), abs(SRC2)) 
+#define OPAR_AMIN        16 // amin    AMIN (abs(SRC1), abs(SRC2))
+#define OPAR_NORM        17 // norm    normed on MSB(SRC1), applied shift in SRC2
+#define OPAR_ADDMOD      18 // addmod  SRC1 + SRC2 (or K) MODULO_DST   DST = OPAR SRC1 SRC2/K      
+#define OPAR_SUBMOD      19 // submod  SRC1 - SRC2 (or K) MODULO_DST   works for PTR    
 
-/*--------------------------------------------------------------------------------OP_LDJUMP---------------*/
-#define OPLJ_CAST         0  // set r2 type #float               operations always done in fp32 or int 
-#define OPLJ_CASTPTR      1  // set r2 typeptr #float (28b_ptr)  and used for data read R[K]
-#define OPLJ_BASE         2  // set r4 base r5         
-#define OPLJ_SIZE         3  // set r4 size r5         
-#define OPLJ_SCATTER      4  // dst [ src2/k ] = src1       save to memory index, use H1C0 to select DST memory
-#define OPLJ_GATHER       5  // dst = src1 [ src2/k ]       read from memory index, see H1C0 for SRC1
-#define OPLJ_WR2BF        6  // dst | lenK posK | = src1    write to bit-field
-#define OPLJ_RDBF         7  // dst = src1 | lenK posK |    read from bit-field
-#define OPLJ_SWAP         8  // swap r2 r3       
-#define OPLJ_DELETE       9  // delete #n from stack without save
-#define OPLJ_JUMP        10  // jump signed_K  + push dst src1
-#define OPLJ_BANZ        11  // banz +/-K decrement dst 
-#define OPLJ_CALL        12  // call +/-K and push dst src1
-#define OPLJ_CALLSYS     13  // callsys {K}  bit8=0 {dst src1 src2}  bit8=1 {dst + extra word for #n + #arc/#node}
-#define OPLJ_SAVE        14  // save up to 5 registers
-#define OPLJ_RESTORE     15  // restore up to 5 registers   
-#define OPLJ_RETURN      16  // return {keep registers fields}
-#define OPLJ_LABEL       17  // dst = Label   load 17+1b Label  (bit telling Code/Heap offset H1C0)
+/*--------------------------------------------------------------------------------OP_LD---------------*/
+#define OPLJ_CAST         0 // set r2 type #float               operations always done in fp32 or int 
+#define OPLJ_CASTPTR      1 // set r2 typeptr #float (28b_ptr)  and used for data read R[K]
+#define OPLJ_BASE         2 // set r4 base r5         
+#define OPLJ_SIZE         3 // set r4 size r5         
+#define OPLJ_PARAM        4 // set r1 param xxx     load offset in param (sets H1C0 = 0)
+#define OPLJ_HEAP         5 // set r3 heap xxx      load offset in heap  (sets H1C0 = 1)
+#define OPLJ_GRAPH        6 // set r3 graph xxx     load offset of graph 
+#define OPLJ_SCATTER      7 // [ dst src2/k ]+ = src1   [ dst ]+ src2/k = src1  use H1C0 to select DST memory
+#define OPLJ_GATHER       8 // dst = [ src1 src2/k ]+   dst = [ src1 ]+ src2/k  OP_EXT1_INST for increment   
+#define OPLJ_WR2BF        9 // dst | lsb msb | = src1     write to bit-field
+#define OPLJ_RDBF        10 // dst = src1 | lsb msb |     read from bit-field
+#define OPLJ_SWAP        11 // swap r2 r3       
+#define OPLJ_DELETE      12 // delete #n from stack without save
+#define OPLJ_JUMP        13 // jump signed_K  + push dst src1
+#define OPLJ_BANZ        14 // banz +/-K decrement dst 
+#define OPLJ_CALL        15 // call +/-K and push dst src1
+#define OPLJ_CALLSYS     16 // callsys {K}  bit8=0 {dst src1 src2}  bit8=1 {dst + extra word for #n + #arc/#node}
+#define OPLJ_SAVE        17 // save up to 5 registers
+#define OPLJ_RESTORE     18 // restore up to 5 registers   
+#define OPLJ_RETURN      19 // return {keep registers fields}
+
 
 #define OPLJ_NONE        32  
 
@@ -381,31 +374,41 @@
           
 #define script_label "label"            
 /*
-    FEDCBA9876543210FEDCBA9876543210
-    IIyyy-OPARDST_SRC10000000000SRC2  eq,le,lt,ne,ge,gt,ld dst src1 src2
-    IIyyy-OPARDST_SRC1xxxxxxxxxxxxxx  eq,le,lt,ne,ge,gt,ld dst src1 K
-    IIyyy-OPARDST_SRC1xxxxxxxxx1TTTT  eq,le,lt,ne,ge,gt,ld dst src1 dtype + K-extented
+    FEDCBA9876543210FEDCBA9876543210            OP_TESTxx and OP_LD :
+    IIyyy-OPARDST_SRC1<----K14-xSRC2  eq,le,lt,ne,ge,gt,ld dst src1 src2
 
-    IIyyy-OPARDST______________1TTTT  OPLJ_CAST(PTR)    dst src1 dtype
-    IIyyy-OPARDST_____xxxxxxxxxYYYYY  OPLJ_BASE         dst src2/K    
-    IIyyy-OPARDST_____xxxxxxxxxYYYYY  OPLJ_SIZE   
-    IIyyy-OPARDST_SRC10#________SRC2  OPLJ_SCATTER
-    IIyyy-OPARDST_SRC11#_<---K11--->  OPLJ_SCATTER
-    IIyyy-OPARDST_SRC10#________SRC2  OPLJ_GATHER 
-    IIyyy-OPARDST_SRC11#_<---K11--->  OPLJ_GATHER 
+                                                OP_JMOV : 
+    IIyyy-OPARDST_______<--K12----->  OPLJ_CAST         dst src1 dtype
+    IIyyy-OPARDST_______<--K12----->  OPLJ_CAST(PTR)    dst src1 dtype
+    IIyyy-OPARDST_______<--K12-0SRC2  OPLJ_BASE         dst src2/K    
+    IIyyy-OPARDST_______<--K12-0SRC2  OPLJ_SIZE         dst src2/K
+    IIyyy-OPARDST______________1_int  OPLJ_PARAM        
+    IIyyy-OPARDST______________1_int  OPLJ_HEAP         
+    IIyyy-OPARDST______________1_int  OPLJ_GRAPH
+    IIyyy-OPARDST_SRC1pp<--K12-xSRC2  OPLJ_SCATTER      [dst src2/k]+ = src1 
+    IIyyy-OPARDST_SRC1pp<--K12-xSRC2  OPLJ_GATHER       dst = [src1]+ src2/k 
     IIyyy-OPARDST_SRC1__LLLLLLPPPPPP  OPLJ_WR2BF  
     IIyyy-OPARDST_SRC1__LLLLLLPPPPPP  OPLJ_RDBF   
     IIyyy-OPARDST_SRC1______________  OPLJ_SWAP   
-    IIyyy-OPARDST______________YYYYY  OPLJ_DELETE 
-    IIyyy-OPARSRC0SRC1SRC3######SRC2  OPLJ_JUMP   
-    IIyyy-OPARSRC0SRC1SRC3######SRC2  OPLJ_BANZ   
-    IIyyy-OPARSRC0SRC1SRC3######SRC2  OPLJ_CALL   
-    IIyyy-OPARSRC0SRC1SRC3######SRC2  OPLJ_CALLSYS
-    IIyyy-OPARSRC0SRC1SRC3SRC4__SRC2  OPLJ_SAVE   
-    IIyyy-OPARSRC0SRC1SRC3SRC4__SRC2  OPLJ_RESTORE
+    IIyyy-OPARDST_______<--K12----->  OPLJ_DELETE       SP0/SP1 are not used
+    IIyyy-OPARDST_SRC1__<--K12----->  OPLJ_JUMP         SP0/SP1 are not used
+    IIyyy-OPARDST_SRC1__<--K12----->  OPLJ_BANZ         SP0/SP1 are not used
+    IIyyy-OPARDST_SRC1__<--K12----->  OPLJ_CALL         SP0/SP1 are not used
+    IIyyy-OPARDST_SRC1SRC3SRC4<-K6->  OPLJ_CALLSYS      SP0/SP1 are not used
+    IIyyy-OPARDST_SRC1SRC3SRC4__SRC2  OPLJ_SAVE         SP0/SP1 are not used
+    IIyyy-OPARDST_SRC1SRC3SRC4__SRC2  OPLJ_RESTORE      SP0/SP1 are not used
     IIyyy-OPAR______________________  OPLJ_RETURN 
-    IIyyy-OPARDST___OOxxxxxxxxxxxxxx  OPLJ_LABEL : unsigned 14bits word32 offset + C0B1=0 for code, =1 for heap/arc_buffer
+
     FEDCBA9876543210FEDCBA9876543210
+
+    STACK INCREMENT : pre-check SRC2 on :
+        IIyyy-OPARDST_SRC1<----K14-xSRC2  eq,le,lt,ne,ge,gt,ld dst src1 src2
+            check src2=SP1 : {src2ID=SP, SP--}
+
+        test SRC2=SP1 on OPLJ_BASE OPLJ_SIZE OPLJ_SCATTER OPLJ_GATHER
+            check src2=SP1 : {src2ID=SP, SP--}
+
+        then src1 , then dst
 */
 
 #endif  // if carm_stream_script_INSTRUCTIONS_H
@@ -414,55 +417,3 @@
 }
 #endif
  
-/*
- =========================================================================================
-
-    Math library: Commonly used single-precision floating-point functions:
-        Basic operations: ceilf, fabsf, floorf, fmaxf, fminf, fmodf, roundf, lroundf, remainderf
-        Exponential/power functions: expf, log2f, powf, sqrtf
-        Trigonometric/hyperbolic functions: sinf, cosf, tanf, asinf, acosf, atan2f, tanhf
-
-    Default "CALLSYS" 
-            sleep/deep-sleep activation
-            system regsters access: who am I ?
-            timer control (default implementation with SYSTICK)
-            returns the PTR27 address of FIFO[read] FIFO[write]
-   -----------------------------------------------
-
-    SYSCALLS
-    --------
-  SYSCALL : 
-    - Callback returning the current use-case to set parameters
-    - Node Set/ReadParam/Run, patch a field in the header
-    - Read Time 16/32/64 from arc/AL, compute differences,
-    - Select new IO settings (set timer period, change gains)
-    - Trace "string" + data
-    - Callbacks (cmd (cmd+LIbName+Subfunction , X, n) for I2C/Radio .. Libraries 
-
-    - FIFO read/set, data amount/free, debug reg read/set, time-stamp of last access (ASRC use-case)
-    - Update Format framesize, FS
-    - Jump to +/- N nodes in the list,      => read HEADER + test fields + jump
-    - Un/Lock a section of the graph
-    - AL decides deep sleep with the help of parameters (wake-up in X[s])
-    - Call a relocatable binary section in the Param area
-    - Share Physical HW addresses
-    - Compute Median from data in a circular buffer + mean/STD
-
-        //  move R(i) to/from arc FIFOdata / debugReg / with/without read index update
-        //  Basic DSP: moving average, median(5), Max(using VAD's forgetting factors).
-        //  time elapsed from today, from a reference, from reset, UTC/local time
-
-        //  if {data arrived from the button queue}
-        //  Registered callback for low-level operations for one or all instances
-        //    fixed format f(cmd,ptr,x,n)
-        //    example specific : IP address, password to share, Ping IP to blink the LED, read RSSI, read IP@
-        //  Default callbacks: sleep/deep-sleep activation, timer control, who am I
-        //    DAC/PWM/GPIO controlled with standard stream Arcs
-        //  Low-level interface : Fill the I2C control string and callback
-        //  Minimum services : average, timer, data formating/rescale/Interp, polling IOs
-        //  Power meter process is using 3 phases x voltage, current, reactive power
-        //  Save the state of a button (shutter button)
-        //  Modulo 60 function for the translation to mn. Wake me at 5AM.
-        //  Registers : 64bits(addressable in int8/16/32) + 8bits (type: time, temperature, pressure, 4xint16, counter-current-max)
-        //Command from arm_stream_command_interpreter() : return the code version number, ..  
-*/

@@ -183,7 +183,7 @@ void sigp_stream_detector2D (int32_t command, stream_handle_t instance, stream_x
 
             //--------------------DEBUG---------------------
             //sprintf (dbg, "Z2%5d Z7%3d Z8%4d VAD%2d", (pinstance->z2)>>12, (pinstance->z7)>>12, (pinstance->z8)>>12, outBuf[0]);
-            //sigp_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_SERVICE_INTERNAL_DEBUG_TRACE), dbg, (uint8_t *)strlen(dbg), 0);                        
+            //sigp_stream_services(PACK_SERVICE(RD(command,INST_CMD), NOTAG_SSRV, STREAM_SERVICE_INTERNAL_DEBUG_TRACE), dbg, (uint8_t *)strlen(dbg), 0);                        
             break;
         }
         case STREAM_STOP :

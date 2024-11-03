@@ -103,7 +103,7 @@ arm_stream_router
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void arm_stream_router (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void arm_stream_router (uint32_t command, void *instance, void *data, uint32_t *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
@@ -121,11 +121,10 @@ void arm_stream_router (int32_t command, stream_handle_t instance, stream_xdmbuf
                 the number of arcs (NARC_CMD) is used to configure arm_stream_router_instance.configuration
         */
         case STREAM_RESET: 
-        {   stream_al_services *stream_entry = (stream_al_services *)data;
-            intPtr_t *memresults = (intPtr_t *)instance;
-            uint16_t preset = RD(command, PRESET_CMD);
-
-            arm_stream_router_instance *pinstance = (arm_stream_router_instance *) *memresults;
+        {   //stream_al_services *stream_entry = (stream_al_services *)data;
+            //intPtr_t *memresults = (intPtr_t *)instance;
+            //uint16_t preset = RD(command, PRESET_CMD);
+            //arm_stream_router_instance *pinstance = (arm_stream_router_instance *) *memresults;
             break;
         }    
 
@@ -135,21 +134,25 @@ void arm_stream_router (int32_t command, stream_handle_t instance, stream_xdmbuf
                 data = parameters
         */ 
         case STREAM_SET_PARAMETER:  
-        {   uint8_t *pt8bsrc, *pt8bdst;
-            uint16_t i, n;
+        {   uint8_t *pt8bsrc;
+            uint16_t *pt16bdst;
+            uint16_t *pt16bsrc;
+            uint16_t i;
+            uint16_t n;
             
             arm_stream_router_instance *pinstance = (arm_stream_router_instance *) instance;
 
             /* copy the parameters from preset or from the graph */
             pt8bsrc = (uint8_t *) data;
             pinstance->configuration = (uint32_t)(*((uint32_t *)pt8bsrc)); 
-            pt8bsrc = pt8bsrc+2;    /* copy of 2 uint16 */
+            pt16bsrc = (uint16_t *) data;    /* copy of 2 uint16 */
+            pt16bsrc = &(pt16bsrc[1]);
 
             n = RD(pinstance->configuration, NB_ROUTER_INDEX);
-            pt8bdst = (uint8_t *)(pinstance->router_parameter);
+            pt16bdst = pinstance->router_parameter;
 
             for (i = 0; i < n; i++)
-            {   pt8bdst[i] = pt8bsrc[i];
+            {   pt16bdst[i] = pt16bsrc[i];
             }
             break;
         }

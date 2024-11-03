@@ -74,8 +74,8 @@ void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input
     uint32_t format, incsrc, incdst, isamp, W0, W1;
     int32_t current_mantissa, target_mantissa;
 
-    delayup = RD(instance->current_delay, DELAY_UP);
-    delaydown = RD(instance->current_delay, DELAY_DOWN);
+    delayup = (int16_t)RD(instance->current_delay, DELAY_UP);
+    delaydown = (int16_t)RD(instance->current_delay, DELAY_DOWN);
     format = (instance->channel_fmt);
     W0 = instance->parameters[0];
     W1 = instance->parameters[1];

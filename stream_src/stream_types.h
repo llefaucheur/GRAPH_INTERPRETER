@@ -35,8 +35,8 @@
 
 #include <stdint.h>
 #include "platform.h"
-#include "../stream_nodes/stream_common_const.h"
-#include "../stream_nodes/stream_common_types.h"
+#include "stream_common_const.h"
+#include "stream_common_types.h"
 #include "stream_const.h"
 
 
@@ -99,11 +99,11 @@ typedef uint64_t sdouble;
       "state" 
  */
 
-typedef void    (stream_node) (uint32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *state);
-typedef void (*p_stream_node) (uint32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *state);
+typedef void    (stream_node) (uint32_t command, void *instance, void *data, uint32_t *status);
+typedef void (*p_stream_node) (uint32_t command, void *instance, void *data, uint32_t *status);
 
-typedef void    (io_function_ctrl) (uint32_t command, uint8_t *data, uint32_t length);   
-typedef void (*p_io_function_ctrl) (uint32_t command, uint8_t *data, uint32_t length);  
+typedef void    (io_function_ctrl) (uint32_t command, void *data, uint32_t length);   
+typedef void (*p_io_function_ctrl) (uint32_t command, void *data, uint32_t length);  
 
 
 /* ------------------------------------------------------------------------------------------
@@ -142,6 +142,7 @@ typedef struct
     uint8_t main_script;                // debug script common to all nodes
     uint8_t nb_stream_instances;        // stream instances pointers (in words) = &(all_arcs[ -nb_stream_instances]) 
     uint8_t error_log;                  // bit-field of logged errors 
+    uint8_t padding[3]; 
 
 } arm_stream_instance_t;
 

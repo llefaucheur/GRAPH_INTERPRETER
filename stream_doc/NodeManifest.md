@@ -34,9 +34,9 @@ Example of is an option list of values (1, 1.2, 1.4, 1.6, 1.8, .. , 4.2), the in
 ## Example of node manifest
 
 ```
-; ------------------------------------------------------------------------------------------------------------
+; --------------------------------------------------------------------------------------
 ; SOFTWARE COMPONENT MANIFEST - "arm_stream_filter"
-; ------------------------------------------------------------------------------------------------------------
+; --------------------------------------------------------------------------------------
 ;
 node_developer_name   ARM                    ; developer name
 node_name             arm_stream_filter      ; node name
@@ -54,7 +54,7 @@ node_mem                1			; second memory bank (node fast working area)
 node_mem_alloc         52           ;
 node_mem_type           1           ; working memory
 node_mem_speed          2           ; critical fast 
-;--------------------------------------------------------------------------------------------
+;---------------------------------------------------------------------------------------
 ;    ARCS CONFIGURATION
 node_arc            0
 node_arc_nb_channels      {1 1 2}   ; arc intleaved,  options for the number of channels
@@ -100,6 +100,7 @@ Example
 ### node_arc_parameter "n"
 When the amount of parameters exceeds 256kB (deep-learning models, video file, etc..) the parameters must be read from extra arcs.
 Example 
+
 ```
     node_arc_parameter 2 ; 2 additional arcs for large parameters
 ```
@@ -372,13 +373,35 @@ Example :
 ### node_arc_nb_channels  "n"
 Number of the channels possible for this arc (default is 1).
 Example :
+
 ```
     node_arc_nb_channels {1 1 2}  ; options for the number of channels is mono or stereo
 ```
 
+### node_arc_units_scale "unit" "scale"
+
+Command used when the node needs the streams to be rescaled to absolute scaled units (See paragraph "Units" of [Tables.md](Tables.md)).
+
+```
+    node_arc_units_scale VRMS  0.15  ; full-scale is equivalent to 0.15 VRMS
+```
+
+### node_arc_units_scale_multiple "unit" "scale"
+
+Command used when the node needs the streams to be rescaled to absolute scaled units and there are multiple units in sequence (See paragraph "Units" of [Tables.md](Tables.md)).
+
+```
+    node_arc_units_scale_multiple DPS 360 GAUSS 0.002 
+    ; interleaved format with maximum 360 dps and 0.002 Gauss
+```
+
+
+
 ### node_arc_raw_format "f"
+
 Raw samples data format for read/write and arithmetic's operations. The stream in the "2D domain" are defining other sub-format 
 Example :
+
 ```
     node_arc_raw_format {1 17 27} raw format options: STREAM_S16, STREAM_FP32, default values S16
 ```

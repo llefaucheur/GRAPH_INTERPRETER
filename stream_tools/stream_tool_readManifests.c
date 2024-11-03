@@ -294,10 +294,10 @@ void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *arc)
         //if (COMPARE(io_frame_duration))
         //{   fields_extract(&pt_line, "CF", cstring, &(arc->format.frame_length)); 
         //}
-        //if (COMPARE(io_subtype_units))
+        //if (COMPARE(io_units_rescale))
         //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
         //}
-        //if (COMPARE(io_subtype_multiple))
+        //if (COMPARE(io_units_rescale_multiple))
         //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_power_mode))
@@ -326,13 +326,10 @@ void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *arc)
         //}
 
         /* --------------  DOMAIN SPECIFIC --------------- */
-        //if (COMPARE(io_subtype_units))
-        //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
-        //}
         //if (COMPARE(io_analog_scale))
         //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
         //}
-        //if (COMPARE(io_rescale_factor))
+        //if (COMPARE(io_units_rescale))
         //{   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_channel_mapping))
@@ -556,9 +553,14 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     int32_t nb_paths, ipath, fw_io_idx, processorBitFieldAffinity, clockDomain;
     extern uint8_t globalEndFile;
     int forScanf;
+    char *forStr;
     
 #define MAXINPUT 100000
     char *inputFile;
+
+    strcpy(graph_platform_manifest_name, "");
+    strcpy(IO_name, "");
+    strcpy(node_name_, "");
 
     /*
         STEP 1 : read the file names : and the digital platform capabilities
@@ -576,10 +578,11 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     jump2next_valid_line(&pt_line);
     forScanf = sscanf(pt_line, "%d %s", &ipath, graph_platform_manifest_name); /* read the platform_manifest name*/
 
-    strcpy(file_name, paths[ipath]);
-    strcat(file_name, graph_platform_manifest_name);
+    forStr = strcpy(file_name, paths[ipath]);
+    forStr = strcat(file_name, graph_platform_manifest_name);
 
-    inputFile = malloc (MAXINPUT); memset(inputFile, 0, MAXINPUT);
+    if (0 == (inputFile = malloc (MAXINPUT))) exit(0); 
+    memset(inputFile, 0, MAXINPUT);
     read_input_file(file_name, inputFile);
 
     read_platform_digital_manifest(inputFile, platform);
@@ -626,9 +629,9 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
         {   fprintf(stderr, "too much nodes !"); exit(-4);
         }
 
-        sscanf (pt_line, "%d %s", &ipath, node_name_); /* read the node's manifest name */
+        forScanf= sscanf (pt_line, "%d %s", &ipath, node_name_); /* read the node's manifest name */
         strcpy(file_name, paths[ipath]);
-        strcat(file_name, node_name_);
+        forStr = strcat(file_name, node_name_);
 
         memset(inputFile, 0, MAXINPUT);
         read_input_file(file_name, inputFile);

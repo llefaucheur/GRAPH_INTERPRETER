@@ -78,8 +78,8 @@
 #define io_interleaving             "io_interleaving"
 #define io_frame_length             "io_frame_length"
 #define io_frame_duration           "io_frame_duration"
-#define io_subtype_units            "io_subtype_units"
-#define io_subtype_multiple         "io_subtype_multiple"
+#define io_units_rescale            "io_units_rescale"
+#define io_units_rescale_multiple   "io_units_rescale_multiple"
 #define io_power_mode               "io_power_mode"
 #define io_position                 "io_position"
 #define io_euler_angles             "io_euler_angles"
@@ -260,6 +260,7 @@
 #define script_code                     "script_code"
 #define script_assembler                "script_assembler"
 #define script_parameters               "script_parameters"
+#define script_heap                     "script_heap"
 
 /*----------------------------------------------------------------------- GRAPH ARCS ------------- */
 #define arc_input                       "arc_input"

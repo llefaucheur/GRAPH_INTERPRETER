@@ -54,6 +54,10 @@ typedef union
     sfloat  f32;   
 } regdata32_t;
 
+/* error codes going to I->ctrl.errors */
+#define ERROR_STACK_UNDERFLOW   (1 << 0)
+#define ERROR_STACK_OVERFLOW    (1 << 1)
+#define ERROR_TIME_UNDERFLOW    (1 << 2)
 
 /*
     THIS GOES IN ARC DESC 
@@ -86,14 +90,16 @@ typedef union
 
         struct
         {   
-            unsigned int SP : 8;        /* in REGS unit */
-            unsigned int PC : 8;        /* in uint32 */
-            unsigned int test_flag : 1;
-            unsigned int nstack : 7;
-            unsigned int nregs : 4;
-    
-#define MAXCYCLES 15
-            unsigned int cycle_downcounter : 4;
+            unsigned int PC        : 10;        /* in uint32 */
+            unsigned int codes     : 10;        /* code size */
+            unsigned int SP        :  8;        /* in REGS unit */
+            unsigned int nstack    :  8;
+            unsigned int nregs     :  4;
+            unsigned int errors    :  4;
+
+            unsigned int test_flag :  1;
+#define MAXCYCLES 255
+            unsigned int max_cycle : 12;
         } ctrl;
 
     } arm_script_instance_t;

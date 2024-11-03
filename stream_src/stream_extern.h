@@ -32,7 +32,7 @@
  extern "C" {
 #endif
 
-extern p_stream_node node_entry_point_table[];
+extern p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS];
 
 /* entry point from the application  */
 extern void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint8_t *data, uint32_t size);
@@ -41,7 +41,7 @@ extern void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, 
 extern void arm_graph_interpreter_io_ack (uint8_t io_al_idx, uint8_t *data,  uint32_t size);
 
 /* entry point from the computing nodes */
-extern void arm_stream_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n);
+extern void arm_stream_services (uint32_t service_command, void *ptr1, void *ptr2, void *ptr3, uint32_t n);
 
 
 /* ---- REFERENCES --------------------------------------------*/

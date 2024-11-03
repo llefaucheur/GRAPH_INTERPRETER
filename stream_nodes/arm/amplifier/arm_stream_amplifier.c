@@ -75,7 +75,7 @@ node arm_stream_amplifier;
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void arm_stream_amplifier (uint32_t command, void *instance, void *data, uint32_t *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
@@ -89,9 +89,10 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
                 memory pointers are in the same order as described in the NODE manifest
         */
         case STREAM_RESET: 
-        {   stream_al_services *stream_entry = (stream_al_services *)data;
+        {
+            //stream_al_services *stream_entry = (stream_al_services *)data;
             intPtr_t *memresults = (intPtr_t *)instance;
-            uint16_t preset = RD(command, PRESET_CMD);
+            //uint16_t preset = RD(command, PRESET_CMD);
 
             /* here reset */
             arm_amplitude_instance *pinstance = (arm_amplitude_instance *) *memresults;
@@ -112,8 +113,9 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
             ST(pinstance->channel_fmt, NBCHANM1_AMPLI_FMT, tmp32);
             
             /* reset here */
-            break;
-        }    
+        }
+        break;
+            
 
         /* func(command = bitfield (STREAM_SET_PARAMETER, PRESET, TAG, NB ARCS IN/OUT)
                     TAG of a parameter to set, NODE_ALL_PARAM means "set all the parameters" in a raw
@@ -121,19 +123,23 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
                 data = (one or all)
         */ 
         case STREAM_SET_PARAMETER:  
-        {   arm_amplitude_instance *pinstance = (arm_amplitude_instance *) instance;
-            uint8_t *pt8bsrc, *pt8bdst, i, n;
+        {
+            uint8_t *pt8bsrc;
+            uint8_t *pt8bdst;
+            uint8_t i;
+            uint8_t n;
+            arm_amplitude_instance *pinstance = (arm_amplitude_instance *) instance;
 
             pt8bsrc = (uint8_t *) data;     
             pt8bdst = (uint8_t *) &(pinstance->parameters[0]); 
 
             switch (RD(command,NODE_TAG_CMD))
             {   default : n = 1; break;
-                case TAG_CMD_RAMP :         pt8bdst += 2; n = 1; break;
-                case TAG_CMD_DESIRED_GAIN:  pt8bdst += 0; n = 2; break;
-                case TAG_CMG_MUTE:          pt8bdst += 3; n = 1; break;
-                case TAG_CMD_DELAY_RAMPUP:  pt8bdst += 6; n = 2; break;
-                case TAG_CMD_DELAY_RAMPDOWN:pt8bdst += 4; n = 2; break;
+                case TAG_CMD_RAMP :         pt8bdst = &pt8bdst[2]; n = 1; break;
+                case TAG_CMD_DESIRED_GAIN:                         n = 2; break;
+                case TAG_CMG_MUTE:          pt8bdst = &pt8bdst[3]; n = 1; break;
+                case TAG_CMD_DELAY_RAMPUP:  pt8bdst = &pt8bdst[6]; n = 2; break;
+                case TAG_CMD_DELAY_RAMPDOWN:pt8bdst = &pt8bdst[4]; n = 2; break;
                 case NODE_ALL_PARAM:             n = 8;               break;
             }
            
@@ -141,7 +147,7 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
             {   pt8bdst[i] = pt8bsrc[i];
             }
         }
-
+        break;
    
         /* func(command = STREAM_RUN, PRESET, TAG, NB ARCS IN/OUT)
                instance,  
@@ -153,7 +159,8 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
         case STREAM_RUN:   
         {
             arm_amplitude_instance *pinstance = (arm_amplitude_instance *) instance;
-            intPtr_t nb_data, stream_xdmbuffer_size;
+            intPtr_t nb_data;
+            intPtr_t stream_xdmbuffer_size;
             stream_xdmbuffer_t *pt_pt;
             #define SAMP_IN uint8_t 
             #define SAMP_OUT int16_t
@@ -168,9 +175,8 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
 
             nb_data = stream_xdmbuffer_size / sizeof(SAMP_IN);
             arm_stream_amplitude_process(pinstance, inBuf, outBuf, &nb_data);
-            
-            break;
         }
+        break;
 
 
 
@@ -179,6 +185,7 @@ void arm_stream_amplifier (int32_t command, stream_handle_t instance, stream_xdm
                data = unused
         */  
         case STREAM_STOP:  break;    
+        default : break;
     }
 }
 

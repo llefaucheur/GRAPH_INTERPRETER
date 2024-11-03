@@ -67,7 +67,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 #define GINC    addrW32s += 1;
 #define HCDEF_SSDC(N,N2,D,C) fprintf(graph->ptf_header,"#define %s%s 0x%X //%s\n", N,N2,D,C);
 #define HCNEWLINE() fprintf(graph->ptf_header,"\n");
-#define HCTEXT(T) fprintf(graph->ptf_header,T);fprintf(graph->ptf_header,"\n");
+#define HCTEXT(T) fprintf(graph->ptf_header,"// %s \n",T);// fprintf(graph->ptf_header,"\n");
 
     fprintf(graph->ptf_graph_bin, "//--------------------------------------\n"); 
     time ( &rawtime );
@@ -148,7 +148,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     }
 
     /*------------------------------------------------------------------------------------------------------------------------------
-        SCRIPTS 
+        SUBROUTINE- SCRIPTS : indexed with a table before the codes
     */
     {   uint32_t offsetW = 0, Base = addrW32s, PreviousEnd;
 
@@ -184,23 +184,32 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         }
 
         /*  
-            codes in sequence 
+            codes in sequence without solving the label position yet
         */
         for (iscript = 0; iscript < graph->nb_scripts; iscript++)
         {   FMT0 = 0;
             ST(FMT0, FORMAT_SCROFF0, graph->all_scripts[iscript].script_format);
+            pscript = &(graph->all_scripts[iscript]);
 
             for (j = 0; j < graph->all_scripts[iscript].script_nb_instruction; j++)
-            {   FMT0 = graph->all_scripts[iscript].script_program[j];
-                sprintf(tmpstring, "%s", graph->all_scripts[iscript].script_comments[j]); /* comments extracted from the code */
+            {   int32_t  cond, opcode, opar, dst, src1, src2, K;
+                FMT0 = graph->all_scripts[iscript].script_program[j];
+                cond =  RD(FMT0, OP_COND_INST);   dst  =  RD(FMT0, OP_DST_INST);
+                opcode= RD(FMT0, OP_INST);        src1 =  RD(FMT0, OP_SRC1_INST);
+                opar =  RD(FMT0, OP_OPAR_INST);   src2 =  RD(FMT0, OP_SRC2_INST);
+                K    =  RD(FMT0, OP_K_INST); K = K - UNSIGNED_K_OFFSET; 
+
+                sprintf(tmpstring, "IF%d %1d_%2d D%2d S1 %2d S2 %2d K %5d ", 
+                    cond, opcode, opar, dst, src1, src2, K);
+                strcat(tmpstring, graph->all_scripts[iscript].script_comments[j]); /* comments extracted from the code */
+
                 GTEXT(tmpstring); GWORDINC(FMT0);
             }
-            
         }
+
     
         /* ------------ UPDATE HEADER WITH THE SIZE OF THE SCRIPT AREA -----------------*/
         /* size of the script section = sum of the codes + one word (offsets) per scripts */
-
 
         {   
         uint32_t backupLK = addrW32s; addrW32s = LKscripts;
@@ -254,7 +263,9 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             node->nodeName, node->graph_instance, node->platform_NODE_idx, node->nbInputArc, node->nbOutputArc, node->using_arc_format, node->locking_arc);
         GTEXT(tmpstring); GWORDINC(FMT0);
         
-        sprintf(tmpstring, "_%d      ",node->graph_instance); HCDEF_SSDC(node->nodeName, tmpstring, addrW32s - 1, " node position in the graph");  
+        node->node_position_in_graph = addrW32s - 1;
+        sprintf(tmpstring, "_%d      ",node->graph_instance); 
+        HCDEF_SSDC(node->nodeName, tmpstring, node->node_position_in_graph, " node position in the graph");  
 
         /* word 1 - arcs */
         nb_arcs = node->nbInputArc + node->nbOutputArc;
@@ -314,11 +325,12 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             ST(FMT0, PARAM_TAG_LW3, node->TAG); 
             ST(FMT0,    PRESET_LW3, node->preset); 
             ST(FMT0,   TRACEID_LW3, node->trace_ID); 
-            ST(FMT0, W32LENGTH_LW3, pscript->ParameterSizeW32 + pscript->script_nb_instruction +1); 
-            sprintf(tmpstring, "ParamLen %d+1 Preset %d Tag0ALL %d", 
-                pscript->ParameterSizeW32 + pscript->script_nb_instruction +1, node->preset, node->TAG);
+            ST(FMT0, W32LENGTH_LW3, pscript->script_nb_instruction +1); 
+            sprintf(tmpstring, "ParamLen %d+1 Preset %d Tag0ALL %d", pscript->script_nb_instruction +1, node->preset, node->TAG);
             GTEXT(tmpstring); 
             GWORDINC(FMT0);
+
+            node->script_position_in_graph = addrW32s;
 
             node->ParameterSizeW32 = pscript->script_nb_instruction;
             for (j = 0; j < node->ParameterSizeW32; j++)
@@ -326,37 +338,17 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             
                 FMT0 = pscript->script_program[j];
                 
-                cond =  RD(FMT0, OP_COND_INST);
-                opcode= RD(FMT0, OP_INST);
-                opar =  RD(FMT0, OP_OPAR_INST);
-                dst  =  RD(FMT0, OP_DST_INST);
-                src1 =  RD(FMT0, OP_SRC1_INST);
-                src2 =  RD(FMT0, OP_SRC2_INST);  
-                if (opcode <= OP_LD)
-                {   K  =  RD(FMT0, LABEL_INST); K = K - 8192; 
-                }
-                else 
-                {   if (opar == OPLJ_LABEL)
-                    {   K  =  RD(FMT0, LABEL_INST); 
-                    }
-                    else
-                    {   K  =  RD(FMT0, JUMPIDX_INST); 
-                        if(K > 512) K -= 1024; 
-                    }
-                }
-                sprintf(tmpstring, "IF%d %1d_%2d D%2d S %2d S %2d K %5d ", 
+                cond =  RD(FMT0, OP_COND_INST);  dst  =  RD(FMT0, OP_DST_INST);
+                opcode= RD(FMT0, OP_INST);       src1 =  RD(FMT0, OP_SRC1_INST);
+                opar =  RD(FMT0, OP_OPAR_INST);  src2 =  RD(FMT0, OP_SRC2_INST);
+                K    =  RD(FMT0, OP_K_INST); K = K - UNSIGNED_K_OFFSET; 
+
+                sprintf(tmpstring, "IF%d %1d_%2d D%2d S1 %2d S2 %2d K %5d ", 
                     cond, opcode, opar, dst, src1, src2, K);
                 strcat(tmpstring,  pscript->script_comments[j]);
                 GTEXT(tmpstring); GWORDINC(FMT0);
             }
             strcpy(tmpstring, "");
-
-            node->ParameterSizeW32 += pscript->ParameterSizeW32;
-            for (j = 0; j < pscript->ParameterSizeW32; j++)
-            {   FMT0 = pscript->PackedParameters[j];
-                sprintf(tmpstring, "(%d)", j); 
-                GTEXT(tmpstring); GWORDINC(FMT0);
-            }
         }
         else
         {
@@ -502,7 +494,8 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
         arc = &(graph->arc[iarc]);
         ARCW0 = ARCW1 = ARCW2 = ARCW3 = ARCW4 = 0;
-
+ 
+        /*-------------------------------- ARC FOR SCRIPTS-------------------------------------------------------------*/
         /* is it the arc from a script ? */
         FMT0 = 0; 
         pscript = &(graph->all_nodes[0].node_script); // for the compiler
@@ -550,14 +543,17 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
                 vid_malloc (pscript->mem_VID,    /* VID */
                     m,          /* size */
                     MEM_REQ_4BYTES_ALIGNMENT, 
-                    &(arc->I[SCRIPT_PTR_SCRARCW0]),                 /* address of the Base to be filled */
+                    //&(arc->I[SCRIPT_PTR_SCRARCW0]),                 /* address of the Base to be filled */
+                    &(arc->I[SCRIPT_PTR_SCRARCW0]), 
                     MEM_TYPE_STATIC,                                /* working 0 static 1 */
                     tmpstring,                                      /* comment */
                     platform, graph);
+                HCTEXT(tmpstring);
             }
-    
+
             ST(arc->I[SCRIPT_PTR_SCRARCW0], NEW_USE_CASE_SCRARCW0, 0);    
             ST(arc->I[    SCRIPT_SCRARCW1], BUFF_SIZE_SCRARCW1, m);        
+            ST(arc->I[    SCRIPT_SCRARCW1], CODESIZE_SCRARCW1, pscript->script_nb_instruction);        
             ST(arc->I[    RDFLOW_SCRARCW2], READ_ARCW2, 0);        
             ST(arc->I[  WRIOCOLL_SCRARCW3], WRITE_ARCW3, 0);        
             ST(arc->I[    DBGFMT_SCRARCW4], RAMTOTALW32_SCRARCW4, 2*(pscript->nb_reg + pscript->nb_stack) + pscript->ram_heap_size);        
@@ -578,12 +574,14 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
                 RD(arc->I[DBGFMT_SCRARCW4], NREGS_SCRARCW4), 
                 RD(arc->I[DBGFMT_SCRARCW4], NSTACK_SCRARCW4),
                 pscript->ram_heap_size);
-            GTEXT(tmpstring);             
+            GTEXT(tmpstring);           HCTEXT(tmpstring);      
             GWORDINC(arc->I[1]);        
             GWORDINC(arc->I[2]);        
             GWORDINC(arc->I[3]);        
             GWORDINC(arc->I[4]);        
+            sprintf(tmpstring, "arc_buf_%d ",iarc); HCDEF_SSDC("", tmpstring, graph->arc[iarc].graph_base, " arc buffer address");
             continue;
+            /*--------------------------------END ARC FOR SCRIPTS-------------------------------------------------------------*/
         }
 
         sprintf(tmpstring, "arc_%d     ",iarc); HCDEF_SSDC("", tmpstring, addrW32s, " arc descriptor position in the graph");  
@@ -664,7 +662,6 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         ST(ARCW3, COLLISION_ARCW3, 0);
         ST(ARCW3, ALIGNBLCK_ARCW3, 0);
         ST(ARCW3,     WRITE_ARCW3, 0);
-            sprintf(tmpstring, "arc_buf_%d ",iarc); HCDEF_SSDC("", tmpstring, arc->graph_base, " arc buffer address");
         sprintf(tmpstring, "    fmtCons %d fmtProd %d dbgreg %d dbgcmd %d", graph->arc[iarc].fmtCons, graph->arc[iarc].fmtProd, graph->arc[iarc].debug_reg, graph->arc[iarc].debug_cmd); 
         GTEXT(tmpstring); 
         GWORDINC(ARCW3);
@@ -687,6 +684,73 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     }
     HCNEWLINE()   
 
+
+
+    /* ------------------------------------------------------------------------------------------------------------------------------
+        LINKING SCRIPT : ==== looking for OFFSET in the graph, search in small scripts and nodes 
+    */
+    for (iscript = 0; iscript < graph->nb_scripts; iscript++)
+    {   
+        labelPos_t *Labels;
+        uint32_t ilabel, label_position, script_offset_in_graph, *instruction;
+        char node_to_compare[NBCHAR_STREAM_NAME];
+
+        pscript = &(graph->all_scripts[iscript]);
+        Labels = pscript->Label_positions;
+        script_offset_in_graph = graph->all_scripts[iscript].script_offset;
+
+        /* replacement of Label of set r label/heap , instruction using 2 words */
+        for (ilabel = 0; ilabel < pscript->idx_label; ilabel++)
+        {   if (Labels[ilabel].label_type == LABEL_GRAPH_USE) 
+            {   for (inode = 0; inode < graph->nb_nodes; inode++)
+                {   node = &(graph->all_nodes[inode]);
+                    sprintf(node_to_compare, "%s_%d", node->nodeName, node->graph_instance);
+
+                    // does the node_name is the one from the script source code 
+                    if (0 == strcmp(Labels[ilabel].symbol, node_to_compare))
+                    {   
+                        label_position = Labels[ilabel].offset;
+                        instruction = &(graph->binary_graph[label_position + script_offset_in_graph]);
+                        *instruction = node->node_position_in_graph;      // 32bits address
+                    }
+                }
+            }
+        }
+    }
+
+    /* solves the labels of scripts in nodes */
+    for (inode = 0; inode < graph->nb_nodes; inode++)
+    {   
+        node = &(graph->all_nodes[inode]);
+        pscript = &(graph->all_nodes[inode].node_script);
+        if (pscript->script_nb_instruction)
+        {
+        labelPos_t *Labels;
+        uint32_t ilabel, label_position, script_offset_in_graph, *instruction;
+        char node_to_compare[NBCHAR_STREAM_NAME];
+
+        Labels = pscript->Label_positions;
+        script_offset_in_graph = node->script_position_in_graph;
+
+        /* replacement of Label of set r label/heap , instruction using 2 words */
+        for (ilabel = 0; ilabel < pscript->idx_label; ilabel++)
+        {   if (Labels[ilabel].label_type == LABEL_GRAPH_USE) 
+            {   for (inode = 0; inode < graph->nb_nodes; inode++)
+                {   node = &(graph->all_nodes[inode]);
+                    sprintf(node_to_compare, "%s_%d", node->nodeName, node->graph_instance);
+
+                    // does the node_name is the one from the script source code 
+                    if (0 == strcmp(Labels[ilabel].symbol, node_to_compare))
+                    {   
+                        label_position = Labels[ilabel].offset;
+                        instruction = &(graph->binary_graph[label_position + script_offset_in_graph]);
+                        *instruction = node->node_position_in_graph;      // 32bits address
+                    }
+                }
+            }
+        }
+        }
+    }
 
     /* ------------------------------------------------------------------------------------------------------------------------------
         LINKED-LIST of SWC , second pass with ONLY static memory allocation 
@@ -820,7 +884,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         for (i = 0; i < MAX_PROC_MEMBANK; i++)
         {   mem = &(platform->membank[i]); 
             maxSizes[mem->offsetID] += mem->size;
-            used[mem->offsetID] += mem->ptalloc_static + mem->max_working;
+            used[mem->offsetID] = (uint32_t)(used[mem->offsetID] + mem->ptalloc_static + mem->max_working);
         }
         for (i = 0; i < NOFF; i++)
         {   percent[i] = (255 * used[i]) / maxSizes[i];

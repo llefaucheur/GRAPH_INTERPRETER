@@ -545,7 +545,7 @@ void platform_init_io(arm_stream_instance_t *S)
     /* if cold start : clear the backup area */
     if (TEST_BIT(S->scheduler_control, BOOT_SCTRL_LSB) == STREAM_COLD_BOOT)
     {   al_func = &(S->al_services[0]);
-        (*al_func)(PACK_SERVICE(0,0,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0,0,0);
+        (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0, 0,0);
     }
 
     /* wait all the process have initialized the graph */

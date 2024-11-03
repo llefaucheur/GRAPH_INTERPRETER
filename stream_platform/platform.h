@@ -52,16 +52,27 @@
 //#define PLATFORM_ARDU_ZERO              //Arduino 
 //#define PLATFORM_PORTENTAC33            //Arduino SE050C2 Secure Element
 
+/* default streaming for the demos :
+
+* i data_in0 from application 
+* i adc0 or file_in
+* i timer0
+* o gpio_out0 or led
+* o data_out0 to the application 
+* o dac0/pwm or file_out
+*   
+*/
+
 /*==========================================================================*/
 
 #ifdef PLATFORM_COMPUTER
 #include "computer/platform_computer.h"
 #endif
 #ifdef PLATFORM_LPC55S69EVK
-#include "lplpc55s69evk\platform_lpc55s69evk.h"
+#include "lplpc55s69evk/platform_lpc55s69evk.h"
 #endif
 #ifdef PLATFORM_MSPM0L1306
-#include "lp-mspm0l1306\platform_lp-mspm0l1306.h"
+#include "lp-mspm0l1306/platform_lp-mspm0l1306.h"
 #endif
 /*==========================================================================*/
 

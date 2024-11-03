@@ -197,6 +197,12 @@
     <ClInclude Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\filter\arm_stream_filter.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_extern.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\graph_computer.txt">

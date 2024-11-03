@@ -66,8 +66,10 @@ static void * pack2linaddr_ptr(uint8_t **long_offset, uint32_t data, uint8_t ext
     data     = XDM[0] data to byte codes XDM[1] Stream instance 
     status 
 */
-void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void arm_stream_script (uint32_t command, void *instance, void *data, uint32_t *status)
 {
+    *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
+
     switch (RD(command,COMMAND_CMD))
     { 
        /* func(command = (STREAM_RESET, COLD, PRESET, TRACEID tag, NB ARCS IN/OUT)
@@ -82,10 +84,13 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
         */
         case STREAM_RESET: 
         {   
-            intPtr_t *memresults = (intPtr_t *)instance;
-            uint16_t preset = RD(command, PRESET_CMD);
+            arm_script_instance_t *pinstance;
+            uint8_t preset;
 
-            arm_script_instance_t *pinstance = (arm_script_instance_t *) *memresults++;
+            preset = (uint8_t) RD(command, PRESET_CMD);
+
+            /* read memory banks */
+            pinstance = *((arm_script_instance_t **) instance);           /* main instance */
 
             /* "data" is the Stream interpreter instance, for access to the services */
             pinstance->services = (stream_al_services *)(intPtr_t)data;
@@ -98,7 +103,9 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
                 data = (one or all)
         */ 
         case STREAM_SET_PARAMETER:  
-        {   arm_script_instance_t *pinstance = (arm_script_instance_t *) instance;
+        {   arm_script_instance_t *pinstance;
+        
+            pinstance = ((arm_script_instance_t *) instance);
             pinstance->byte_code = (uint32_t *) data;
             break;
         }
@@ -111,19 +118,23 @@ void arm_stream_script (int32_t command, stream_handle_t instance, stream_xdmbuf
         case STREAM_RUN:   
         {   
             stream_xdmbuffer_t *pt_pt;
-            arm_script_instance_t *pinstance = (arm_script_instance_t *) instance;
+            arm_script_instance_t *pinstance;
+        
+            pinstance = ((arm_script_instance_t *) instance);
 
-            pt_pt = data;   pinstance->S = (arm_script_instance_t *)pt_pt->address;  
+            pt_pt = data;   pinstance->S = (arm_stream_instance_t *)pt_pt->address;  
             pt_pt++;        pinstance->arc_desc = (uint32_t *)pt_pt->address; 
             pt_pt++;        pinstance->REGS = (regdata_t *)pt_pt->address;  
 
             /* reset the instance (arc buffer address) */
+
+            pinstance->ctrl.codes = RD(pinstance->arc_desc[SCRIPT_SCRARCW1], CODESIZE_SCRARCW1);
             pinstance->ctrl.nstack = RD(pinstance->arc_desc[DBGFMT_SCRARCW4], NSTACK_SCRARCW4);
             pinstance->ctrl.nregs = RD(pinstance->arc_desc[DBGFMT_SCRARCW4], NREGS_SCRARCW4);
             pinstance->ctrl.SP = pinstance->ctrl.nregs;     // after { R0 .. R(nregs),R12 }
             pinstance->ctrl.PC = 0;         // PC pre-incremented before read
             pinstance->ctrl.test_flag = 0;
-            pinstance->ctrl.cycle_downcounter = MAXCYCLES;
+            pinstance->ctrl.max_cycle = MAXCYCLES;
 
             /*
             *  BYTECODE 

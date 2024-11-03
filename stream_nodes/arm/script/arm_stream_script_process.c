@@ -37,6 +37,7 @@
 
 
 #include <stdint.h>
+#include <string.h> // memcpy
 #include "stream_common_const.h"
 #include "stream_common_types.h"
 #include "arm_stream_script.h"
@@ -46,14 +47,16 @@ static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t,
 static void int_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, int32_t *dst, int32_t src1, int32_t src2);
 static void test_arithmetic_operation(arm_script_instance_t *I);
 static void readreg(arm_script_instance_t *I, regdata32_t *data, int32_t srcID, uint8_t K);
-static void writreg(arm_script_instance_t *I, int32_t dstID, regdata32_t src);
+static void writreg(arm_script_instance_t *I, int32_t dstID, regdata32_t src, uint8_t dtype);
 static void jmov_operation(arm_script_instance_t *I);
 
 
+/*
+*   arithmetics operations and test on floating point data
+*/
 
 static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, sfloat *dst, sfloat src1, sfloat src2)
 {
-#if 0
     sfloat tmp; 
 
     switch (opar)
@@ -75,10 +78,13 @@ static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t,
     case OPAR_SET  : tmp = I2F(F2I(src1) | (1<<F2I(src2)));     break;  // SET iSRC1 | (1 << iSRC2 (or K)) BSET      
     case OPAR_CLR  : tmp = I2F(F2I(src1) & (~(1<<F2I(src2))));  break;  // CLR iSRC1 & (1 << iSRC2 (or K)) BCLR     TESTBIT 0/R0 OPAR_SHIFT(iSRC1, 1<<K5)
     case OPAR_NORM :  //  NORM *iDST = normed on MSB(*iSRC1), applied shift in *iSRC2 
-            {   uint32_t count = 0U, mask = 1L << 31;  
+            {   uint32_t count = 0U, mask = 1UL << 31;  
                 
-                while ((src1 & mask) == 0U) { count += 1U; mask = mask >> 1U; }
-                tmp = src1 << count; src2 = count;
+                while ((F2I(src1) & mask) == 0U) 
+                { count += 1U; mask = mask >> 1U; }
+
+                tmp = (sfloat)((F2I(src1)) << count); 
+                src2 = (sfloat)count;
             }
             break;
     }
@@ -95,11 +101,12 @@ static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t,
     if (opcode == OP_LD)
     {   *dst = tmp;   
     }
-#endif
 }
 
-/**
-  @brief  ALU
+
+
+/*
+*   arithmetics operations and test on integer data
 */
 static void int_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, int32_t *dst, int32_t src1, int32_t src2)
 {
@@ -128,11 +135,11 @@ static void int_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, i
     case OPAR_SET  : tmp = src1 | (1<<src2);                break;
     case OPAR_CLR  : tmp = src1 & (~(1<<src2));             break;
     case OPAR_NORM :  //  NORM *iDST = normed on MSB(*iSRC1), applied shift in *iSRC2 
-            {   uint32_t count = 0U, mask = 1L << 31;  
+            {   uint32_t count = 0U, mask = 1u << 31;  
                 while ((src1 & mask) == 0U) { count += 1U; mask = mask >> 1U; }
                 tmp = src1 << count; src2 = count;
             }
-                                                            break;
+            break;
     }
 
     *t = 0;
@@ -155,7 +162,7 @@ static void int_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, i
 
 
 /**
-  @brief  push register content of src1/src2 on stack
+  @brief  push valid register index on stack 
 */
 static void optional_push (arm_script_instance_t *I, int32_t src1)
 {
@@ -164,6 +171,52 @@ static void optional_push (arm_script_instance_t *I, int32_t src1)
     }
 }
 
+
+
+/**
+  @brief  read SRC2/K  (SP0/SP1/regs/K) to data->i32
+          *data <- *(srcID)
+          when reading stack with SP0 the stack pointer does not move
+          when reading stack with SP1 the stack pointer is post-decremented after the move
+*/
+static void readsrc2K (arm_script_instance_t *I, regdata_t *data, uint8_t *src2ID)
+{
+    uint32_t instruction = I->instruction;
+
+    *src2ID = (uint8_t) RD(instruction, OP_SRC2_INST);
+
+    if (0 == RD(instruction, SRC2LONGK_PATTERN_INST))               // not a short constant ?
+    {   
+        if (1 == RD(instruction, OP_RKEXT_INST))                    // extended constant
+        {   *src2ID = RegNone;
+            data->v_i32[REGS_DATA] = I->byte_code[I->ctrl.PC++];    // read next word of the program
+            ST(data->v_i32[REGS_TYPE], DTYPE_REGS1, 
+                RD(instruction, DTYPE_REGS1));                      // set the type
+        } 
+        else                                                        // use register src2 
+        {   
+            if (*src2ID == RegSP0)                                  // simple stack read
+            {   *data = I->REGS[I->ctrl.SP];                        //  read data and type 
+            }
+            else if (*src2ID == RegSP1)                             // pop data (SP --)
+            {   *data = I->REGS[I->ctrl.SP];                        //  read data and type 
+                I->ctrl.SP --;
+                if (I->ctrl.SP < I->ctrl.nregs)                     // check stack underflow
+                {   I->ctrl.errors |= ERROR_STACK_UNDERFLOW;
+                    I->ctrl.SP ++;
+                }
+            }
+            else                                                    // read register data
+            {   *data = I->REGS[*src2ID];                           //  read data and type 
+            }
+        }
+    }
+    else 
+    {   *src2ID = RegNone;
+        data->i32 = RD(instruction, OP_K_INST)-UNSIGNED_K_OFFSET;   // 12bits signed short constant
+        ST(data->v_i32[REGS_TYPE], DTYPE_REGS1, DTYPE_INT32);       //  signed int32
+    }        
+}
 
 
 
@@ -183,15 +236,15 @@ static void readreg(arm_script_instance_t *I, regdata32_t *data, int32_t srcID, 
                 {
                 case DTYPE_UINT8 : case DTYPE_UINT16: case DTYPE_INT16 : case DTYPE_UINT32: 
                 case DTYPE_INT32 : case DTYPE_TIME16: case DTYPE_TIME32: case DTYPE_PTR28B: 
-                    /* k = src2_K.i32; */
+                    /* k = reg_src2K.v_i32[REGS_DATA].i32; */
                     break;
-                case DTYPE_FP16  : case DTYPE_FP32  : case DTYPE_FP64  : 
+                case DTYPE_FP16  : case DTYPE_FP32  : //case DTYPE_FP64  : 
                     /* kl.f32 */
                     break;
-                case DTYPE_INT64 : case DTYPE_TIME64: 
-                    /* read one more word */
-                    data->i32 = I->byte_code[I->ctrl.PC++];
-                    break;
+                //case DTYPE_INT64 : case DTYPE_TIME64: 
+                //    /* read one more word */
+                //    data->i32 = I->byte_code[I->ctrl.PC++];
+                //    break;
                 }
             } 
             else                                        // use register src2 
@@ -210,10 +263,10 @@ static void readreg(arm_script_instance_t *I, regdata32_t *data, int32_t srcID, 
         }
         else 
         {   data->i32 = RD(instruction, OP_K_INST);     // 14bits signed short constant
-            data->i32 = (data->i32) - 8192;             // [8191 .. -8160]
+            data->i32 = (data->i32) - UNSIGNED_K_OFFSET; // [-2016  2048]
         }        
     }
-    /* read src1 */
+    /* read src2 */
     else
     {
         data->i32 = I->REGS[srcID].v_i32[REGS_DATA];
@@ -222,25 +275,31 @@ static void readreg(arm_script_instance_t *I, regdata32_t *data, int32_t srcID, 
 
 
 /**
-  @brief  read register
-          *dstID <- *(src data)
+  @brief  write to dstID register 
+        operation : 
+          (*dstID)  <-  *(src data) + dtype
 */
-static void writreg(arm_script_instance_t *I, int32_t dstID, regdata32_t src)
+static void writreg(arm_script_instance_t *I, int32_t dstID, regdata32_t src, uint8_t dtype)
 {
-    int32_t *pdst;
+    regdata_t *pdst;
 
     if (dstID == RegSP0)
-    {   pdst = &(I->REGS[I->ctrl.SP].v_i32[REGS_DATA]);
+    {   pdst = &(I->REGS[I->ctrl.SP]);
     }
     else if (dstID == RegSP1)
-    {   pdst = &(I->REGS[I->ctrl.SP].v_i32[REGS_DATA]);
+    {   pdst = &(I->REGS[I->ctrl.SP]);
         I->ctrl.SP ++;
+        if (I->ctrl.SP > I->ctrl.nregs + I->ctrl.nstack)    // check stack underflow
+        {   I->ctrl.errors |= ERROR_STACK_OVERFLOW;
+            I->ctrl.SP--;
+        }
     }
     else
-    {   pdst = &(I->REGS[dstID].v_i32[REGS_DATA]);
+    {   pdst = &(I->REGS[dstID]);
     }
 
-    *pdst = src.i32;
+    pdst->v_i32[REGS_DATA] = src.i32;
+    pdst->v_i32[REGS_TYPE] = dtype;
 }
 
 
@@ -249,164 +308,301 @@ static void writreg(arm_script_instance_t *I, int32_t dstID, regdata32_t src)
 */
 static void jmov_operation(arm_script_instance_t *I)
 {
-    int32_t k, tmp;
-    regdata32_t src2_K;
-    regdata_t reg;
-    uint8_t dst, src1, src2, src3, src4;
+    int32_t K, *DST;
+    regdata_t reg_src2K;
+    uint8_t dst, src1, src2;
     int32_t instruction = I->instruction;
     int32_t opar = RD(instruction, OP_OPAR_INST);
 
-    dst = RD(instruction, OP_DST_INST);
-    src1= RD(instruction, OP_SRC1_INST);
-    src2= RD(instruction, OP_SRC2_INST);
-    src3= RD(instruction, OP_SRC3_INST);
-    src4= RD(instruction, OP_SRC4_INST);
-
-
-
-     // ^ ^  K10:  -512 .. +511 (JUMPIDX_INST)
-     // | |   
-     // |^|^
-     // |||| K6 :  0 .. 63 (CALLSYSIDX_INST)
-     // ||||
-     // ||||
-     // ||||
-     // ||vv
-     // ||   K10: -512 .. +512 (SCGA_K11_INST)
-     // vv   K14: -8160 .. +8191 (OP_K_INST)
-
-
-    if (opar == OPLJ_JUMP || opar == OPLJ_BANZ || opar == OPLJ_CALL)      
-    {   k = RD(instruction, JUMPIDX_INST);      // 10bits signed extended 
-        k = k << (31-JUMPIDX_INST_MSB + JUMPIDX_INST_LSB); 
-        k = k >> (31-JUMPIDX_INST_MSB + JUMPIDX_INST_LSB);        
-    } else                                                                    
-    if (opar == OPLJ_CALLSYS)                                             
-    {   k = RD(instruction, CALLSYSIDX_INST);   // 6bits unsigned         
-    } else
-    if (opar == OPLJ_SCATTER || opar == OPLJ_GATHER)
-    {   k = RD(instruction, SCGA_K11_INST);     // 10bits signed    
-        k = (k << (32-SCGA_K11_INST_MSB)) >> (32-SCGA_K11_INST_MSB);     
-    } else
-    {  readreg(I, &src2_K, src2, 1);
+    // stack pointer increment is interpreted from right to left when reading the line 
+    // STACK INCREMENT : pre-check SRC2 on :
+    //  test SRC2=SP1 on OPLJ_BASE OPLJ_SIZE OPLJ_SCATTER OPLJ_GATHER OPLJ_CALLSYS
+    if (opar == OPLJ_BASE || opar == OPLJ_SIZE || opar == OPLJ_SCATTER || opar == OPLJ_GATHER ||opar == OPLJ_CALLSYS)
+    {   
     }
+
+
+    src1= (uint8_t)RD(instruction, OP_SRC1_INST);
+    if (src1 == RegSP0) 
+    { src1 = (uint8_t)(I->ctrl.SP); 
+    } 
+    if (src1 == RegSP1) 
+    { src1 = (uint8_t)(I->ctrl.SP); I->ctrl.SP --; 
+    }
+
+    dst = (uint8_t)RD(instruction, OP_DST_INST);     
+    if (dst == RegSP0) 
+    { dst = (uint8_t)(I->ctrl.SP); 
+    } 
+    if (dst == RegSP1) 
+    { dst = (uint8_t)(I->ctrl.SP); I->ctrl.SP ++;       // stack destination => increment 
+    }
+    DST = &(I->REGS[dst].v_i32[REGS_TYPE]);
+
+
+    reg_src2K.v_i32[REGS_DATA] = 0; reg_src2K.v_i32[REGS_TYPE] = 0;
+    readsrc2K(I, &reg_src2K, &src2);
+    K = reg_src2K.v_i32[REGS_DATA]; // can be float ..
+
 
     switch (opar)
     {
-    // IIyyy-OPARDST______________1TTTT  OPLJ_CAST(PTR)    dst  dtype
-    case OPLJ_CAST:
-        ST(I->REGS[I->ctrl.SP].v_i32[REGS_TYPE], DTYPE_REGS1, RD(instruction, DTYPE_REGS1)); 
+    // data type cast
+    // IIyyy-OPARDST_______<--K12-0SRC2     OPLJ_CAST(PTR)  dst  dtype
+    case OPLJ_CAST: 
+        ST(I->REGS[dst].v_i32[REGS_TYPE], DTYPE_REGS1, K); 
         break;
 
-    // IIyyy-OPARDST_____xxxxxxxxxYYYYY  OPLJ_BASE         dst src2/K    
+    // set the base of cicular buffer addressing
+    // IIyyy-OPARDST_______<--K12-0SRC2     OPLJ_BASE       dst src2/K    
     case OPLJ_BASE:
-        ST(I->REGS[I->ctrl.SP].v_i32[REGS_TYPE], BASE_REGS1, src2_K.i32); 
+        ST(I->REGS[dst].v_i32[REGS_TYPE], BASE_REGS1, K); 
         break;
 
-    // IIyyy-OPARDST_____xxxxxxxxxYYYYY  OPLJ_SIZE   
+    // set the size of the circular buffer
+    // IIyyy-OPARDST_______<--K12-0SRC2     OPLJ_SIZE       circular addressing control
     case OPLJ_SIZE:
-        ST(I->REGS[I->ctrl.SP].v_i32[REGS_TYPE], SIZE_REGS1, src2_K.i32); 
+        ST(I->REGS[dst].v_i32[REGS_TYPE], SIZE_REGS1, K); 
         break;
 
-    // IIyyy-OPARDST_SRC10#________SRC2  OPLJ_SCATTER  : st r2 [r4/k] r3  => R2[R4] = R3 
-    case OPLJ_SCATTER:
-        {   int32_t *heap;                  /* working area */
-        heap = (uint32_t *)&I->REGS[0];
-        heap = &heap[(I->ctrl.nregs + I->ctrl.nstack)*2];   // 2 words per register
-        tmp = I->REGS[dst].v_i32[REGS_DATA];
-        tmp = tmp + k;
-        heap[tmp] = I->REGS[src1].v_i32[REGS_DATA];  // [tmp = dst+K] = src1
+    // the gathered data will be read from the parameter area
+    // IIyyy-OPARDST_______<--K12-0SRC2     OPLJ_PARAM      set r1 param xxx load offset in param (sets H1C0 = 0):
+    case OPLJ_PARAM:           
+    case OPLJ_GRAPH:
+        ST(I->REGS[dst].v_i32[REGS_TYPE], H1C0_REGS1, 0); 
+        I->REGS[dst].v_i32[REGS_DATA] = K;
+        break;
+
+    // the gathered data will be from the heap
+    // IIyyy-OPARDST_______<--K12-0SRC2     OPLJ_HEAP       set r3 heap xxx load offset in heap  (sets H1C0 = 1)     
+    case OPLJ_HEAP:                 // 
+        ST(I->REGS[dst].v_i32[REGS_TYPE], H1C0_REGS1, 1); 
+        I->REGS[dst].v_i32[REGS_DATA] = K;
+        break;
+
+    // scatter data access : R[K}=R
+    // IIyyy-OPARDST_SRC1pp<--K12-0SRC2     OPLJ_SCATTER    [ dst src2/k BYTES ]+ = src1  pre-increment
+    //    cast to the destination format                    [ dst ]+ src2/k BYTES = src1  use H1C0 to select DST memory
+    case OPLJ_SCATTER:  
+        {   uint32_t index;
+            uint8_t  *p8src, *p8dst, nbytes;
+            uint8_t preinc, destH1C0, dsttype, updateptr;
+        
+        destH1C0 = RD(I->REGS[dst].v_i32[REGS_TYPE], H1C0_REGS1); // select H1C0
+        preinc  = (uint8_t)RD(instruction, OP_EXT0_INST);
+        updateptr = (uint8_t)RD(instruction, OP_EXT1_INST);
+        dsttype = (uint8_t)RD(I->REGS[dst].v_i32[REGS_TYPE], DTYPE_REGS1); // destination type
+        nbytes = 0;
+        index = 0;
+
+        if (destH1C0 == 1)                                      // destination in heap ?
+        {   p8dst = (uint8_t *)&(I->REGS[(I->ctrl.nregs + I->ctrl.nstack)*2]);
+        }
+        else                                                    // destination in the code param area? (graph is in RAM)
+        {   p8dst = (uint8_t *)&(I->byte_code[I->ctrl.codes]);
+        }
+
+        // check pre-increment
+        if (preinc)
+        {   index = K;
+        }
+        p8src = (uint8_t *)&(I->REGS[src1].v_i32[REGS_DATA]);
+        p8dst = &(p8dst[index]);
+
+        /* cast the source to the type of the destination to allow by te addressing */ 
+        switch (dsttype)
+        {
+        case DTYPE_UINT8:  nbytes = 1; break;
+        case DTYPE_INT16: case DTYPE_FP16: case DTYPE_TIME16:  nbytes = 2; break;
+        case DTYPE_UINT32:case DTYPE_INT32:case DTYPE_FP32:case DTYPE_TIME32:case DTYPE_PTR28B: nbytes = 4; break;
+        }
+
+        memcpy (p8dst, p8src, nbytes);
+ 
+        // check post-increment, post-increment without update is useless
+        if (0 == preinc)
+        {   index = K;
+        }        
+
+        // check update
+        if (updateptr)
+        {   I->REGS[dst].v_i32[REGS_DATA] += index;
+        }        
+
         break;
         }
-    // IIyyy-OPARDST_SRC11#_<---K11--->  OPLJ_GATHER  : ld r2 r3 [r4/k] =>  R2 = R3[R4]
+
+    // gather data access : R=R[K}
+    // IIyyy-OPARDST_SRC1pp<--K12-0SRC2     OPLJ_GATHER  :  dst = [ src1 src2/k ]+   pre-increment
+    //    cast from the source format,                      dst = [ src1 ]+ src2/k   post-increment
     case OPLJ_GATHER:
-        {   int32_t *heap;                  /* working area */
-        heap = (uint32_t *)&I->REGS[0];
-        heap = &heap[(I->ctrl.nregs + I->ctrl.nstack)*2];   // 2 words per register
-        tmp = I->REGS[src1].v_i32[REGS_DATA];
-        tmp = tmp + k;
-        I->REGS[dst].v_i32[REGS_DATA] = heap[tmp];  // dst = [tmp = src1+K]
+        {   uint32_t index;
+            uint8_t  *p8src, *p8dst, nbytes;
+            uint8_t preinc, destH1C0, srctype, updateptr;
+        
+        destH1C0 = RD(I->REGS[dst].v_i32[REGS_TYPE], H1C0_REGS1); // select H1C0
+        preinc  = (uint8_t)RD(instruction, OP_EXT0_INST);
+        updateptr = (uint8_t)RD(instruction, OP_EXT1_INST);
+        srctype = (uint8_t)RD(I->REGS[dst].v_i32[REGS_TYPE], DTYPE_REGS1); // destination type
+        nbytes = 0;
+        index = 0;
+
+        if (destH1C0 == 1)                                      // source in heap ?
+        {   p8src = (uint8_t *)&(I->REGS[(I->ctrl.nregs + I->ctrl.nstack)*2]);
+        }
+        else                                                    // source in the code param area? 
+        {   p8src = (uint8_t *)&(I->byte_code[I->ctrl.codes]);
+        }
+
+        // check pre-increment
+        if (preinc)
+        {   index = K;
+        }
+
+        p8src = &(p8src[index]);
+        p8dst = (uint8_t *)&(I->REGS[src1].v_i32[REGS_DATA]);
+
+        /* clear the destination word according the size of the source */ 
+        switch (srctype)
+        {
+        case DTYPE_UINT8:  nbytes = 1; memset(p8dst, 0, sizeof(uint32_t)); break;
+        case DTYPE_INT16: case DTYPE_FP16: case DTYPE_TIME16:  nbytes = 2; memset(p8dst, 0, sizeof(uint32_t)); break;
+        case DTYPE_UINT32:case DTYPE_INT32:case DTYPE_FP32:case DTYPE_TIME32:case DTYPE_PTR28B: nbytes = 4; break;
+        }
+        memcpy (p8dst, p8src, nbytes);              // write 8b, 16b or 32b
+ 
+        // check post-increment, post-increment without update is useless
+        if (0 == preinc)
+        {   index = K;
+        }        
+
+        // check update
+        if (updateptr)
+        {   I->REGS[dst].v_i32[REGS_DATA] += index;
+        }        
         break;
         }
-    // IIyyy-OPARDST_SRC1__LLLLLLPPPPPP  OPLJ_WR2BF     move r2 | lenK posK | r3 
+
+    // write to a destination bit-field R[lsb msb]=R
+    // IIyyy-OPARDST_SRC1__LLLLLLPPPPPP     OPLJ_WR2BF     move r2 | lenK posK | r3 
     case OPLJ_WR2BF:
         {
-        uint32_t pos, len, mask, masklsb;
-        pos = RD(instruction, BITFIELD_POS_INST);
-        len = RD(instruction, BITFIELD_LEN_INST);
-        masklsb = (1 << len) -1;  
-        mask = masklsb << pos;
+        uint8_t msb, lsb;
+        uint32_t mask, tmp;
+        msb = (uint8_t)RD(instruction, BITFIELD_MSB_INST);
+        lsb = (uint8_t)RD(instruction, BITFIELD_LSB_INST);
+        mask = (uint32_t)(-1) >> (31-(msb-lsb));
+        tmp = I->REGS[src1].v_i32[REGS_DATA] & mask;
+        mask <<= lsb;
         I->REGS[dst].v_i32[REGS_DATA] &= ~mask;
-        I->REGS[dst].v_i32[REGS_DATA] |= (I->REGS[src1].v_i32[REGS_DATA] & masklsb) << pos;
+        
+        I->REGS[dst].v_i32[REGS_DATA] |= tmp << lsb;
         break;
         }
-    // IIyyy-OPARDST_SRC1__LLLLLLPPPPPP  OPLJ_RDBF      move r2 r3 | lenK posK |
+
+    // extract a bit-field  R=R[lsb msb]
+    // IIyyy-OPARDST_SRC1__LLLLLLPPPPPP     OPLJ_RDBF      move r2 r3 | lenK posK |
     case OPLJ_RDBF:
         {   
-        uint32_t pos, len, masklsb;
-        pos = RD(instruction, BITFIELD_POS_INST);
-        len = RD(instruction, BITFIELD_LEN_INST);
-        masklsb = (1 << len) -1;  
-        I->REGS[src1].v_i32[REGS_DATA] >>= pos;
-        I->REGS[dst].v_i32[REGS_DATA] = ((I->REGS[src1].v_i32[REGS_DATA] >> pos) & masklsb);
+        uint8_t msb, lsb;
+        uint32_t mask, tmp;
+        msb = (uint8_t)RD(instruction, BITFIELD_MSB_INST);
+        lsb = (uint8_t)RD(instruction, BITFIELD_LSB_INST);
+        mask = (uint32_t)(-1) >> (31-(msb-lsb));
+        mask <<= lsb;
+        tmp = I->REGS[src1].v_i32[REGS_DATA] & mask;
+        I->REGS[dst].v_i32[REGS_DATA] = tmp >> lsb;
         break;
         }
 
-    // IIyyy-OPARDST_SRC1______________  OPLJ_SWAP   
+    // swap two registers (or stack)    swap r1 r2
+    // IIyyy-OPARDST_SRC1______________     OPLJ_SWAP   
     case OPLJ_SWAP:
-        reg = I->REGS[src1]; 
+        reg_src2K = I->REGS[src1]; 
         I->REGS[src1] = I->REGS[dst]; 
-        I->REGS[dst] = reg; break; 
+        I->REGS[dst] = reg_src2K; 
         break;
 
-    // IIyyy-OPARDST______________YYYYY  OPLJ_DELETE 
+    // remove several registers from the stack : delete 4
+    // IIyyy-OPARDST______________YYYYY     OPLJ_DELETE 
     case OPLJ_DELETE:
-        I->ctrl.SP -= k;
+        I->ctrl.SP -= K;
         break;
 
+    // jump to an address and optional save 2 registers : jump label R1
     // IIyyy-OPARSRC0SRC1SRC3######SRC2  OPLJ_JUMP   
     case OPLJ_JUMP    : 
-        I->ctrl.PC += k-1;   // JMP offset_K8, PUSH SRC1/SRC2/SRC3, PC was already post incremented
-        optional_push(I, dst); optional_push(I, src1); optional_push(I, src2); 
+        I->ctrl.PC += K-1;   // JMP offset_K8, PUSH SRC1/SRC2/SRC3, PC was already post incremented
+        optional_push(I, dst); optional_push(I, src1); 
         break;
 
-    // IIyyy-OPARSRC0SRC1SRC3######SRC2  OPLJ_BANZ                           
+    // decrement a register and branch is not null : banz label R1
+    // IIyyy-OPARSRC0SRC1SRC3######SRC2  OPLJ_BANZ         
+    // see ti.com/lit/ds/symlink/tms320c25.pdf
     case OPLJ_BANZ    : 
-        I->REGS[RD(instruction,OP_SRC0_INST)].v_i32[REGS_DATA] --; // decrement loop counter
-        if (I->REGS[src1].v_i32[REGS_DATA] != 0)             // see ti.com/lit/ds/symlink/tms320c25.pdf
-        {   I->ctrl.PC += k-1;
+        I->REGS[RD(instruction,OP_DST_INST)].v_i32[REGS_DATA] --;   // decrement loop counter
+        if (I->REGS[src1].v_i32[REGS_DATA] != 0)   
+        {   I->ctrl.PC += K-1;
         }
         break;
 
-    // IIyyy-OPARSRC0SRC1SRC3######SRC2  OPLJ_CALL
+    // call (return address push on the stack) and save registers:    call label R1
+    // IIyyy-OPARDST_SRC1__<--K12-0SRC2  OPLJ_CALL
     case OPLJ_CALL    : 
-        reg.v_i32[REGS_DATA] = (1+ I->ctrl.PC);
-        I->REGS[I->ctrl.SP] = reg;
+        reg_src2K.v_i32[REGS_DATA] = (1+ I->ctrl.PC);
+        I->REGS[I->ctrl.SP] = reg_src2K;
         I->ctrl.SP ++;                      // push return address
-        I->ctrl.PC += k-1;           // call
-        optional_push(I, dst);  optional_push(I, src1); optional_push(I, src2); optional_push(I, src3); 
+        I->ctrl.PC += K-1;           // call
+        optional_push(I, dst);  optional_push(I, src1);  
         break;
 
-    // IIyyy-OPARSRC0SRC1SRC3######SRC2  OPLJ_CALLSYS
+    // system call : callsys 63 r1 r2 r3 r4
+    // IIyyy-OPARDST_SRC1SRC3SRC4<-K6->  OPLJ_CALLSYS
     case OPLJ_CALLSYS : // CALLSYS  {K11} system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW, Pointers)  
         {   
         const p_stream_al_services *al_func;
+        uint8_t K_service = (uint8_t)RD(instruction, CALLSYS_K_INST); 
+        uint8_t src3 = (uint8_t)RD(instruction, OP_SRC3_INST); 
+        uint8_t src4 = (uint8_t)RD(instruction, OP_SRC4_INST); 
+
         al_func = &(I->S->al_services[0]);
-        (*al_func)(PACK_SERVICE(0,0,PLATFORM_CLEAR_BACKUP_MEM, k), 
+        (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV, PLATFORM_CLEAR_BACKUP_MEM, K_service), 
             (intPtr_t)(I->REGS[dst].v_i32[REGS_DATA]),  
             (intPtr_t)(I->REGS[src1].v_i32[REGS_DATA]),
-            (intPtr_t)(I->REGS[src2].v_i32[REGS_DATA]), 
-            I->REGS[src3].v_i32[REGS_DATA]);
+            (intPtr_t)(I->REGS[src3].v_i32[REGS_DATA]),
+            (intPtr_t)(I->REGS[src4].v_i32[REGS_DATA])
+            );
         }
         break;
 
-    case OPLJ_LABEL    : 
-        I->REGS[dst].v_i32[REGS_DATA] = RD(I->instruction, LABEL_INST); // read K14 
-        ST(I->REGS[dst].v_i32[REGS_TYPE], DTYPE_REGS1, DTYPE_INT32);    // uint32
+    // up to 5 register push on stack
+    // IIyyy-OPARDST_SRC1SRC3SRC4__SRC2  OPLJ_SAVE 
+    case OPLJ_SAVE   : 
+        {
+        src1= (uint8_t)RD(instruction, OP_DST_INST ); optional_push(I, src1);      
+        src1= (uint8_t)RD(instruction, OP_SRC1_INST); optional_push(I, src1);      
+        src1= (uint8_t)RD(instruction, OP_SRC2_INST); optional_push(I, src1);      
+        src1= (uint8_t)RD(instruction, OP_SRC3_INST); optional_push(I, src1);      
+        src1= (uint8_t)RD(instruction, OP_SRC4_INST); optional_push(I, src1);      
+        }
+        break;
+
+    // up to 5 pop from stack
+    // IIyyy-OPARDST_SRC1SRC3SRC4__SRC2  OPLJ_RESTORE
+    case OPLJ_RESTORE: 
+        if (RegNone != (src1 = (uint8_t)RD(instruction, OP_DST_INST ))) I->REGS[src1] = I->REGS[I->ctrl.SP++];     
+        if (RegNone != (src1 = (uint8_t)RD(instruction, OP_SRC1_INST))) I->REGS[src1] = I->REGS[I->ctrl.SP++];     
+        if (RegNone != (src1 = (uint8_t)RD(instruction, OP_SRC2_INST))) I->REGS[src1] = I->REGS[I->ctrl.SP++];     
+        if (RegNone != (src1 = (uint8_t)RD(instruction, OP_SRC3_INST))) I->REGS[src1] = I->REGS[I->ctrl.SP++];     
+        if (RegNone != (src1 = (uint8_t)RD(instruction, OP_SRC4_INST))) I->REGS[src1] = I->REGS[I->ctrl.SP++];  
         break;
 
     default:
-    case OPLJ_RETURN : break;
+    // return from subroutine 
+    // IIyyy-OPAR______________________  OPLJ_RETURN 
+    case OPLJ_RETURN : 
+        I->ctrl.PC = I->REGS[I->ctrl.SP++].v_i32[REGS_DATA];
+        break;
     }
 }
 
@@ -424,24 +620,23 @@ static void jmov_operation(arm_script_instance_t *I)
 static void test_arithmetic_operation(arm_script_instance_t *I)
 {
     regdata32_t dst, src1, src2;
-    uint8_t t = I->ctrl.test_flag; 
+    uint8_t t = (uint8_t)(I->ctrl.test_flag); 
     int32_t instruction = I->instruction;
-    int32_t opcode = RD(instruction, OP_INST);
-    int32_t opar = RD(instruction, OP_OPAR_INST);
+    int8_t opcode = (uint8_t)RD(instruction, OP_INST);
+    int8_t opar = (uint8_t)RD(instruction, OP_OPAR_INST);
 
     /* ONLY INTEGERS */
     {   uint8_t db1, db2, dbdst;
-        db1 = RD(instruction, OP_SRC1_INST);
-        db2 = RD(instruction, OP_SRC2_INST);
-        dbdst=RD(instruction, OP_DST_INST);
+        db1 = (uint8_t)RD(instruction, OP_SRC1_INST);
+        db2 = (uint8_t)RD(instruction, OP_SRC2_INST);
+        dbdst=(uint8_t)RD(instruction, OP_DST_INST);
         db2 = db2;
 
-        readreg(I, &src1, RD(instruction, OP_SRC1_INST), 0);
         readreg(I, &src2, RD(instruction, OP_SRC2_INST), 1);
+        readreg(I, &src1, RD(instruction, OP_SRC1_INST), 0);
         readreg(I, &dst,  RD(instruction, OP_DST_INST) , 0);
-
         int_arithmetic_operation(opcode, opar, &t, &(dst.i32), src1.i32, src2.i32);
-        writreg(I, RD(instruction, OP_DST_INST), dst);
+        writreg(I, RD(instruction, OP_DST_INST), dst, DTYPE_INT32);
     }
 
     I->ctrl.test_flag = t;
@@ -474,7 +669,7 @@ static void test_arithmetic_operation(arm_script_instance_t *I)
 void arm_stream_script_interpreter (arm_script_instance_t *I)
 {
     int32_t  cond, opcode, opar, count;
-    count = 1 << I->ctrl.cycle_downcounter;
+    count = I->ctrl.max_cycle;
 
     while (count-- > 0)
     {
@@ -507,7 +702,7 @@ void arm_stream_script_interpreter (arm_script_instance_t *I)
         if (opcode == OP_JMOV)
         {   jmov_operation(I);
         }
-        else
+        else        /* OP_LD  +  OP_TESTxxx */
         {   test_arithmetic_operation(I);
         }
     }

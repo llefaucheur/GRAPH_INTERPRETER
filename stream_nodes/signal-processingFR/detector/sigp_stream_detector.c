@@ -214,7 +214,7 @@ void sigp_stream_detector (int32_t command, stream_handle_t instance, stream_xdm
 
             //--------------------DEBUG---------------------
             //sprintf (dbg, "Z2%5d Z7%3d Z8%4d VAD%2d", (pinstance->z2)>>12, (pinstance->z7)>>12, (pinstance->z8)>>12, outBuf[0]);
-            //sigp_stream_services(PACK_SERVICE(RD(command,INST_CMD), STREAM_SERVICE_INTERNAL_DEBUG_TRACE), dbg, (uint8_t *)strlen(dbg), 0);  
+            //sigp_stream_services(PACK_SERVICE(RD(command,INST_CMD), NOTAG_SSRV, STREAM_SERVICE_INTERNAL_DEBUG_TRACE), dbg, (uint8_t *)strlen(dbg), 0);  
             // pinstance->traceID_tag
             //{   extern uint8_t itoab(char *s, int32_t n, int base);
             //    const char dbg0[] = "                     Z2 Z7 Z8 VAD";
@@ -223,7 +223,7 @@ void sigp_stream_detector (int32_t command, stream_handle_t instance, stream_xdm
             //    itoab(&(dbg[0]), (pinstance->z2)>>12, C_BASE10);
             //    itoab(&(dbg[6]), (pinstance->z7)>>12, C_BASE10);
             //    itoab(&(dbg[12]), (pinstance->z8)>>12, C_BASE10);
-            //    pinstance->services(PACK_SERVICE(0, STREAM_SERVICE_INTERNAL_DEBUG_TRACE, STREAM_SERVICE_INTERNAL), dbg, 0, 0, cl);
+            //    pinstance->services(PACK_SERVICE(0, NOTAG_SSRV, STREAM_SERVICE_INTERNAL_DEBUG_TRACE, STREAM_SERVICE_INTERNAL), dbg, 0, 0, cl);
             //}
             break;
         }

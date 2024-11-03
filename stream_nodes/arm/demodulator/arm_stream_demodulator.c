@@ -77,7 +77,7 @@
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void arm_stream_demodulator (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void arm_stream_demodulator (uint32_t command, void *instance, void *data, uint32_t *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 

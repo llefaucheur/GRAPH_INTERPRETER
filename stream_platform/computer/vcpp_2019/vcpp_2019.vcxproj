@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -74,12 +74,14 @@
     <ClCompile Include="..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_init_q15.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\stream_nodes\arm\filter\arm_stream_filter.h" />
     <ClInclude Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator.h" />
     <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_stream_script.h" />
     <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_stream_script_instructions.h" />
     <ClInclude Include="..\..\..\stream_nodes\stream_common_const.h" />
     <ClInclude Include="..\..\..\stream_nodes\stream_common_types.h" />
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
+    <ClInclude Include="..\..\..\stream_src\stream_extern.h" />
     <ClInclude Include="..\..\..\stream_src\stream_types.h" />
   </ItemGroup>
   <ItemGroup>
@@ -154,7 +156,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
@@ -182,7 +184,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>

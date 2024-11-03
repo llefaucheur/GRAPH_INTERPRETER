@@ -131,113 +131,113 @@ Raw data types
 
 | NAME           |  CODE | UNIT        | COMMENT                                                    |
 | -- | -- | ---- | ------------- |
-| ANA_ANY           |  0 |           | any                                                    |
-| ANA_METER         |  1 |  m        | meter                                                  |
-| ANA_KGRAM         |  2 |  kg       | kilogram                                               |
-| ANA_GRAM          |  3 |  g        | gram                                                   |
-| ANA_SECOND        |  4 |  s        | second                                                 |
-| ANA_AMPERE        |  5 |  A        | ampere                                                 |
-| ANA_KELVIB        |  6 |  K        | kelvin                                                 |
-| ANA_CANDELA       |  7 |  cd       | candela                                                |
-| ANA_MOLE          |  8 |  mol      | mole                                                   |
-| ANA_HERTZ         |  9 |  Hz       | hertz                                                  |
-| ANA_RADIAN        | 10 |  rad      | radian                                                 |
-| ANA_STERADIAN     | 11 |  sr       | steradian                                              |
-| ANA_NEWTON        | 12 |  N        | newton                                                 |
-| ANA_PASCAL        | 13 |  Pa       | pascal                                                 |
-| ANA_JOULE         | 14 |  J        | joule                                                  |
-| ANA_WATT          | 15 |  W        | watt                                                   |
-| ANA_COULOMB       | 16 |  C        | coulomb                                                |
-| ANA_VOLT          | 17 |  V        | volt                                                   |
-| ANA_FARAD         | 18 |  F        | farad                                                  |
-| ANA_OHM           | 19 |  Ohm      | ohm                                                    |
-| ANA_SIEMENS       | 20 |  S        | siemens                                                |
-| ANA_WEBER         | 21 |  Wb       | weber                                                  |
-| ANA_TESLA         | 22 |  T        | tesla                                                  |
-| ANA_HENRY         | 23 |  H        | henry                                                  |
-| ANA_CELSIUSDEG    | 24 |  Cel      | degrees Celsius                                        |
-| ANA_LUMEN         | 25 |  lm       | lumen                                                  |
-| ANA_LUX           | 26 |  lx       | lux                                                    |
-| ANA_BQ            | 27 |  Bq       | becquerel                                              |
-| ANA_GRAY          | 28 |  Gy       | gray                                                   |
-| ANA_SIVERT        | 29 |  Sv       | sievert                                                |
-| ANA_KATAL         | 30 |  kat      | katal                                                  |
+| _ANY           |  0 |           | any                                                    |
+| _METER         |  1 |  m        | meter                                                  |
+| _KGRAM         |  2 |  kg       | kilogram                                               |
+| _GRAM          |  3 |  g        | gram                                                   |
+| _SECOND        |  4 |  s        | second                                                 |
+| _AMPERE        |  5 |  A        | ampere                                                 |
+| _KELVIB        |  6 |  K        | kelvin                                                 |
+| _CANDELA       |  7 |  cd       | candela                                                |
+| _MOLE          |  8 |  mol      | mole                                                   |
+| _HERTZ         |  9 |  Hz       | hertz                                                  |
+| _RADIAN        | 10 |  rad      | radian                                                 |
+| _STERADIAN     | 11 |  sr       | steradian                                              |
+| _NEWTON        | 12 |  N        | newton                                                 |
+| _PASCAL        | 13 |  Pa       | pascal                                                 |
+| _JOULE         | 14 |  J        | joule                                                  |
+| _WATT          | 15 |  W        | watt                                                   |
+| _COULOMB       | 16 |  C        | coulomb                                                |
+| _VOLT          | 17 |  V        | volt                                                   |
+| _FARAD         | 18 |  F        | farad                                                  |
+| _OHM           | 19 |  Ohm      | ohm                                                    |
+| _SIEMENS       | 20 |  S        | siemens                                                |
+| _WEBER         | 21 |  Wb       | weber                                                  |
+| _TESLA         | 22 |  T        | tesla                                                  |
+| _HENRY         | 23 |  H        | henry                                                  |
+| _CELSIUSDEG    | 24 |  Cel      | degrees Celsius                                        |
+| _LUMEN         | 25 |  lm       | lumen                                                  |
+| _LUX           | 26 |  lx       | lux                                                    |
+| _BQ            | 27 |  Bq       | becquerel                                              |
+| _GRAY          | 28 |  Gy       | gray                                                   |
+| _SIVERT        | 29 |  Sv       | sievert                                                |
+| _KATAL         | 30 |  kat      | katal                                                  |
 |    | 31 |  m2       | square meter (area)                                    |
-| ANA_CUBICMETER    | 32 |  m3       | cubic meter (volume)                                   |
-| ANA_LITER         | 33 |  l        | liter (volume)                                         |
-| ANA_M_PER_S       | 34 |  m/s      | meter per second (velocity)                            |
-| ANA_M_PER_S2      | 35 |  m/s2     | meter per square second (acceleration)                 |
-| ANA_M3_PER_S      | 36 |  m3/s     | cubic meter per second (flow rate)                     |
-| ANA_L_PER_S       | 37 |  l/s      | liter per second (flow rate)                           |
-| ANA_W_PER_M2      | 38 |  W/m2     | watt per square meter (irradiance)                     |
-| ANA_CD_PER_M2     | 39 |  cd/m2    | candela per square meter (luminance)                   |
-| ANA_BIT           | 40 |  bit      | bit (information content)                              |
-| ANA_BIT_PER_S     | 41 |  bit/s    | bit per second (data rate)                             |
-| ANA_LATITUDE      | 42 |  lat      | degrees latitude[1]                                    |
-| ANA_LONGITUDE     | 43 |  lon      | degrees longitude[1]                                   |
-| ANA_PH            | 44 |  pH       | pH value (acidity; logarithmic quantity)               |
-| ANA_DB            | 45 |  dB       | decibel (logarithmic quantity)                         |
-| ANA_DBW           | 46 |  dBW      | decibel relative to 1 W (power level)                  |
-| ANA_BSPL          | 47 |  Bspl     | bel (sound pressure level; log quantity)               |
-| ANA_COUNT         | 48 |  count    | 1 (counter value)                                      |
-| ANA_PER           | 49 |  /        | 1 (ratio e.g., value of a switch; )                 |
-| ANA_PERCENT       | 50 |  %        | 1 (ratio e.g., value of a switch; )                |
-| ANA_PERCENTRH     | 51 |  %RH      | Percentage (Relative Humidity)                         |
-| ANA_PERCENTEL     | 52 |  %EL      | Percentage (remaining battery energy level)            |
-| ANA_ENERGYLEVEL   | 53 |  EL       | seconds (remaining battery energy level)               |
-| ANA_1_PER_S       | 54 |  1/s      | 1 per second (event rate)                              |
-| ANA_1_PER_MIN     | 55 |  1/min    | 1 per minute (event rate, "rpm")                      |
-| ANA_BEAT_PER_MIN  | 56 |  beat/min | 1 per minute (heart rate in beats per minute)          |
-| ANA_BEATS         | 57 |  beats    | 1 (Cumulative number of heart beats)                  |
-| ANA_SIEMPERMETER  | 58 |  S/m      | Siemens per meter (conductivity)                       |
-| ANA_BYTE          | 59 |  B        | Byte (information content)                             |
-| ANA_VOLTAMPERE    | 60 |  VA       | volt-ampere (Apparent Power)                           |
-| ANA_VOLTAMPERESEC | 61 |  VAs      | volt-ampere second (Apparent Energy)                   |
-| ANA_VAREACTIVE    | 62 |  var      | volt-ampere reactive (Reactive Power)                  |
-| ANA_VAREACTIVESEC | 63 |  vars     | volt-ampere-reactive second (Reactive Energy)          |
-| ANA_JOULE_PER_M   | 64 |  J/m      | joule per meter (Energy per distance)                  |
-| ANA_KG_PER_M3     | 65 |  kg/m3    | kg/m3 (mass density, mass concentration)               |
-| ANA_DEGREE        | 66 |  deg      | degree (angle)                                        |
-| ANA_NTU           | 67 |  NTU      | Nephelometric Turbidity Unit                           |
+| _CUBICMETER    | 32 |  m3       | cubic meter (volume)                                   |
+| _LITER         | 33 |  l        | liter (volume)                                         |
+| _M_PER_S       | 34 |  m/s      | meter per second (velocity)                            |
+| _M_PER_S2      | 35 |  m/s2     | meter per square second (acceleration)                 |
+| _M3_PER_S      | 36 |  m3/s     | cubic meter per second (flow rate)                     |
+| _L_PER_S       | 37 |  l/s      | liter per second (flow rate)                           |
+| _W_PER_M2      | 38 |  W/m2     | watt per square meter (irradiance)                     |
+| _CD_PER_M2     | 39 |  cd/m2    | candela per square meter (luminance)                   |
+| _BIT           | 40 |  bit      | bit (information content)                              |
+| _BIT_PER_S     | 41 |  bit/s    | bit per second (data rate)                             |
+| _LATITUDE      | 42 |  lat      | degrees latitude[1]                                    |
+| _LONGITUDE     | 43 |  lon      | degrees longitude[1]                                   |
+| _PH            | 44 |  pH       | pH value (acidity; logarithmic quantity)               |
+| _DB            | 45 |  dB       | decibel (logarithmic quantity)                         |
+| _DBW           | 46 |  dBW      | decibel relative to 1 W (power level)                  |
+| _BSPL          | 47 |  Bspl     | bel (sound pressure level; log quantity)               |
+| _COUNT         | 48 |  count    | 1 (counter value)                                      |
+| _PER           | 49 |  /        | 1 (ratio e.g., value of a switch; )                 |
+| _PERCENT       | 50 |  %        | 1 (ratio e.g., value of a switch; )                |
+| _PERCENTRH     | 51 |  %RH      | Percentage (Relative Humidity)                         |
+| _PERCENTEL     | 52 |  %EL      | Percentage (remaining battery energy level)            |
+| _ENERGYLEVEL   | 53 |  EL       | seconds (remaining battery energy level)               |
+| _1_PER_S       | 54 |  1/s      | 1 per second (event rate)                              |
+| _1_PER_MIN     | 55 |  1/min    | 1 per minute (event rate, "rpm")                      |
+| _BEAT_PER_MIN  | 56 |  beat/min | 1 per minute (heart rate in beats per minute)          |
+| _BEATS         | 57 |  beats    | 1 (Cumulative number of heart beats)                  |
+| _SIEMPERMETER  | 58 |  S/m      | Siemens per meter (conductivity)                       |
+| _BYTE          | 59 |  B        | Byte (information content)                             |
+| _VOLTAMPERE    | 60 |  VA       | volt-ampere (Apparent Power)                           |
+| _VOLTAMPERESEC | 61 |  VAs      | volt-ampere second (Apparent Energy)                   |
+| _VAREACTIVE    | 62 |  var      | volt-ampere reactive (Reactive Power)                  |
+| _VAREACTIVESEC | 63 |  vars     | volt-ampere-reactive second (Reactive Energy)          |
+| _JOULE_PER_M   | 64 |  J/m      | joule per meter (Energy per distance)                  |
+| _KG_PER_M3     | 65 |  kg/m3    | kg/m3 (mass density, mass concentration)               |
+| _DEGREE        | 66 |  deg      | degree (angle)                                        |
+| _NTU           | 67 |  NTU      | Nephelometric Turbidity Unit                           |
 |  ----- rfc8798 ----- | |  Secondary Unit   (SenML Unit) |   Scale and Offset  |
-| ANA_MS           | 68 |s     millisecond                    | scale = 1/1000    1ms = 1s x [1/1000]        |
-| ANA_MIN          | 69 |s     minute                         | scale = 60                                   |
-| ANA_H            | 70 |s     hour                           | scale = 3600                                 |
-| ANA_MHZ          | 71 |Hz    megahertz                      | scale = 1000000                              |
-| ANA_KW           | 72 |W     kilowatt                       | scale = 1000                                 |
-| ANA_KVA          | 73 |VA    kilovolt-ampere                | scale = 1000                                 |
-| ANA_KVAR         | 74 |var   kilovar                        | scale = 1000                                 |
-| ANA_AH           | 75 |C     ampere-hour                    | scale = 3600                                 |
-| ANA_WH           | 76 |J     watt-hour                      | scale = 3600                                 |
-| ANA_KWH          | 77 |J     kilowatt-hour                  | scale = 3600000                              |
-| ANA_VARH         | 78 |vars  var-hour                       | scale = 3600                                 |
-| ANA_KVARH        | 79 |vars  kilovar-hour                   | scale = 3600000                              |
-| ANA_KVAH         | 80 |VAs   kilovolt-ampere-hour           | scale = 3600000                              |
-| ANA_WH_PER_KM    | 81 |J/m   watt-hour per kilometer        | scale = 3.6                                  |
-| ANA_KIB          | 82 |B     kibibyte                       | scale = 1024                                 |
-| ANA_GB           | 83 |B     gigabyte                       | scale = 1e9                                  |
-| ANA_MBIT_PER_S   | 84 |bit/s megabit per second             | scale = 1000000                              |
-| ANA_B_PER_S      | 85 |bit/s byteper second                 | scale = 8                                    |
-| ANA_MB_PER_S     | 86 |bit/s megabyte per second            | scale = 8000000                              |
-| ANA_MV           | 87 |V     millivolt                      | scale = 1/1000                               |
-| ANA_MA           | 88 |A     milliampere                    | scale = 1/1000                                      |
-| ANA_DBM          | 89 |dBW   decibel rel. to 1 milliwatt    | scale = 1       Offset = -30   0 dBm = -30 dBW              |
-| ANA_UG_PER_M3    | 90 |kg/m3 microgram per cubic meter      | scale = 1e-9                                    |
-| ANA_MM_PER_H     | 91 |m/s   millimeter per hour            | scale = 1/3600000                               |
-| ANA_M_PER_H      | 92 |m/s   meterper hour                  | scale = 1/3600                                  |
-| ANA_PPM          | 93 |/     partsper million               | scale = 1e-6                                    |
-| ANA_PER_100      | 94 |/     percent                        | scale = 1/100                                   |
-| ANA_PER_1000     | 95 |/     permille                       | scale = 1/1000                                  |
-| ANA_HPA          | 96 |Pa    hectopascal                    | scale = 100                                     |
-| ANA_MM           | 97 |m     millimeter                     | scale = 1/1000                                  |
-| ANA_CM           | 98 |m     centimeter                     | scale = 1/100                                   |
-| ANA_KM           | 99 |m     kilometer                      | scale = 1000                                    |
-| ANA_KM_PER_H     |100 |m/s   kilometer per hour             | scale = 1/3.6                                   |
-| ANA_GRAVITY      |101 |m/s2  earth gravity                  | scale = 9.81         1g = m/s2 x 9.81           |
-| ANA_DPS          |102 |1/s   degrees per second             | scale = 360        1dps = 1/s x 1/360           |
-| ANA_GAUSS        |103 |Tesla Gauss                          | scale = 10-4         1G = Tesla x 1/10000       |
-| ANA_VRMS         |104 |Volt  Volt rms                       | scale = 0.707     1Vrms = 1Volt (peak) x 0.707  |
-| ANA_MVPGAUSS     |105 |millivolt Hall effect, mV/Gauss      | scale = 1    1mV/Gauss                     |
+| _MS           | 68 |s     millisecond                    | scale = 1/1000    1ms = 1s x [1/1000]        |
+| _MIN          | 69 |s     minute                         | scale = 60                                   |
+| _H            | 70 |s     hour                           | scale = 3600                                 |
+| _MHZ          | 71 |Hz    megahertz                      | scale = 1000000                              |
+| _KW           | 72 |W     kilowatt                       | scale = 1000                                 |
+| _KVA          | 73 |VA    kilovolt-ampere                | scale = 1000                                 |
+| _KVAR         | 74 |var   kilovar                        | scale = 1000                                 |
+| _AH           | 75 |C     ampere-hour                    | scale = 3600                                 |
+| _WH           | 76 |J     watt-hour                      | scale = 3600                                 |
+| _KWH          | 77 |J     kilowatt-hour                  | scale = 3600000                              |
+| _VARH         | 78 |vars  var-hour                       | scale = 3600                                 |
+| _KVARH        | 79 |vars  kilovar-hour                   | scale = 3600000                              |
+| _KVAH         | 80 |VAs   kilovolt-ampere-hour           | scale = 3600000                              |
+| _WH_PER_KM    | 81 |J/m   watt-hour per kilometer        | scale = 3.6                                  |
+| _KIB          | 82 |B     kibibyte                       | scale = 1024                                 |
+| _GB           | 83 |B     gigabyte                       | scale = 1e9                                  |
+| _MBIT_PER_S   | 84 |bit/s megabit per second             | scale = 1000000                              |
+| _B_PER_S      | 85 |bit/s byteper second                 | scale = 8                                    |
+| _MB_PER_S     | 86 |bit/s megabyte per second            | scale = 8000000                              |
+| _MV           | 87 |V     millivolt                      | scale = 1/1000                               |
+| _MA           | 88 |A     milliampere                    | scale = 1/1000                                      |
+| _DBM          | 89 |dBW   decibel rel. to 1 milliwatt    | scale = 1       Offset = -30   0 dBm = -30 dBW              |
+| _UG_PER_M3    | 90 |kg/m3 microgram per cubic meter      | scale = 1e-9                                    |
+| _MM_PER_H     | 91 |m/s   millimeter per hour            | scale = 1/3600000                               |
+| _M_PER_H      | 92 |m/s   meterper hour                  | scale = 1/3600                                  |
+| _PPM          | 93 |/     partsper million               | scale = 1e-6                                    |
+| _PER_100      | 94 |/     percent                        | scale = 1/100                                   |
+| _PER_1000     | 95 |/     permille                       | scale = 1/1000                                  |
+| _HPA          | 96 |Pa    hectopascal                    | scale = 100                                     |
+| _MM           | 97 |m     millimeter                     | scale = 1/1000                                  |
+| _CM           | 98 |m     centimeter                     | scale = 1/100                                   |
+| _KM           | 99 |m     kilometer                      | scale = 1000                                    |
+| _KM_PER_H     |100 |m/s   kilometer per hour             | scale = 1/3.6                                   |
+| _GRAVITY      |101 |m/s2  earth gravity                  | scale = 9.81         1g = m/s2 x 9.81           |
+| _DPS          |102 |1/s   degrees per second             | scale = 360        1dps = 1/s x 1/360           |
+| _GAUSS        |103 |Tesla Gauss                          | scale = 10-4         1G = Tesla x 1/10000       |
+| _VRMS         |104 |Volt  Volt rms                       | scale = 0.707     1Vrms = 1Volt (peak) x 0.707  |
+| _MVPGAUSS     |105 |millivolt Hall effect, mV/Gauss      | scale = 1    1mV/Gauss                     |
 
 ## Stream format "domains"
   | Domain name        | Code | Comments | 
@@ -283,7 +283,7 @@ io_analog_scale 0.55           ; 0.55V is corresponding to full-scale (0x7FFF or
 domain is using subtype_units "stream_unit_physical"
 
 ```
-io_subtype_units    DBSPL       ; STREAM_SUBT_ANA_DBSPL of the domain
+io_subtype_units    DBSPL       ; STREAM_SUBT__DBSPL of the domain
 io_analog_scale     90.1        ; 90.1 dBSPL is corresponding to full-scale with the default setting
 ```
 

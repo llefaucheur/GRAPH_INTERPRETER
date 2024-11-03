@@ -170,13 +170,13 @@ void compute_memreq(struct node_memory_bank *m, struct formatStruct *all_format)
     size = m->size0;                    // A
     
     nchan = all_format[m->iarcChannelI].nchan;          // nchan-1 only when building thr binary graph 
-    size += (uint32_t) (0.5 + (m->sizeNchan * nchan));  // + B x nb_channels_arc(i)
+    size += (uint32_t) ( 0.5f + (float)(m->sizeNchan) * (float)nchan);                          // + B x nb_channels_arc(i)
     
     FS = all_format[m->iarcSamplingJ].samplingRate;
-    size += (uint32_t) (0.5 + (m->sizeFS * FS));        // + C x samplingHz_arc(j)
+    size += (uint32_t) (0.5f + (float)(m->sizeFS * FS));        // + C x samplingHz_arc(j)
     
     frame_length = all_format[m->iarcFrameK].frame_length;
-    size += (uint32_t) (0.5 + (m->sizeFrame * frame_length));  // + D x frame_size_arc(k)
+    size += (uint32_t) (0.5f + (float)(m->sizeFrame * frame_length));  // + D x frame_size_arc(k)
     
     size = ((size+3)>>2)<<2;
     m->graph_memreq_size = size;
@@ -190,6 +190,7 @@ void stream_tool_read_subgraph (char **pt_line, struct stream_platform_manifest*
 {   
     char *new_ggraph, file_name[NBCHAR_NAME], file_name2[NBCHAR_NAME], *subName, paths[MAX_NB_PATH][NBCHAR_LINE], dbg;
     uint32_t ipath, i;
+    char *dbgchar;
     extern void arm_stream_read_graph (struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph, char *ggraph_txt);
     
     strcpy(file_name, ""); strcpy(file_name2, "");
@@ -211,21 +212,26 @@ void stream_tool_read_subgraph (char **pt_line, struct stream_platform_manifest*
     /* read subgraph as a recursion */ 
     dbg = sscanf (*pt_line, "%d %s", &ipath, file_name2); jump2next_valid_line(pt_line);
     strncpy(file_name, paths[ipath], NBCHAR_NAME); 
-    strcat(file_name, file_name2);
+    file_name[NBCHAR_NAME-1] = '\0';
+    file_name2[NBCHAR_NAME-1] = '\0';
+    dbgchar = strcat(file_name, file_name2);
     read_input_file (file_name, new_ggraph);
 
     /* recursion starts here */
-    arm_stream_read_graph (platform, graph, new_ggraph);
-    
-    /* restore the situation : go on step above in the recursion */
-    strcpy(&(graph->mangling[graph->subg_depth - 1][0]), "");
-    
-    strcpy(graph->toConcatenate, "");
-    for (i = 0; i < graph->subg_depth; i++)
-    {   strcat (graph->toConcatenate, graph->mangling[i]);
-    }
-    
-    graph->subg_depth--;
+    //
+    // TODO
+    // 
+    //arm_stream_read_graph (platform, graph, new_ggraph);
+    //
+    ///* restore the situation : go on step above in the recursion */
+    //strcpy(&(graph->mangling[graph->subg_depth - 1][0]), "");
+    //
+    //strcpy(graph->toConcatenate, "");
+    //for (i = 0; i < graph->subg_depth; i++)
+    //{   strcat (graph->toConcatenate, graph->mangling[i]);
+    //}
+    //
+    //graph->subg_depth--;
     
     free(new_ggraph);
 }

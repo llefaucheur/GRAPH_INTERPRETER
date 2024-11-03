@@ -74,7 +74,7 @@ int vid_malloc (uint32_t VID, intPtr_t size, uint32_t alignment,
                 struct stream_graph_linkedlist *graph) 
 { 
     uint32_t found, ibank, offset, offsetID;
-    uint64_t alignmask;
+    uint32_t alignmask;
     char tmpstring[NBCHAR_LINE];
 
     /*  platform->membank[ibank].base32;    
@@ -105,8 +105,8 @@ int vid_malloc (uint32_t VID, intPtr_t size, uint32_t alignment,
     {   alignment = MEM_REQ_4BYTES_ALIGNMENT;
     }
 
-    alignmask =  ~((1 << (7&alignment)) -1);
-    size = (size + 3) & alignmask;
+    alignmask =  ~((1u << (7&alignment)) -1u);
+    size = (intPtr_t)((uint32_t)(size + 3u) & alignmask);
      
     *pack27b = 0;
     ST(*pack27b, DATAOFF_ARCW0, offsetID);
@@ -259,6 +259,7 @@ void read_binary_param(char **pt_line, void *X, uint8_t *raw_type, uint32_t *nbf
         {   if (0 == strcmp(stype, "h32")) c = sscanf(ptstart, "%llx", &i);
             else                           c = sscanf(ptstart, "%lld", &i);
             *ptu32++ = (uint32_t)i;  
+            ptstart = strchr(ptstart, ' '); while (*ptstart == ' ') ptstart++;
         }
     }
 
@@ -494,6 +495,7 @@ int fields_extract(char **pt_line, char *types,  ...)
     ptstart = *pt_line;
     nfields = (int)strlen(types);
     ptstart0 = ptstart;
+    strcpy(S, "");
 
     for (ifield = 0; ifield < nfields; ifield++)
     {

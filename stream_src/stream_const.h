@@ -35,13 +35,13 @@
 #ifndef cSTREAM_CONST_H
 #define cSTREAM_CONST_H
 
-#include "../stream_nodes/stream_common_const.h"
+#include "stream_common_const.h" 
 
 #define U(x) ((uint32_t)(x)) /* for MISRA-2012 compliance to Rule 10.4 */
 
 
 /*------ Major-Minor version numbers ------*/
-#define GRAPH_INTERPRETER_VERSION 0x0100
+#define GRAPH_INTERPRETER_VERSION 0x0100u
 
 /* 
   *- Graph data format :
@@ -113,11 +113,11 @@
 /* max number of instances simultaneously reading the graph
    used to synchronize the RESET sequence in platform_al() 
    smaller than 1<< NBINSTAN_SCTRL */
-#define MAX_NB_STREAM_INSTANCES 4 
+#define MAX_NB_STREAM_INSTANCES 4u 
 
 
 /* the first word of the graph holds the number of words32 */
-#define GRAPH_SIZE_SKIP_WORD0 1
+#define GRAPH_SIZE_SKIP_WORD0 1u
 
 /* -------- GRAPH[0] 28b RAM address, HW-shared MEM & RAM copy config---- 
                                    2 options :
@@ -130,30 +130,30 @@
         Debug registers, Buffers   RAM  RAM
 */
 
-#define VID0    0
-#define GRAPH_START_VID0 0
+#define VID0    0u
+#define GRAPH_START_VID0 0u
 
 /* for pack2linaddr_ptr () */
-//#define LINADDR_UNIT_BYTE   1
-#define LOG2ADDR_UNIT_W32   2
-#define LINADDR_UNIT_W32    4
-#define LINADDR_UNIT_EXTD  64
+//#define LINADDR_UNIT_BYTE   1u
+#define LOG2ADDR_UNIT_W32   2u
+#define LINADDR_UNIT_W32    4u
+#define LINADDR_UNIT_EXTD  64u
 
-#define COPY_CONF_GR0_COPY_ALL_IN_RAM   0
-#define COPY_CONF_GR0_FROM_PIO          1
-#define COPY_CONF_GR0_ALREADY_IN_RAM    2
+#define COPY_CONF_GR0_COPY_ALL_IN_RAM   0u
+#define COPY_CONF_GR0_FROM_PIO          1u
+#define COPY_CONF_GR0_ALREADY_IN_RAM    2u
 
-#define PACKSHARERAMSPLIT(share,RAMsplit) ((share<<3) + RAMsplit)
-#define GR0_INDEX   1                // graph size + GR(X)
-#define   _____________GR0_MSB U(31) 
-#define   _____________GR0_LSB U(30) // 2
+#define PACKSHARERAMSPLIT(share,RAMsplit) (((share)<<3u) + (RAMsplit))
+#define GR0_INDEX   1u                // graph size + GR(X)
+#define   unused_______GR0_MSB U(31) 
+#define   unused_______GR0_LSB U(30) // 2
 #define       RAMSPLIT_GR0_MSB U(29) //   
 #define       RAMSPLIT_GR0_LSB U(28) // 2 COPY_CONF_GR0_COPY_ALL_IN_RAM / _FROM_PIO / _ALREADY_IN_RAM
-#define    GRAPH_RAM_OFFSET(L,G)     pack2linaddr_int(L,G[0], LINADDR_UNIT_W32)
-#define    GRAPH_RAM_OFFSET_PTR(L,G) pack2linaddr_ptr(L,G[0], LINADDR_UNIT_W32)
+#define    GRAPH_RAM_OFFSET(L,G)     pack2linaddr_int((L),(G)[0], LINADDR_UNIT_W32)
+#define    GRAPH_RAM_OFFSET_PTR(L,G) pack2linaddr_ptr((L),(G)[0], LINADDR_UNIT_W32)
 
 /* -------- GRAPH[1] number of FORMAT, IOs, size of SCRIPTS ---- */
-#define GR1_INDEX   2
+#define GR1_INDEX   2u
 #define   SCRIPTSSZW32_GR1_MSB U(31) 
 #define   SCRIPTSSZW32_GR1_LSB U(12) /* 20 scripts size */
 #define         NB_IOS_GR1_MSB U(11) 
@@ -164,19 +164,19 @@
  * Maximum number of IOs used by the graph 
  * This number is lower or equal to the maximum of possible IO connexions of the platform (max {FWIOIDX_IOFMT0})
  */
-#define MAX_GRAPH_NB_IO_STREAM  (1 << (NB_IOS_GR1_MSB - NB_IOS_GR1_LSB + 1))
+#define MAX_GRAPH_NB_IO_STREAM  (1u << (NB_IOS_GR1_MSB - NB_IOS_GR1_LSB + 1u))
 
 /* -------- GRAPH[2] size of LINKEDLIST  ---- */
-#define GR2_INDEX   3
+#define GR2_INDEX   3u
 #define   ARC_DEBUG_IDX_GR2_MSB U(31) 
 #define   ARC_DEBUG_IDX_GR2_LSB U(22) /* 10 index of PIO to address the arc debug data */
 #define LINKEDLISTSZW32_GR2_MSB U(21) 
 #define LINKEDLISTSZW32_GR2_LSB U( 0) /* 22 size of the linkedList with the parameters */
 
 /* -------- GRAPH[3] number of ARCS, scheduler control ----*/
-#define GR3_INDEX   4
-#define   ______________GR3_MSB U(31) 
-#define   ______________GR3_LSB U(20) /* 12  */
+#define GR3_INDEX   4u
+#define   unused________GR3_MSB U(31) 
+#define   unused________GR3_LSB U(20) /* 12  */
 #define    SCRIPT_SCTRL_GR3_MSB U(19) /*    SCRIPT_SCTRL_GR3_LSB+SCRIPT_SCTRL_MSB-SCRIPT_SCTRL_LSB+1) */
 #define    SCRIPT_SCTRL_GR3_LSB U(14) /* 6  debug script options  */
 #define    RETURN_SCTRL_GR3_MSB U(13)
@@ -185,44 +185,44 @@
 #define         NB_ARCS_GR3_LSB U( 0) /* 11 up to 2K ARCs, see ARC0_LW1 */
 
 /* -------- GRAPH[4] bit-field of the processors activated to process this graph ----*/
-#define GR4_INDEX   5
-#define   ______________GR4_MSB U(31) 
-#define   ______________GR4_LSB U( 8) /* 24  */
+#define GR4_INDEX   5u
+#define             un__GR4_MSB U(31) 
+#define             un__GR4_LSB U( 8) /* 24  */
 #define    PROC_ALLOWED_GR4_MSB U( 7) 
 #define    PROC_ALLOWED_GR4_LSB U( 0) /* 8  up to eight processors selection  (PROCID_PARCH) */
-#define PROCID_ALLOWED(proc_id) ((1<<(proc_id)) & RD(S->graph[4]))
+#define PROCID_ALLOWED(proc_id) ((1u<<(proc_id)) & RD(S->graph[4u]))
 
 
 /* -------- GRAPH[5,6] UQ8(-1) (0xFF = 100%, 0x3F = 25%) portion of memory consumed on each 
     long_offset[MAX_NB_MEMORY_OFFSET] to let the application taking 
     a piece of the preallocated RAM area 
 */
-#define BYTE_3_MSB 31
-#define BYTE_3_LSB 24
-#define BYTE_2_MSB 23
-#define BYTE_2_LSB 16
-#define BYTE_1_MSB 15
-#define BYTE_1_LSB  8
-#define BYTE_0_MSB  7
-#define BYTE_0_LSB  0
+#define BYTE_3_MSB 31u
+#define BYTE_3_LSB 24u
+#define BYTE_2_MSB 23u
+#define BYTE_2_LSB 16u
+#define BYTE_1_MSB 15u
+#define BYTE_1_LSB  8u
+#define BYTE_0_MSB  7u
+#define BYTE_0_LSB  0u
 
 #define GRAPH_HEADER_NBWORDS 7    /* GRAPH[0 .. 6] */
 
  
 //enum stream_scheduling_options
 //{
-#define STREAM_SCHD_RET_NO_ACTION           0    /* the decision is made by the graph */
-#define STREAM_SCHD_RET_END_EACH_NODE        1    /* return to caller after each NODE calls */
-#define STREAM_SCHD_RET_END_ALL_PARSED      2    /* return to caller once all NODE are parsed */
-#define STREAM_SCHD_RET_END_NODE_NODATA      3    /* return to caller when all NODE are starving */
-                                              
-#define STREAM_SCHD_NO_SCRIPT               0 
-#define STREAM_SCHD_SCRIPT_BEFORE_EACH_NODE  1    /* script is called before each NODE called */
-#define STREAM_SCHD_SCRIPT_AFTER_EACH_NODE   2    /* script is called after each NODE called */
-#define STREAM_SCHD_SCRIPT_END_PARSING      4    /* script is called at the end of the loop */
-#define STREAM_SCHD_SCRIPT_START            8    /* script is called when starting */
-#define STREAM_SCHD_SCRIPT_END              16   /* script is called before return */
-#define STREAM_SCHD_SCRIPT_UNUSED           32   /* 6bits are reserved in SCRIPT_SCTRL */
+#define STREAM_SCHD_RET_NO_ACTION            0u  /* the decision is made by the graph */
+#define STREAM_SCHD_RET_END_EACH_NODE        1u  /* return to caller after each NODE calls */
+#define STREAM_SCHD_RET_END_ALL_PARSED       2u  /* return to caller once all NODE are parsed */
+#define STREAM_SCHD_RET_END_NODE_NODATA      3u  /* return to caller when all NODE are starving */
+                                            
+#define STREAM_SCHD_NO_SCRIPT                0u
+#define STREAM_SCHD_SCRIPT_BEFORE_EACH_NODE  1u  /* script is called before each NODE called */
+#define STREAM_SCHD_SCRIPT_AFTER_EACH_NODE   2u  /* script is called after each NODE called */
+#define STREAM_SCHD_SCRIPT_END_PARSING       4u  /* script is called at the end of the loop */
+#define STREAM_SCHD_SCRIPT_START             8u  /* script is called when starting */
+#define STREAM_SCHD_SCRIPT_END              16u /* script is called before return */
+#define STREAM_SCHD_SCRIPT_UNUSED           32u /* 6bits are reserved in SCRIPT_SCTRL */
 //};
 #define STREAM_COLD_BOOT 0u
 #define STREAM_WARM_BOOT 1u         /* Reset + restore memory banks from retention */
@@ -231,7 +231,7 @@
 #define MAX_NODE_REPEAT 4u
 
 
-#define STREAM_MAIN_INSTANCE 1
+#define STREAM_MAIN_INSTANCE 1u
 
 /* ----------- instance -> scheduler_control  ------------- */
 #define     UNUSED_SCTRL_MSB U(31)   
@@ -303,9 +303,9 @@
             platform_io_al_idx_to_graph [FWIOIDX] = graph_io_idx index in the graph for pio_control[]
         arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data, size);
 */
-#define STREAM_IOFMT_SIZE_W32 4   /* four word for IO controls : one for the scheduler, three for IO settings */
+#define STREAM_IOFMT_SIZE_W32 4u   /* four word for IO controls : one for the scheduler, three for IO settings */
 
-#define MAX_IO_FUNCTION_PLATFORM 127 /* table of functions : platform_io[MAX_IO_FUNCTION_PLATFORM] */
+#define MAX_IO_FUNCTION_PLATFORM 127u /* table of functions : platform_io[MAX_IO_FUNCTION_PLATFORM] */
                               
 #define IO_COMMAND_SET_BUFFER 0u  /* arc buffer point directly to the IO buffer: ping-pong, big buffer */
 #define IO_COMMAND_DATA_MOVE  1u  /* the IO has its own buffer */
@@ -316,10 +316,10 @@
 #define IO_IS_COMMANDER0      0u
 #define IO_IS_SERVANT1        1u
 
-#define IOFMT0 0                   /* first word used by the scheduler */
+#define IOFMT0 0u                  /* first word used by the scheduler */
 
-#define ____UNUSED_IOFMT0_MSB 31u  
-#define ____UNUSED_IOFMT0_LSB 26u  /* 6 */
+#define     UNUSED_IOFMT0_MSB 31u  
+#define     UNUSED_IOFMT0_LSB 26u  /* 6 */
 #define    FWIOIDX_IOFMT0_MSB 25u  
 #define    FWIOIDX_IOFMT0_LSB 19u  /* 7 */
 #define  IO_DOMAIN_IOFMT0_MSB 18u  /*    the domain should match with the arc prod/cons format */
@@ -335,9 +335,9 @@
 #define    IOARCID_IOFMT0_MSB 10u 
 #define    IOARCID_IOFMT0_LSB  0u  /* 11  ARC*/
 
-#define IOFMT1 1                   /* domain-specific controls */
-#define IOFMT2 2                   /* domain-specific controls */
-#define IOFMT3 3                   /* domain-specific controls */
+#define IOFMT1 1u                  /* domain-specific controls */
+#define IOFMT2 2u                  /* domain-specific controls */
+#define IOFMT3 3u                  /* domain-specific controls */
 
 /*================================= ONGOING  (RAM) ==============================
       
@@ -346,8 +346,8 @@
 
 #define    ONGOING_IO_MSB 7u  
 #define    ONGOING_IO_LSB 7u  /* 1 set in scheduler, reset in IO, iomask manages processor access */
-#define ____UNUSED_IO_MSB 6u  
-#define ____UNUSED_IO_LSB 0u  /* 7 */
+#define     UNUSED_IO_MSB 6u  
+#define     UNUSED_IO_LSB 0u  /* 7 */
 
 /*================================= SCRIPTS ======================================= */
 
@@ -358,7 +358,7 @@
 #define  SHARED_SCROFF0_MSB U(18) /* 1  shareable memory for the script with other scripts in mono processor platforms */
 #define  SHARED_SCROFF0_LSB U(18) /*                                    */
 #define  OFFSET_SCROFF0_MSB U(17) /* 17 offset in the W32 script table */
-#define  OFFSET_SCROFF0_LSB U( 0) /*    placed at                                */
+#define  OFFSET_SCROFF0_LSB U( 0) /*    placed at    */
 
          
 /* 
@@ -371,15 +371,15 @@
 #define          DBGFMT_SCRARCW4  U( 4) /*  */
 
           
-#define    __________SCRARCW0_MSB U(31)    
-#define    __________SCRARCW0_LSB U(29) /*  3    base address of the working memory */
+#define    unused____SCRARCW0_MSB U(31)    
+#define    unused____SCRARCW0_LSB U(29) /*  3    base address of the working memory */
 #define NEW_USE_CASE_SCRARCW0_MSB U(28) /*  1  new use-case arrived */ 
 #define NEW_USE_CASE_SCRARCW0_LSB U(28) /*     */ 
 #define    BASEIDXOFFSCRARCW0_MSB U(27)    
 #define    BASEIDXOFFSCRARCW0_LSB U( 0) /* 28  base address of the script memory (regs + state + stack)  */
 
-#define       _______SCRARCW1_MSB U(31) 
-#define       _______SCRARCW1_LSB U(21) /* 10 */
+#define     CODESIZE_SCRARCW1_MSB U(31) 
+#define     CODESIZE_SCRARCW1_LSB U(22) /* 10 */
 #define    BUFF_SIZE_SCRARCW1_MSB U(21) /*    */
 #define    BUFF_SIZE_SCRARCW1_LSB U( 0) /* 22 BYTE-acurate up to 4MBytes (up to 128GB with ARCEXTEND_ARCW2 */
 
@@ -405,11 +405,11 @@
     "analog user-interface" called (knobs / needles) give controls and visibility on NODE parameters and
     are accessed with scripts 
 */
-#define SCRIPT_PRERUN 1         /* executed before calling the node : the Z flag is set */
-#define SCRIPT_POSTRUN 2        /* executed after */
+#define SCRIPT_PRERUN 1u        /* executed before calling the node : the Z flag is set */
+#define SCRIPT_POSTRUN 2u       /* executed after */
 
 /* ======================================   NODE   ============================================ */ 
-#define arm_stream_script_index 1      /* arm_stream_script() is the first one in the list node_entry_point_table[] */
+#define arm_stream_script_index 1u     /* arm_stream_script() is the first one in the list node_entry_point_table[] */
 
         /* word 0 - main Header */
 
@@ -448,37 +448,37 @@
             arc(tx) used for locking is ARC0_LW1
         */
 
-#define MAX_NB_STREAM_PER_NODE 4 /* no limit in practice */
+#define MAX_NB_STREAM_PER_NODE 4u /* no limit in practice */
 
-#define ARC_RX0TX1_TEST  0x0800 /* MSB gives the direction of the arc */
-#define ARC_RX0TX1_CLEAR 0x07FF 
+#define ARC_RX0TX1_TEST  0x0800u /* MSB gives the direction of the arc */
+#define ARC_RX0TX1_CLEAR 0x07FFu 
 
-#define ____1_LW1_MSB 31 
-#define ____1_LW1_LSB 30 /*  2   */
-#define DBGB1_LW1_MSB 29 
-#define DBGB1_LW1_LSB 28 /*  2  debug register bank for ARC1 */
-#define  ARC1_LW1_MSB 27
-#define ARC1D_LW1_LSB 27 /*  1  ARC1 direction */
-#define ARC1D_LW1_MSB 27
-#define  ARC1_LW1_LSB 16 /* 11  ARC1  11 usefull bits + 1 MSB to tell rx0tx1 */
-
-#define ____0_LW1_MSB 15 
-#define ____0_LW1_LSB 14 /*  2   */
-#define DBGB0_LW1_MSB 13 
-#define DBGB0_LW1_LSB 12 /*  2  debug register bank for ARC0 : debug-arc index of the debug data */
-#define  ARC0_LW1_MSB 11
-#define ARC0D_LW1_LSB 11 /*  1  ARC0 direction */
-#define ARC0D_LW1_MSB 11
-#define  ARC0_LW1_LSB  0 /* 11  ARC0, (11 + 1 rx0tx1) up to 2K ARCs */
+#define un__1_LW1_MSB 31u 
+#define un__1_LW1_LSB 30u /*  2   */
+#define DBGB1_LW1_MSB 29u 
+#define DBGB1_LW1_LSB 28u /*  2  debug register bank for ARC1 */
+#define  ARC1_LW1_MSB 27u
+#define ARC1D_LW1_LSB 27u /*  1  ARC1 direction */
+#define ARC1D_LW1_MSB 27u
+#define  ARC1_LW1_LSB 16u /* 11  ARC1  11 usefull bits + 1 MSB to tell rx0tx1 */
+                        
+#define un__0_LW1_MSB 15u 
+#define un__0_LW1_LSB 14u /*  2   */
+#define DBGB0_LW1_MSB 13u 
+#define DBGB0_LW1_LSB 12u /*  2  debug register bank for ARC0 : debug-arc index of the debug data */
+#define  ARC0_LW1_MSB 11u
+#define ARC0D_LW1_LSB 11u /*  1  ARC0 direction */
+#define ARC0D_LW1_MSB 11u
+#define  ARC0_LW1_LSB  0u /* 11  ARC0, (11 + 1 rx0tx1) up to 2K ARCs */
 
 #if IOARCID_IOFMT0_MSB != (ARC0D_LW1_MSB-1)
 #error "IOFORMAT ARC SIZE"
 #endif
         /* word 2+2n - FIRST WORD : memory banks address + size */
 
-#define NBW32_MEMREQ_LW2  2     /* there are two words per memory segments, to help programing the memory protection unit (MPU) */
-#define ADDR_LW2 0              /*      one for the address */ 
-#define SIZE_LW2 1              /*      one for the size of the segment */ 
+#define NBW32_MEMREQ_LW2  2u    /* there are two words per memory segments, to help programing the memory protection unit (MPU) */
+#define ADDR_LW2 0u             /*      one for the address */ 
+#define SIZE_LW2 1u             /*      one for the size of the segment */ 
 
             /* word 2 first word = base address of the memory segment + control on the first segment */
 #define  NALLOCM1_LW2_MSB U(31) /*      number of memory segments to give at RESET [0..MAX_NB_MEM_REQ_PER_NODE-1] */  
@@ -503,9 +503,9 @@
             /* word 2 SECOND WORD = size of the memory segment  + control on the first segment 
                             if the segment is swapped, the 12-LSB bits give the ARC ID of the buffer 
                             and the memory size is given by the FIFO descriptor (BUFF_SIZE_ARCW1) */
-#define LW2S_NOSWAP 0
-#define LW2S_SWAP 1
-#define LW2S_COPY 2
+#define LW2S_NOSWAP 0u
+#define LW2S_SWAP 1u
+#define LW2S_COPY 2u
 
 
 #define       KEY_LW2S_MSB U(31) /*      */
@@ -572,14 +572,14 @@
  */ 
 
 //enum stream_node_status {
-#define NODE_BUFFERS_PROCESSED 0
-#define NODE_NEED_RUN_AGAIN 1         /* NODE completion type */
+#define NODE_BUFFERS_PROCESSED 0u
+#define NODE_NEED_RUN_AGAIN 1u        /* NODE completion type */
 
 //enum mem_mapping_type {
-#define MEM_TYPE_STATIC          0    /* (LSB) memory content is preserved (default ) */
-#define MEM_TYPE_WORKING         1    /* scratch memory content is not preserved between two calls */
-#define MEM_TYPE_PERIODIC_BACKUP 2    /* persistent static parameters to reload for warm boot after a crash */
-#define MEM_TYPE_PSEUDO_WORKING  3    /* static only during the uncompleted execution state of the SWC, see NODE_RUN 
+#define MEM_TYPE_STATIC          0u   /* (LSB) memory content is preserved (default ) */
+#define MEM_TYPE_WORKING         1u   /* scratch memory content is not preserved between two calls */
+#define MEM_TYPE_PERIODIC_BACKUP 2u   /* persistent static parameters to reload for warm boot after a crash */
+#define MEM_TYPE_PSEUDO_WORKING  3u   /* static only during the uncompleted execution state of the SWC, see NODE_RUN 
 
                 periodic backup use-case : long-term estimators. This memory area is cleared at cold NODE_RESET and 
                 refreshed for warm NODE_RESET. The NODE should not reset it (there is 
@@ -590,9 +590,9 @@
               
 
 //enum mem_speed_type                         /* memory requirements associated to enum memory_banks */
-#define MEM_SPEED_REQ_ANY           0    /* best effort */
-#define MEM_SPEED_REQ_FAST          1    /* will be internal SRAM when possible */
-#define MEM_SPEED_REQ_CRITICAL_FAST 2    /* will be TCM when possible
+#define MEM_SPEED_REQ_ANY           0u   /* best effort */
+#define MEM_SPEED_REQ_FAST          1u   /* will be internal SRAM when possible */
+#define MEM_SPEED_REQ_CRITICAL_FAST 2u   /* will be TCM when possible
            When a NODE is declaring this segment as relocatable ("RELOC_MEMREQ") it will use 
            physical address different from one TCM to an other depending on the processor running the SWC.
            The scheduler shares the TCM address dynamically before calling the SWC. 
@@ -604,16 +604,16 @@
 //enum buffer_alignment_type            
 //#define MEM_REQ_NOALIGNMENT_REQ    0    /* address binary mask : */
 //#define MEM_REQ_2BYTES_ALIGNMENT   1   /*   mask = ~((1 << (7 & mem_req_2bytes_alignment) -1) */
-#define MEM_REQ_4BYTES_ALIGNMENT   2     
-#define MEM_REQ_8BYTES_ALIGNMENT   3
-#define MEM_REQ_16BYTES_ALIGNMENT  4
-#define MEM_REQ_32BYTES_ALIGNMENT  5
-#define MEM_REQ_64BYTES_ALIGNMENT  6
-#define MEM_REQ_128BYTES_ALIGNMENT 7
+#define MEM_REQ_4BYTES_ALIGNMENT   2u    
+#define MEM_REQ_8BYTES_ALIGNMENT   3u
+#define MEM_REQ_16BYTES_ALIGNMENT  4u
+#define MEM_REQ_32BYTES_ALIGNMENT  5u
+#define MEM_REQ_64BYTES_ALIGNMENT  6u
+#define MEM_REQ_128BYTES_ALIGNMENT 7u
 
 
-#define NODE_CONTROLS U(4)
-#define NODE_CONTROLS_NAME U(8)
+#define NODE_CONTROLS U(4u)
+#define NODE_CONTROLS_NAME U(8u)
 
 /*================================================== ARC ==================================================================*/
 /*
@@ -628,25 +628,25 @@
 
 // enum debug_arc_computation_1D { COMPUTCMD_ARCW2 /* 5bits */
 
-#define COMPUTCMD_ARCW2_NO_ACTION               0       
-#define COMPUTCMD_ARCW2_INCREMENT_REG           1   /* increment DEBUG_REG_ARCW1 with the number of RAW samples */      
-#define COMPUTCMD_ARCW2_SET_ZERO_ADDR           2   /* set a 0 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to clear */      
-#define COMPUTCMD_ARCW2_SET_ONE_ADDR            3   /* set a 1 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to set */       
-#define COMPUTCMD_ARCW2_INCREMENT_REG_ADDR      4   /* increment *DEBUG_REG_ARCW1 */ 
-#define COMPUTCMD_ARCW2__5                      5
-#define COMPUTCMD_ARCW2_APP_CALLBACK1           6   /* call-back in the application side, data rate estimate in DEBUG_REG_ARCW1 */      
-#define COMPUTCMD_ARCW2_APP_CALLBACK2           7   /* second call-back : wake-up processor from DEBUG_REG_ARCW1=[ProcID, command]  */      
-#define COMPUTCMD_ARCW2__8                      8
-#define COMPUTCMD_ARCW2_TIME_STAMP_LAST_ACCESS  9
-#define COMPUTCMD_ARCW2_PEAK_DATA               10  /* peak/mean/min with forgeting factor 1/256 in DEBUG_REG_ARCW1 */          
-#define COMPUTCMD_ARCW2_MEAN_DATA               11
-#define COMPUTCMD_ARCW2_MIN_DATA                12
-#define COMPUTCMD_ARCW2_ABSMEAN_DATA            13
-//#define COMPUTCMD_ARCW2_DATA_TO_OTHER_ARC     14  /* when data is changing the new data is push to another arc DEBUG_REG_ARCW1=[ArcID] */
-#define COMPUTCMD_ARCW2_LOOPBACK                15  /* automatic rewind read/write */           
-#define COMPUTCMD_ARCW2_LAST                31
+#define COMPUTCMD_ARCW2_NO_ACTION                0u      
+#define COMPUTCMD_ARCW2_INCREMENT_REG            1u  /* increment DEBUG_REG_ARCW1 with the number of RAW samples */      
+#define COMPUTCMD_ARCW2_SET_ZERO_ADDR            2u  /* set a 0 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to clear */      
+#define COMPUTCMD_ARCW2_SET_ONE_ADDR             3u  /* set a 1 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to set */       
+#define COMPUTCMD_ARCW2_INCREMENT_REG_ADDR       4u  /* increment *DEBUG_REG_ARCW1 */ 
+#define COMPUTCMD_ARCW2__5                       5u 
+#define COMPUTCMD_ARCW2_APP_CALLBACK1            6u  /* call-back in the application side, data rate estimate in DEBUG_REG_ARCW1 */      
+#define COMPUTCMD_ARCW2_APP_CALLBACK2            7u  /* second call-back : wake-up processor from DEBUG_REG_ARCW1=[ProcID, command]  */      
+#define COMPUTCMD_ARCW2__8                       8u 
+#define COMPUTCMD_ARCW2_TIME_STAMP_LAST_ACCESS   9u 
+#define COMPUTCMD_ARCW2_PEAK_DATA               10u  /* peak/mean/min with forgeting factor 1/256 in DEBUG_REG_ARCW1 */          
+#define COMPUTCMD_ARCW2_MEAN_DATA               11u 
+#define COMPUTCMD_ARCW2_MIN_DATA                12u 
+#define COMPUTCMD_ARCW2_ABSMEAN_DATA            13u 
+//#define COMPUTCMD_ARCW2_DATA_TO_OTHER_ARC     14u  /* when data is changing the new data is push to another arc DEBUG_REG_ARCW1=[ArcID] */
+#define COMPUTCMD_ARCW2_LOOPBACK                15u  /* automatic rewind read/write */           
+#define COMPUTCMD_ARCW2_LAST                31u
 
-#define ARC_DBG_REGISTER_SIZE_W32 2                 /* debug registers on 64 bits */
+#define ARC_DBG_REGISTER_SIZE_W32 2u                 /* debug registers on 64 bits */
 
 
 /* increment DEBUG_REG_ARCW1 with the number of RAW samples */
@@ -670,21 +670,21 @@
 
 
 /*==========================================  ARCS  ===================================================*/
-#define arc_read_address                1 
-#define arc_write_address               2 
-#define arc_data_amount                 3 
-#define arc_free_area                   4
-#define arc_buffer_size                 5
-#define data_move_to_arc                6
-#define data_moved_from_arc             7
-#define data_swapped_with_arc           8
-#define arc_data_realignment_to_base    9
+#define arc_read_address                1u
+#define arc_write_address               2u
+#define arc_data_amount                 3u
+#define arc_free_area                   4u
+#define arc_buffer_size                 5u
+#define data_move_to_arc                6u
+#define data_moved_from_arc             7u
+#define data_swapped_with_arc           8u
+#define arc_data_realignment_to_base    9u
 
-#define SIZEOF_ARCDESC_W32 5
+#define SIZEOF_ARCDESC_W32 5u
 
 #define   BUF_PTR_ARCW0    U( 0)
-#define    _______ARCW0_MSB U(31) 
-#define    _______ARCW0_LSB U(28) /*  4 */
+#define   unused__ARCW0_MSB U(31) 
+#define   unused__ARCW0_LSB U(28) /*  4 */
 #define BASEIDXOFFARCW0_MSB U(27) /*    */
 #define   DATAOFF_ARCW0_MSB U(27) /*    address = offset[DATAOFF] + 4x BASEIDX[Bytes] */
 #define   DATAOFF_ARCW0_LSB U(22) /*  6 64 x 64bits offset indexes  */
@@ -693,16 +693,16 @@
 #define BASEIDXOFFARCW0_LSB U( 0) /*    base + offset */
                                 
 #define BUFSIZDBG_ARCW1    U( 1)
-#define    _______ARCW1_MSB U(31) 
-#define    _______ARCW1_LSB U(21) /* 10 */
+#define   unused__ARCW1_MSB U(31) 
+#define   unused__ARCW1_LSB U(21) /* 10 */
 #define BUFF_SIZE_ARCW1_MSB U(21) /*    */
 #define BUFF_SIZE_ARCW1_LSB U( 0) /* 22 BYTE-acurate up to 4MBytes (up to 128GB with ARCEXTEND_ARCW2 */
 
 #define    RDFLOW_ARCW2    U( 2)  
 #define ARCEXTEND_ARCW2_MSB U(31) /*    Size/Read/Write are used with <<(2x{0..7}) to extend base/size/read/write arc */
 #define ARCEXTEND_ARCW2_LSB U(29) /* 3  to  256MB, 4GB, 64GB , for use-cases with NN models, video players, etc */
-#define    _______ARCW2_MSB U(28) 
-#define    _______ARCW2_LSB U(24) /* 5  */
+#define   unused__ARCW2_MSB U(28) 
+#define   unused__ARCW2_LSB U(24) /* 5  */
 #define   MPFLUSH_ARCW2_MSB U(23) 
 #define   MPFLUSH_ARCW2_LSB U(23) /* 1  flush data used after processing */
 #define FLOWERROR_ARCW2_MSB U(22)
@@ -714,8 +714,8 @@
 #define  WRIOCOLL_ARCW3    U( 3) 
 #define COLLISION_ARCW3_MSB U(31) /*  8 MSB byte used to lock the SWC, loaded with arch+proc+instance ID */ 
 #define COLLISION_ARCW3_LSB U(24) /*       to check node-access collision from an other processor */
-#define    _______ARCW3_MSB U(23) 
-#define    _______ARCW3_LSB U(23) /*  1  */
+#define    unused_ARCW3_MSB U(23) 
+#define    unused_ARCW3_LSB U(23) /*  1  */
 #define ALIGNBLCK_ARCW3_MSB U(22) /*    producer blocked */
 #define ALIGNBLCK_ARCW3_LSB U(22) /*  1 producer sets "need for data realignement"  */
 #define     WRITE_ARCW3_MSB U(21) /*    write pointer is incremented by FRAMESIZE_FMT0 */
@@ -751,8 +751,12 @@
     commands from the NODE to Stream
     16 family of commands:
     - 1 : internal to Stream, reset, debug trace, report errors , described here
+            CALLSYS_INTERNAL         TODO
+            - Un/Lock a section of the graph
+            - Jump to +/- N nodes in the list,      => read HEADER + test fields + jump
+            - system regsters access: who am I ?
 
-            described in stream_common_const.h:
+    described in stream_common_const.h:
     - 2 : arc access for scripts : pointer, last data, debug fields, format changes
     - 3 : format converters (time, raw data)
     - 4 : stdlib.h subset (time, stdio)
@@ -766,42 +770,26 @@
 */
 
 
-//#define NOOPTION_SSRV 0
-//#define NOCONTROL_SSRV 0
-//
-///* arm_stream_services COMMAND */
-//#define  CONTROL_SSRV_MSB U(31)       
-//#define  CONTROL_SSRV_LSB U(28) /* 4   set/init/wait completion, in case of coprocessor usage */
-//#define   OPTION_SSRV_MSB U(27)       
-//#define   OPTION_SSRV_LSB U(24) /* 4   compute accuracy, in-place processing, frame size .. */
-//#define FUNCTION_SSRV_MSB U(23)       
-//#define FUNCTION_SSRV_LSB U( 4) /* 20   64K functions/group  */
-//#define    GROUP_SSRV_MSB U( 3)       
-//#define    GROUP_SSRV_LSB U( 0) /* 4    16 groups */
-//
-//#define PACK_SERVICE(CTRL,OPTION,FUNC,GROUP) (((CTRL)<<CONTROL_SSRV_LSB)|((OPTION)<<OPTION_SSRV_LSB)|((FUNC)<<FUNCTION_SSRV_LSB)|(GROUP)<<GROUP_SSRV_LSB)
-
-
 /* 1/SERV_INTERNAL ------------------------------------------------ */
 
 /*  FUNCTION_SSRV GROUP : SLEEP CONTROL ---------------------- */
-#define AL_SERVICE_SLEEP_CONTROL 1
+#define AL_SERVICE_SLEEP_CONTROL 1u
 
 /*  FUNCTION_SSRV GROUP : READ MEMORY ------------------------ */
-#define AL_SERVICE_READ_MEMORY 2
+#define AL_SERVICE_READ_MEMORY 2u
     /* SERVICE FUNCTIONS */
-    #define AL_SERVICE_READ_MEMORY_FAST_MEM_ADDRESS 1
+    #define AL_SERVICE_READ_MEMORY_FAST_MEM_ADDRESS 1u
 
 /*  FUNCTION_SSRV GROUP : SERIAL COMMUNICATION --------------- */
-#define AL_SERVICE_SERIAL_COMMUNICATION 3
+#define AL_SERVICE_SERIAL_COMMUNICATION 3u
 
 /*  FUNCTION_SSRV GROUP : MUTUAL EXCLUSION ------------------- */
-#define AL_SERVICE_MUTUAL_EXCLUSION 4
+#define AL_SERVICE_MUTUAL_EXCLUSION 4u
     /* SERVICE FUNCTIONS */
-    #define AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP 1
-    #define AL_SERVICE_MUTUAL_EXCLUSION_RD_BYTE_MP 2
-    #define AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP 3
-    #define AL_SERVICE_MUTUAL_EXCLUSION_CLEAR_BIT_MP 4
+    #define AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP 1u
+    #define AL_SERVICE_MUTUAL_EXCLUSION_RD_BYTE_MP 2u
+    #define AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP 3u
+    #define AL_SERVICE_MUTUAL_EXCLUSION_CLEAR_BIT_MP 4u
 
     #ifdef _MSC_VER 
     #define DATA_MEMORY_BARRIER
@@ -817,16 +805,27 @@
     #endif
 
 /*  FUNCTION_SSRV GROUP : IO SETTINGS -------------------------*/
-#define AL_SERVICE_CHANGE_IO_SETTING 5
+#define AL_SERVICE_CHANGE_IO_SETTING 5u
+
+/* used to call p_io_function_ctrl functions with STREAM_READ_PARAMETER : the arm_stream_converter checks
+*   if consumer-node (of the associated producer-node for IO TX) is compatible with the format
+*   to rescale the data stream to the good amplitude/scale 
+*   AL_SERVICE_READ_IO_SCALING receives the IO ID
+*       it reads the setting in the graph STREAM_IO_CONTROL table
+*       calls the p_io_function_ctrl with STREAM_READ_PARAMETER 
+*/
+#define AL_SERVICE_READ_IO_SCALING 0u       
+
+#define AL_SERVICE_CHANGE_IO_SETTING 5u
 
 /*  FUNCTION_SSRV GROUP : TIME ------------------------------- */
-#define AL_SERVICE_READ_TIME 6
-    #define AL_SERVICE_READ_TIME64 1
-    #define AL_SERVICE_READ_TIME32 2
-    #define AL_SERVICE_READ_TIME16 3
+#define AL_SERVICE_READ_TIME 6u
+    #define AL_SERVICE_READ_TIME64 1u
+    #define AL_SERVICE_READ_TIME32 2u
+    #define AL_SERVICE_READ_TIME16 3u
 
-#define AL_SERVICE_UNUSED3 7
-#define MAX_NB_APP_SERVICES 8
+#define AL_SERVICE_UNUSED3 7u
+#define MAX_NB_APP_SERVICES 8u
 
 
 
@@ -881,18 +880,40 @@
 #define U8(x) ((uint8_t)(x))
 
 
-#define STREAM_PTRPHY      4    
-#define STREAM_PTR27B      5    
+#define STREAM_PTRPHY      4u    
+#define STREAM_PTR27B      5u    
 
 
 /* constants for uint8_t itoa(char *s, int32_t n, int base) 
 * string conversions to decimal and hexadecimal */
 
-#define C_BASE2 2
-#define C_BASE10 10
-#define C_BASE16 16
+#define C_BASE2 2u
+#define C_BASE10 10u
+#define C_BASE16 16u
 
+/*================================================================================================================*/    
+/*                                            FLOAT                                                               */
+/*================================================================================================================*/    
 
+#define FADD(tmp, src1, src2)  tmp=src1+src2
+#define FSUB(tmp, src1, src2)  
+#define FMUL(tmp, src1, src2)  
+#define FDIV(tmp, src1, src2)  
+#define FMAX(tmp, src2, src1)  
+#define FMIN(tmp, src2, src1)  
+#define FAMAX(tmp, src2, src1) 
+#define FAMAX(tmp, src2, src1) 
+#define FTESTEQU(tmp, dst) 0
+#define FTESTLEQ(tmp, dst) 0
+#define FTESTLT(tmp, dst)  0
+#define FTESTNEQ(tmp, dst) 0
+#define FTESTGEQ(tmp, dst) 0
+#define FTESTGT(tmp, dst)  0
+
+#define F2I(src) ((uint32_t)0)
+#define I2F(src) ((sfloat)0)
+
+/*================================================================================================================*/    
 
 #endif /* cSTREAM_CONST_H */
 /*

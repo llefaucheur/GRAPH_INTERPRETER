@@ -128,7 +128,7 @@ static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_
         }
 
         /* ----------------------------------------------------------------------------------
-            arm_stream_services(PACK_SERVICE(instance index, SERV_INTERNAL_DEBUG_TRACE), *int8_t, 0, nb bytes);
+            arm_stream_services(PACK_SERVICE(instance index, NOTAG_SSRV,  SERV_INTERNAL_DEBUG_TRACE), *int8_t, 0, nb bytes);
                 the Stream instance index
             arm_stream_services(DEBUG_TRACE_STAMPS, disable_0 / enable_1 time stamps);
 
@@ -380,9 +380,9 @@ void arm_stream_command_interpreter (uint32_t command, uint8_t* ptr1, uint8_t* p
 
 void arm_stream_services (
     uint32_t command, 
-    uint8_t *ptr1, 
-    uint8_t *ptr2, 
-    uint8_t *ptr3, 
+    void *ptr1, 
+    void *ptr2, 
+    void *ptr3, 
     uint32_t n)
 {   
     //arm_stream_instance_t *pinst;
@@ -391,7 +391,7 @@ void arm_stream_services (
 	switch (RD(command, GROUP_SSRV))
     {
     //enum stream_service_group
-    case SERV_INTERNAL:
+    case SERV_GROUP_INTERNAL:
         
         //if ((RD(command, FUNCTION_SSRV)) == FUNCTION_SSRV)
         //{   // arm_stream_services(*ID, SERV_INTERNAL_RESET, stream_instance, 0, 0); 
@@ -408,20 +408,20 @@ void arm_stream_services (
             arm_stream_services_internal(RD(command, FUNCTION_SSRV), ptr1, ptr2, ptr3, n);
         }
         break;
-    case SERV_SCRIPT:
+    case SERV_GROUP_SCRIPT:
         arm_stream_services_flow (command, ptr1, ptr2, ptr3, n);
         break;
-    case SERV_CONVERSION:
+    case SERV_GROUP_CONVERSION:
         arm_stream_services_conversion(command, ptr1, ptr2, ptr3, n);
         break;
-    case SERV_STDLIB:
+    case SERV_GROUP_STDLIB:
         arm_stream_services_stdlib(command, ptr1, ptr2, ptr3, n);
         break;
-    case SERV_MATH:
+    case SERV_GROUP_MATH:
         arm_stream_services_math(command, ptr1, ptr2, ptr3, n);
         break;
 
-    case SERV_DSP_ML:
+    case SERV_GROUP_DSP_ML:
             /*  
                 - IIR-DF1 biquad filter cascade, Cortex-M0's CMSIS-DSP arm_biquad_cascade_df1_q15
                 - The spectral comuputation (cFFT, rFFT, DFT, window, module, dB)
@@ -431,11 +431,11 @@ void arm_stream_services (
             switch (RD(command, FUNCTION_SSRV))
             {
             case SERV_CHECK_END_COMP:
-                *ptr1 = 1;                      /* return a completion flag */
+                *(uint8_t *)ptr1 = 1;                      /* return a completion flag */
                 break;
 
             case SERV_CASCADE_DF1_Q15:          /* IIR filters arm_biquad_cascade_df1_fast_q15*/
-                if (RD(command,  CONTROL_SSRV) == SERV_INIT)
+                if (RD(command,  COMMAND_SSRV) == SERV_INIT)
                 {
 
                     //pinstance->services(                <<<========>>>          void arm_stream_services (
@@ -453,7 +453,7 @@ void arm_stream_services (
                         (q15_t *) ptr3,                                         //         q15_t * pState,
                         n >> 8);                                                //         int8_t postShift)
 
-                } else //(RD(command,  CONTROL_SSRV) == SERV_RUN)
+                } else //(RD(command,  COMMAND_SSRV) == SERV_RUN)
                 {
                     // pinstance->services(                                        void arm_stream_services (
                     //     pinstance->iir_service,                                             uint32_t command, 
@@ -508,14 +508,14 @@ void arm_stream_services (
                 break;
             }
         break;
-    case SERV_DEEPL:
+    case SERV_GROUP_DEEPL:
         arm_stream_services_mm_audio(command, ptr1, ptr2, ptr3, n);
         break;
         
-    case SERV_MM_AUDIO:
+    case SERV_GROUP_MM_AUDIO:
         arm_stream_services_mm_audio(command, ptr1, ptr2, ptr3, n);
         break;
-    case SERV_MM_IMAGE:
+    case SERV_GROUP_MM_IMAGE:
         arm_stream_services_mm_image(command, ptr1, ptr2, ptr3, n);
         break;
 

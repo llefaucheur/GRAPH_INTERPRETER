@@ -46,11 +46,11 @@ typedef void *stream_handle_t;
     #define MAX_ADD_OFFSET 0x7FFFFFFFFFFFFFFFL
 */
 #ifdef PLATFORM_ARCH_32BIT
-#define intPtr_t uint32_t 
-#define sintPtr_t int32_t
+typedef uint32_t  intPtr_t;
+typedef  int32_t sintPtr_t;
 #else
-#define intPtr_t uint64_t 
-#define sintPtr_t int64_t 
+typedef uint64_t  intPtr_t;
+typedef  int64_t sintPtr_t;
 #endif
 
 /* ------------------------------------------------------------------------------------------

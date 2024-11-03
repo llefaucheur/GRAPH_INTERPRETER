@@ -124,7 +124,7 @@
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void arm_stream_analysis (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void arm_stream_analysis (uint32_t command, void *instance, void *data, uint32_t *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
@@ -198,7 +198,7 @@ void arm_stream_analysis (int32_t command, stream_handle_t instance, stream_xdmb
             {   /*  report an error on parameter input 
                 typedef void (stream_al_services) (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n); */
 /*                pinstance->services(
-                    PACK_SERVICE(0, RD(command,INST_CMD_SSRV), STREAM_SERVICE_INTERNAL_DEBUG_TRACE, STREAM_SERVICE_INTERNAL), 
+                    PACK_SERVICE(0, RD(command,INST_CMD_SSRV), NOTAG_SSRV, STREAM_SERVICE_INTERNAL_DEBUG_TRACE, STREAM_SERVICE_INTERNAL), 
                     "MIX4 PARAM ERROR\n", 
                     0, 
                     0, 

@@ -22,7 +22,7 @@ Example :
 ## IO Domains
 | Domain name        | Code | Comments |
 | ----            |   -- | -- |
-| GENERAL            |   0 | Any stream, for example (a)synchronous sensor data + electrical, chemical, pixels, .. data from the application processors, compressed streams, JSON, etc .. |
+| GENERAL            |   0 | Any stream, for example (a)synchronous sensor data + electrical, chemical, pixels, .. data from/to the application processors, compressed streams, JSON, etc .. |
 | AUDIO_IN           |   1 | microphone, line-in, I2S, PDM RX                                                                                        |
 | AUDIO_OUT          |   2 | line-out, earphone / speaker, PDM TX, I2S,                                                                              |
 | GPIO_IN            |   3 | generic digital IO                                                                                   |
@@ -95,13 +95,9 @@ When the IO is "Servant" the scheduler call p_io_function_ctrl(STREAM_RUN, ..) t
 
 ```
 io_buffer_allocation    2.0     ;  default is 0, which means the buffer is declared outside of the graph
-;  The floating-point number is a multiplication factor of the frame size (here 2 frames), 
-;   the buffer size is computed with rounding (n = floor(X+0.5))
-;  
-;  When more than one byte are exchanged, the IO driver needs a temporary buffer. This buffer
-;   can be allocated "outside(0)" by the IO driver, or ">1" during the graph memory mapping preparation
-;   The memora mapping of this allocation is decided in the graph and can be in general-purpose or 
-;   any RAM "0" or specific memory bank for speed reason or reserved for DMA processing, etc ..
+The floating-point number is a multiplication factor of the frame size (here 2 frames), the buffer size is computed with rounding (n = floor(X+0.5))
+  
+When more than one byte are exchanged, the IO driver needs a temporary buffer. This buffer can be allocated "outside(0)" by the IO driver, or ">1" during the graph memory mapping preparation. The memory mapping of this allocation is decided in the graph and can be in general-purpose or any RAM "0" or specific memory bank for speed reason or reserved for DMA processing, etc ..
 ```
 
 ### io_set0_copy1 "0/1"
@@ -148,22 +144,31 @@ io_frame_length   {1 1 2 16 }   ; options of possible frame_size in number of sa
 io_frame_duration {1 10 22.5}   ; options of possible frame_size in [milliseconds].     The default frame length is 1 sample
 ```
 
-### io_subtype_units "x"
+### io_setup_time  
+
+Information of the time it takes before valid / calibrated samples are ready for processing.
+
+```
+io_setup_time  12.5 ; wait 12.5ms before receiving valid data
+```
+
+### io_units_rescale "u a b max"
 
 See file "Table.md" for the list of available Units from RFC8798 and RFC8428.
 
 ```
-io_subtype_units  VRMS          ; depending on the domain. Here Units_Vrms of the "general" domain (0 = any or underfined)
+io_units_rescale  VRMS  0.0135  -10.1  0.15
+; Y = a x (X - b) with the default hardware settings
+; Y [VRMS] <=> 0.0135 x ( X + 10.1 ), max 0.15 Vrms
+; 0.15 VRMS <=> 0.0135 x (1.0 - (-10.1))
 ```
 
 ### io_subtype_multiple "x"
 
-Multiple units for interleaved streams
+Multiple units interleaved streams with rescaling factors of above "io_units_rescale". Used for example with motion sensors delivering acceleration, speed, magnetic field, temperature, etc ..
 
 ```
-io_subtype_multiple {DPS GAUSS}     
-; example of two multi domain stream : motion sensors for example can have 4 data 
-;   units for accelerometer, gyroscope, magnetometer, temperature
+io_subtype_multiple DPS a b max GAUSS a b max
 ```
 
 

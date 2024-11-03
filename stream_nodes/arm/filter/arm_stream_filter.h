@@ -58,7 +58,7 @@
  #else
     /* use CMSIS-DSP plain software  */
     /* ----------------------------- */
-#include "CMSIS-DSP/Include/dsp/filtering_functions.h"
+#include "filtering_functions.h"
     ///**
     // * @brief Instance structure for the Q15 Biquad cascade filter.
     // */
@@ -102,7 +102,6 @@
 
 /* ----------------------------- */
 
-typedef int16_t q15_t;
 #define MAX_NB_BIQUAD_Q15 2
 
 /* ----------------------------- */
@@ -112,11 +111,11 @@ typedef int16_t q15_t;
     a1 and a2 have the opposite sign given by Matlab
 */
 
-typedef struct
-{   int8_t numStages;        
-    q15_t  coefs[MAX_NB_BIQUAD_Q15*6];        
-    int8_t postShift;        
-} arm_biquad_casd_df1_q15_preset;
+//typedef struct
+//{   int8_t numStages;        
+//    q15_t  coefs[MAX_NB_BIQUAD_Q15*6];        
+//    int8_t postShift;        
+//} arm_biquad_casd_df1_q15_preset;
 
 
 typedef struct

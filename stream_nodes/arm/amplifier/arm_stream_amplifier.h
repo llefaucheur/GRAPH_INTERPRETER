@@ -83,8 +83,8 @@ typedef struct
     /*
         multi-channel format 
     */
-#define   ___AMPLICHAN_FMT_MSB 31  
-#define   ___AMPLICHAN_FMT_LSB 30  
+#define    AMPLICHAN___FMT_MSB 31  
+#define    AMPLICHAN___FMT_LSB 30  
 #define FRAMESIZE_FMT0_FMT_MSB 29   
 #define FRAMESIZE_FMT0_FMT_LSB  6  /* 24 copy of arc's format FRAMESIZE_FMT0 */
 #define   INTERLEAVING_FMT_MSB  5  

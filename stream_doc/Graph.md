@@ -580,39 +580,7 @@ r6 = sub r5 r4            r6 = ( r5 - r4 )
 if_yes r6 = add r5 3      conditional addition of r5 with 3 saved in r6
 ```
 
-
-
-```
-Example of instructions     Comments
------------------------     --------
-if_no set r2 type #float    conditional set of the type of r2 to float
-set r2 type #float          convert r2 to a floating point data
-set r4 base r5              set the base address of circular buffer r4 to r5
-set r4 size 14              set the size of the circular buffer r4 to 14
-r2 [ r4 ] = r3              scatter save with indexes r2[r4] = r3
-r2 = r3 [ r4 ]              gather addressing r2 = r3[r4]
-r2 = r3 [ 2000 ]            gather addressing r2 = r3[2000]
-r2 | 12 2 | = r3            store r3 to a bit-field {2 .. 12} of r2 
-r2 = r3 | 12 2 |            save in r2 a bit-field {2 .. 12} from r3
-swap r2 r3                  swap two registers
-delete 4                    remove the last 4 registers from the stack
-save r3 r0 r11              push 3 (up to 5) registers on the stack
-restore r3 r0 r11           restore 3 (up to 5) registers from the stack
-jump L_label r1             jump to label and save on register (up to 3) on the stack
-banz L_Label r0             decrement r0 and branch if not zero
-call L_Label r1 r2 r3       call a subroutine and save three registers
-callsys 17 r1 r2 r3         call a system suboutine and save 3 parameters (up to 4)
-return                      return from subroutine
-```
-
-The "callsys" instruction gives access to :
-
-- FIFO content (read/write), filling status and access to the arc debug information (last time-stamp access, average of samples, etc ..)
-- Node parameters read and update, with / without a reset of the node
-- Basic compute and data move functions
-- The call-backs provided by the application (use-case, change the graph IO parameters, debug and trace)
-
-The graph declares the script like standard nodes :
+### Graph syntax
 
 ```
 script 1  			      ; script (instance) index           
@@ -624,14 +592,11 @@ script 1  			      ; script (instance) index
     ...
     return                ; return to the graph scheduler
     end                                                      
-    script_parameters                                    
-       include 1 binary_code.txt ; path ID and file name     
-    end                                                     
 ```
 
 ### Test instructions
 
-The format of the test instructions are: 
+The four formats of the test instructions are: 
 
 1) ` test instruction, register to be compared to, register used as source of comparison`
 
@@ -641,11 +606,11 @@ The format of the test instructions are:
 
 4) ` test instruction, register to be compared to, arithmetic instruction, register used as first operand, literal constant used as second operand` 
 
-The test of the condition made with : `if_yes ... `  or ` if_no ... `.
-
-List of test instructions and meaning
+The test of the computed condition is made with : `if_yes ... `  or ` if_no ... `.
 
 ```
+List of test instructions and meaning :
+
 test_equ	     test if equal
 test_leq	     test if less or equal
 test_lt 	     test if lower
@@ -654,7 +619,7 @@ test_geq	     test if great or equal
 test_gt 	     test if greater
 ```
 
- List of arithmetic operations
+### Arithmetic operations
 
 ```
 add   		addition of two operands
@@ -680,14 +645,52 @@ submod		subtraction with modulo
 
 
 
-| Examples and explanations                                    |
-| ------------------------------------------------------------ |
-| ` testlt r6 3                 test r6 < 3 ` <br/>` testlt r6 add r5 3          test r6 < ( r5 + 3 ) `<br/>` testlt r6 sub r5 r4         test r6 < ( r5 - r4 ) ` |
-| ` r1 = 16                     initalize r1 `<br/>` r4 = sp1                    pop data to r4 `<br/>` test_equ r1 shl r4 2        test r1 == r4<<2 `<br/>` if_yes call L_sub5 r4       if yes push r4 and call a subroutine `    ` |
+### Calling the upper layers
+
+The "callsys" instruction gives access to :
+
+- FIFO content (read/write), filling status and access to the arc debug information (last time-stamp access, average of samples, etc ..)
+- Node parameters read and update, with / without a reset of the node
+- Basic compute and data move functions
+- The call-backs provided by the application (use-case, change the graph IO parameters, debug and trace)
 
 
 
------------------------------------------
+### Examples
+
+```
+Example of instructions     Comments
+-----------------------     --------
+testlt r6 3                 test r6 < 3 
+testlt r6 add r5 3          test r6 < ( r5 + 3 )
+testlt r6 sub r5 r4         test r6 < ( r5 - r4 ) 
+   
+r1 = 16                     initalize r1 
+r4 = sp1                    pop data to r4 
+test_equ r1 shl r4 2        test r1 == r4<<2 
+if_yes call L_sub5 r4       if yes push r4 and call a subroutine
+
+if_no set r2 type #float    conditional set of the type of r2 to float
+set r2 type #float          convert r2 to a floating point data
+set r4 base r5              set the base address of circular buffer r4 to r5
+set r4 size 14              set the size of the circular buffer r4 to 14
+r2 [ r4 ] = r3              scatter save with indexes r2[r4] = r3
+r2 = r3 [ r4 ]              gather addressing r2 = r3[r4]
+r2 = r3 [ 2000 ]            gather addressing r2 = r3[2000]
+r2 | 12 2 | = r3            store r3 to a bit-field {2 .. 12} of r2 
+r2 = r3 | 12 2 |            save in r2 a bit-field {2 .. 12} from r3
+swap r2 r3                  swap two registers
+delete 4                    remove the last 4 registers from the stack
+save r3 r0 r11              push 3 (up to 5) registers on the stack
+restore r3 r0 r11           restore 3 (up to 5) registers from the stack
+jump L_label r1             jump to label and save on register (up to 3) on the stack
+banz L_Label r0             decrement r0 and branch if not zero
+call L_Label r1 r2 r3       call a subroutine and save three registers
+callsys 17 r1 r2 r3         call a system suboutine and save 3 parameters (up to 4)
+return                      return from subroutine
+```
+
+------
 
 ## ARC of the graph
 The syntax is different for arcs connected to the boundary of the graph, and arcs placed between two nodes.
