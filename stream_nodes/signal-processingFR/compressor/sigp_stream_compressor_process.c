@@ -23,15 +23,15 @@
  * limitations under the License.
  * 
  */
-
+    
+#include "platform.h"
+#ifdef CODE_SIGP_STREAM_COMPRESSOR
+   
 
 #ifdef __cplusplus
  extern "C" {
 #endif
-   
-#include "platform.h"
-#ifdef CODE_SIGP_STREAM_COMPRESSOR
-   
+
 #include <stdint.h>
 #include "stream_common_const.h"
 #include "stream_common_types.h"
@@ -51,8 +51,9 @@ void sigp_stream_compressor_process (sigp_stream_compressor_instance *instance, 
 
 }
 
-#endif //CODE_SIGP_STREAM_COMPRESSOR
 #ifdef __cplusplus
 }
 #endif
+
+#endif //CODE_SIGP_STREAM_COMPRESSOR
  

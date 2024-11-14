@@ -9,15 +9,17 @@
 ;   +----------+     +--------+      +--------+     +--------+
 ;                
 ;----------------------------------------------------------------------
+graph_location          1           ; script and linked-list stays in flash 
+;----------------------------------------------------------------------
 format_index            0
 format_frame_length     8
 format_index            1
 format_frame_length     16
 ;----------------------------------------------------------------------
-stream_io               0                       ;
-stream_io_hwid          1                       ; io_platform_data_in_1.txt
-stream_io               1                       ;
-stream_io_hwid          9                       ; io_platform_data_out_0.txt
+stream_io               0           ;
+stream_io_hwid          1           ; io_platform_data_in_1.txt
+stream_io               1           ;
+stream_io_hwid          9           ; io_platform_data_out_0.txt
 ;----------------------------------------------------------------------
 node arm_stream_filter  0 
     node_preset         1                       ; Q15 filter
@@ -78,7 +80,7 @@ node arm_stream_script     0
         label BBB              
         2  u32; 0x33333333 0x444444444 ; ROM   h33333333 h444444444
         label CCC              
-        1  u8 ;  ox55           ; ROM   h55      
+        1  u8 ;  0x55           ; ROM   h55      
         1  u32;  0x66666666     ; ROM   66666666
 
     script_heap

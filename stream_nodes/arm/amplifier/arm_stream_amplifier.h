@@ -99,7 +99,7 @@ typedef struct
 } arm_amplitude_instance;
 
 
-extern void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input, void *output, intPtr_t *nsamp);
+extern void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input, void *output /*, intPtr_t *nsamp*/);
 
 #endif
 

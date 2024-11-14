@@ -94,6 +94,7 @@ typedef struct
     int32_t down_counter;    /* memory of the debouncing downcounter  */
     int16_t decf;  /* memory of the decimator for z7/floor noise estimation */
     uint8_t previous_vad; 
+    uint8_t pad___; 
 } sigp_detector2D_instance;
 
 #define F2Q31(f) (long)(0x7FFFFFFFL*(f))
@@ -105,15 +106,15 @@ typedef struct
 // MiniFloat 76543210
 //           MMMEEEEE x= MMM(0..7) << EEEEE(0..31) =[0..15e9] +/-1
 // just for information: OFP8_E4M3 SEEEEMMM x= (sign).(1 + M/8).(2<<(E-7)) =[-8..+8] +/-1e-6
-#define MINIF(m,exp) ((uint8_t)((m)<<5 | (exp)))
-#define MINIFLOAT2Q31(x) ((((x) & 0xE0)>>5) << ((x) & 0x1F))
-#define MULTIPLIER_MSB 7     
-#define MULTIPLIER_LSB 5
-#define   EXPONENT_MSB 4     
-#define   EXPONENT_LSB 0
+//#define MINIF(m,exp) ((uint8_t)((m)<<5 | (exp)))
+//#define MINIFLOAT2Q31(x) ((((x) & 0xE0)>>5) << ((x) & 0x1F))
+//#define MULTIPLIER_MSB 7     
+//#define MULTIPLIER_LSB 5
+//#define   EXPONENT_MSB 4     
+//#define   EXPONENT_LSB 0
 
-#define VADRISE MINIFLOAT2Q31(instance->config.vad_rise)
-#define VADFALL MINIFLOAT2Q31(instance->config.vad_fall)
+//#define VADRISE MINIFLOAT2Q31(instance->config.vad_rise)
+//#define VADFALL MINIFLOAT2Q31(instance->config.vad_fall)
 
 // Threshold/clamping to prevent the value 0 entering filter calculations
 // TODO - This prevents zero entering filter but effectively restricts us to

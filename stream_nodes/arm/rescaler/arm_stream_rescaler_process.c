@@ -24,7 +24,8 @@
  * limitations under the License.
  * 
  */
-
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_RESCALER
 
 #ifdef __cplusplus
  extern "C" {
@@ -52,3 +53,4 @@ void arm_stream_rescaler_process (arm_stream_rescaler_instance *instance, void *
 }
 #endif
  
+#endif // CODE_ARM_STREAM_RESCALER

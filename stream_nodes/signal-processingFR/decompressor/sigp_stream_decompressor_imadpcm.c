@@ -70,6 +70,9 @@
         - Low data storage overhead for minimum bits per audio sample.
 */
 
+#include "platform.h"
+#ifdef CODE_SIGP_STREAM_DECOMPRESSOR
+
 
 #include <stdio.h>
 #include <stdint.h>
@@ -186,3 +189,4 @@ void decode_imadpcm(int32_t *state, uint8_t* input, uint32_t numSamples, int16_t
     state[INDEX] = index;
 }
 
+#endif //CODE_SIGP_STREAM_DECOMPRESSOR

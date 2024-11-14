@@ -23,6 +23,8 @@
  * limitations under the License.
  * 
  */
+#include "platform.h"
+#ifdef CODE_SIGP_STREAM_DETECTOR2D
 
 #ifdef __cplusplus
  extern "C" {
@@ -66,3 +68,5 @@ void sigp_stream_detector2D_process (sigp_detector2D_instance *instance,
 }
 #endif
  
+
+#endif

@@ -24,6 +24,10 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_SIGP_CONVERTER
+
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -346,3 +350,4 @@ void sigp_stream_converter_process3 (sigp_stream_converter_format *output,
 }
 #endif
  
+#endif  // #ifndef CODE_sigp_STREAM_CONVERTER

@@ -30,6 +30,10 @@
  * limitations under the License.
  * 
  */
+
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_FILTER2D
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -227,3 +231,7 @@ void arm_stream_filter2D (int32_t command, stream_handle_t instance, stream_xdmb
 #ifdef __cplusplus
 }
 #endif
+
+#else
+void arm_stream_filter2D (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif //#ifdef CODE_ARM_STREAM_FILTER2D

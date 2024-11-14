@@ -24,6 +24,9 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_SIGP_STREAM_DETECTOR2D
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -91,7 +94,7 @@ long x;
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void sigp_stream_detector2D (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void sigp_stream_detector2D (unsigned int command, void *instance, void *data, unsigned int *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
     switch (RD(command,COMMAND_CMD))
@@ -197,3 +200,7 @@ void sigp_stream_detector2D (int32_t command, stream_handle_t instance, stream_x
 }
 #endif
  
+
+#else
+void sigp_stream_detector2D (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif  // #ifndef CODE_ARM_STREAM_AMPLIFIER

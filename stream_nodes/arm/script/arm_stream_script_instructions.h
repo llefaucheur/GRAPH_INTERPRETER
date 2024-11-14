@@ -75,15 +75,14 @@
 
 
     FEDCBA9876543210FEDCBA9876543210
-    II______________________________ if yes, if not, no test, break-point (+ margin)
+    II______________________________  if yes, if not, no test, break-point (+ margin)
     __yyy___________________________  8 op-code (eq,le,lt,ne,ge,gt) + ldjmp  + xxx 
-    _____-OPARDST_SRC1xxxxxxxxxxxxxx  OPLJ_HEAP OPLJ_PARAM OPLJ_BASE OPLJ_SIZE OP_LD OP_TEST OPLJ_SCATTER OPLJ_GATHER OPLJ_CAST OPLJ_JUMP OPLJ_BANZ OPLJ_CALL OPLJ_CALLSYS (save 2 regs)
-                      xx<----K12--->  signed_K(sw) = unsigned_K12(32..4095)-2048 = [2048 .. -2016]
-    __________________0000000000SRC2  detection of 0000.000_.____ = (X & FE0) => either SRC2 or K-long
-    __________________0000000001TTTT  DTYPE + extra word (and DTYPE
-    )
-    __________DST_SRC1__LLLLLLPPPPPP  OPLJ_WR2BF OPLJ_RDBF 6+6-bits(Len Pos) 
-    __________SRC0SRC1SRC3SRC4__SRC2  SAVE/RESTORE 5 Registers(r0..r11)
+    _____-OPAR______________________  OPAR
+    __________DST_SRC1__________SRC2  Destination and source registers
+                      xx<----K12--->  small signed constant [-2016 .. 2047]
+    __________________0000000001TTTT  extra word constant and its type
+    ____________________<-MSB><-LSB>  Bit-field operations
+    __________SRC0SRC1SRC3SRC4__SRC2  Up to 5 Registers save/restore
 
     IIyyy-OPARDST_SRC1__<--K12-0SRC2
 
@@ -338,7 +337,7 @@
 #define OPAR_MIN         14 // min     MIN (SRC1, SRC2)                      
 #define OPAR_AMAX        15 // amax    AMAX (abs(SRC1), abs(SRC2)) 
 #define OPAR_AMIN        16 // amin    AMIN (abs(SRC1), abs(SRC2))
-#define OPAR_NORM        17 // norm    normed on MSB(SRC1), applied shift in SRC2
+#define OPAR_NORM        17 // norm    normed on MSB(SRC1)
 #define OPAR_ADDMOD      18 // addmod  SRC1 + SRC2 (or K) MODULO_DST   DST = OPAR SRC1 SRC2/K      
 #define OPAR_SUBMOD      19 // submod  SRC1 - SRC2 (or K) MODULO_DST   works for PTR    
 
@@ -359,7 +358,7 @@
 #define OPLJ_JUMP        13 // jump signed_K  + push dst src1
 #define OPLJ_BANZ        14 // banz +/-K decrement dst 
 #define OPLJ_CALL        15 // call +/-K and push dst src1
-#define OPLJ_CALLSYS     16 // callsys {K}  bit8=0 {dst src1 src2}  bit8=1 {dst + extra word for #n + #arc/#node}
+#define OPLJ_CALLSYS     16 // callsys {K}  
 #define OPLJ_SAVE        17 // save up to 5 registers
 #define OPLJ_RESTORE     18 // restore up to 5 registers   
 #define OPLJ_RETURN      19 // return {keep registers fields}

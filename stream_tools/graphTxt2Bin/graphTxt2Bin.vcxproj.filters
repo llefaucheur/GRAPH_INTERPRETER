@@ -73,6 +73,12 @@
     <ClInclude Include="..\..\stream_nodes\stream_common_types.h">
       <Filter>Stream</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\stream_platform\platform_computer.h">
+      <Filter>GraphSteps</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\stream_platform\platform_lp-mspm0l1306.h">
+      <Filter>GraphSteps</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk.txt">

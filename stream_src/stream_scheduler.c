@@ -73,8 +73,8 @@ static void check_graph_boundaries(arm_stream_instance_t *S);
  */
 
 static void stream_calls_node (arm_stream_instance_t *S,
-                    stream_handle_t instance, 
-                    stream_xdmbuffer_t *data,
+                    void *instance, 
+                    void *data,
                     uint32_t *parameter
                    )
 {
@@ -770,9 +770,8 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
                  check the time interval from last frame (by a read of the time-stamp in 
                  the FIFO) and current time, to deliver a data rate close to :
                  "platform_io_control.stream_settings_default.SAMPLING_FMT1_"
-                Trigger the data request some time ahead to let the converters
-                 have the time to exchange data (image, remote temperature sensors,
-                 characters on a display, ..).
+                Trigger the data request using script and delta-time read
+                MP(A+M) 
                 Tell data transfer on-going (REQMADE_IO_LSB)
             */
             SET_BIT(*ongoing, ONGOING_IO_LSB);
@@ -786,10 +785,9 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
             }
 
             /* io_func has its internal buffer, don't give the final destination */
-            //if (IO_COMMAND_SET_BUFFER != RD(*pio_control, SET0COPY1_IOFMT0))
-            //{   buffer = 0;
-            //}
-            //@@@@@@@@@@@@@ UPDATE IO MANIFESTS @@@@@@@@@@@@
+            if (IO_COMMAND_SET_BUFFER != RD(*pio_control, SET0COPY1_IOFMT0))
+            {   buffer = 0;
+            }
 
             /* io_func : data move + io_stream notification */
             (*io_func)(STREAM_RUN, buffer, size);
@@ -865,7 +863,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
 {   
     static long DEBUG_CNT;
 
-    if (script_option & STREAM_SCHD_SCRIPT_START) { script_processing (S->main_script, 0);}
+    //if (script_option & STREAM_SCHD_SCRIPT_START) { script_processing (S->main_script, 0);}
 
     /* continue from the last position, index in W32 */
     S->linked_list_ptr = &((S->linked_list)[RD(S->whoami_ports, NODE_W32OFF_PARCH)]);
@@ -962,7 +960,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
             break;
         }
 
-        if (script_option & STREAM_SCHD_SCRIPT_END_PARSING) {script_processing (S->main_script, 0); }
+        //if (script_option & STREAM_SCHD_SCRIPT_END_PARSING) {script_processing (S->main_script, 0); }
 
     } while ((return_option == STREAM_SCHD_RET_END_NODE_NODATA) && 
                 (TEST_BIT(S->scheduler_control, STILDATA_SCTRL_LSB)));
@@ -1020,7 +1018,7 @@ static void read_header (arm_stream_instance_t *S)
 
 
     /* read the physical address */
-    S->address_node = S->node_entry_point_table[idx_node];
+    S->address_node = S->node_entry_points[idx_node];
 
     /* read the arc indexes */
     for (iarc = 0; iarc < MIN(narc, MAX_NB_STREAM_PER_NODE); iarc+=2)
@@ -1077,7 +1075,7 @@ static uint8_t lock_this_component (arm_stream_instance_t *S)
     //uint8_t check;
     const p_stream_al_services *al_func;
 
-    al_func = &(S->al_services[0]);
+    al_func = &(S->al_services);
 
     /* ---------------------SWC reservation attempt -------------------*/            
     /* if the NODE is already used skip it */
@@ -1099,14 +1097,15 @@ static uint8_t lock_this_component (arm_stream_instance_t *S)
 
 static uint8_t unlock_this_component (arm_stream_instance_t *S)
 {
-    const p_stream_al_services *al_func = &(S->al_services[0]);
+    const p_stream_al_services *al_func = &(S->al_services);
     uint8_t tmp = 0;
 
     (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV, AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP,AL_SERVICE_MUTUAL_EXCLUSION), 
-        (intPtr_t)(S->pt8b_collision_arc), (intPtr_t)&tmp, 0, 0);
+        (void *)(S->pt8b_collision_arc), (void *)&tmp, 0, 0);
 
     return 1;
 }
+
 
 
 /**
@@ -1128,7 +1127,7 @@ static void reset_component (arm_stream_instance_t *S)
 {
     uint8_t nbmem;
     uint8_t imem, j, iformat, narc;
-    uint32_t *memreq, check;
+    uint32_t *memreq, check, *key;
     
     #define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (STREAM_FORMAT_SIZE_W32*MAX_NB_STREAM_PER_NODE))
     intPtr_t memreq_physical[MEMRESET];
@@ -1141,7 +1140,18 @@ static void reset_component (arm_stream_instance_t *S)
     for (imem = 1; imem < nbmem; imem++)
     {   /* create pointers to the right memory bank */
         memreq_physical[imem] = pack2linaddr_int(S->long_offset, memreq[NBW32_MEMREQ_LW2 * imem], LINADDR_UNIT_W32);
-    }      
+    }
+    
+    /* are there keys to share */
+    if (RD(S->arcID[0], KEY_LW1))
+    {   
+        memreq_physical[imem] = memreq[NBW32_MEMREQ_LW2 * imem]; imem ++; /* user key */
+        memreq_physical[imem] = memreq[NBW32_MEMREQ_LW2 * imem]; imem ++;
+        
+        arm_stream_services (PACK_SERVICE(NOCOMMAND_SSRV,NOOPTION_SSRV,NOTAG_SSRV, SERV_INTERNAL_KEYEXCHANGE, SERV_GROUP_INTERNAL), &key, 0, 0, 0);
+        memreq_physical[imem] = key[0]; imem ++;    /* platform key */
+        memreq_physical[imem] = key[1]; imem ++;
+    }
 
     if (TEST_BIT(S->node_header[0], LOADFMT_LW0_LSB))
     {   /* push the FORMAT of the arcs */
@@ -1172,11 +1182,9 @@ static void reset_component (arm_stream_instance_t *S)
     ST(S->pack_command, NODE_TAG_CMD, RD((S->node_header)[S->node_parameters_offset], TRACEID_LW3));
 
     stream_calls_node (S,
-        (stream_handle_t) memreq_physical, 
-        (stream_xdmbuffer_t *) arm_stream_services, 
+        (void *) memreq_physical, 
+        (void *) arm_stream_services, 
         &check);
-
-    /* @@@ TODO : STREAM_SERVICE_INTERNAL_KEYEXCHANGE for KEY_LW2S for key exchanges */
 }
 
 
@@ -1214,7 +1222,7 @@ static void set_new_parameters (arm_stream_instance_t *S, uint32_t *ptr_param32b
 
         stream_calls_node (S, 
                 S->node_instance_addr,
-                (stream_xdmbuffer_t *)ptr_param32b, 
+                (void *)ptr_param32b, 
                 &status);
     }
 }

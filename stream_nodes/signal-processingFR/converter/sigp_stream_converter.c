@@ -24,6 +24,9 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_SIGP_CONVERTER
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -58,10 +61,6 @@ The case of IMU format is managed like other one-dimension format.
 The case of 2D format is special with operations of pixel area extraction, zoom, interpolate, rotation  and pixel format conversions.
 
 */
-#if CODE_SIGP_STREAM_CONVERTER 
-void sigp_stream_converter (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status) {}   // codesize saving 
-#else
-
 
 /*
  * size of each types managed by VLIB
@@ -77,7 +76,7 @@ const s32_t ssrc_formatSize[MAXNBFORMATS] = { 2 , 4 }; /* nb of byte for the two
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void sigp_stream_converter (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void sigp_stream_converter (unsigned int command, void *instance, void *data, unsigned int *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
@@ -656,6 +655,10 @@ void  ssrc_getWorkingMemRequirement (s32_t *amountOfMemory,
 
 #ifdef __cplusplus
 }
+
+#else
+void sigp_stream_converter(unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+
 #endif  // #ifndef CODE_sigp_STREAM_CONVERTER
 
  

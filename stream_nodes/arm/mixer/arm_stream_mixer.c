@@ -30,6 +30,8 @@
  * limitations under the License.
  * 
  */
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_MIXER
 
 #ifdef __cplusplus
  extern "C" {
@@ -136,7 +138,7 @@ node arm_stream_mixer
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void arm_stream_mixer (unsigned int command, void *instance, void *data, unsigned int *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
@@ -228,3 +230,6 @@ void arm_stream_mixer (int32_t command, stream_handle_t instance, stream_xdmbuff
 }
 #endif
     
+#else
+void arm_stream_mixer (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif  // #ifndef CODE_ARM_STREAM_MIXER

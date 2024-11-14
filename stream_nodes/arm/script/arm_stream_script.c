@@ -31,6 +31,9 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_SCRIPT
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -68,6 +71,7 @@ static void * pack2linaddr_ptr(uint8_t **long_offset, uint32_t data, uint8_t ext
 */
 void arm_stream_script (uint32_t command, void *instance, void *data, uint32_t *status)
 {
+
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
     switch (RD(command,COMMAND_CMD))
@@ -128,13 +132,13 @@ void arm_stream_script (uint32_t command, void *instance, void *data, uint32_t *
 
             /* reset the instance (arc buffer address) */
 
-            pinstance->ctrl.codes = RD(pinstance->arc_desc[SCRIPT_SCRARCW1], CODESIZE_SCRARCW1);
-            pinstance->ctrl.nstack = RD(pinstance->arc_desc[DBGFMT_SCRARCW4], NSTACK_SCRARCW4);
-            pinstance->ctrl.nregs = RD(pinstance->arc_desc[DBGFMT_SCRARCW4], NREGS_SCRARCW4);
-            pinstance->ctrl.SP = pinstance->ctrl.nregs;     // after { R0 .. R(nregs),R12 }
-            pinstance->ctrl.PC = 0;         // PC pre-incremented before read
-            pinstance->ctrl.test_flag = 0;
-            pinstance->ctrl.max_cycle = MAXCYCLES;
+            pinstance->codes = RD(pinstance->arc_desc[SCRIPT_SCRARCW1], CODESIZE_SCRARCW1);
+            pinstance->nstack = RD(pinstance->arc_desc[DBGFMT_SCRARCW4], NSTACK_SCRARCW4);
+            pinstance->nregs = RD(pinstance->arc_desc[DBGFMT_SCRARCW4], NREGS_SCRARCW4);
+            pinstance->SP = pinstance->nregs;     // after { R0 .. R(nregs),R12 }
+            pinstance->PC = 0;         // PC pre-incremented before read
+            pinstance->test_flag = 0;
+            pinstance->max_cycle = MAXCYCLES;
 
             /*
             *  BYTECODE 
@@ -169,3 +173,6 @@ void arm_stream_script (uint32_t command, void *instance, void *data, uint32_t *
 }
 #endif
     
+#else
+void arm_stream_script (unsigned int command, void *instance, void *data, unsigned int *status) {}
+#endif //if CODE_ARM_STREAM_SCRIPT

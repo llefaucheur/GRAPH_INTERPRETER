@@ -38,7 +38,9 @@
    32bits / 64bits architectures 
 */
 #define PLATFORM_ARCH_32BIT
-//#define PLATFORM_ARCH_64BIT
+
+/* #define PLATFORM_ARCH_64BIT 
+*/
 
 
 
@@ -256,6 +258,42 @@
 
 /* IO_DOMAIN_USER_INTERFACE_OUT   12 : subtypes and tuning  SUBTYPE_FMT1 */
 
+
+
+
+/*============================  ARCHITECTURES ============================================*/
+
+enum stream_processor_architectures  /* architectures */
+{
+    ANY_ARCH    = 0,    /* source code without intrinsics neither inline assembly */
+    ARMv6_M0    = 1,    /* Cortex-M0+ */
+    ARMv6_M3    = 2,    /* Cortex-M3 */
+    ARMv7E_M    = 3,    /* Cortex-M4/M7 */
+    ARMv8_M     = 4,    /* Cortex-M33 */
+
+    ARMv7_R     = 11,   /* Cortex-R4 */
+    ARMv8_R     = 12,   /* Cortex-R52 */
+
+    ARMv7_A     = 21,   /* Cortex-A7 */
+
+    ARMv8_A32   = 31,   /* Cortex-A32 */
+    ARMv8_A64   = 32,   /* Cortex-A55 */
+
+    ARMv9_A     = 41,
+
+    C166        = 81, 
+    C51         = 82,  
+    LAST_ARCH
+};
+
+enum stream_processor_sub_arch_fpu    
+{
+    ARCH_INTEGER    = 1,  /* non constraint : computations on integers */
+    ARCH_FPU        = 2,  /* scalar fp32 */
+    ARCH_DPFPU      = 3,  /* scalar fp32 + fp64 */
+    ARCH_VECTOR     = 4,  /* NEON/MVE + fp16 + fp32 + dotProd8b */
+    ARCH_ADVANCED_VECTOR = 5 /* ARCH_VECTOR + NN CA55 */
+};
 
 /* 
    ================================= stream_format  FORMATS =======================================
@@ -540,8 +578,8 @@
 
     /* CALLSYS_NODE (CMD=set/read_param + TAG, Node offset, Pointer, Nbytes) */
     #define CALLSYS_FUNCTION_SSRV_NODE      1u       
-    
-    /*  #define STREAM_RESET                1
+
+/*      #define STREAM_RESET                1
         #define STREAM_SET_PARAMETER        2
         #define STREAM_READ_PARAMETER       3
         #define STREAM_RUN                  4
@@ -551,8 +589,7 @@
         #define STREAM_READ_DATA            8
         #define STREAM_WRITE_DATA           9
 
-        #define NOWAIT_OPTION_SSRV      0
-        #define   WAIT_OPTION_SSRV      1
+
         
         script language : CALLSYS ARC  r-CMD r-ARC r-ADDR r-N
                                   FUNC   SET arcID addr   n 

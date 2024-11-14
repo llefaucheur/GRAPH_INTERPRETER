@@ -24,7 +24,7 @@
  * limitations under the License.
  * 
  */
-
+#ifdef CODE_ARM_STREAM_DEMODULATOR
 
 #ifdef __cplusplus
  extern "C" {
@@ -52,3 +52,4 @@ void arm_stream_demodulator_process (arm_stream_demodulator_instance *instance, 
 }
 #endif
  
+#endif

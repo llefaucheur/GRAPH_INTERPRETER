@@ -99,11 +99,11 @@ typedef uint64_t sdouble;
       "state" 
  */
 
-typedef void    (stream_node) (uint32_t command, void *instance, void *data, uint32_t *status);
-typedef void (*p_stream_node) (uint32_t command, void *instance, void *data, uint32_t *status);
+typedef void    (stream_node) (unsigned int command, void *instance, void *data, unsigned int *status);
+typedef void (*p_stream_node) (unsigned int command, void *instance, void *data, unsigned int *status);
 
-typedef void    (io_function_ctrl) (uint32_t command, void *data, uint32_t length);   
-typedef void (*p_io_function_ctrl) (uint32_t command, void *data, uint32_t length);  
+typedef void    (io_function_ctrl) (unsigned int command, void *data, unsigned int length);   
+typedef void (*p_io_function_ctrl) (unsigned int command, void *data, unsigned int length);  
 
 
 /* ------------------------------------------------------------------------------------------
@@ -111,7 +111,7 @@ typedef void (*p_io_function_ctrl) (uint32_t command, void *data, uint32_t lengt
 */
 typedef struct  
 {  
-    uint8_t **long_offset;              // pointer to "long_offset[MAX_NB_MEMORY_OFFSET]" 
+    const uint8_t **long_offset;        // pointer to "long_offset[MAX_NB_MEMORY_OFFSET]" 
     uint32_t *graph;                    // base address of the binary graph
     uint8_t *ongoing;                   // pointer to the RAM area to the IOs : on-going transfer flag
 
@@ -120,10 +120,10 @@ typedef struct
     uint32_t *linked_list;   
     uint32_t *script_offsets;   
     const p_io_function_ctrl *platform_io;
-    const p_stream_node *node_entry_point_table;
+    const p_stream_node *node_entry_points;
 
-    const p_stream_al_services * application_callbacks;
-    const p_stream_al_services * al_services;
+    p_stream_al_services application_callbacks;
+    p_stream_al_services al_services;
 
     p_stream_node address_node;
     uint32_t *linked_list_ptr;          // current position of the linked-list read pointer

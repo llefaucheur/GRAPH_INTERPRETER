@@ -37,7 +37,7 @@ of intrinsics.
 #ifndef _NONE_H_
 #define _NONE_H_
 
-#include "arm_math_types.h"
+#include "../arm_math_types.h"
 
 #ifdef   __cplusplus
 extern "C"
@@ -494,31 +494,31 @@ __STATIC_FORCEINLINE uint32_t __ROR(uint32_t op1, uint32_t op2)
   /*
    * @brief C custom defined SMLALD
    */
-  __STATIC_FORCEINLINE uint64_t __SMLALD(
-  uint32_t x,
-  uint32_t y,
-  uint64_t sum)
-  {
-/*  return (sum + ((q15_t) (x >> 16) * (q15_t) (y >> 16)) + ((q15_t) x * (q15_t) y)); */
-    return ((uint64_t)(((((q31_t)x << 16) >> 16) * (((q31_t)y << 16) >> 16)) +
-                       ((((q31_t)x      ) >> 16) * (((q31_t)y      ) >> 16)) +
-                       ( ((q63_t)sum    )                                  )   ));
-  }
+//  __STATIC_FORCEINLINE uint64_t __SMLALD(
+//  uint32_t x,
+//  uint32_t y,
+//  uint64_t sum)
+//  {
+///*  return (sum + ((q15_t) (x >> 16) * (q15_t) (y >> 16)) + ((q15_t) x * (q15_t) y)); */
+//    return ((uint64_t)(((((q31_t)x << 16) >> 16) * (((q31_t)y << 16) >> 16)) +
+//                       ((((q31_t)x      ) >> 16) * (((q31_t)y      ) >> 16)) +
+//                       ( ((q63_t)sum    )                                  )   ));
+//  }
 
 
   /*
    * @brief C custom defined SMLALDX
    */
-  __STATIC_FORCEINLINE uint64_t __SMLALDX(
-  uint32_t x,
-  uint32_t y,
-  uint64_t sum)
-  {
-/*  return (sum + ((q15_t) (x >> 16) * (q15_t) y)) + ((q15_t) x * (q15_t) (y >> 16)); */
-    return ((uint64_t)(((((q31_t)x << 16) >> 16) * (((q31_t)y      ) >> 16)) +
-                       ((((q31_t)x      ) >> 16) * (((q31_t)y << 16) >> 16)) +
-                       ( ((q63_t)sum    )                                  )   ));
-  }
+//  __STATIC_FORCEINLINE uint64_t __SMLALDX(
+//  uint32_t x,
+//  uint32_t y,
+//  uint64_t sum)
+//  {
+///*  return (sum + ((q15_t) (x >> 16) * (q15_t) y)) + ((q15_t) x * (q15_t) (y >> 16)); */
+//    return ((uint64_t)(((((q31_t)x << 16) >> 16) * (((q31_t)y      ) >> 16)) +
+//                       ((((q31_t)x      ) >> 16) * (((q31_t)y << 16) >> 16)) +
+//                       ( ((q63_t)sum    )                                  )   ));
+//  }
 
 
   /*

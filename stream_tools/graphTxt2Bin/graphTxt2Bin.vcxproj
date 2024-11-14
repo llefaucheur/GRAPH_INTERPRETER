@@ -26,6 +26,8 @@
     <ClInclude Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_header.h" />
     <ClInclude Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk_header.h" />
     <ClInclude Include="..\..\stream_platform\platform.h" />
+    <ClInclude Include="..\..\stream_platform\platform_computer.h" />
+    <ClInclude Include="..\..\stream_platform\platform_lp-mspm0l1306.h" />
     <ClInclude Include="..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\stream_src\stream_extern.h" />
     <ClInclude Include="..\..\stream_src\stream_types.h" />
@@ -193,7 +195,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_src\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>

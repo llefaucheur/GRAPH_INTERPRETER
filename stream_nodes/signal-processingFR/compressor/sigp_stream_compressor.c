@@ -24,7 +24,8 @@
  * 
  */
 
-
+#include "platform.h"
+#ifdef CODE_SIGP_STREAM_COMPRESSOR
 
 #include <stdint.h>
 #include "stream_common_const.h"
@@ -74,7 +75,7 @@
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void sigp_stream_compressor (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void sigp_stream_compressor (unsigned int command, void *instance, void *data, unsigned int *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
@@ -190,3 +191,8 @@ void sigp_stream_compressor (int32_t command, stream_handle_t instance, stream_x
 #ifdef __cplusplus
 }
 #endif
+
+
+#else
+void sigp_stream_compressor (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif  // #ifndef CODE_SIGP_STREAM_COMPRESSOR

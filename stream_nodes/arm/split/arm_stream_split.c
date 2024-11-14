@@ -31,6 +31,10 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_SPLIT
+
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -227,3 +231,7 @@ void arm_stream_split (int32_t command, stream_handle_t instance, stream_xdmbuff
 }
 #endif
     
+
+#else
+void arm_stream_split (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif  // #ifndef CODE_ARM_STREAM_SPLIT

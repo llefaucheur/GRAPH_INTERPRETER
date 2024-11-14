@@ -31,6 +31,9 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_FMTCONV
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -64,10 +67,6 @@ The case of IMU format is managed like other one-dimension format.
 The case of 2D format is special with operations of pixel area extraction, zoom, interpolate, rotation  and pixel format conversions.
 
 */
-
-#ifndef CODE_ARM_STREAM_FMTCONV
-void arm_stream_format_converter (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status) { }
-#else
 
 
 /**
@@ -146,10 +145,12 @@ void arm_stream_format_converter (int32_t command, stream_handle_t instance, str
         default :
             break;
     }
-#endif
 }
+
 #ifdef __cplusplus
 }
-#endif  // #ifndef CODE_arm_stream_format_converter
+#endif
 
- 
+#else
+void arm_stream_format_converter (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif  // #ifndef CODE_ARM_STREAM_FMTCONV 

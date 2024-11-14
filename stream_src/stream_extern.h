@@ -32,10 +32,10 @@
  extern "C" {
 #endif
 
-extern p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS];
+extern p_stream_node node_entry_points[NB_NODE_ENTRY_POINTS];
 
 /* entry point from the application  */
-extern void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint8_t *data, uint32_t size);
+extern void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, void *data, uint32_t size);
 
 /* entry point from the device drivers */
 extern void arm_graph_interpreter_io_ack (uint8_t io_al_idx, uint8_t *data,  uint32_t size);

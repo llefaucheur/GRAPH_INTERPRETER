@@ -23,6 +23,8 @@
  * limitations under the License.
  * 
  */
+#include "platform.h"
+#ifdef CODE_SIGP_STREAM_RESAMPLER
 
 #ifdef __cplusplus
  extern "C" {
@@ -50,3 +52,4 @@
 }
 #endif
  
+#endif 

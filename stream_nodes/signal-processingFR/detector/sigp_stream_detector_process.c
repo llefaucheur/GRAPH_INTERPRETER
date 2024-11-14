@@ -24,6 +24,10 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_SIGP_STREAM_DETECTOR
+
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -155,3 +159,4 @@ void sigp_stream_detector_process (sigp_detector_instance *pinstance,
 }
 #endif
  
+#endif

@@ -24,6 +24,10 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_SIGP_CONVERTER
+
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -7303,3 +7307,4 @@ const f32_t ssrc_RomCoefficients[40961] = {
 }
 #endif
  
+#endif  // #ifndef CODE_sigp_STREAM_CONVERTER

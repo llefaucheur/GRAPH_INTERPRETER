@@ -41,7 +41,6 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\rescaler\arm_stream_rescaler_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\router\arm_stream_router.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\router\arm_stream_router_process.c" />
-    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_graph_control.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_script.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_script_process.c" />
     <ClCompile Include="..\..\..\stream_nodes\arm\split\arm_stream_split.c" />
@@ -65,6 +64,9 @@
     <ClCompile Include="..\..\..\stream_src\stream_graph_interpreter.c" />
     <ClCompile Include="..\..\..\stream_src\stream_io.c" />
     <ClCompile Include="..\..\..\stream_src\stream_scheduler.c" />
+    <ClCompile Include="..\..\lp-mspm0l1306\main_call_lp-mspm0l1306.c" />
+    <ClCompile Include="..\..\lp-mspm0l1306\platform_lp-mspm0l1306.c" />
+    <ClCompile Include="..\..\lp-mspm0l1306\platform_lp-mspm0l1306_io_services.c" />
     <ClCompile Include="..\main.c" />
     <ClCompile Include="..\main_call_computer.c" />
     <ClCompile Include="..\platform_computer.c" />
@@ -74,6 +76,7 @@
     <ClCompile Include="..\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_init_q15.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier.h" />
     <ClInclude Include="..\..\..\stream_nodes\arm\filter\arm_stream_filter.h" />
     <ClInclude Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator.h" />
     <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_stream_script.h" />
@@ -83,6 +86,11 @@
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\..\stream_src\stream_extern.h" />
     <ClInclude Include="..\..\..\stream_src\stream_types.h" />
+    <ClInclude Include="..\..\platform.h" />
+    <ClInclude Include="..\..\platform_computer.h" />
+    <ClInclude Include="..\..\platform_lp-mspm0l1306.h" />
+    <ClInclude Include="..\..\platform_lpc55s69evk.h" />
+    <ClInclude Include="..\platform_computer.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\graph_computer.txt" />
@@ -184,10 +192,12 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <WarningLevel>Level2</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <DisableSpecificWarnings>C4189;C4100;C4464;4189;4100;4464</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

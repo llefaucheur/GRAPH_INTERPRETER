@@ -31,6 +31,9 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_ANALYSIS
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -138,9 +141,9 @@ void arm_stream_analysis (uint32_t command, void *instance, void *data, uint32_t
                 memory pointers are in the same order as described in the NODE manifest
         */
         case STREAM_RESET: 
-        {   stream_al_services *stream_entry = (stream_al_services *)data;
+        {   //stream_al_services *stream_entry = (stream_al_services *)data;
             intPtr_t *memresults = (intPtr_t *)instance;
-            uint16_t preset = RD(command, PRESET_CMD);
+            //uint16_t preset = RD(command, PRESET_CMD);
 
             arm_analysis_instance *pinstance = (arm_analysis_instance *) *memresults;
             pinstance->services = (stream_al_services *)data;
@@ -227,3 +230,6 @@ void arm_stream_analysis (uint32_t command, void *instance, void *data, uint32_t
 }
 #endif
     
+#else
+void arm_stream_analysis (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif //#ifdef CODE_ARM_STREAM_ANALYSIS

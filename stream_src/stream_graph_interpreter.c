@@ -60,7 +60,7 @@
                       
   @remark
  */
-void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uint8_t *data, uint32_t size)
+void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, void *data, uint32_t size)
 {   
 	switch (RD(command, COMMAND_CMD))
     {

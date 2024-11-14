@@ -43,12 +43,13 @@
 #include <string.h>
 
 #include <stdint.h>
+
+#include "platform.h"
 #include "stream_common_const.h"
 #include "stream_common_types.h"
 #include "stream_const.h"      
 #include "stream_types.h"
 
-#include "platform_lp-mspm0l1306.h"
 
 extern void platform_init_copy_graph(arm_stream_instance_t *S);
 extern void platform_init_io(arm_stream_instance_t *S);
@@ -68,51 +69,56 @@ extern const uint8_t platform_audio_out_bit_fields[];
     Full node descriptions given in ./stream_tools/TEMPLATE_GRAPH.txt
 */
 
+
+extern p_stream_node arm_stream_null_task;       /*  0  */
 extern p_stream_node arm_stream_script;          /*  1  #define arm_stream_script_index 1 */
-extern p_stream_node arm_stream_graph_control;   /*  2*/
+extern p_stream_node arm_stream_format_converter;/*  2*/
 extern p_stream_node arm_stream_router;          /*  3*/
-extern p_stream_node arm_stream_converter;       /*  4*/
+extern p_stream_node sigp_stream_converter;      /*  4*/
 extern p_stream_node arm_stream_amplifier;       /*  5*/
 extern p_stream_node arm_stream_mixer;           /*  6*/
 extern p_stream_node arm_stream_filter;          /*  7*/
-extern p_stream_node arm_stream_detector;        /*  8*/
+extern p_stream_node sigp_stream_detector;       /*  8*/
 extern p_stream_node arm_stream_rescaler;        /*  9*/
-extern p_stream_node arm_stream_compressor;      /* 10*/
-extern p_stream_node arm_stream_decompressor;    /* 11*/
+extern p_stream_node sigp_stream_compressor;     /* 10*/
+extern p_stream_node sigp_stream_decompressor;   /* 11*/
 extern p_stream_node arm_stream_modulator;       /* 12*/
 extern p_stream_node arm_stream_demodulator;     /* 13*/
-extern p_stream_node arm_stream_resampler;       /* 14*/
+extern p_stream_node sigp_stream_resampler;      /* 14*/
 extern p_stream_node arm_stream_qos;             /* 15*/
 extern p_stream_node arm_stream_split;           /* 16*/
-extern p_stream_node arm_stream_detector2D;      /* 17*/
+extern p_stream_node sigp_stream_detector2D;     /* 17*/
 extern p_stream_node arm_stream_filter2D;        /* 18*/
 extern p_stream_node arm_stream_analysis;        /* 19*/
+extern p_stream_node bitbank_JPEGENC;            /* 20*/
+extern p_stream_node TjpgDec;                    /* 21*/
 
 #define TBD 0
 
-p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
+p_stream_node node_entry_points[NB_NODE_ENTRY_POINTS] =
 {
-    /*--------- ARM ---------*/
-    /*  0*/ (void *)0,                          /* node disabled */
+    /*  0*/ (void *)&arm_stream_null_task,       /* node disabled */
     /*  1*/ (void *)&arm_stream_script,         /* byte-code interpreter, index "arm_stream_script_INDEX" */
-    /*  2*/ (void *)&arm_stream_graph_control,  /* scheduler control : lock, bypass, loop, if-then */
+    /*  2*/ (void *)&arm_stream_format_converter,/* arm_stream_format_converter */  
     /*  3*/ (void *)&arm_stream_router,         /* copy input arcs and subchannel and output arcs and subchannels   */     
-    /*  4*/ (void *)&arm_stream_converter,      /* raw data format converter */
+    /*  4*/ (void *)&sigp_stream_converter,     /* raw data format converter */
     /*  5*/ (void *)&arm_stream_amplifier,      /* amplifier mute and un-mute with ramp and delay control */
     /*  6*/ (void *)&arm_stream_mixer,          /* multichannel mixer with mute/unmute and ramp control */
     /*  7*/ (void *)&arm_stream_filter,         /* cascade of DF1 filters */
-    /*  8*/ (void *)&arm_stream_detector,       /* estimates peaks/floor of the mono input and triggers a flag on high SNR */
+    /*  8*/ (void *)&sigp_stream_detector,      /* estimates peaks/floor of the mono input and triggers a flag on high SNR */
     /*  9*/ (void *)&arm_stream_rescaler,       /* raw data values remapping using "interp1" */
-    /* 10*/ (void *)&arm_stream_compressor,     /* raw data compression with adaptive prediction */
-    /* 11*/ (void *)&arm_stream_decompressor,   /* raw data decompression */
+    /* 10*/ (void *)&sigp_stream_compressor,    /* raw data compression with adaptive prediction */
+    /* 11*/ (void *)&sigp_stream_decompressor,  /* raw data decompression */
     /* 12*/ (void *)&arm_stream_modulator,      /* signal generator with modulation */
     /* 13*/ (void *)&arm_stream_demodulator,    /* signal demodulator, frequency estimator */
-    /* 14*/ (void *)&arm_stream_resampler,      /* asynchronous sample-rate converter */
+    /* 14*/ (void *)&sigp_stream_resampler,     /* asynchronous sample-rate converter */
     /* 15*/ (void *)&arm_stream_qos,            /* raw data interpolator with synchronization to one HQoS stream */
     /* 16*/ (void *)&arm_stream_split,          /* let a buffer be used by several nodes */
-    /* 17*/ (void *)&arm_stream_detector2D,     /* activity detection, pattern detection */
+    /* 17*/ (void *)&sigp_stream_detector2D,    /* activity detection, pattern detection */
     /* 18*/ (void *)&arm_stream_filter2D,       /* Filter, rescale, rotate, exposure compensation */
     /* 19*/ (void *)&arm_stream_analysis,       /* arm_stream_analysis, */
+    /* 20*/ (void *)&bitbank_JPEGENC,           /* bitbank_JPEGENC */
+    /* 21*/ (void *)&TjpgDec,                   /* TjpgDec */
 };
 
 
@@ -123,22 +129,26 @@ p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
         1 1 9 4 number of architectures, number of processors, number of memory banks, number of offsets
  */
 
-static uint32_t MEXT[SIZE_MBANK_DMEM_EXT];
-static uint32_t BACKUPMEM1[SIZE_MBANK_BACKUPMEM1]; 
-static uint32_t TCM2[SIZE_MBANK_TCM2]; 
-static uint32_t FLASH3[SIZE_MBANK_FLASH3]; 
+static uint8_t MEXT[SIZE_MBANK_DMEM_EXT];
+static uint8_t BACKUPMEM1[SIZE_MBANK_BACKUPMEM1]; 
+static uint8_t TCM2[SIZE_MBANK_TCM2]; 
+static uint8_t FLASH3[SIZE_MBANK_FLASH3]; 
 
-const intPtr_t long_offset[MAX_NB_MEMORY_OFFSET] = 
-{   (const intPtr_t) &(MEXT[0]),
-    (const intPtr_t) &(BACKUPMEM1[0]),
-    (const intPtr_t) &(TCM2[0]),
-    (const intPtr_t) &(FLASH3[0]),
+const uint8_t * long_offset[MAX_NB_MEMORY_OFFSET] = 
+{   &(MEXT[0]),
+    &(BACKUPMEM1[0]),
+    &(TCM2[0]),
+    &(FLASH3[0]),
 };
 
+/* 
+    translation of physical indexes known by the AL to index to the graph (pio_control with RX0/TX1, ARC, ..)
+    usage : 
+        arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data, size);
+*/
 
-//uint8_t platform_iocontrol[LAST_IO_FUNCTION_PLATFORM]; /* bytes/flags of on-going activity merged in one */
+uint8_t platform_io_al_idx_to_graph[LAST_IO_FUNCTION_PLATFORM]; 
 
-uint8_t platform_io_al_idx_to_graph[LAST_IO_FUNCTION_PLATFORM]; /* translation of physical indexes to graph indexes */
 arm_stream_instance_t * platform_io_callback_parameter;
 
 extern p_io_function_ctrl data_in_0;      
@@ -225,13 +235,20 @@ const p_stream_al_services application_callbacks[MAX_NB_APP_CALLBACKS] =
 };
 
 
-//extern const p_stream_al_services al_services;
+extern void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3, uint32_t n);
 
-/* Forward declare al_services defined below. */
-stream_al_services al_services;
-const p_stream_al_services al_service[1] =
-{   (void *)&al_services
-};
+
+//const p_stream_al_services p_arm_stream_services[1] =
+//{   arm_stream_services
+//};
+
+
+//extern const p_stream_al_services al_services;
+///* Forward declare al_services defined below. */
+//stream_al_services al_services;
+//const p_stream_al_services al_service[1] =
+//{   (void *)&al_services
+//};
 
 
 /**
@@ -281,22 +298,22 @@ uint32_t lin2pack (arm_stream_instance_t *S, uint8_t *buffer)
                 The scheduler of each Stream instance sends a physical address to the Nodes
                 and translates here the indexes to physical address using a table of offsets.
  */
-static intPtr_t pack2linaddr_int(const intPtr_t *long_offset, uint32_t x, uint32_t unit)
+static intPtr_t pack2linaddr_int(const uint8_t **long_offset, uint32_t x, uint32_t unit)
 {
-    intPtr_t dbg1, dbg2, dbg3;
+    const uint8_t *dbg1;
+    intPtr_t dbg2;
+    const uint8_t *dbg3;
+    intPtr_t result;
 
     dbg1 = long_offset[RD(x,DATAOFF_ARCW0)];    
     dbg2 = (intPtr_t)(unit * (intPtr_t)RD((x),BASEIDX_ARCW0));
+    dbg3 = &(dbg1[dbg2]);
+    result = (intPtr_t)dbg3;
 
-    if (RD(x,BAS_SIGN_ARCW0)) 
-        dbg3 = dbg1 + ~(dbg2) +1;   // dbg1-dbg2 using unsigned integers
-     else
-        dbg3 = dbg1 + dbg2;
-
-    return dbg3;  
+    return result;  
 }
 
-void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data, uint32_t unit)
+void * pack2linaddr_ptr(const uint8_t **long_offset, uint32_t data, uint32_t unit)
 {
     return (void *) (pack2linaddr_int(long_offset, data, unit));
 }
@@ -314,16 +331,14 @@ void * pack2linaddr_ptr(const intPtr_t *long_offset, uint32_t data, uint32_t uni
 
 void platform_init_stream_instance(arm_stream_instance_t *S)
 {
-extern p_stream_node node_entry_point_table[];
-extern const uint32_t graph_input[];
-extern const p_stream_al_services application_callbacks[];
+extern p_stream_node node_entry_points[];
     uint32_t PIOoffsetWords;
 
 #define STREAM_CURRENT_INSTANCE 0
 #define STREAM_NB_INSTANCE 1
 
-    S->graph = (uint32_t *) &(graph_input[1]);
-    S->long_offset = long_offset;
+    S->graph = (uint32_t *) &(graph_input[1]);      /* binary graph address loaded in the graph interpreter instance */ 
+    S->long_offset = long_offset;                   /* there is one single graph executed per platform */ 
 
     S->scheduler_control = PACK_STREAM_PARAM(
             STREAM_MAIN_INSTANCE,
@@ -337,17 +352,25 @@ extern const p_stream_al_services application_callbacks[];
     ST(S->whoami_ports, PROCID_PARCH, PROC_ID);
     ST(S->whoami_ports, PRIORITY_PARCH, STREAM_INSTANCE_LOWLATENCYTASKS);
     ST(S->whoami_ports, NODE_W32OFF_PARCH, 0);   /* index in the linked list */
-    S->al_services = al_service;
-    S->application_callbacks = application_callbacks;
-    S->node_entry_point_table = &(node_entry_point_table[0]);
+    S->al_services = arm_stream_services;
+    S->application_callbacks = &application_callbacks;
+    S->node_entry_points = &(node_entry_points[0]);
     S->platform_io = platform_io;
+
+    //{
+    //    const p_stream_al_services *al_func;
+
+    //    al_func = &(S->al_services);
+    //    (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV, PLATFORM_CLEAR_BACKUP_MEM, 0), 0,0,0,0);
+    //}
 
     platform_init_copy_graph (S);
 
     S->iomask = (1 << (RD((S->graph)[1], NB_IOS_GR1))) -1;      // IOs are enabled                                    
 
     PIOoffsetWords = GRAPH_HEADER_NBWORDS                       // Header
-                   + RD((S->graph)[1], NB_IOS_GR1);             // PIO settings
+                   + (STREAM_IOFMT_SIZE_W32 * 
+                      RD((S->graph)[1], NB_IOS_GR1));             // PIO settings
     S->script_offsets = &(S->graph[PIOoffsetWords]);
 
     PIOoffsetWords += RD((S->graph)[1], SCRIPTSSZW32_GR1);       // Scripts
@@ -355,10 +378,10 @@ extern const p_stream_al_services application_callbacks[];
     S->linked_list_ptr = S->linked_list;
 
     PIOoffsetWords += RD((S->graph)[2], LINKEDLISTSZW32_GR2);   // linked list
-    S->pio = &(S->graph[PIOoffsetWords]);
+    S->ongoing = (uint8_t *) &(S->graph[PIOoffsetWords]);
 
     PIOoffsetWords += RD((S->graph)[2], ARC_DEBUG_IDX_GR2) + ((3 + RD((S->graph)[1], NB_IOS_GR1))>>2);
-    S->all_formats = &(S->graph[PIOoffsetWords]);               // PIO is an array of Bytes of size NB_IOS_GR1/4 words
+    S->all_formats = &(S->graph[PIOoffsetWords]);               // 
 
     PIOoffsetWords += RD((S->graph)[1], NBFORMATS_GR1) * STREAM_FORMAT_SIZE_W32;
     S->all_arcs = &(S->graph[PIOoffsetWords]);
@@ -438,7 +461,7 @@ extern const p_stream_al_services application_callbacks[];
 void platform_init_copy_graph(arm_stream_instance_t *S)
 {
     uint8_t RAMsplit;
-    uint32_t graph_words_copy_in_ram, PIOoffsetWords;
+    uint32_t graph_words_copy_in_ram, PIOongoing;
     uint32_t *graph_src, *graph_dst;
 
     /* 
@@ -457,7 +480,7 @@ void platform_init_copy_graph(arm_stream_instance_t *S)
 
 
     graph_dst = (uint32_t *)GRAPH_RAM_OFFSET_PTR(L,(S->graph));
-    PIOoffsetWords = GRAPH_HEADER_NBWORDS                       // Header
+    PIOongoing     = GRAPH_HEADER_NBWORDS                       // Header
                    + RD((S->graph)[1], NB_IOS_GR1)              // PIO settings
                    + RD((S->graph)[1], SCRIPTSSZW32_GR1)        // Scripts
                    + RD((S->graph)[2], LINKEDLISTSZW32_GR2);    // linked list
@@ -475,8 +498,8 @@ void platform_init_copy_graph(arm_stream_instance_t *S)
             S->graph = graph_dst;                       // take the new address after copy 
             break;
         case COPY_CONF_GR0_FROM_PIO: 
-            graph_src = &((S->graph)[PIOoffsetWords]);
-            graph_words_copy_in_ram = S->graph[-1] - PIOoffsetWords; 
+            graph_src = &((S->graph)[PIOongoing]);
+            graph_words_copy_in_ram = S->graph[-1] - PIOongoing; 
             break; 
     }
 
@@ -490,13 +513,15 @@ void platform_init_copy_graph(arm_stream_instance_t *S)
     /* copy the graph data to uint8_t platform_io_al_idx_to_graph[LAST_IO_FUNCTION_PLATFORM]; 
         to ease the translation from graph index to graph_io_idx used in arm_graph_interpreter_io_ack() 
     */
-    {   uint32_t i_graph_io_idx, tmpi, tmpn;
+    {   uint32_t graph_io_idx, tmpi, tmpn;
+        uint32_t *pio_control;
+
         tmpn = RD((S->graph)[1], NB_IOS_GR1);
-        for (i_graph_io_idx = 0; i_graph_io_idx < tmpn; i_graph_io_idx++)
+        for (graph_io_idx = 0; graph_io_idx < tmpn; graph_io_idx++)
         {   
-            tmpi = (S->graph)[PIOoffsetWords + i_graph_io_idx];
-            tmpi = RD(tmpi, FWIOIDX_IOFMT0);
-            platform_io_al_idx_to_graph[tmpi] = i_graph_io_idx;
+            pio_control = &(S->graph[GRAPH_HEADER_NBWORDS + graph_io_idx * STREAM_IOFMT_SIZE_W32]);
+            tmpi = RD(*pio_control, FWIOIDX_IOFMT0);
+            platform_io_al_idx_to_graph[tmpi] = graph_io_idx;
         }
     }
 }
@@ -515,7 +540,8 @@ void platform_init_io(arm_stream_instance_t *S)
 {
     uint32_t nio;
     uint8_t graph_io_idx;
-    uint32_t *pio, *pio_base;
+    uint8_t *ongoing;
+    uint32_t *pio_control;
     uint32_t stream_format_io_setting;
     uint32_t io_mask;
     uint32_t iarc; 
@@ -528,8 +554,8 @@ void platform_init_io(arm_stream_instance_t *S)
 
     /* if cold start : clear the backup area */
     if (TEST_BIT(S->scheduler_control, BOOT_SCTRL_LSB) == STREAM_COLD_BOOT)
-    {   al_func = &(S->al_services[0]);
-        (*al_func)(PACK_AL_SERVICE(0,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0,0,0);
+    {   al_func = &(S->al_services);
+        (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0, 0,0);
     }
 
     /* wait all the process have initialized the graph */
@@ -543,20 +569,23 @@ void platform_init_io(arm_stream_instance_t *S)
         initialization of the graph IO ports 
     */     
     io_mask = S->iomask;
-    pio_base = S->pio;
+
     nio = RD(S->graph[1],NB_IOS_GR1);
     all_arcs = S->all_arcs;
 
 
-    /* the Graph interpreter instance holds the memory pointers */
+    /* 
+        the Graph interpreter instance holds the memory pointers 
+        this is a read-only global variable to let the IO have access to ongoing[], list of arcs, formats[] ..
+    */
     platform_io_callback_parameter = S;
 
     for (graph_io_idx = 0; graph_io_idx < nio; graph_io_idx++)
     {
         uint8_t *address;
         uint32_t size;
-
-        pio = &(pio_base[graph_io_idx * STREAM_IOFMT_SIZE_W32]);
+        pio_control = &(S->graph[GRAPH_HEADER_NBWORDS + graph_io_idx * STREAM_IOFMT_SIZE_W32]);
+        ongoing = &(S->ongoing[graph_io_idx]);
 
         /* does this port is managed by the Graph interpreter instance ? */
         if (0 == (io_mask & (1U << graph_io_idx))) 
@@ -564,7 +593,7 @@ void platform_init_io(arm_stream_instance_t *S)
 
         /* default value settings */
         stream_format_io_setting = S->graph[GRAPH_HEADER_NBWORDS + graph_io_idx];
-        io_func = &(S->platform_io[RD(*pio, FWIOIDX_IOFMT0)]);
+        io_func = &(S->platform_io[RD(*pio_control, FWIOIDX_IOFMT0)]);
         if (*io_func == 0) 
         {   continue;
         }
@@ -573,122 +602,17 @@ void platform_init_io(arm_stream_instance_t *S)
         /* 
             IO-Interface expects the buffer to be declared by the graph 
         */
-        if (0 != TEST_BIT(*pio, FROMIOBUFF_IOFMT0_LSB))
+        if (TEST_BIT(*pio_control, FROMIOBUFF_IOFMT0_LSB))
         {
-            iarc = RD(*pio, IOARCID_IOFMT0);
+            iarc = RD(*pio_control, IOARCID_IOFMT0);
             iarc = SIZEOF_ARCDESC_W32 * iarc;
             address = (uint8_t *)pack2linaddr_ptr(S->long_offset, all_arcs[iarc + BUF_PTR_ARCW0], LINADDR_UNIT_W32);
             size = (uint32_t)RD(all_arcs[iarc + BUFSIZDBG_ARCW1], BUFF_SIZE_ARCW1);
 
-            io_func = &(S->platform_io[RD(*pio, FWIOIDX_IOFMT0)]);
+            io_func = &(S->platform_io[RD(*pio_control, FWIOIDX_IOFMT0)]);
             (*io_func)(STREAM_SET_BUFFER, address, size);
         }
     } 
-}
-
-/**
-  @brief        provision for time functions
-  @param[in]    none
-  @return       none
-
-  @par          
-
-  @remark       
- */
-void al_service_time_functions (uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
-{   volatile uint8_t *pt8 = pt8b;
-
-    switch (service_command)
-    {   case AL_SERVICE_READ_TIME64:
-        case AL_SERVICE_READ_TIME32:
-        case AL_SERVICE_READ_TIME16:
-        {   break;
-        }
-    }
-}
-
-/**
-  @brief        multiprocessing mutual exclusion services 
-  @param[in]    none
-  @return       none
-
-  @par          Usage:
-            al_service_mutual_exclusion (AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP, 
-                S->pt8b_collision_arc, (*data) &check, &process_ID, 0);
-                
-  @remark       
- */
-void al_service_mutual_exclusion(uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
-{   
-    volatile uint8_t *pt8 = pt8b;
-
-    switch (service_command)
-    {
-        case AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP:
-        {
-            /* attempt to reserve the node */
-            *pt8 = *data;    
-
-            /* check collision with all the running processes using the equivalent of lock() and unlock() 
-              Oyama Lock, "Towards more scalable mutual exclusion for multicore architectures" by Jean-Pierre Lozi */
-            //  INSTRUCTION_SYNC_BARRIER;
-            //  DATA_MEMORY_BARRIER;
-            *data = (*pt8 == *flag);
-            break;
-        }
-
-        case AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP:
-        {   *(volatile uint8_t *)(pt8) = (*data); 
-            DATA_MEMORY_BARRIER; 
-            break;
-        }
-
-        default:
-        case AL_SERVICE_MUTUAL_EXCLUSION_RD_BYTE_MP:
-        {   DATA_MEMORY_BARRIER; 
-            (*data) = *(volatile uint8_t *)(pt8);
-            break;
-        }
-
-        case AL_SERVICE_MUTUAL_EXCLUSION_CLEAR_BIT_MP:
-        {   ((*pt8b) = U(*pt8b) & U(~(U(1) << U(n)))); 
-            DATA_MEMORY_BARRIER;
-            break;
-        }
-    }
-}
-
-
-/**
-  @brief        Platform abstraction layer (time, spinlock, IOs)
-  @param[in]    none
-  @return       none
-
-  @par          Usage:
-                
-  @remark       
- */
-void al_services (uint32_t service_command, uint8_t *ptr1, uint8_t *ptr2, uint8_t *ptr3, uint32_t n)
-{   
-    /* max 16 groups of commands */
-	switch (RD(service_command, GROUP_AL_SRV))
-    {
-    case AL_SERVICE_READ_TIME:
-        al_service_time_functions(RD(service_command, FUNCTION_SSRV), ptr1, ptr2, ptr3, n);
-        break;
-    case AL_SERVICE_SLEEP_CONTROL:
-        break;
-    case AL_SERVICE_READ_MEMORY:
-        break;
-    case AL_SERVICE_SERIAL_COMMUNICATION:
-        break;
-    //enum stream_service_group
-    case AL_SERVICE_MUTUAL_EXCLUSION:
-        al_service_mutual_exclusion(RD(service_command, FUNCTION_SSRV), ptr1, ptr2, ptr3, n);
-        break;
-    case AL_SERVICE_CHANGE_IO_SETTING:
-        break;
-    }
 }
 
 

@@ -26,7 +26,7 @@
 
 #define _ARM_MATH_UTILS_H_
 
-#include "arm_math_types.h"
+#include "../arm_math_types.h"
 #include <limits.h>
 
 #ifdef   __cplusplus

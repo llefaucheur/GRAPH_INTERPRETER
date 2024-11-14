@@ -24,6 +24,11 @@
 /                     Some performance improvement.
 /----------------------------------------------------------------------------*/
 
+
+#include "platform.h"
+#ifdef CODE_TJPGDEC
+
+
 #include "tjpgd.h"
 
 
@@ -1151,3 +1156,5 @@ JRESULT jd_decomp (
 
 	return rc;
 }
+
+#endif

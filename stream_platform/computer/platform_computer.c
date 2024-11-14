@@ -40,15 +40,14 @@
 
 #include <stdlib.h>
 #include <string.h>
-
-
 #include <stdint.h>
+
+#include "platform.h"
 #include "stream_common_const.h"
 #include "stream_common_types.h"
 #include "stream_const.h"      
 #include "stream_types.h"
 
-#include "platform_computer.h"
 
 extern void platform_init_copy_graph(arm_stream_instance_t *S);
 extern void platform_init_io(arm_stream_instance_t *S);
@@ -94,7 +93,7 @@ extern p_stream_node TjpgDec;                    /* 21*/
 
 #define TBD 0
 
-p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
+p_stream_node node_entry_points[NB_NODE_ENTRY_POINTS] =
 {
     /*  0*/ (void *)&arm_stream_null_task,       /* node disabled */
     /*  1*/ (void *)&arm_stream_script,         /* byte-code interpreter, index "arm_stream_script_INDEX" */
@@ -237,13 +236,19 @@ const p_stream_al_services application_callbacks[MAX_NB_APP_CALLBACKS] =
 };
 
 
-//extern const p_stream_al_services al_services;
+extern void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3, uint32_t n);
 
-/* Forward declare al_services defined below. */
-stream_al_services al_services;
-const p_stream_al_services al_service[1] =
-{   (void *)&al_services
-};
+//const p_stream_al_services p_arm_stream_services[1] =
+//{   arm_stream_services
+//};
+
+
+//extern const p_stream_al_services al_services;
+///* Forward declare al_services defined below. */
+//stream_al_services al_services;
+//const p_stream_al_services al_service[1] =
+//{   (void *)&al_services
+//};
 
 
 /**
@@ -326,16 +331,14 @@ void * pack2linaddr_ptr(const uint8_t **long_offset, uint32_t data, uint32_t uni
 
 void platform_init_stream_instance(arm_stream_instance_t *S)
 {
-extern p_stream_node node_entry_point_table[];
-extern const uint32_t graph_input[];
-extern const p_stream_al_services application_callbacks[];
+extern p_stream_node node_entry_points[];
     uint32_t PIOoffsetWords;
 
 #define STREAM_CURRENT_INSTANCE 0
 #define STREAM_NB_INSTANCE 1
 
     S->graph = (uint32_t *) &(graph_input[1]);      /* binary graph address loaded in the graph interpreter instance */ 
-    S->long_offset = (uint8_t **) long_offset;                /* there is one single graph executed per platform */ 
+    S->long_offset = (uint8_t **) long_offset;      /* there is one single graph executed per platform */ 
 
     S->scheduler_control = PACK_STREAM_PARAM(
             STREAM_MAIN_INSTANCE,
@@ -349,10 +352,17 @@ extern const p_stream_al_services application_callbacks[];
     ST(S->whoami_ports, PROCID_PARCH, PROC_ID);
     ST(S->whoami_ports, PRIORITY_PARCH, STREAM_INSTANCE_LOWLATENCYTASKS);
     ST(S->whoami_ports, NODE_W32OFF_PARCH, 0);   /* index in the linked list */
-    S->al_services = al_service;
-    S->application_callbacks = application_callbacks;
-    S->node_entry_point_table = &(node_entry_point_table[0]);
+    S->al_services = arm_stream_services;
+    S->application_callbacks = &application_callbacks;
+    S->node_entry_points = &(node_entry_points[0]);
     S->platform_io = platform_io;
+
+    //{
+    //    const p_stream_al_services *al_func;
+
+    //    al_func = &(S->al_services);
+    //    (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV, PLATFORM_CLEAR_BACKUP_MEM, 0), 0,0,0,0);
+    //}
 
     platform_init_copy_graph (S);
 
@@ -544,7 +554,7 @@ void platform_init_io(arm_stream_instance_t *S)
 
     /* if cold start : clear the backup area */
     if (TEST_BIT(S->scheduler_control, BOOT_SCTRL_LSB) == STREAM_COLD_BOOT)
-    {   al_func = &(S->al_services[0]);
+    {   al_func = &(S->al_services);
         (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0, 0,0);
     }
 
@@ -604,112 +614,6 @@ void platform_init_io(arm_stream_instance_t *S)
         }
     } 
 }
-
-/**
-  @brief        provision for time functions
-  @param[in]    none
-  @return       none
-
-  @par          
-
-  @remark       
- */
-void al_service_time_functions (uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
-{   volatile uint8_t *pt8 = pt8b;
-
-    switch (service_command)
-    {   case AL_SERVICE_READ_TIME64:
-        case AL_SERVICE_READ_TIME32:
-        case AL_SERVICE_READ_TIME16:
-        {   break;
-        }
-    }
-}
-
-/**
-  @brief        multiprocessing mutual exclusion services 
-  @param[in]    none
-  @return       none
-
-  @par          Usage:
-            al_service_mutual_exclusion (AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP, 
-                S->pt8b_collision_arc, (*data) &check, &process_ID, 0);
-                
-  @remark       
- */
-void al_service_mutual_exclusion(uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
-{   
-    volatile uint8_t *pt8 = pt8b;
-
-    switch (service_command)
-    {
-        case AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP:
-        {
-            /* attempt to reserve the node */
-            *pt8 = *data;    
-
-            /* check collision with all the running processes using the equivalent of lock() and unlock() 
-              Oyama Lock, "Towards more scalable mutual exclusion for multicore architectures" by Jean-Pierre Lozi */
-            //  INSTRUCTION_SYNC_BARRIER;
-            //  DATA_MEMORY_BARRIER;
-            *data = (*pt8 == *flag);
-            break;
-        }
-
-        case AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP:
-        {   *(volatile uint8_t *)(pt8) = (*data); 
-            DATA_MEMORY_BARRIER; 
-            break;
-        }
-
-        default:
-        case AL_SERVICE_MUTUAL_EXCLUSION_RD_BYTE_MP:
-        {   DATA_MEMORY_BARRIER; 
-            (*data) = *(volatile uint8_t *)(pt8);
-            break;
-        }
-
-        case AL_SERVICE_MUTUAL_EXCLUSION_CLEAR_BIT_MP:
-        {   ((*pt8b) = U(*pt8b) & U(~(U(1) << U(n)))); 
-            DATA_MEMORY_BARRIER;
-            break;
-        }
-    }
-}
-
-
-/**
-  @brief        Platform abstraction layer (time, spinlock, IOs)
-  @param[in]    none
-  @return       none
-
-  @par          Usage:
-                
-  @remark       
- */
-void al_services (uint32_t service_command, intPtr_t ptr1, intPtr_t ptr2, intPtr_t ptr3, uint32_t n)
-{   
-    /* max 16 groups of commands {SERV_INTERNAL .. SERV_MM_IMAGE} */
-	switch (RD(service_command, FUNCTION_SSRV))
-    {
-    case AL_SERVICE_READ_TIME:
-        al_service_time_functions(RD(service_command, FUNCTION_SSRV), (uint8_t *)ptr1, (uint8_t *)ptr2, (uint8_t *)ptr3, n);
-        break;
-    case AL_SERVICE_SLEEP_CONTROL:
-        break;
-    case AL_SERVICE_READ_MEMORY:
-        break;
-    case AL_SERVICE_SERIAL_COMMUNICATION:
-        break;
-    //enum stream_service_group
-    case AL_SERVICE_MUTUAL_EXCLUSION:
-        al_service_mutual_exclusion(RD(service_command, FUNCTION_SSRV), (uint8_t *)ptr1, (uint8_t *)ptr2, (uint8_t *)ptr3, n);
-        break;
-    case AL_SERVICE_CHANGE_IO_SETTING:
-        break;
-    }
-}
-
 
 
 #endif

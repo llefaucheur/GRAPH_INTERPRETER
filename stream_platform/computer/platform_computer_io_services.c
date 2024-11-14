@@ -36,6 +36,10 @@
 #define DATA_FROM_FILES 1
 
 //#define _CRT_SECURE_NO_DEPRECATE 1
+#ifdef _MSC_VER 
+#define _CRT_SECURE_NO_DEPRECATE
+#endif
+
 #if DATA_FROM_FILES
 #include <stdio.h>
 #endif
@@ -50,12 +54,8 @@
 #include "stream_const.h"      
 #include "stream_types.h"
 
-#include "platform_computer.h"
-
 extern void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_t size);
 extern uint8_t platform_io_al_idx_to_graph[];
-
-
 
 /*
  * NULL TASK

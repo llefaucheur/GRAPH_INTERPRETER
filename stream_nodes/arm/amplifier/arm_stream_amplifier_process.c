@@ -31,6 +31,10 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_AMPLIFIER
+
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -50,13 +54,14 @@
       const int32_t min = -1 - max ;
       if (val > max)
       {
-        return max;
+        val = max;
       }
       else if (val < min)
       {
-        return min;
+        val = min;
       }
     }
+
     return val;
   }
 
@@ -67,7 +72,7 @@
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input, void *output, intPtr_t *nsamp)
+void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input, void *output /*, intPtr_t *nsamp */)
 {
     uint8_t slope, ichan;
     int16_t *psrc, *pdst, exp, delayup, delaydown;
@@ -108,7 +113,7 @@ void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input
     incdst = 1;
 
     /* prepare the update of the gain */
-    slope = 16 - RD(W0, SLOPE);
+    slope = (uint8_t)(16 - RD(W0, SLOPE));
 
     /* example with 0dB = 0x805
        target_mantissa = 0x40000000 
@@ -128,7 +133,7 @@ void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input
     }
     else /* muting is going through ramp-down filter with a faster slope */
     {   target_mantissa = 0;
-        slope = 16 - (RD(W0, SLOPE) >> 1);
+        slope = (uint8_t)(16 - (RD(W0, SLOPE) >> 1));
     }
 
     current_mantissa = instance->ampli_current_mantissa;
@@ -140,7 +145,7 @@ void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input
             acc = (*pdst);
             tmp = ((int32_t)(*psrc) * (current_mantissa >> 16)) >> exp;
             acc = acc + tmp;
-            *pdst = __SSAT (acc, 16);
+            *pdst = (int16_t)(__SSAT (acc, 16));
             psrc += incsrc;
             pdst += incdst;
 
@@ -157,3 +162,4 @@ void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input
 }
 #endif
  
+#endif  // #ifndef CODE_ARM_STREAM_AMPLIFIER

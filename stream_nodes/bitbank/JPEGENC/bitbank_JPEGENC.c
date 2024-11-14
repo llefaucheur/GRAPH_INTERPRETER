@@ -24,6 +24,10 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_BITBANK_JPEGENC
+
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -41,7 +45,7 @@
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void bitbank_JPEGENC (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void bitbank_JPEGENC (unsigned int command, void *instance, void *data, unsigned int *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
     switch (RD(command,COMMAND_CMD))
@@ -90,3 +94,6 @@ void bitbank_JPEGENC (int32_t command, stream_handle_t instance, stream_xdmbuffe
 }
 #endif
  
+#else
+void bitbank_JPEGENC (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif // CODE_BITBANK_JPEGENC

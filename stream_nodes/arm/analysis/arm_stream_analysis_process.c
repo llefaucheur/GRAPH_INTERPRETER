@@ -24,7 +24,8 @@
  * limitations under the License.
  * 
  */
-
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_ANALYSIS
 
 #ifdef __cplusplus
  extern "C" {
@@ -50,3 +51,4 @@ void arm_stream_analysis_process (arm_analysis_instance *instance, stream_xdmbuf
 }
 #endif
  
+#endif //#ifdef CODE_ARM_STREAM_ANALYSIS

@@ -3,18 +3,23 @@
 ; ------------------------------------------------------------------------------------------------------------
 ;
 
-    1 1 9 4 number of architectures, processors, memory banks, offsets
+    1 1 9 1 number of architectures, processors, memory banks, offsets
 
 ;   memory banks:
-;   - ID        base offset ID reference above
-;   - VID       virtual ID used in the graph for manual mapping, 
+;   - ID        base offset ID (<63) used by all processors and physical address seen from the main processor
+;           0   h20000000   image of "platform_specific_long_offset(intPtr_t long_offset[])" 
+;           1   h28000000       in stream_al/platform_XXXXX.c
+;           2   h2C000000   TCM Private memory of processor 1 
+;           3   h08000000   Internal Flash   
+;
+;   - VID       virtual ID used in the graph for manual mapping
 ;   - S         0=any/1=normal/2=fast/3=critical-Fast, 
 ;   - W         static0/working1/retention2
 ;   - P         shared0/private1,
 ;   - H         DMAmemHW1
 ;   - D         Data0/Prog1/Both2 
 ;   - Size      minimum sizes guaranteed per VID starting from @[ID]+offset below
-;   - Offset    maximum offset from the base offset ID,
+;   - Offset    maximum guaranteed offset from the base offset ID,
 
 ;   the memory is further split in the graph "top_memory_mapping" to ease mapping and overlays
 
@@ -28,17 +33,14 @@
     1  10   0 2 0 0 0     8192 524288   Retention memory
     3  20   0 0 0 0 0   200000 10       Data in Flash
     2   8   3 1 1 0 1    16384 0        ITCM Private memory of processor 1 
-  
 
-;   memory offsets ID used by all processors and physical address seen from the main processor
-;   0       h20000000   image of "platform_specific_long_offset(intPtr_t long_offset[])" 
-;   1       h28000000       in stream_al/platform_XXXXX.c
-;   2       h2C000000   TCM Private memory of processor 1 
-;   3       h08000000   Internal Flash   
+;    memory offsets ID used by all processors and physical address seen from the main processor
+    0       h00000000   Internal Flash  
 
 ;----------------------------------------------------------------------------------------
 ; all architectures
-    ;   all processors (processor IDs >0)
+;       all processors (processor IDs >0)
+;        ProcID Main Libs
         ;------------------------------------------------------------
-        1 1 15      processor ID, boolean "I am the main processor" allowed to boot the graphs
+        1 1 15      processor ID, boolean "I am the main processor" allowed to boot the graphs 
         ;           Bit-field computation firmware extensions, 

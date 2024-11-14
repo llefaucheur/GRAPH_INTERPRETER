@@ -30,6 +30,9 @@
  * limitations under the License.
  * 
  */
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_DEMODULATOR
+
 
 #ifdef __cplusplus
  extern "C" {
@@ -179,3 +182,6 @@ void arm_stream_demodulator (uint32_t command, void *instance, void *data, uint3
 }
 #endif
  
+#else
+void arm_stream_demodulator (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif  // #ifndef CODE_ARM_STREAM_DEMODULATOR

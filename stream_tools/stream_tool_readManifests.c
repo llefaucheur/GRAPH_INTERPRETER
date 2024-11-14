@@ -273,7 +273,7 @@ void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *arc)
         {   fields_extract(&pt_line, "CI", cstring, &(arc->commander0_servant1)); 
         }
         if (COMPARE(io_buffer_allocation))
-        {   fields_extract(&pt_line, "CI", cstring, &(arc->graphalloc_X_bsp_0)); 
+        {   fields_extract(&pt_line, "CII", cstring, &(arc->graphalloc_X_bsp_0), &(arc->sram0_hwdmaram1)); //TODO : sram0_hwdmaram1
         }
         if (COMPARE(io_direction_rx0tx1))
         {   fields_extract(&pt_line, "CI", cstring, &(arc->rx0tx1));

@@ -31,6 +31,9 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_FMTCONV
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -100,4 +103,6 @@ void arm_stream_format_converter_process (arm_stream_format_converter_format *in
 #ifdef __cplusplus
 }
 #endif
- 
+   
+
+#endif  // #ifdef CODE_ARM_STREAM_FMTCONV

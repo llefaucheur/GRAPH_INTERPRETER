@@ -222,9 +222,9 @@ void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *
 
             pinstance->services(                                            // void arm_stream_services (      
                 pinstance->iir_service,                                     //      uint32_t command, 
-                (intPtr_t)&(pinstance->TCM->biquad_casd_df1_inst_q15),      //      uint8_t *ptr1, 
-                (intPtr_t)&(pinstance->TCM->coefs[0]),                      //      uint8_t *ptr2, 
-                (intPtr_t)&(pinstance->TCM->state),                         //      uint8_t *ptr3, 
+                (void *)&(pinstance->TCM->biquad_casd_df1_inst_q15),      //      uint8_t *ptr1, 
+                (void *)&(pinstance->TCM->coefs[0]),                      //      uint8_t *ptr2, 
+                (void *)&(pinstance->TCM->state),                         //      uint8_t *ptr3, 
                 (postShift << 8u) | numStages                               //      uint32_t n)
                 );
 #else
@@ -268,9 +268,9 @@ void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *
 
             pinstance->services(
                 pinstance->iir_service,
-                (intPtr_t)inBuf, 
-                (intPtr_t)outBuf,
-                (intPtr_t)(&(pinstance->TCM->biquad_casd_df1_inst_q15)),
+                (void *)inBuf, 
+                (void *)outBuf,
+                (void *)(&(pinstance->TCM->biquad_casd_df1_inst_q15)),
                 nb_data
                 );
 

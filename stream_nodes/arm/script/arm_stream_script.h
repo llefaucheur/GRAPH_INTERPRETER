@@ -86,22 +86,16 @@ typedef union
         stream_al_services *services;
         regdata_t *REGS;                /* registers and stack */
         uint32_t *byte_code;            /* program to run */
-        uint32_t instruction;           /* current instruction */
-
-        struct
-        {   
-            unsigned int PC        : 10;        /* in uint32 */
-            unsigned int codes     : 10;        /* code size */
-            unsigned int SP        :  8;        /* in REGS unit */
-            unsigned int nstack    :  8;
-            unsigned int nregs     :  4;
-            unsigned int errors    :  4;
-
-            unsigned int test_flag :  1;
-#define MAXCYCLES 255
-            unsigned int max_cycle : 12;
-        } ctrl;
-
+        uint16_t instruction;           /* current instruction */
+        uint16_t PC;                    /* in uint32 */          
+        uint16_t codes;                 /* code size */          
+        uint16_t max_cycle;
+#define MAXCYCLES 1000
+        uint8_t SP;                    /* in REGS unit */          
+        uint8_t nstack;          
+        uint8_t nregs;          
+        uint8_t errors;
+        uint8_t test_flag;
     } arm_script_instance_t;
 
 

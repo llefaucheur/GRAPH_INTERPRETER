@@ -47,6 +47,10 @@
 extern void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_t size);
 extern uint8_t platform_io_al_idx_to_graph[];
 
+/*
+ * NULL TASK
+ */
+void arm_stream_null_task (int32_t c, stream_handle_t i, stream_xdmbuffer_t *d, uint32_t *s)  {}
 
 /* --------------------------------------------------------------------------------------- 
     FW IO FUNCTIONS

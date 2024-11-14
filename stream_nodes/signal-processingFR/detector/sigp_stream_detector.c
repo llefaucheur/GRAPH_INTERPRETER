@@ -24,6 +24,9 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_SIGP_STREAM_DETECTOR
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -99,7 +102,7 @@ const detector_parameters detector_preset [NB_PRESET] =
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void sigp_stream_detector (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void sigp_stream_detector (unsigned int command, void *instance, void *data, unsigned int *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
     switch (RD(command,COMMAND_CMD))
@@ -240,3 +243,6 @@ void sigp_stream_detector (int32_t command, stream_handle_t instance, stream_xdm
 }
 #endif
  
+#else
+void sigp_stream_detector (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif

@@ -138,9 +138,6 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\router\arm_stream_router_process.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_graph_control.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_script.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -174,6 +171,15 @@
     <ClCompile Include="..\..\..\stream_nodes\arm\format_converter\arm_stream_format_converter.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\lp-mspm0l1306\main_call_lp-mspm0l1306.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\lp-mspm0l1306\platform_lp-mspm0l1306.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\lp-mspm0l1306\platform_lp-mspm0l1306_io_services.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\stream_nodes\stream_common_const.h">
@@ -201,6 +207,24 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\stream_src\stream_extern.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\platform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\platform_computer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\platform_computer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\platform_lpc55s69evk.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\platform_lp-mspm0l1306.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

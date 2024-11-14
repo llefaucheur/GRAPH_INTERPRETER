@@ -25,6 +25,8 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_QOS
 
 #ifdef __cplusplus
  extern "C" {
@@ -50,3 +52,4 @@ void arm_stream_qos_process (arm_qos_instance *instance, stream_xdmbuffer_t *xdm
 }
 #endif
  
+#endif  // #ifndef CODE_ARM_STREAM_QOS

@@ -24,6 +24,10 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_TJPGDEC
+
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -41,7 +45,7 @@
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void TjpgDec (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void TjpgDec(unsigned int command, void *instance, void *data, unsigned int *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
     switch (RD(command,COMMAND_CMD))
@@ -90,3 +94,6 @@ void TjpgDec (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *dat
 }
 #endif
  
+#else
+void TjpgDec (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif

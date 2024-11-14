@@ -31,6 +31,9 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_RESCALER
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -77,7 +80,7 @@ arm_stream_rescaler;
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void arm_stream_rescaler (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void arm_stream_rescaler (unsigned int command, void *instance, void *data, unsigned int *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
@@ -173,3 +176,7 @@ void arm_stream_rescaler (int32_t command, stream_handle_t instance, stream_xdmb
 #ifdef __cplusplus
 }
 #endif
+
+#else
+void arm_stream_rescaler (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif  // #ifndef CODE_ARM_STREAM_RESCALER

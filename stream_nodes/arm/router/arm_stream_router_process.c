@@ -31,6 +31,9 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_ROUTER
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -58,3 +61,4 @@ void arm_stream_router_process (arm_stream_router_instance *instance, stream_xdm
 }
 #endif
  
+#endif // CODE_ARM_STREAM_ROUTER

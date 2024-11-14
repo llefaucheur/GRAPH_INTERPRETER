@@ -25,6 +25,8 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_MODULATOR
 
 #ifdef __cplusplus
  extern "C" {
@@ -52,3 +54,4 @@ void arm_stream_modulator_process (arm_stream_modulator_instance *instance, void
 }
 #endif
  
+#endif // CODE_ARM_STREAM_MODULATOR

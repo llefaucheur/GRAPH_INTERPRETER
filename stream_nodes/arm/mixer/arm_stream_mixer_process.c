@@ -24,7 +24,8 @@
  * limitations under the License.
  * 
  */
-
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_MIXER
 
 #ifdef __cplusplus
  extern "C" {
@@ -166,3 +167,4 @@ void arm_stream_mixer_process (arm_mixer_instance *instance, stream_xdmbuffer_t 
 }
 #endif
  
+#endif // CODE_ARM_STREAM_MIXER

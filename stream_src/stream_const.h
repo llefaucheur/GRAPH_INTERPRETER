@@ -235,7 +235,7 @@
 
 /* ----------- instance -> scheduler_control  ------------- */
 #define     UNUSED_SCTRL_MSB U(31)   
-#define     UNUSED_SCTRL_LSB U(19)  /* 12 */ 
+#define     UNUSED_SCTRL_LSB U(19)  /* 13 ____*/ 
 #define   INSTANCE_SCTRL_MSB U(18)
 #define   INSTANCE_SCTRL_LSB U(18)  /* 1 flag : 0=instances executed on this processor are disabled  */
 #define   MAININST_SCTRL_MSB U(17)   
@@ -409,7 +409,7 @@
 #define SCRIPT_POSTRUN 2u       /* executed after */
 
 /* ======================================   NODE   ============================================ */ 
-#define arm_stream_script_index 1u     /* arm_stream_script() is the first one in the list node_entry_point_table[] */
+#define arm_stream_script_index 1u     /* arm_stream_script() is the first one in the list node_entry_points[] */
 
         /* word 0 - main Header */
 
@@ -463,7 +463,9 @@
 #define  ARC1_LW1_LSB 16u /* 11  ARC1  11 usefull bits + 1 MSB to tell rx0tx1 */
                         
 #define un__0_LW1_MSB 15u 
-#define un__0_LW1_LSB 14u /*  2   */
+#define un__0_LW1_LSB 15u /*  1   */
+#define   KEY_LW1_MSB 15u 
+#define   KEY_LW1_LSB 14u /*  1  two 64b KEYs are inserted after the memory pointers (word 2+2n)  */
 #define DBGB0_LW1_MSB 13u 
 #define DBGB0_LW1_LSB 12u /*  2  debug register bank for ARC0 : debug-arc index of the debug data */
 #define  ARC0_LW1_MSB 11u
@@ -481,8 +483,8 @@
 #define SIZE_LW2 1u             /*      one for the size of the segment */ 
 
             /* word 2 first word = base address of the memory segment + control on the first segment */
-#define  NALLOCM1_LW2_MSB U(31) /*      number of memory segments to give at RESET [0..MAX_NB_MEM_REQ_PER_NODE-1] */  
-#define  NALLOCM1_LW2_LSB U(29) /*  3   2 words each : pointer + size */
+#define  NALLOCM1_LW2_MSB U(31) /*      number of memory segments (pointer + size) to give at RESET [0..MAX_NB_MEM_REQ_PER_NODE-1] */  
+#define  NALLOCM1_LW2_LSB U(29) /*  3   2 words each  */
 #define     XDM11_LW2_MSB U(28) /*      0: Rx/Tx flow is asynchronous  1: same consumption on RSx/Tx */   
 #define     XDM11_LW2_LSB U(28) /*  1   the input and output frame size of all arcs are identical (manifest: 0=node_variable_rxtx_data_rate)*/ 
 #define BASEIDXOFFLW2_MSB U(27) 
@@ -680,29 +682,29 @@
 #define data_swapped_with_arc           8u
 #define arc_data_realignment_to_base    9u
 
-#define SIZEOF_ARCDESC_W32 5u
+#define SIZEOF_ARCDESC_W32 6u
 
 #define   BUF_PTR_ARCW0    U( 0)
 #define   unused__ARCW0_MSB U(31) 
-#define   unused__ARCW0_LSB U(28) /*  4 */
+#define   unused__ARCW0_LSB U(28) /*  4 ____*/
 #define BASEIDXOFFARCW0_MSB U(27) /*    */
 #define   DATAOFF_ARCW0_MSB U(27) /*    address = offset[DATAOFF] + 4x BASEIDX[Bytes] */
 #define   DATAOFF_ARCW0_LSB U(22) /*  6 64 x 64bits offset indexes  */
 #define   BASEIDX_ARCW0_MSB U(21) /*    base address 22bits linear address range in Word32 */
-#define   BASEIDX_ARCW0_LSB U( 0) /* 22 0x3F.FFFF(W32) =  4MW/16MBytes extended with ARCEXTEND_ARCW4 */
+#define   BASEIDX_ARCW0_LSB U( 0) /* 22 0x3F.FFFF(W32) =  4MW/16MBytes extended with ARCEXTEND_ARCW2 */
 #define BASEIDXOFFARCW0_LSB U( 0) /*    base + offset */
                                 
 #define BUFSIZDBG_ARCW1    U( 1)
 #define   unused__ARCW1_MSB U(31) 
-#define   unused__ARCW1_LSB U(21) /* 10 */
+#define   unused__ARCW1_LSB U(21) /* 10 ____*/
 #define BUFF_SIZE_ARCW1_MSB U(21) /*    */
-#define BUFF_SIZE_ARCW1_LSB U( 0) /* 22 BYTE-acurate up to 4MBytes (up to 128GB with ARCEXTEND_ARCW2 */
+#define BUFF_SIZE_ARCW1_LSB U( 0) /* 22 BYTE-acurate up to 4MBytes (up to 64GB with ARCEXTEND_ARCW2 */
 
 #define    RDFLOW_ARCW2    U( 2)  
 #define ARCEXTEND_ARCW2_MSB U(31) /*    Size/Read/Write are used with <<(2x{0..7}) to extend base/size/read/write arc */
 #define ARCEXTEND_ARCW2_LSB U(29) /* 3  to  256MB, 4GB, 64GB , for use-cases with NN models, video players, etc */
 #define   unused__ARCW2_MSB U(28) 
-#define   unused__ARCW2_LSB U(24) /* 5  */
+#define   unused__ARCW2_LSB U(24) /* 5  ____*/
 #define   MPFLUSH_ARCW2_MSB U(23) 
 #define   MPFLUSH_ARCW2_LSB U(23) /* 1  flush data used after processing */
 #define FLOWERROR_ARCW2_MSB U(22)
@@ -715,7 +717,7 @@
 #define COLLISION_ARCW3_MSB U(31) /*  8 MSB byte used to lock the SWC, loaded with arch+proc+instance ID */ 
 #define COLLISION_ARCW3_LSB U(24) /*       to check node-access collision from an other processor */
 #define    unused_ARCW3_MSB U(23) 
-#define    unused_ARCW3_LSB U(23) /*  1  */
+#define    unused_ARCW3_LSB U(23) /*  1 ____*/
 #define ALIGNBLCK_ARCW3_MSB U(22) /*    producer blocked */
 #define ALIGNBLCK_ARCW3_LSB U(22) /*  1 producer sets "need for data realignement"  */
 #define     WRITE_ARCW3_MSB U(21) /*    write pointer is incremented by FRAMESIZE_FMT0 */
@@ -733,7 +735,7 @@
 #define PRODUCFMT_ARCW4_MSB U( 7) /*  8 bits PRODUCER format  (intPtr_t) +[i x STREAM_FORMAT_SIZE_W32]  */ 
 #define PRODUCFMT_ARCW4_LSB U( 0) /*    Graph generator gives IN/OUT arc's frame size to be the LCM of NODE "grains" */
 
-#define         LOGFMT_ARCW4    U( 5) 
+#define         LOGFMT_ARCW5    U( 5) 
 #define  LOGTRACE_ARCW5_MSB U(31) 
 #define  LOGTRACE_ARCW5_LSB U( 0) /* 32 default debug/trace location is in the descriptor (TRACECMD / DEBUG_REG) */ 
 

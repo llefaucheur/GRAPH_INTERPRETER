@@ -30,6 +30,8 @@
  * limitations under the License.
  * 
  */
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_ROUTER
 
 #ifdef __cplusplus
  extern "C" {
@@ -103,7 +105,7 @@ arm_stream_router
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void arm_stream_router (uint32_t command, void *instance, void *data, uint32_t *status)
+void arm_stream_router (unsigned int command, void *instance, void *data, unsigned int *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
@@ -180,3 +182,7 @@ void arm_stream_router (uint32_t command, void *instance, void *data, uint32_t *
 }
 #endif
  
+arm_stream_router
+#else
+void arm_stream_router (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif  // #ifndef CODE_ARM_STREAM_ROUTER

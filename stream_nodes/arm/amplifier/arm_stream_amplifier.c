@@ -30,6 +30,9 @@
  * limitations under the License.
  * 
  */
+#include "platform.h"
+#ifdef CODE_ARM_STREAM_AMPLIFIER
+
 
 #ifdef __cplusplus
  extern "C" {
@@ -174,7 +177,7 @@ void arm_stream_amplifier (uint32_t command, void *instance, void *data, uint32_
             outBuf = (SAMP_OUT *)(pt_pt->address); 
 
             nb_data = stream_xdmbuffer_size / sizeof(SAMP_IN);
-            arm_stream_amplitude_process(pinstance, inBuf, outBuf, &nb_data);
+            arm_stream_amplitude_process(pinstance, inBuf, outBuf /*, &nb_data*/);
         }
         break;
 
@@ -191,5 +194,8 @@ void arm_stream_amplifier (uint32_t command, void *instance, void *data, uint32_
 
 #ifdef __cplusplus
 }
+#endif
+
+#else
+void arm_stream_amplifier (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
 #endif  // #ifndef CODE_ARM_STREAM_AMPLIFIER
- 

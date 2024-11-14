@@ -24,6 +24,10 @@
  * 
  */
 
+#include "platform.h"
+#ifdef CODE_SIGP_STREAM_RESAMPLER
+
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -73,7 +77,7 @@ extern void sigp_stream_resampler_process (sigp_stream_resampler_instance *insta
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void sigp_stream_resampler (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status)
+void sigp_stream_resampler (unsigned int command, void *instance, void *data, unsigned int *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
@@ -138,3 +142,6 @@ void sigp_stream_resampler (int32_t command, stream_handle_t instance, stream_xd
 }
 #endif
  
+#else
+void sigp_stream_resampler (unsigned int command, void *instance, void *data, unsigned int *status) { /* fake access */ if(command || instance || data || status) return;}
+#endif  // #ifndef CODE_SIGP_STREAM_RESAMPLER
