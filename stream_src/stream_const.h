@@ -57,7 +57,7 @@
         This table is made to exclude a group of processor to execute any NODE even if their scheduler is launched.
     [5,6] UQ8 portion of memory consumed on each long_offset[MAX_NB_MEMORY_OFFSET] 
     -------------------
-    STREAM_IO_CONTROL (4 words per IO)  size = [NB_IOS_GR1], "ONGOING" flag is in RAM
+    STREAM_IO_CONTROL (4 words per IO)  size = 4*[NB_IOS_GR1], "ONGOING" flag is in RAM
         depends on the domain of the IO
 
   *- SCRIPTS are adressed with a table_int32[128] : offset, ARC, binary format
@@ -135,9 +135,9 @@
 
 /* for pack2linaddr_ptr () */
 //#define LINADDR_UNIT_BYTE   1u
-#define LOG2ADDR_UNIT_W32   2u
-#define LINADDR_UNIT_W32    4u
-#define LINADDR_UNIT_EXTD  64u
+//#define LOG2ADDR_UNIT_W32   2u
+//#define LINADDR_UNIT_W32    4u
+//#define LINADDR_UNIT_EXTD  64u
 
 #define COPY_CONF_GR0_COPY_ALL_IN_RAM   0u
 #define COPY_CONF_GR0_FROM_PIO          1u
@@ -149,8 +149,7 @@
 #define   unused_______GR0_LSB U(30) // 2
 #define       RAMSPLIT_GR0_MSB U(29) //   
 #define       RAMSPLIT_GR0_LSB U(28) // 2 COPY_CONF_GR0_COPY_ALL_IN_RAM / _FROM_PIO / _ALREADY_IN_RAM
-#define    GRAPH_RAM_OFFSET(L,G)     pack2linaddr_int((L),(G)[0], LINADDR_UNIT_W32)
-#define    GRAPH_RAM_OFFSET_PTR(L,G) pack2linaddr_ptr((L),(G)[0], LINADDR_UNIT_W32)
+#define    GRAPH_RAM_OFFSET_PTR(L,G,X) pack2linaddr_ptr((L),(G)[0],X)
 
 /* -------- GRAPH[1] number of FORMAT, IOs, size of SCRIPTS ---- */
 #define GR1_INDEX   2u
@@ -307,8 +306,8 @@
 
 #define MAX_IO_FUNCTION_PLATFORM 127u /* table of functions : platform_io[MAX_IO_FUNCTION_PLATFORM] */
                               
-#define IO_COMMAND_SET_BUFFER 0u  /* arc buffer point directly to the IO buffer: ping-pong, big buffer */
-#define IO_COMMAND_DATA_MOVE  1u  /* the IO has its own buffer */
+#define IO_COMMAND_SET_BUFFER 0u  /* arc buffer used ping-pong, big buffer */
+#define IO_COMMAND_DATA_COPY  1u  /* copy : the IO has its own buffer */
                               
 #define RX0_TO_GRAPH          0u
 #define TX1_FROM_GRAPH        1u
@@ -319,15 +318,13 @@
 #define IOFMT0 0u                  /* first word used by the scheduler */
 
 #define     UNUSED_IOFMT0_MSB 31u  
-#define     UNUSED_IOFMT0_LSB 26u  /* 6 */
-#define    FWIOIDX_IOFMT0_MSB 25u  
-#define    FWIOIDX_IOFMT0_LSB 19u  /* 7 */
-#define  IO_DOMAIN_IOFMT0_MSB 18u  /*    the domain should match with the arc prod/cons format */
-#define  IO_DOMAIN_IOFMT0_LSB 15u  /* 4  16 Domains, to select the format of the tuning  */
-#define FROMIOBUFF_IOFMT0_MSB 14u   
-#define FROMIOBUFF_IOFMT0_LSB 14u  /* 1  share the arc buffer with the IO BSP "io_buffer_allocation" */
+#define     UNUSED_IOFMT0_LSB 25u  /* 7 */
+#define    FWIOIDX_IOFMT0_MSB 24u  
+#define    FWIOIDX_IOFMT0_LSB 18u  /* 7 */
+#define  IO_DOMAIN_IOFMT0_MSB 17u  /*    the domain should match with the arc prod/cons format */
+#define  IO_DOMAIN_IOFMT0_LSB 14u  /* 4  16 Domains, to select the format of the tuning  */
 #define  SET0COPY1_IOFMT0_MSB 13u  
-#define  SET0COPY1_IOFMT0_LSB 13u  /* 1  command_id IO_COMMAND_SET_BUFFER / IO_COMMAND_DATA_MOVE */
+#define  SET0COPY1_IOFMT0_LSB 13u  /* 1  command_id IO_COMMAND_SET_BUFFER / IO_COMMAND_DATA_COPY */
 #define   SERVANT1_IOFMT0_MSB 12u  
 #define   SERVANT1_IOFMT0_LSB 12u  /* 1  1=IO_IS_SERVANT1 */
 #define     RX0TX1_IOFMT0_MSB 11u  /*    direction of the stream */
@@ -344,10 +341,10 @@
       The graph hold a table of uint8_t in RAM for the "on-going" flag    
 */
 
-#define    ONGOING_IO_MSB 7u  
-#define    ONGOING_IO_LSB 7u  /* 1 set in scheduler, reset in IO, iomask manages processor access */
-#define     UNUSED_IO_MSB 6u  
-#define     UNUSED_IO_LSB 0u  /* 7 */
+#define     UNUSED_IO_MSB 7u  
+#define     UNUSED_IO_LSB 1u  /* 7 */
+#define    ONGOING_IO_MSB 0u  
+#define    ONGOING_IO_LSB 0u  /* 1 set in scheduler, reset in IO, iomask manages processor access */
 
 /*================================= SCRIPTS ======================================= */
 
@@ -464,7 +461,7 @@
                         
 #define un__0_LW1_MSB 15u 
 #define un__0_LW1_LSB 15u /*  1   */
-#define   KEY_LW1_MSB 15u 
+#define   KEY_LW1_MSB 14u 
 #define   KEY_LW1_LSB 14u /*  1  two 64b KEYs are inserted after the memory pointers (word 2+2n)  */
 #define DBGB0_LW1_MSB 13u 
 #define DBGB0_LW1_LSB 12u /*  2  debug register bank for ARC0 : debug-arc index of the debug data */
@@ -507,30 +504,28 @@
                             and the memory size is given by the FIFO descriptor (BUFF_SIZE_ARCW1) */
 #define LW2S_NOSWAP 0u
 #define LW2S_SWAP 1u
-#define LW2S_COPY 2u
 
-
-#define       KEY_LW2S_MSB U(31) /*      */
-#define       KEY_LW2S_LSB U(31) /*  1   protocol for key exchanges (boot and graph/user) */
-#define CLEARSWAP_LW2S_MSB U(29) /*      bit used on the first memory bank */
-#define CLEARSWAP_LW2S_LSB U(24) /*  1   at least one memory segment to clear or to swap */
-#define     CLEAR_LW2S_MSB U(24) /*      */
-#define     CLEAR_LW2S_LSB U(24) /*  1   protocol for key exchanges (boot and graph/user) */
-#define      SWAP_LW2S_MSB U(23) /*      0= normal memory segment, 2 = copy before execute */
-#define      SWAP_LW2S_LSB U(22) /*  2   1= swap before/after execute */
-#define  EXT_SIZE_LW2S_MSB U(21) /*      SizeMax = 1M / 16M / 256M / 4G with EXT=0/1/2/3 */
+#define    unused_LW2S_MSB U(31) /*      */
+#define    unused_LW2S_LSB U(25) /*  7   */
+#define CLEARSWAP_LW2S_MSB U(24) /*      used on the instance : "at least on memory bank is swapped or cleared */
+#define CLEARSWAP_LW2S_LSB U(24) /*  1   */
+#define     CLEAR_LW2S_MSB U(23) /*      clear the memory before calling the node */
+#define     CLEAR_LW2S_LSB U(23) /*  1   */
+#define      SWAP_LW2S_MSB U(22) /*      0= normal memory segment, 1 = swap before execute */
+#define      SWAP_LW2S_LSB U(22) /*  1    */
+#define  EXT_SIZE_LW2S_MSB U(21) /*      extend SizeMax = 1M / 16M / 256M / 4G with EXT=0/1/2/3 */
 #define  EXT_SIZE_LW2S_LSB U(20) /*  2    */
 #define BUFF_SIZE_LW2S_MSB U(19) /* ###  overlaid with SWAPBUFID_LW2S in case of COPY / SWAP */
 #define BUFF_SIZE_LW2S_LSB U( 0) /* 20   Wrd32-acurate up to 1MBwords x (1 << (4 * EXT_SIZE)) */
 
-#define SWAPBUFID_LW2S_MSB  ARC0_LW1_MSB /*     ARC => swap source address in slow memory + swap length */
-#define SWAPBUFID_LW2S_LSB  ARC0_LW1_LSB /* 12  ARC0, (11 + 1) up to 2K FIFO */
+#define SWAPBUFID_LW2S_MSB ARC0_LW1_MSB /*     ARC => swap source address in slow memory + swap length */
+#define SWAPBUFID_LW2S_LSB ARC0_LW1_LSB /* 12  ARC0, (11 + 1) up to 2K FIFO */
 
 
   /* word 4+n - parameters 
     NODE header can be in RAM (to patch the parameter area, cancel the component..)
 
-  BOOTPARAMS (if W32LENGTH_LW3>0 )
+  BOOTPARAMS (if W32LENGTH_LW4>0 )
 
   PARAM_TAG : 4  index to parameter (0='all parameters')
   PRESET    : 4  preset index (SWC delivery)
@@ -552,14 +547,14 @@
 //#define MAX_TMP_PARAMETERS 30   /* temporary buffer (words32) of parameters to send to the Node */
 
 
-#define PARAM_TAG_LW3_MSB U(31) 
-#define PARAM_TAG_LW3_LSB U(28) /* 4  for PARAM_TAG_CMD (15='all parameters')  */
-#define    PRESET_LW3_MSB U(27)
-#define    PRESET_LW3_LSB U(24) /* 4  preset   16 precomputed configurations */
-#define   TRACEID_LW3_MSB U(23)       
-#define   TRACEID_LW3_LSB U(16) /* 8  TraceID used to route the trace to the corresponding peripheral/display-line */
-#define W32LENGTH_LW3_MSB U(15) /*    if >256kB are needed then use an arc to a buffer */
-#define W32LENGTH_LW3_LSB U( 0) /* 16 skip this : number of uint32 to skip the boot parameters */
+#define PARAM_TAG_LW4_MSB U(31) 
+#define PARAM_TAG_LW4_LSB U(28) /* 4  for PARAM_TAG_CMD (15='all parameters')  */
+#define    PRESET_LW4_MSB U(27)
+#define    PRESET_LW4_LSB U(24) /* 4  preset   16 precomputed configurations */
+#define   TRACEID_LW4_MSB U(23)       
+#define   TRACEID_LW4_LSB U(16) /* 8  TraceID used to route the trace to the corresponding peripheral/display-line */
+#define W32LENGTH_LW4_MSB U(15) /*    if >256kB are needed then use an arc to a buffer */
+#define W32LENGTH_LW4_LSB U( 0) /* 16 skip this : number of uint32 to skip the boot parameters */
 
 
 /* ================================= */
@@ -690,8 +685,8 @@
 #define BASEIDXOFFARCW0_MSB U(27) /*    */
 #define   DATAOFF_ARCW0_MSB U(27) /*    address = offset[DATAOFF] + 4x BASEIDX[Bytes] */
 #define   DATAOFF_ARCW0_LSB U(22) /*  6 64 x 64bits offset indexes  */
-#define   BASEIDX_ARCW0_MSB U(21) /*    base address 22bits linear address range in Word32 */
-#define   BASEIDX_ARCW0_LSB U( 0) /* 22 0x3F.FFFF(W32) =  4MW/16MBytes extended with ARCEXTEND_ARCW2 */
+#define   BASEIDX_ARCW0_MSB U(21) /*    base address 22bits linear address range in BYTES */
+#define   BASEIDX_ARCW0_LSB U( 0) /* 22 0x3F.FFFF(W32) =  1MW/4MBytes extended with ARCEXTEND_ARCW2 */
 #define BASEIDXOFFARCW0_LSB U( 0) /*    base + offset */
                                 
 #define BUFSIZDBG_ARCW1    U( 1)
@@ -702,8 +697,8 @@
 
 #define    RDFLOW_ARCW2    U( 2)  
 #define ARCEXTEND_ARCW2_MSB U(31) /*    Size/Read/Write are used with <<(2x{0..7}) to extend base/size/read/write arc */
-#define ARCEXTEND_ARCW2_LSB U(29) /* 3  to  256MB, 4GB, 64GB , for use-cases with NN models, video players, etc */
-#define   unused__ARCW2_MSB U(28) 
+#define ARCEXTEND_ARCW2_LSB U(29) /* 3  to 0:4MB 1:16M 2:64MB 3:256M 4:1G 5:4G 6:16G 7:64G */
+#define   unused__ARCW2_MSB U(28)       /*  for use-cases with NN models, video players, etc */
 #define   unused__ARCW2_LSB U(24) /* 5  ____*/
 #define   MPFLUSH_ARCW2_MSB U(23) 
 #define   MPFLUSH_ARCW2_LSB U(23) /* 1  flush data used after processing */

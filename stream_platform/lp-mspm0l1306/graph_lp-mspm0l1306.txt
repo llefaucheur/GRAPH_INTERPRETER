@@ -12,9 +12,9 @@
 graph_location          1           ; script and linked-list stays in flash 
 ;----------------------------------------------------------------------
 format_index            0
-format_frame_length     8
+format_frame_length     2           ; minimum = frame of one int16
 format_index            1
-format_frame_length     8
+format_frame_length     128         ; "ADC_SAMPLE_SIZE" 64 samples = 128 Bytes
 ;----------------------------------------------------------------------
 stream_io               0           ;
 stream_io_hwid          1           ; io_platform_data_in_1.txt
@@ -57,8 +57,13 @@ script  0                   ; script name
         return              ; return
     end                     ; end script 0
 ;----------------------------------------------------------------------
-arc_input   0 1 0 arm_stream_filter     0 0 0  ; io0 set0copy1 fmt0     ; DETECT => OUTPUT 
-arc_output  1 1 1 sigp_stream_detector  0 1 1  ; io1 set0copy1 fmt1     ; INPUT => IIR
+; arc_input   { io / set0copy1 / fmtProd } + { node / inst / arc / fmtCons }
+; arc_output  { io / set0copy1 / fmtCons } + { node / inst / arc / fmtProd }
+; arc         { inst / arc / fmtProd }     + { inst / arc / fmtProd }
+;
+arc_input   0 0 1 arm_stream_filter     0 0 1  ; io0 set0copy1 fmt0     ; INPUT => IIR, format 1
+arc_output  1 0 0 sigp_stream_detector  0 0 0  ; io1 set0copy1 fmt1     ; DETECT => OUTPUT 
 
-arc arm_stream_filter 0 1 0 sigp_stream_detector 0 0 1                  ; IIR => DETECT
+arc arm_stream_filter 0 1 0 sigp_stream_detector 0 0 0                  ; IIR => DETECT
+
 end

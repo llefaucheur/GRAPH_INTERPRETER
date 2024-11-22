@@ -162,13 +162,10 @@ void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *
             switch (preset)
             {   default: 
                 case 0:     /* by-pass*/
-                    pt16dst[0] = 0x7FFF;
                     break;
                 case 1:     /* LPF fc=fs/4 */
-                    pt16dst[0] = 0x7FFF;    //TODO
                     break;
                 case 2:     /* HPF fc=fs/8 */
-                    pt16dst[0] = 0x7FFF;    //TODO
                     break;
             }
 
@@ -222,9 +219,9 @@ void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *
 
             pinstance->services(                                            // void arm_stream_services (      
                 pinstance->iir_service,                                     //      uint32_t command, 
-                (void *)&(pinstance->TCM->biquad_casd_df1_inst_q15),      //      uint8_t *ptr1, 
-                (void *)&(pinstance->TCM->coefs[0]),                      //      uint8_t *ptr2, 
-                (void *)&(pinstance->TCM->state),                         //      uint8_t *ptr3, 
+                (void *)&(pinstance->TCM->biquad_casd_df1_inst_q15),        //      void *ptr1, 
+                (void *)&(pinstance->TCM->coefs),                           //      void *ptr2, 
+                (void *)&(pinstance->TCM->state),                           //      void *ptr3, 
                 (postShift << 8u) | numStages                               //      uint32_t n)
                 );
 #else

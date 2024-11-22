@@ -7,4 +7,6 @@
 
     io_direction_rx0tx1 1
 
+    io_frame_length        {32}
+
     end

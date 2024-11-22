@@ -5,5 +5,6 @@
 io_platform_data_in_1  ; name for the tools                            
 data_in                ; domain name,   no specific field
 
-io_frame_length        {1 8 16}
+io_frame_length        {32}
+
     end

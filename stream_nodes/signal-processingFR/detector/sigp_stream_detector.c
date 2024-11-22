@@ -40,7 +40,7 @@
 #include "sigp_stream_detector.h"
 
 
-#define PRINTF 1 // debug
+#define PRINTF 0 // debug
 
 #if PRINTF
 #include <stdio.h>
@@ -213,7 +213,7 @@ void sigp_stream_detector (unsigned int command, void *instance, void *data, uns
             pt_pt = data;
             *(&(pt_pt->size)) = nb_data * sizeof(SAMP_IN); /* amount of data consumed */
             pt_pt ++;
-            *(&(pt_pt->size)) = nb_data * sizeof(SAMP_OUT);   /* amount of data produced */
+            *(&(pt_pt->size)) = 1 * sizeof(SAMP_OUT);   /* amount of data produced */
 
             //--------------------DEBUG---------------------
             //sprintf (dbg, "Z2%5d Z7%3d Z8%4d VAD%2d", (pinstance->z2)>>12, (pinstance->z7)>>12, (pinstance->z8)>>12, outBuf[0]);

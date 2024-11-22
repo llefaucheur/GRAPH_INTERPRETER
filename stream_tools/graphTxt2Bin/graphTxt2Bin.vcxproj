@@ -188,14 +188,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <RunCodeAnalysis>true</RunCodeAnalysis>
-    <IncludePath>..\..\stream_nodes;..\..\stream_platform;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform;..\..\stream_nodes;..\..\stream_platform;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_src\;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_src\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>

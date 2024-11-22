@@ -202,9 +202,7 @@ void dtype_register (uint32_t *INST, char S[cNFIELDS][cASM], int offset, int32_t
         if ((0 == strcmp(S[idx], "#ptrfp16"))   || (0 == strcmp(S[idx], "#fp16"))  ) { type = DTYPE_FP16  ; }
         if ((0 == strcmp(S[idx], "#ptrfloat"))  || (0 == strcmp(S[idx], "#float")) ) { type = DTYPE_FP32  ; }
         //if ((0 == strcmp(S[idx], "#ptrdouble")) || (0 == strcmp(S[idx], "#double"))) { type = DTYPE_FP64  ; }
-        if ( 0 == strcmp(S[idx], "#time16")  ) { type = DTYPE_TIME16; }
         if ( 0 == strcmp(S[idx], "#time32")  ) { type = DTYPE_TIME32; }
-        if ( 0 == strcmp(S[idx], "#time64")  ) { type = DTYPE_TIME64; }
         if ( 0 == strcmp(S[idx], "#ptr")     ) { type = DTYPE_PTR28B; }
         idx ++;   /* switch to next field as a constant */
     }
@@ -220,7 +218,6 @@ void K_register (uint32_t *INST, char S[cNFIELDS][cASM], int offset, uint32_t ms
         uint32_t i;
         float f;
     } fK;
-    int64_t llK;
 
     idx = offset;
     type = DTYPE_INT32; /*  it a constant w/wo #type  : SRC2=RK and check if we need 2 words */
@@ -236,9 +233,7 @@ void K_register (uint32_t *INST, char S[cNFIELDS][cASM], int offset, uint32_t ms
         if ((0 == strcmp(S[idx], "#ptrfp16"))   || (0 == strcmp(S[idx], "#fp16"))  ) { type = DTYPE_FP16  ; }
         if ((0 == strcmp(S[idx], "#ptrfloat"))  || (0 == strcmp(S[idx], "#float")) ) { type = DTYPE_FP32  ; }
         //if ((0 == strcmp(S[idx], "#ptrdouble")) || (0 == strcmp(S[idx], "#double"))) { type = DTYPE_FP64  ; }
-        if ( 0 == strcmp(S[idx], "#time16")  ) { type = DTYPE_TIME16; }
         if ( 0 == strcmp(S[idx], "#time32")  ) { type = DTYPE_TIME32; }
-        if ( 0 == strcmp(S[idx], "#time64")  ) { type = DTYPE_TIME64; }
         if ( 0 == strcmp(S[idx], "#ptr")     ) { type = DTYPE_PTR28B; }
         idx ++;   /* switch to next field as a constant */
     }
@@ -252,7 +247,6 @@ void K_register (uint32_t *INST, char S[cNFIELDS][cASM], int offset, uint32_t ms
     {
     default:
     case DTYPE_PTR28B : /* TODO */
-    case DTYPE_TIME16 : 
     case DTYPE_TIME32 : 
     case DTYPE_UINT8  : 
     case DTYPE_UINT16 : 
@@ -283,13 +277,6 @@ void K_register (uint32_t *INST, char S[cNFIELDS][cASM], int offset, uint32_t ms
     case DTYPE_FP16   : tmp = sscanf (S[idx],"%f", &(fK.f));    /* double converted to float */
                         INST[1] = fK.i;  
                         INST [INST_WORDS-1] = 2;                /* two words */
-                        break;
-
-    //case DTYPE_INT64  : 
-    case DTYPE_TIME64 : tmp = sscanf (S[idx],"%lld", &llK); 
-                        INST[1] = (int)((int64_t)0xFFFFFFFF & llK);  
-                        INST[2] = (int)((int64_t)0xFFFFFFFF & (llK >> 32));  
-                        INST [INST_WORDS-1] = 3;                /* three words */
                         break;
     }
 }
@@ -446,7 +433,7 @@ void read_para_heap_labels (char **pt_line, struct stream_script *script,
         /* read the header of the line : number of fields and type */
         ptstart = *pt_line;   
         ptend = strchr(ptstart, '\n');
-        i = ptend - ptstart;
+        i =(int)(ptend - ptstart);
         strncpy(inputchar, ptstart, (int)i); inputchar[i] = '\0'; inputchar[i+1] = '\n';
         
         Label = strstr(inputchar, script_label);

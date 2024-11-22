@@ -74,7 +74,7 @@
   @remark
  */
 
-void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_t data_size)
+void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, void *data, uint32_t size)
 {
     extern arm_stream_instance_t * platform_io_callback_parameter;
     arm_stream_instance_t *S = platform_io_callback_parameter;
@@ -88,24 +88,24 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
     uint8_t *long_base;
     uint8_t *src;
     uint8_t *dst;
+    uint8_t extend;
 
     pio_control = &(S->graph[(int)GRAPH_HEADER_NBWORDS + (int)graph_io_idx * (int)STREAM_IOFMT_SIZE_W32]);
     ongoing = &(S->ongoing[graph_io_idx]);
     arc = S->all_arcs;
     arc = &(arc[(int)SIZEOF_ARCDESC_W32 * (int)RD(*pio_control, IOARCID_IOFMT0)]);
 
-    long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];                       /* platfom memory offsets */
-    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << LOG2ADDR_UNIT_W32]); /* BASE is in word32 @@@ shift  ARCEXTEND_ARCW2*/
+    extend = RD(arc[2], ARCEXTEND_ARCW2);
+    long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];                   /* platfom memory offsets */
+    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << (2*extend)]);    /* BASE is in BYTES shift ARCEXTEND_ARCW2*/
 
     fifosize = RD(arc[1], BUFF_SIZE_ARCW1);
     read = RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
 
     /* 
-        Check overflow, does the data request was already reset ?
+        Check overflow @@@, does the data request was already reset ?
     */
-
-
 
     if (0 == TEST_BIT(*pio_control, RX0TX1_IOFMT0_LSB))
     {    
@@ -114,22 +114,22 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
         */
         if (IO_COMMAND_SET_BUFFER != RD(*pio_control, SET0COPY1_IOFMT0))
         {               
-            /* IO_COMMAND_DATA_MOVE : reset the ONGOING flag when enough small 
+            /* IO_COMMAND_DATA_COPY : reset the ONGOING flag when enough small 
                 sub-frames have been received
             */
-            if (fifosize - write < data_size)   /* free area too small => overflow */
+            if (fifosize - write < size)   /* free area too small => overflow */
             {   /* overflow issue */
                 //platform_al(PLATFORM_ERROR, 0,0,0);
                 /* TODO : implement the flow management desired for "flow_error" */
                 //flow_error = (uint8_t) RD(arc[2], OVERFLRD_ARCW2);
-                data_size = fifosize - write;
+                size = fifosize - write;
             }
 
             /* only one node can read the write-index at a time : no collision is possible */
             src = data;
             dst = &(long_base[write]);
-            MEMCPY (dst, src, (uint32_t)data_size)
-            write = write + data_size;
+            MEMCPY (dst, src, size)
+            write = write + size;
             ST(arc[3], WRITE_ARCW3, write);     /* update the write index */
 
             /* reset the data transfert flag is a frame is fully received */
@@ -156,10 +156,10 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
         else /* IO_COMMAND_SET_BUFFER */
         {
             /* arc_set_base_address_to_arc */
-            arc[0] = lin2pack(S, data);
-            ST(arc[1], BUFF_SIZE_ARCW1, data_size); /* FIFO size aligned with the buffer size */
+            ST(arc[0], BASEIDXOFFARCW0, lin2pack(S, data));
+            ST(arc[1], BUFF_SIZE_ARCW1, size);  /* FIFO size aligned with the buffer size */
             ST(arc[2], READ_ARCW2, 0);
-            ST(arc[3], WRITE_ARCW3, data_size); /* automatic rewind after read */
+            ST(arc[3], WRITE_ARCW3, size);      /* automatic rewind after read */
             CLEAR_BIT(*ongoing, ONGOING_IO_LSB);
         }
     }
@@ -169,22 +169,22 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
         */
         if (IO_COMMAND_SET_BUFFER != RD(*pio_control, SET0COPY1_IOFMT0))
         {     
-           /* IO_COMMAND_DATA_MOVE : reset the ONGOING flag when the remaining data to transmit 
+           /* IO_COMMAND_DATA_COPY : reset the ONGOING flag when the remaining data to transmit 
                 is small, and below the transmitter frame size
             */
-            if (write - read < data_size)   /* data available for TX is too small => underflow */
+            if (write - read < size)   /* data available for TX is too small => underflow */
             {   /* underflow issue */
                 //platform_al(PLATFORM_ERROR, 0,0,0);
                 /* TODO : implement the flow management desired for "flow_error" */
                 //flow_error = (uint8_t) RD(arc[2], OVERFLRD_ARCW2);
-                data_size = write - read;
+                size = write - read;
             }
 
             /* only one node can read the write-index at a time : no collision is possible */
             src = &(long_base[read]);
             dst = data;
-            MEMCPY (dst, src, (uint32_t)data_size)
-            read = read + data_size;
+            MEMCPY (dst, src, size)
+            read = read + size;
             ST(arc[2], READ_ARCW2, read);   /* update the read index */
 
             /* check need for alignement */
@@ -211,7 +211,7 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, uint8_t *data,  uint32_
         else /* IO_COMMAND_SET_BUFFER for the next frame to send */
         {
             /*arc_set_base_address_to_arc */
-            arc[0] = lin2pack(S, data);
+            ST(arc[0], BASEIDXOFFARCW0, lin2pack(S, data));
             ST(arc[2], READ_ARCW2, 0);
             ST(arc[3], WRITE_ARCW3, 0);
             CLEAR_BIT(*ongoing, ONGOING_IO_LSB);

@@ -66,5 +66,5 @@
     2                     arm/analysis/node_manifest_analysis.txt        /* 19 arm_stream_analysis        */
     2                  bitbank/JPEGENC/node_manifest_bitbank_JPEGENC.txt /* 20 JPG encoder                */
     2                         elm-lang/TJpgDec/node_manifest_TjpgDec.txt /* 21 JPG decoder                */
-
+end
 ; ------------------------------------------------------------------------------------------------------------

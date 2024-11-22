@@ -50,13 +50,13 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     static fpos_t pos_NWords, pos_end;
     static uint32_t nFMT, LENscript, LinkedList, LinkedList0, NbInstance, nIOs, NBarc, SizeDebug, dbgScript;
     uint32_t j, m;
-    char tmpstring[NBCHAR_LINE], tmpstring2[NBCHAR_LINE];
+    char tmpstring[NBCHAR_LINE], tmpstring2[NBCHAR_LINE], tmpstring3[NBCHAR_LINE];
     struct arcStruct *arc;
     struct stream_node_manifest *node;
     uint32_t addrW32s;
     time_t rawtime;
     struct tm * timeinfo;
-    uint32_t all_buffers, iarc, inode, iscript, iformat, tmp;
+    uint32_t all_buffers, iarc, inode, iscript, iformat, tmp, clearswap_lw2s;
     stream_script_t *pscript;
 
     FMT4 = FMT5 = all_buffers = addrW32s = 0;
@@ -129,14 +129,13 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
             ST(FMT0,   FWIOIDX_IOFMT0, arc->fw_io_idx);
             ST(FMT0, IO_DOMAIN_IOFMT0, arc->domain);
-            ST(FMT0,FROMIOBUFF_IOFMT0, (arc->graphalloc_X_bsp_0) > 0);
             ST(FMT0, SET0COPY1_IOFMT0, arc->set0copy1);
             ST(FMT0,  SERVANT1_IOFMT0, arc->commander0_servant1);
             ST(FMT0,    RX0TX1_IOFMT0, arc->rx0tx1);
             ST(FMT0,   IOARCID_IOFMT0, arc->idx_arc_in_graph);
 
-            sprintf(tmpstring, "IO(graph%d) %d arc %d set0copy1=%d rx0tx1=%d servant1 %d shared %d domain %d", 
-                j++, arc->fw_io_idx,arc->idx_arc_in_graph, arc->set0copy1, arc->rx0tx1, arc->commander0_servant1, (arc->graphalloc_X_bsp_0) > 0, arc->domain); 
+            sprintf(tmpstring, "IO(graph%d) %d arc %d set0copy1=%d rx0tx1=%d servant1 %d domain %d", 
+                j++, arc->fw_io_idx,arc->idx_arc_in_graph, arc->set0copy1, arc->rx0tx1, arc->commander0_servant1, arc->domain); 
             GTEXT(tmpstring); GWORDINC(FMT0);
 
             sprintf(tmpstring, "IO(settings %d, fmtProd %d (L=%d) fmtCons %d (L=%d)", FMT1, graph->arc[iarc].fmtProd, (int)(graph->arcFormat[graph->arc[iarc].fmtProd].frame_length), 
@@ -303,18 +302,10 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             GTEXT(tmpstring); GWORDINC(FMT0);
         }
 
-        /* word 2 - memory banks  ---  allocations are made in the second pass */
+        /* word 2 - memory banks  ---  allocations and comments are made in the second pass */
         for (imem = 0; imem < node->nbMemorySegment; imem++) 
-        {   FMT0 = 0; 
-            ST(FMT0, NALLOCM1_LW2, (node->nbMemorySegment) - 1); 
-            ST(FMT0, XDM11_LW2, (0 == node->variable_data_rate));      /* same data rate on Rx and Tx, invert the flag */
-            if (imem == 0) 
-            {   sprintf(tmpstring, "Nb Memreq-1 %d  XDM11_same_rate %d", (node->nbMemorySegment)-1, (0 == node->variable_data_rate));
-            } else
-            {   sprintf(tmpstring, "");
-            }
-            GTEXT(tmpstring); GWORDINC(FMT0);
-            FMT0 = 0; /* size of the segment */  GTEXT(""); GWORDINC(FMT0);
+        {   GINC
+            GINC
         }
 
         /* word 3 - parameters */
@@ -322,10 +313,10 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         if (pscript->script_nb_instruction)
         {
             FMT0 = 0;                   // Param header
-            ST(FMT0, PARAM_TAG_LW3, node->TAG); 
-            ST(FMT0,    PRESET_LW3, node->preset); 
-            ST(FMT0,   TRACEID_LW3, node->trace_ID); 
-            ST(FMT0, W32LENGTH_LW3, pscript->script_nb_instruction +1); 
+            ST(FMT0, PARAM_TAG_LW4, node->TAG); 
+            ST(FMT0,    PRESET_LW4, node->preset); 
+            ST(FMT0,   TRACEID_LW4, node->trace_ID); 
+            ST(FMT0, W32LENGTH_LW4, pscript->script_nb_instruction +1); 
             sprintf(tmpstring, "ParamLen %d+1 Preset %d Tag0ALL %d", pscript->script_nb_instruction +1, node->preset, node->TAG);
             GTEXT(tmpstring); 
             GWORDINC(FMT0);
@@ -353,10 +344,10 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         else
         {
             FMT0 = 0;                   // Param header
-            ST(FMT0, PARAM_TAG_LW3, node->TAG); 
-            ST(FMT0,    PRESET_LW3, node->preset); 
-            ST(FMT0,   TRACEID_LW3, node->trace_ID); 
-            ST(FMT0, W32LENGTH_LW3, node->ParameterSizeW32  + 1); /* the parameter section is Header + PackedParameters[]  */
+            ST(FMT0, PARAM_TAG_LW4, node->TAG); 
+            ST(FMT0,    PRESET_LW4, node->preset); 
+            ST(FMT0,   TRACEID_LW4, node->trace_ID); 
+            ST(FMT0, W32LENGTH_LW4, node->ParameterSizeW32  + 1); /* the parameter section is Header + PackedParameters[]  */
             sprintf(tmpstring, "ParamLen %d+1 Preset %d Tag0ALL %d", node->ParameterSizeW32, node->preset, node->TAG);
             GTEXT(tmpstring); 
             GWORDINC(FMT0);
@@ -463,19 +454,21 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
 
     /*
-        Memory consumption adjusted to the graph consumption in VID0
+        Memory reservation of the graph (w/wo split) for the above data, the buffer malloc comes after
     */
     if (graph->option_graph_location == COPY_CONF_GR0_COPY_ALL_IN_RAM || 
         graph->option_graph_location == COPY_CONF_GR0_ALREADY_IN_RAM )
     {   
+        strcpy(tmpstring3,  "COPY_CONF_GR0");
         vid_malloc(VID0, 4 * (addrW32s + (SIZEOF_ARCDESC_W32 * graph->nb_arcs) + graph->debug_pattern_size), 
-            MEM_REQ_4BYTES_ALIGNMENT, &tmp, MEM_TYPE_STATIC, "COPY_CONF_GR0", platform, graph);
+            MEM_REQ_4BYTES_ALIGNMENT, &tmp, MEM_TYPE_STATIC, tmpstring3, platform, graph);
     }
 
     if (graph->option_graph_location == COPY_CONF_GR0_FROM_PIO)
     {
+        strcpy(tmpstring3,  "COPY_CONF_GR0");
         vid_malloc(VID0, 4 * (addrW32s + (SIZEOF_ARCDESC_W32 * graph->nb_arcs) - LK_PIO  + graph->debug_pattern_size), 
-           MEM_REQ_4BYTES_ALIGNMENT,  &tmp, MEM_TYPE_STATIC, "COPY_CONF_GR0", platform, graph);
+           MEM_REQ_4BYTES_ALIGNMENT,  &tmp, MEM_TYPE_STATIC, tmpstring3, platform, graph);
     }
 
 
@@ -607,11 +600,9 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         }
         tmpSize = size = 0.5f + (jitterFactor * size);
 
-        /* if the IO buffer is declared in the BSP: no malloc */
-        if (arc->ioarc_flag)
-        {   if (arc->set0copy1 == 0)
-            {   tmpSize = size = 0;
-            }
+        if (arc->ioarc_flag &&                  /* the arc buffer is external => no memory allocation */
+            0 == arc->set0copy1)     
+        {   size  = 0;
         }
 
         /* memory allocation of BUFFERS */
@@ -772,7 +763,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     ENDARCS = addrW32s;
     addrW32s = LK1;
     for (inode = 0; inode < graph->nb_nodes; inode++)
-    {   uint32_t imem, iword32_arcs, nword32_arcs;
+    {   uint32_t imem, iword32_arcs, nword32_arcs, extend;
 
         /* word 0 - main Header */
         node = &(graph->all_nodes[inode]); GINC 
@@ -783,31 +774,57 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         {   GINC
         }
 
-        /* word 2 - memory banks  ---  Static allocations are made in THIS second pass */
+        clearswap_lw2s = 0;
+        /* word 2 - memory banks  compute the global swap/clear flag  */
+        for (imem = 0; imem < node->nbMemorySegment; imem++)    
+        {   struct node_memory_bank *membank = &(node->memreq[imem]);
+            clearswap_lw2s |=  membank->toClear;
+            clearswap_lw2s |=  membank->toSwap;
+        }
+
+        /* word 2 - memory banks  compute the static area  */
         for (imem = 0; imem < node->nbMemorySegment; imem++)    
         {   struct node_memory_bank *membank = &(node->memreq[imem]);
             uint32_t graph_malloc;
 
+            FMT0 = FMT1 = 0;
+            ST(FMT0, NALLOCM1_LW2, (node->nbMemorySegment) - 1); 
+            ST(FMT0, XDM11_LW2, (0 == node->variable_data_rate));      /* same data rate on Rx and Tx, invert the flag */
+            ST(FMT1, CLEARSWAP_LW2S, clearswap_lw2s); 
+            ST(FMT1, CLEAR_LW2S, membank->toClear); 
+            ST(FMT1, SWAP_LW2S, membank->toSwap); 
+            extend = (membank->graph_memreq_size) >> (BASEIDX_ARCW0_MSB+1);
+            extend = extend >> 1;       /* extension is computed as : address << (extend *2) */
+            ST(FMT1, EXT_SIZE_LW2S, extend); 
+
             if (membank->stat0work1ret2 != MEM_TYPE_WORKING)
             {
+                if (imem == 0) 
+                {   sprintf(tmpstring, "Nb Memreq %d  XDM11_same_rate %d  ClearSwap %d -Static memory bank  Swap %d ", 
+                    (node->nbMemorySegment), (0 == node->variable_data_rate), clearswap_lw2s, (membank->toSwap));
+                } else
+                {   sprintf(tmpstring, "Static memory bank Swap %d ", membank->toSwap);
+                }
+
                 compute_memreq (membank, graph->arcFormat);
                 graph_malloc = node->memreq[imem].malloc_add;
                 membank->graph_memreq_size += graph_malloc; 
-
-                sprintf(tmpstring, "_%d_mem_%d",node->graph_instance, imem);
             
+                strcpy(tmpstring3, "");
                 vid_malloc (membank->mem_VID, membank->graph_memreq_size, membank->alignmentBytes,
-                    &(membank->graph_base), MEM_TYPE_STATIC, tmpstring, platform, graph);
+                    &(membank->graph_base), MEM_TYPE_STATIC, tmpstring3, platform, graph);
+                HCDEF_SSDC(node->nodeName, tmpstring3, membank->graph_base, " node static memory address"); 
 
-                HCDEF_SSDC(node->nodeName, tmpstring, membank->graph_base, " node static memory address"); 
+                ST(FMT0, BASEIDXOFFLW2, membank->graph_base);    // address of the memory bank
+                ST(FMT1, BUFF_SIZE_LW2S, membank->graph_memreq_size); 
 
-                FMT0 = graph->binary_graph[addrW32s];
-                ST(FMT0, BASEIDXOFFLW2, node->memreq[imem].graph_base);    // address 
+                sprintf(tmpstring2, " bank %ld stat0work1ret2 = %d size d%ld(h%x) ", 
+                    imem, membank->stat0work1ret2, membank->graph_memreq_size, membank->graph_memreq_size); 
+
+                GTEXT(tmpstring); 
                 GWORDINC(FMT0);
-
-                sprintf(tmpstring, "Reserved static memory bank(%d) = bank %ld stat0work1ret2 = %d size %ld ", 
-                    imem, RD(membank->graph_base, DATAOFF_ARCW0), membank->stat0work1ret2, membank->graph_memreq_size); 
-                GTEXT(tmpstring); FMT0 = membank->graph_memreq_size; GWORDINC(FMT0);
+                GTEXT(tmpstring2); 
+                GWORDINC(FMT1);
             }
             else
             {   GINC    /* address */
@@ -846,25 +863,33 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
             if (membank->stat0work1ret2 == MEM_TYPE_WORKING)
             {
+                if (imem == 0) 
+                {   sprintf(tmpstring, "Nb Memreq %d  XDM11_same_rate %d  ClearSwap %d -Scratch memory bank  Swap %d ", 
+                    (node->nbMemorySegment), (0 == node->variable_data_rate), clearswap_lw2s, (membank->toSwap));
+                } else
+                {   sprintf(tmpstring, "Scratch memory bank Swap %d ", membank->toSwap);
+                }
+
                 compute_memreq (membank, graph->arcFormat);
                 graph_malloc = node->memreq[imem].malloc_add;
                 membank->graph_memreq_size += graph_malloc; 
             
-                sprintf(tmpstring, "_%d_mem_%d",node->graph_instance, imem);  
-
+                strcpy(tmpstring3, "");
                 vid_malloc(membank->mem_VID, membank->graph_memreq_size, membank->alignmentBytes, 
-                    &(membank->graph_base), MEM_TYPE_WORKING, tmpstring, platform, graph);
+                    &(membank->graph_base), MEM_TYPE_WORKING, tmpstring3, platform, graph);
+                sprintf(tmpstring3, "%s offset %d index %d", " node scratch memory address", RD(membank->graph_base, DATAOFF_ARCW0), RD(membank->graph_base, BASEIDX_ARCW0));  
+                HCDEF_SSDC(node->nodeName, tmpstring3, membank->graph_base, tmpstring3);
 
-                sprintf(tmpstring2, "%s offset %d index %d", " node scratch memory address", RD(membank->graph_base, DATAOFF_ARCW0), RD(membank->graph_base, BASEIDX_ARCW0));  
-                HCDEF_SSDC(node->nodeName, tmpstring, membank->graph_base, tmpstring2);
+                ST(FMT0, BASEIDXOFFLW2, membank->graph_base);       // address of the memory bank
+                ST(FMT1, BUFF_SIZE_LW2S, membank->graph_memreq_size); 
 
-                FMT0 = graph->binary_graph[addrW32s];
-                ST(FMT0, BASEIDXOFFLW2, node->memreq[imem].graph_base);    // address 
+                sprintf(tmpstring2, " bank %ld stat0work1ret2 = %d size d%ld(h%x) ", 
+                    imem, membank->stat0work1ret2, membank->graph_memreq_size, membank->graph_memreq_size); 
+
+                GTEXT(tmpstring); 
                 GWORDINC(FMT0);
-
-                sprintf(tmpstring, "Scratch memory bank(%d) = bank %ld stat0work1ret2 = %d  size %ld ",
-                    imem, RD(membank->graph_base, DATAOFF_ARCW0), membank->stat0work1ret2,  membank->graph_memreq_size); 
-                GTEXT(tmpstring); FMT0 = membank->graph_memreq_size; GWORDINC(FMT0);
+                GTEXT(tmpstring2); 
+                GWORDINC(FMT1);
             }
             else
             {   GINC    /* address */
@@ -927,7 +952,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
 
     {   uint32_t ibank, a, b, c, d; 
-        sprintf(tmpstring,    "// bank   size        consumed    static    +  working");
+        sprintf(tmpstring,    "// bank      size          consumed      static   +  working");
         fprintf (graph->ptf_graph_bin, "%s\n", tmpstring);
         for (ibank = 0; ibank < platform->nbMemoryBank_detailed; ibank++)
         {   
@@ -935,7 +960,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             b = platform->membank[ibank].ptalloc_static + platform->membank[ibank].max_working_booking; 
             c = platform->membank[ibank].ptalloc_static;
             d = platform->membank[ibank].max_working_booking;
-            sprintf(tmpstring, "// %2d   %5d (%X) %5d (%X) %5d (%X) %5d (%X)", ibank, a,a, b,b, c,c, d,d);
+            sprintf(tmpstring, "// %2d   %7d (%6X) %5d (%4X) %5d (%4X) %5d (%4X)", ibank, a,a, b,b, c,c, d,d);
             fprintf (graph->ptf_graph_bin, "%s\n", tmpstring);
         }
     }

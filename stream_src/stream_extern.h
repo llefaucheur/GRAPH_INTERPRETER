@@ -38,7 +38,7 @@ extern p_stream_node node_entry_points[NB_NODE_ENTRY_POINTS];
 extern void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, void *data, uint32_t size);
 
 /* entry point from the device drivers */
-extern void arm_graph_interpreter_io_ack (uint8_t io_al_idx, uint8_t *data,  uint32_t size);
+extern void arm_graph_interpreter_io_ack (uint8_t io_al_idx, void *data,  uint32_t size);
 
 /* entry point from the computing nodes */
 extern void arm_stream_services (uint32_t service_command, void *ptr1, void *ptr2, void *ptr3, uint32_t n);

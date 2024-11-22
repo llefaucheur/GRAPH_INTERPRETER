@@ -43,4 +43,4 @@
         ;------------------------------------------------------------
         1 1 15      processor ID, boolean "I am the main processor" allowed to boot the graphs
         ;           Bit-field computation firmware extensions, on top of the basic one, embedded in Stream services
-        ;                 EXT_SERVICE_MATH 1, EXT_SERVICE_DSPML 2, EXT_SERVICE_AUDIO 3, EXT_SERVICE_IMAGE 4
+        ;                 EXT_SERVICE_MATH 1, EXT_SERVICE_DSPML 2, 

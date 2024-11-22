@@ -45,22 +45,22 @@
 #include "arm_stream_script_instructions.h"
 #include "arm_stream_script.h"
 
-static intPtr_t pack2linaddr_int(uint8_t **long_offset, uint32_t x, uint8_t extend)
-{
-    const uint8_t *dbg1;
-    intPtr_t dbg2;
-    const uint8_t *dbg3;
-
-    dbg1 = long_offset[RD(x,DATAOFF_ARCW0)]; 
-    dbg2 = ((intPtr_t)RD((x),BASEIDX_ARCW0)) << (2*extend);
-    dbg3 = &(dbg1[dbg2]);
-    return (intPtr_t)dbg3;  
-}
-
-static void * pack2linaddr_ptr(uint8_t **long_offset, uint32_t data, uint8_t extend)
-{
-    return (void *) (pack2linaddr_int(long_offset, data, extend));
-}
+//static intPtr_t pack2linaddr_int(uint8_t **long_offset, uint32_t x, uint8_t extend)
+//{
+//    const uint8_t *dbg1;
+//    intPtr_t dbg2;
+//    const uint8_t *dbg3;
+//
+//    dbg1 = long_offset[RD(x,DATAOFF_ARCW0)]; 
+//    dbg2 = ((intPtr_t)RD((x),BASEIDX_ARCW0)) << (2*extend);
+//    dbg3 = &(dbg1[dbg2]);
+//    return (intPtr_t)dbg3;  
+//}
+//
+//static void * pack2linaddr_ptr(uint8_t **long_offset, uint32_t data, uint8_t extend)
+//{
+//    return (void *) (pack2linaddr_int(long_offset, data, extend));
+//}
 
 
 /*

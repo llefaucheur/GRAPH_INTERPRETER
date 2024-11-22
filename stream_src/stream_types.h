@@ -102,8 +102,8 @@ typedef uint64_t sdouble;
 typedef void    (stream_node) (unsigned int command, void *instance, void *data, unsigned int *status);
 typedef void (*p_stream_node) (unsigned int command, void *instance, void *data, unsigned int *status);
 
-typedef void    (io_function_ctrl) (unsigned int command, void *data, unsigned int length);   
-typedef void (*p_io_function_ctrl) (unsigned int command, void *data, unsigned int length);  
+typedef void    (io_function_ctrl) (unsigned int command, stream_xdmbuffer_t *data);   
+typedef void (*p_io_function_ctrl) (unsigned int command, stream_xdmbuffer_t *data);  
 
 
 /* ------------------------------------------------------------------------------------------
@@ -111,7 +111,7 @@ typedef void (*p_io_function_ctrl) (unsigned int command, void *data, unsigned i
 */
 typedef struct  
 {  
-    const uint8_t **long_offset;        // pointer to "long_offset[MAX_NB_MEMORY_OFFSET]" 
+    uint8_t **long_offset;              // pointer to "long_offset[MAX_NB_MEMORY_OFFSET]"
     uint32_t *graph;                    // base address of the binary graph
     uint8_t *ongoing;                   // pointer to the RAM area to the IOs : on-going transfer flag
 

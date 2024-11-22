@@ -6,7 +6,7 @@
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
  * --------------------------------------------------------------------
-/*
+ *
  * Copyright (C) 2010-2023 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0

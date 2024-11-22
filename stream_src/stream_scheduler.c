@@ -126,15 +126,16 @@ static void script_processing(uint32_t script_index, uint32_t parameter)
                 and translates here the indexes to physical address using a table of offsets.
  */
 
-static intPtr_t pack2linaddr_int(uint8_t **long_offset, uint32_t x, uint32_t unit)
+static intPtr_t pack2linaddr_int(uint8_t **long_offset, uint32_t x, uint32_t extend)
 {
     uint8_t *dbg1;
     intPtr_t dbg2;
     uint8_t *dbg3;
     intPtr_t result;
 
-    dbg1 = long_offset[RD(x,DATAOFF_ARCW0)];                //@@@ shift  ARCEXTEND_ARCW2
-    dbg2 = (intPtr_t)(unit * (intPtr_t)RD((x),BASEIDX_ARCW0));
+    dbg1 = long_offset[RD(x,DATAOFF_ARCW0)];             
+    dbg2 = (intPtr_t)(RD((x),BASEIDX_ARCW0));
+    dbg2 = dbg2 << (2*extend);
     dbg3 = &(dbg1[dbg2]);
     result = (intPtr_t)dbg3;
 
@@ -195,12 +196,14 @@ static uint8_t * arc_extract_info_pt (arm_stream_instance_t *S, uint32_t *arc, u
     uint32_t write;
     uint8_t *long_base;
     uint8_t *ret;
+    uint8_t extend;
 
     read =  RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
+    extend = RD(arc[2], ARCEXTEND_ARCW2);
 
-    long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];                       /* platfom memory offsets */
-    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << LOG2ADDR_UNIT_W32]); /* BASE is in word32  @@@ shift  ARCEXTEND_ARCW2*/
+    long_base = (uint8_t *)(S->long_offset[RD(arc[0],DATAOFF_ARCW0)]);   /* platfom memory offsets */
+    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << (2*extend)]); /* BASE is in BYTE */
 
     switch (tag)
     {
@@ -364,9 +367,11 @@ static void arc_data_operations (
     uint8_t *long_base;
     uint8_t *src;
     uint8_t* dst;
+    uint8_t extend;
 
-    long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];                       /* platfom memory offsets */
-    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << LOG2ADDR_UNIT_W32]); /* BASE is in word32 @@@ shift  ARCEXTEND_ARCW2 */
+    extend = RD(arc[2], ARCEXTEND_ARCW2);
+    long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];                /* platfom memory offsets */
+    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << (2*extend)]); /* BASE is in BYTES shift ARCEXTEND_ARCW2*/
 
     switch (tag)
     {
@@ -662,7 +667,7 @@ void load_clear_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1)
     
     for (imem = 0; imem < MAX_NB_MEM_REQ_PER_NODE; imem++)
     {   
-        memaddr = (intPtr_t *)pack2linaddr_ptr (S->long_offset, memreq[NBW32_MEMREQ_LW2 * imem + ADDR_LW2], LINADDR_UNIT_W32);
+        memaddr = (intPtr_t *)pack2linaddr_ptr (S->long_offset, memreq[NBW32_MEMREQ_LW2 * imem + ADDR_LW2], 0);
 
         /* swap memory with the arc buffer "SWAPBUFID" */ 
         if (RD(memreq[NBW32_MEMREQ_LW2 * imem + SIZE_LW2], SWAP_LW2S) != 0)
@@ -673,16 +678,11 @@ void load_clear_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1)
             arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
             memlen = RD(arc[1], BUFF_SIZE_ARCW1);
 
-            if (LW2S_COPY == RD(memaddr, SWAP_LW2S))
-            {   arc_data_operations (S, arc, data_moved_from_arc, (uint8_t *)memaddr, memlen);
-            } 
-            else if (LW2S_SWAP == RD(memaddr, SWAP_LW2S))
-            {   arc_data_operations (S, arc, data_swapped_with_arc, (uint8_t *)memaddr, memlen);
-            } 
+            arc_data_operations (S, arc, data_swapped_with_arc, (uint8_t *)memaddr, memlen);
         }
 
         /* clear memory */
-        if (TEST_BIT(memreq[NBW32_MEMREQ_LW2 * imem + SIZE_LW2], CLEARSWAP_LW2S_LSB))
+        if (TEST_BIT(memreq[NBW32_MEMREQ_LW2 * imem + SIZE_LW2], CLEAR_LW2S_LSB))
         {   memlen = RD(memreq[NBW32_MEMREQ_LW2 * imem + SIZE_LW2], BUFF_SIZE_LW2S);
             MEMSET(memaddr, 0, memlen);
         }
@@ -719,6 +719,7 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
     uint32_t io_mask = S->iomask;
     uint32_t nio;
     const p_io_function_ctrl *io_func;
+static int dbgc;
 
     nio = RD((S->graph)[1],NB_IOS_GR1);
 
@@ -765,7 +766,9 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
         }
         
         if (0u != need_data_move)
-        {   /*  TODO 
+        {   stream_xdmbuffer_t pt_pt;
+        
+            /*  TODO 
                 When the IO is slave and stream_io_domain=PLATFORM_ANALOG_SENSOR_XX 
                  check the time interval from last frame (by a read of the time-stamp in 
                  the FIFO) and current time, to deliver a data rate close to :
@@ -775,7 +778,7 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
                 Tell data transfer on-going (REQMADE_IO_LSB)
             */
             SET_BIT(*ongoing, ONGOING_IO_LSB);
-
+            
             /* fw function index is in the control field, while platform_io[] has all the possible functions */
             io_func = &(S->platform_io[RD(*pio_control, FWIOIDX_IOFMT0)]);
 
@@ -790,7 +793,8 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
             }
 
             /* io_func : data move + io_stream notification */
-            (*io_func)(STREAM_RUN, buffer, size);
+            pt_pt.address = (intPtr_t)buffer; pt_pt.size = 0;
+            (*io_func)(STREAM_RUN, &pt_pt);
 
             /* if this is an input stream : check the buffer needs alignment by the consumer */
             if (RX0_TO_GRAPH == TEST_BIT(*pio_control, RX0TX1_IOFMT0_LSB))
@@ -1003,7 +1007,7 @@ static void read_header (arm_stream_instance_t *S)
     /* default parameters of the node */
     S->pack_command = PACK_COMMAND(
         0,      /* TRACEID tag */
-        RD((S->node_header)[S->node_parameters_offset], PRESET_LW3), /* PRESET */
+        RD((S->node_header)[S->node_parameters_offset], PRESET_LW4), /* PRESET */
         narc,   /* number of arcs*/
         RD(S->scheduler_control, BOOT_SCTRL), /* cold/warm boot, NODE knows */
         0);     /* command */
@@ -1013,7 +1017,7 @@ static void read_header (arm_stream_instance_t *S)
     S->node_instance_addr = (stream_handle_t)pack2linaddr_int
         (S->long_offset, 
          S->node_header[S->node_memory_banks_offset],
-         LINADDR_UNIT_W32
+         0
         );
 
 
@@ -1039,7 +1043,7 @@ static void read_header (arm_stream_instance_t *S)
     S->pt8b_collision_arc = &(S->pt8b_collision_arc[COLLISION_ARC_OFFSET_BYTE]);
 
     /* set the linkedList pointer to the next node */
-    x = (uint16_t)RD((S->node_header)[S->node_parameters_offset], W32LENGTH_LW3) +
+    x = (uint16_t)RD((S->node_header)[S->node_parameters_offset], W32LENGTH_LW4) +
         S->node_parameters_offset;
         
     S->linked_list_ptr = &(S->linked_list_ptr[x]);      // linked_list_ptr => next SWC.
@@ -1097,7 +1101,7 @@ static uint8_t lock_this_component (arm_stream_instance_t *S)
 
 static uint8_t unlock_this_component (arm_stream_instance_t *S)
 {
-    const p_stream_al_services *al_func = &(S->al_services);
+    p_stream_al_services *al_func = &(S->al_services);
     uint8_t tmp = 0;
 
     (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV, AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP,AL_SERVICE_MUTUAL_EXCLUSION), 
@@ -1126,7 +1130,7 @@ static uint8_t unlock_this_component (arm_stream_instance_t *S)
 static void reset_component (arm_stream_instance_t *S)
 {
     uint8_t nbmem;
-    uint8_t imem, j, iformat, narc;
+    uint8_t imem, j, iformat, narc, imem_graph;
     uint32_t *memreq, check, *key;
     
     #define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (STREAM_FORMAT_SIZE_W32*MAX_NB_STREAM_PER_NODE))
@@ -1137,16 +1141,19 @@ static void reset_component (arm_stream_instance_t *S)
     nbmem ++;
     memreq_physical[0] = (intPtr_t)(S->node_instance_addr);
 
+    /* start the loop with the second memory bank */
+    imem_graph = NBW32_MEMREQ_LW2;          
     for (imem = 1; imem < nbmem; imem++)
     {   /* create pointers to the right memory bank */
-        memreq_physical[imem] = pack2linaddr_int(S->long_offset, memreq[NBW32_MEMREQ_LW2 * imem], LINADDR_UNIT_W32);
+        memreq_physical[imem] = pack2linaddr_int(S->long_offset, memreq[imem_graph], 0);
+        imem_graph += NBW32_MEMREQ_LW2;
     }
     
     /* are there keys to share */
     if (RD(S->arcID[0], KEY_LW1))
     {   
-        memreq_physical[imem] = memreq[NBW32_MEMREQ_LW2 * imem]; imem ++; /* user key */
-        memreq_physical[imem] = memreq[NBW32_MEMREQ_LW2 * imem]; imem ++;
+        memreq_physical[imem] = memreq[imem_graph];    imem ++; /* user key */
+        memreq_physical[imem] = memreq[imem_graph +1]; imem ++;
         
         arm_stream_services (PACK_SERVICE(NOCOMMAND_SSRV,NOOPTION_SSRV,NOTAG_SSRV, SERV_INTERNAL_KEYEXCHANGE, SERV_GROUP_INTERNAL), &key, 0, 0, 0);
         memreq_physical[imem] = key[0]; imem ++;    /* platform key */
@@ -1179,7 +1186,7 @@ static void reset_component (arm_stream_instance_t *S)
 
     /* reset the component with the parameter TraceID (6bits) */
     ST(S->pack_command, COMMAND_CMD, STREAM_RESET);
-    ST(S->pack_command, NODE_TAG_CMD, RD((S->node_header)[S->node_parameters_offset], TRACEID_LW3));
+    ST(S->pack_command, NODE_TAG_CMD, RD((S->node_header)[S->node_parameters_offset], TRACEID_LW4));
 
     stream_calls_node (S,
         (void *) memreq_physical, 
@@ -1192,7 +1199,7 @@ static void reset_component (arm_stream_instance_t *S)
   @brief         Set new parameters
   @param[in]     instance   pointer to the static area of the current Stream instance
                  ptr_param32b : 32bits-aligned section of parameters (32 TAGS + 
-                    parameters following, see PARAM_TAG_LW3)
+                    parameters following, see PARAM_TAG_LW4)
   @return        none
     
   @remark
@@ -1211,12 +1218,12 @@ static void set_new_parameters (arm_stream_instance_t *S, uint32_t *ptr_param32b
         W32LENGTH :16  nb of WORD32 to skip at run time, 0 means NO PARAMETER, max=256kB
     */
 
-    if (1 < RD((S->node_header)[S->node_parameters_offset], W32LENGTH_LW3))
+    if (1 < RD((S->node_header)[S->node_parameters_offset], W32LENGTH_LW4))
     {
         /* change the NODE command to "Set Parameter" */
         ST(S->pack_command, COMMAND_CMD, STREAM_SET_PARAMETER);
 
-        tmp = RD(*ptr_param32b, PARAM_TAG_LW3); /* copy the param_tag to node_tag for parameter index */
+        tmp = RD(*ptr_param32b, PARAM_TAG_LW4); /* copy the param_tag to node_tag for parameter index */
         ST(S->pack_command, NODE_TAG_CMD, tmp);
         ptr_param32b++;
 

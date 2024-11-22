@@ -119,7 +119,7 @@ void stream_tool_read_parameters(
     uint8_t *ptr_param, *pt0;
 
     //node->ParameterSizeW32 = 1;
-    //ST(node->PackedParameters[0], W32LENGTH_LW3, node->ParameterSizeW32);
+    //ST(node->PackedParameters[0], W32LENGTH_LW4, node->ParameterSizeW32);
             
     pt0 = ptr_param = (uint8_t *)(PackedParameters);
     while (1)
@@ -337,7 +337,7 @@ void LoadPlatformNode(struct stream_node_manifest *graph_node, struct stream_nod
     graph_node->subtype_units      = platform_node->subtype_units;        
     graph_node->architecture       = platform_node->architecture;         
     graph_node->fpu_used           = platform_node->fpu_used;             
-    graph_node->node_version       = platform_node->node_version;         
+    graph_node->node_node_version  = platform_node->node_node_version;         
     graph_node->stream_version     = platform_node->stream_version;       
     graph_node->nbMemorySegment    = platform_node->nbMemorySegment;   
     graph_node->inPlaceProcessing  = platform_node->inPlaceProcessing; 
@@ -542,8 +542,8 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         {   fields_extract(&pt_line, "CII", ctmp, &i, &j); graph->all_nodes[graph->nb_nodes -1].memreq[i].toSwap = 1;
             graph->all_nodes[graph->nb_nodes -1].memreq[i].swapVID = j;
         }
-        if (COMPARE(node_map_copy))
-        {   
+        if (COMPARE(node_memory_clear))
+        {   fields_extract(&pt_line, "CI", ctmp, &i);  graph->all_nodes[graph->nb_nodes -1].memreq[i].toClear = 1;
         }   
         if (COMPARE(node_trace_id))
         {   
@@ -557,14 +557,14 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(node_map_rtos))
         {   
         }   
+        if (COMPARE(node_user_key))
+        {   
+        }   
         if (COMPARE(node_map_verbose))
         {   
         }   
         if (COMPARE(node_memory_isolation))
         {   
-        }   
-        if (COMPARE(node_memory_clear))
-        {   /* @@@@@  set CLEAR_LW2S */
         }   
         if (COMPARE(node_parameters))
         {   uint32_t TAG; 

@@ -573,7 +573,7 @@ void platform_init_io(arm_stream_instance_t *S)
         /* 
             IO-Interface expects the buffer to be declared by the graph 
         */
-        if (0 != TEST_BIT(*pio, FROMIOBUFF_IOFMT0_LSB))
+        if (IO_COMMAND_SET_BUFFER == RD(*pio_control, SET0COPY1_IOFMT0))
         {
             iarc = RD(*pio, IOARCID_IOFMT0);
             iarc = SIZEOF_ARCDESC_W32 * iarc;

@@ -1,4 +1,15 @@
-[TOC]
+| Table of content     |
+| --------------------- |
+| [Graph Interpreter Memory](#Graph-Interpreter-instance)     |
+| [Manifest Files](#Top-Manifest)                             |
+| [Processor Manifest](#Processor-Manifest)                   |
+| [Interfaces Manifests](#IO-Manifest)                        |
+| [Nodes Manifests](#Node-manifest)                           |
+| [Design of Nodes](#Node-design)                             |
+| [Designing a graph](#Graph-design)                          |
+| [Formats and Domains](#Common-tables)                       |
+| [Common Nodes](#List-of-pre-installed-nodes-(development))  |
+
 
 
 
@@ -463,7 +474,7 @@ When the IO is "Servant" the scheduler call p_io_function_ctrl(STREAM_RUN, ..) t
 
 ### io_buffer_allocation "x"
 
-When data are exchanged there is a need for a temporary exchange buffer. This buffer can be allocated outside by the IO driver, or during the graph memory mapping preparation. The memory mapping of this allocation is decided in the graph and can be in general-purpose RAM or specific memory bank for speed reason or reserved for DMA processing, etc ..
+When data are exchanged there is a need for a temporary exchange buffer. This buffer can be allocated outside by the graph (in the  IO driver), or during the graph memory mapping preparation. The memory mapping of this allocation is decided in the graph and can be in general-purpose RAM or specific memory bank for speed reason or reserved for DMA processing, etc ..
 
 ```
 io_buffer_allocation 2.0  0
@@ -475,10 +486,10 @@ The parameter is a floating-point number used has a multiplication factor of the
 
 ### io_set0copy1 "0/1"
 
-Declares if the IO stream is used with **set**ting a pointer to the data (value 0, default) or with a memory **copy** (value 1). 
+Declares if the IO stream is using a pointer provided by the scheduler (the pointer is **set** value 0), or if the data needs to be copied from the IO internal buffer to the graph arc buffer (**copy** value 1). 
 
 ```
-io_set0copy1      1            
+io_set0copy1      1     ; data will be copied from/to the IO pointer to/from the arc buffer (rx/tx IO)
 ```
 
 ### io_direction_rx0tx1 "0/1"
@@ -606,12 +617,12 @@ See file "Table.md" for the definition of time-stamp format :
 - 0: no time stamp
 - 1: simple counter
 
-- 39: STREAM_TIME16 format q14.2 in seconds, maximum range 1 hour + 8mn +/- 0.0625
-- 40: STREAM_TIME16D format q15 seconds, for time differences +/- 15us 
-- 41: STREAM_TIME32 format q28.4 seconds, maximum 8.5 years +/- 0.0625s
-- 42: STREAM_TIME32D format q17.15 seconds, maximum 36hours +/- 30us for time differences
-- 43: STREAM_TIME64 format q32.28 seconds, maximum 140 years +/- 4ns
-- 44: STREAM_TIME64MS format u42 in milliseconds, amximum 140 years
+- 39: STREAM_TIME16 format q14.2 in seconds, maximum range 4 hours 30mn, 0.25s steps
+- 40: STREAM_TIME16D format q1.15  2 seconds, for time differences, step=30us 
+- 41: STREAM_TIME32 format q30.2 seconds, maximum 34 years , 0.25s steps
+- 42: STREAM_TIME32D format q17.15 seconds, maximum 36hours steps 30us for time differences
+- 43: STREAM_TIME64 format q32.26 seconds, maximum 140 years +/- 4ns
+- 44: STREAM_TIME64MS format u42 in milliseconds, maximum 140 years
 - 45: STREAM_TIME64ISO ISO8601 with signed offset, example 2024-05-04T21:12:02+07:00
 
 ```
@@ -1034,17 +1045,6 @@ Example :
    node_fpu_used   0  ; fpu option used (default 0: none, no FPU assembly or intrinsic) 
 ```
 
-### node_key  "x"
-
-The key is sent to the node during the reset sequence, is placed after the memory allocation pointers. 
-
-The node receives this "node_key" and the "platform key" from the scheduler to decide the features to activate.
-Example :
-
-```
-   node_key  0x83560234	; node key to check against the platform's one
-```
-
 ### node_version    "n"
 
 For information, the version of the node
@@ -1252,6 +1252,15 @@ Example :
 ```
 
 Implementation comment : all the nodes have at least one arc on the transmit side used to manage the node's locking field.
+
+### node_arc_name "name"
+
+Name of the arc used in the GUI.
+Example: 
+
+```
+    node_arc_name filter_output  ; "filter_output" is the name of the arc
+```
 
 ### node_arc_rx0tx1 "0/1"
 
@@ -1489,7 +1498,7 @@ After this list addresses the scheduler will push (when the manifest command *no
 
 **The third parameter "data"** is used to share the address of function providing computing services. 
 
-### Set Parameter command
+### Set Parameter command @@@
 
 The bit-field "Node Tag" tells which (or all) parameter will be updated.
 
@@ -1507,7 +1516,7 @@ The bit-field "Node Tag" tells which (or all) parameter will be updated.
 
 Nodes are delivered with a test-bench (code and non-regression database).
 
-## Node example
+## Node example @@@
 
     typedef struct
     {   q15_t coefs[MAX_NB_BIQUAD_Q15*6];
@@ -1981,12 +1990,12 @@ time-stamp format :
 
 - 0: no time stamp
 - 1: simple counter
-- 39: STREAM_TIME16 format q14.2 in seconds, maximum range 1 hour + 8mn +/- 0.0625
-- 40: STREAM_TIME16D format q15 seconds, for time differences +/- 15us 
-- 41: STREAM_TIME32 format q28.4 seconds, maximum 8.5 years +/- 0.0625s
-- 42: STREAM_TIME32D format q17.15 seconds, maximum 36hours +/- 30us for time differences
-- 43: STREAM_TIME64 format q32.28 seconds, maximum 140 years +/- 4ns
-- 44: STREAM_TIME64MS format u42 in milliseconds, amximum 140 years
+- 39: STREAM_TIME16 format q14.2 in seconds, maximum range 4 hours 30mn, 0.25s steps
+- 40: STREAM_TIME16D format q1.15  2 seconds, for time differences, step=30us 
+- 41: STREAM_TIME32 format q30.2 seconds, maximum 34 years , 0.25s steps
+- 42: STREAM_TIME32D format q17.15 seconds, maximum 36hours steps 30us for time differences
+- 43: STREAM_TIME64 format q32.26 seconds, maximum 140 years +/- 4ns
+- 44: STREAM_TIME64MS format u42 in milliseconds, maximum 140 years
 - 45: STREAM_TIME64ISO ISO8601 with signed offset, example 2024-05-04T21:12:02+07:00
 
 ### format_domain "n"
@@ -2205,18 +2214,17 @@ Example :
     node_map_hwblock 0 2 ; memory segment 0 is mapped to bank offset 2 
 ```
 
-### node_map_copy / node_map_swap "m" "o"
+### node_map_swap "m" "o"
 
-This command is used to optimize the memory mapping of small and fast memory segment by copying, or swapping, a memory segment content from and other memory offset (usually a slower one).
+This command is used to optimize the memory mapping of small and fast memory segment by swapping, a memory segment content from and other memory offset (usually a slower one).
 Usage : 
 
 ```
-    node_map_copy 1 0; forced copy of the indexed node memory segment 1 to hardware memory offset 0  
-    node_map_swap 1 0; forced swap of the indexed node memory segment 1 to hardware memory offset 0 
+; forced swap of the node memory segment 1 to hardware memory offset 0     
+	node_map_swap 1 0
 ```
 
-In the above both cases the memory segment 1 is copied from offset memory segment 1 (a dummy arc descriptor is created to access this temporary area). 
-In the second swap case the scheduler reads node memory segment and updates the slow memory.
+In the above both cases the memory segment 1 is copied (next is swapped) from offset memory segment 0 (a dummy arc descriptor is created to access this temporary area) before code execution. 
 
 ### node_trace_id "io"
 
@@ -2276,15 +2284,16 @@ Example :
   node_script 12 ; call script #12 associated to this node
 ```
 
-### node_user_key "key"
+### node_user_key "k64"
 
-The key is sent to the node during the reset sequence, It is placed after the memory allocation pointers. 
+The 64bits key is sent to the node during the reset sequence, It is placed after the memory allocation pointers. 
 
-The node receives the "node_key" from the node manifest file, this "user_key",  and the "platform key" from the scheduler to decide the features to activate.
+The node receives the "node_key" from the scheduler and this "user_key" to decide the features to activate.
+
 Example :
 
 ```
-  node_user_key 0x2334809458
+  node_user_key 0x2334809458	; 64 bits key
 ```
 
 ### node_parameters "tag"
@@ -2368,7 +2377,7 @@ r6 = 3                    r6 = 3  (the default litterals type is int32)
 r11 = sp                  read data from the top of the stack 
 r6 = add r5 3             r6 = ( r5 + 3 )
 sp1 = r6                  push the result on stack (SP incremented)
-test_eq r6 = sub r5 r4    test if r6 == ( r5 - r4 )
+test_eq r6 sub r5 r4      test if r6 == ( r5 - r4 )
 if_yes r6 = add r5 3      conditional addition of r5 with 3 saved in r6
 ```
 
@@ -2387,10 +2396,11 @@ label L1                  label declaration
 if_not call L1            conditional call 
 banz L1 r2                decrement r2 and branch if not zero
 jump L1 r1                jump to label and push up to 2 registers 
-call L1 r2 r3             call a subroutine and save 2 registers
-set r4 #uint32            cast r4 to an unsigned integer
+call L1 r2 r3             call a subroutine and push 2 registers
+set r4 #uint32            cast r4 as an unsigned integer
 set r4 #heap L2           load r4 with an address in the heap RAM
 set r4 base L2            set the base address of a circular buffer
+set r4 size 12            set the size of a circular buffer
 set r0 graph node_name_2  set r0 with the graph's node instance #2
 save r4 r5 r0 r2 r11      push 5 registers on the stack
 restore r4 r5             pop 2 registers from the stack
@@ -2400,7 +2410,7 @@ r3 = [ r4 ]  r0           gather load
 r3 | 8 15 | = r2          bit-field load of r2 to the 2nd byte of r3
 r3 = r2 | 0 7 |           bit-field extract the LSB of r2 to r3
 return                    return from subroutine or script
-callsys 1 r1 r4 r5        to address nodes and arcs
+callsys 1 r1 r4 r5        system call (below)
 ```
 
 ### Graph syntax
@@ -2450,8 +2460,9 @@ The `"callsys"` instruction gives access to nodes (set/read parameters) and arc 
 | 4 (IO settings)                  | 1: IO's graph index<br/>2: command <br/>    set/read parameter=2/3<br/>3: address of data<br/>4: number of bytes |
 | 5 (debug and trace)              | TBD                                                          |
 | 6 (computation)                  | TBD                                                          |
-| 7 (timers and idle controls )    | TBD, read time, delta-time, in the three formats (16, 32, 64 bits). Compute difference of time. Share to the application the recommended Idle strategy to apply (small or deep-sleep). Read Node descriptor from the graph, check the script is executed from a specific processor. |
-| 8 (low-level functions)          | TBD, peek/poke directly to memory, direct access to IOs (I2C driver, GPIO setting, interrupts generation and settings) |
+| 7 (low-level functions)          | TBD, peek/poke directly to memory, direct access to IOs (I2C driver, GPIO setting, interrupts generation and settings) |
+| 8 (idle controls)                | TBD, Share to the application the recommended Idle strategy to apply (small or deep-sleep). |
+| 9 (time)                         | 1: command and time format <br/>2: parameter1 (depends on CB)<br/>3: parameter2 (depends on CB)<br/>4: parameter3 (depends on CB) |
 
 ------
 
@@ -2479,6 +2490,66 @@ Example :
  arc between nodeAAA instance 1 output #2 using format #0             
      and nodeBBB instance 3 output #4 using format #1                 
  arc nodeAAA 1 2 0   nodeBBB 3 4 1                                    
+```
+
+### arc_input 
+
+A declaration of a graph input gives the name of the index of the stream which is the "producer" and the node it is connected to (the "consumer").
+
+- index of the IO (see [stream_io](#stream_io))
+- 0 or 1 to indicate the data is consumed "in-place" (parameter =0), or will be copied in the buffer associated to the arc (parameter =1). When the data is processed in-place the graph declares an arc descriptor without buffer, the function `void arm_graph_interpreter_io_ack()` will copy the address of the data in the base address of the arc descriptor
+- format ID (see [format "n"](#format-"n"))  used to produce the stream
+- name of the consumer node 
+- Instance index of the node, starting from 0
+- arc index of the node (see [node_arc "n"](#node-arc="n"))
+- format ID (see [format "n"](#format-"n"))  used to by the node consumer of the stream
+
+Example
+
+``` 
+arc_input   1 0 3 arm_stream_filter   4 0 6  
+; 1 input stream from io 1
+; 0 set the pointer to IO buffer without copy
+; 3 third format used 
+; arm_stream_filter receives the data
+; 4 fifth instance of the node in the graph
+; 0 arc index of the node connected to the stream (node input)
+; 6 stream is consumed using the seventh format
+```
+
+### arc_output 
+
+A declaration of a graph output gives the name of the index of the stream which is the "consumer" and the node it is connected to (the "producer").
+
+Example
+
+```
+arc_output   1 1 3 arm_stream_filter   4 1 0
+; 1 output stream from io 1
+; 1 copy the data from the arc buffer 
+; 3 third format used 
+; arm_stream_filter produces the data
+; 4 fifth instance of the node in the graph
+; 1 arc index of the node connected to the stream (node output)
+; 0 stream is generated using the first format
+```
+
+### arc node1 - node2
+
+Declaration of an arc between two nodes.
+
+Example
+
+``` 
+arc arm_stream_filter 4 1 0 sigp_stream_detector 0 0 1 
+; arm_stream_filter produces the data to the sigp_stream_detector
+; 4 fifth instance of the node in the graph
+; 1 arc index of the node connected to the stream (node output)
+; 0 stream is generated using the first format
+; sigp_stream_detector consumes the data
+; 0 first instance of the node in the graph
+; 0 arc index of the node connected to the stream (node input)
+; 1 stream is consumed using the second format
 ```
 
 ### arc flow control 
@@ -2635,59 +2706,59 @@ Format of the images in pixels: height, width, border. The "extension" bit-field
 
 Raw data types
 
-| TYPE              | CODE | COMMENTS                                                    |
-| ----------------- | ---- | :---------------------------------------------------------- |
-| STREAM_DATA_ARRAY | 0    | stream_array : [0NNNTT00] number, type                      |
-| STREAM_S1         | 1    | S, one signed bit, "0" = +1 one bit per data                |
-| STREAM_U1         | 2    | one bit unsigned, Boolean                                   |
-| STREAM_S2         | 3    | SX two bits per data                                        |
-| STREAM_U2         | 4    | uu                                                          |
-| STREAM_Q1         | 5    | Sx ~stream_s2 with saturation management                    |
-| STREAM_S4         | 6    | Sxxx four bits per data                                     |
-| STREAM_U4         | 7    | xxxx                                                        |
-| STREAM_Q3         | 8    | Sxxx                                                        |
-| STREAM_FP4_E2M1   | 9    | Seem micro-float [8 .. 64]                                  |
-| STREAM_FP4_E3M0   | 10   | Seee [8 .. 512]                                             |
-| STREAM_S8         | 11   | ` Sxxxxxxx`  eight bits per data                            |
-| STREAM_U8         | 12   | ` xxxxxxxx`  ASCII char, numbers..                          |
-| STREAM_Q7         | 13   | ` Sxxxxxxx`  arithmetic saturation                          |
-| STREAM_CHAR       | 14   | ` xxxxxxxx`                                                 |
-| STREAM_FP8_E4M3   | 15   | ` Seeeemmm`  NV tiny-float [0.02 .. 448]                    |
-| STREAM_FP8_E5M2   | 16   | ` Seeeeemm`  IEEE-754 [0.0001 .. 57344]                     |
-| STREAM_S16        | 17   | ` Sxxxxxxx.xxxxxxxx` 2 bytes per data                       |
-| STREAM_U16        | 18   | ` xxxxxxxx.xxxxxxxx`  Numbers, UTF-16 characters            |
-| STREAM_Q15        | 19   | ` Sxxxxxxx.xxxxxxxx`  arithmetic saturation                 |
-| STREAM_FP16       | 20   | ` Seeeeemm.mmmmmmmm`  half-precision float                  |
-| STREAM_BF16       | 21   | ` Seeeeeee.mmmmmmmm`  bfloat                                |
-| STREAM_Q23        | 22   | ` Sxxxxxxx.xxxxxxxx.xxxxxxxx`  24bits 3 bytes per data      |
-| STREAM_Q23_       | 32   | ` SSSSSSSS.Sxxxxxxx.xxxxxxxx.xxxxxxx`  4 bytes per data     |
-| STREAM_S32        | 24   | one long word                                               |
-| STREAM_U32        | 25   | ` xxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx`  UTF-32, ..          |
-| STREAM_Q31        | 26   | ` Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx`                      |
-| STREAM_FP32       | 27   | ` Seeeeeee.mmmmmmmm.mmmmmmmm..`  FP32                       |
-| STREAM_CQ15       | 28   | ` Sxxxxxxx.xxxxxxxx+Sxxxxxxx.xxxxxxxx (I Q)`                |
-| STREAM_CFP16      | 29   | ` Seeeeemm.mmmmmmmm+Seeeeemm.. (I Q)`                       |
-| STREAM_S64        | 30   | long long 8 bytes per data                                  |
-| STREAM_U64        | 31   | unsigned 64 bits                                            |
-| STREAM_Q63        | 32   | ` Sxxxxxxx.xxxxxx ....... xxxxx.xxxxxxxx`                   |
-| STREAM_CQ31       | 33   | ` Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx Sxxxx..`              |
-| STREAM_FP64       | 34   | ` Seeeeeee.eeemmmmm.mmmmmmm ...`  double                    |
-| STREAM_CFP32      | 35   | ` Seeeeeee.mmmmmmmm.mmmmmmmm.m..+Seee..`  (I Q)             |
-| STREAM_FP128      | 36   | ` Seeeeeee.eeeeeeee.mmmmmmm ...`  quadruple precision       |
-| STREAM_CFP64      | 37   | fp64 + fp64 (I Q)                                           |
-| STREAM_FP256      | 38   | ` Seeeeeee.eeeeeeee.eeeeemm ...`  octuple precision         |
-| STREAM_TIME16     | 39   | ssssssssssssqqqq q14.2 1 hour + 8mn +/- 0.0625s             |
-| STREAM_TIME16D    | 40   | qqqqqqqqqqqqqqqq q15 [s] time difference +/- 15us           |
-| STREAM_TIME32     | 41   | ssssss .. ssssssssssssqqqq q28.4 [s] 8.5 years +/- 0.0625s  |
-| STREAM_TIME32D    | 42   | ssssss..sssqqqqq.. q17.15 [s] 36h  +/- 30us time difference |
-| STREAM_TIME64     | 43   | ____sssssssssssssss..qqqqqqqqqq q32.28 [s] 140 Y +Q28 [s]   |
-| STREAM_TIME64MS   | 44   | ___________mmmmmmmmmmmmmmm u42 [ms], 140Y                   |
-| STREAM_TIME64ISO  | 45   | ISO8601___..YY .. MM..MM..DD..DD..SS..SS.....offs..MM ..    |
-| STREAM_WGS84      | 46   | <--LAT 32B--><--LONG 32B-->                                 |
-| STREAM_HEXBINARY  | 47   | UTF-8 lower case hexadecimal byte stream                    |
-| STREAM_BASE64     | 48   | RFC-2045 base64 for xsd:base64Binary XML data               |
-| STREAM_STRING8    | 49   | UTF-8 string of char terminated by 0                        |
-| STREAM_STRING16   | 50   | UTF-16 string of char terminated by 0                       |
+| TYPE              | CODE | COMMENTS                                                     |
+| ----------------- | ---- | :----------------------------------------------------------- |
+| STREAM_DATA_ARRAY | 0    | stream_array : `{ 0NNN TT 00 }` number, type                 |
+| STREAM_S1         | 1    | `S`, one signed bit, "0" = +1 one bit per data               |
+| STREAM_U1         | 2    | one bit unsigned, Boolean                                    |
+| STREAM_S2         | 3    | `Sx` two bits per data                                       |
+| STREAM_U2         | 4    | `uu`                                                         |
+| STREAM_Q1         | 5    | `Sx` ~stream_s2 with saturation management                   |
+| STREAM_S4         | 6    | `Sxxx` four bits per data                                    |
+| STREAM_U4         | 7    | `xxxx`                                                       |
+| STREAM_Q3         | 8    | `Sxxx`                                                       |
+| STREAM_FP4_E2M1   | 9    | `Seem`  micro-float [8 .. 64]                                |
+| STREAM_FP4_E3M0   | 10   | `Seee`   [8 .. 512]                                          |
+| STREAM_S8         | 11   | ` Sxxxxxxx`  eight bits per data                             |
+| STREAM_U8         | 12   | ` xxxxxxxx`  ASCII char, numbers..                           |
+| STREAM_Q7         | 13   | ` Sxxxxxxx`  arithmetic saturation                           |
+| STREAM_CHAR       | 14   | ` xxxxxxxx`                                                  |
+| STREAM_FP8_E4M3   | 15   | ` Seeeemmm`  NV tiny-float [0.02 .. 448]                     |
+| STREAM_FP8_E5M2   | 16   | ` Seeeeemm`  IEEE-754 [0.0001 .. 57344]                      |
+| STREAM_S16        | 17   | ` Sxxxxxxx.xxxxxxxx` 2 bytes per data                        |
+| STREAM_U16        | 18   | ` xxxxxxxx.xxxxxxxx`  Numbers, UTF-16 characters             |
+| STREAM_Q15        | 19   | ` Sxxxxxxx.xxxxxxxx`  arithmetic saturation                  |
+| STREAM_FP16       | 20   | ` Seeeeemm.mmmmmmmm`  half-precision float                   |
+| STREAM_BF16       | 21   | ` Seeeeeee.mmmmmmmm`  bfloat                                 |
+| STREAM_Q23        | 22   | ` Sxxxxxxx.xxxxxxxx.xxxxxxxx`  24bits 3 bytes per data       |
+| STREAM_Q23_       | 32   | ` SSSSSSSS.Sxxxxxxx.xxxxxxxx.xxxxxxx`  4 bytes per data      |
+| STREAM_S32        | 24   | one long word                                                |
+| STREAM_U32        | 25   | ` xxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx`  UTF-32, ..           |
+| STREAM_Q31        | 26   | ` Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx`                       |
+| STREAM_FP32       | 27   | ` Seeeeeee.mmmmmmmm.mmmmmmmm..`  FP32                        |
+| STREAM_CQ15       | 28   | ` Sxxxxxxx.xxxxxxxx+Sxxxxxxx.xxxxxxxx (I Q)`                 |
+| STREAM_CFP16      | 29   | ` Seeeeemm.mmmmmmmm+Seeeeemm.. (I Q)`                        |
+| STREAM_S64        | 30   | long long 8 bytes per data                                   |
+| STREAM_U64        | 31   | unsigned 64 bits                                             |
+| STREAM_Q63        | 32   | ` Sxxxxxxx.xxxxxx ....... xxxxx.xxxxxxxx`                    |
+| STREAM_CQ31       | 33   | ` Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx Sxxxx..`               |
+| STREAM_FP64       | 34   | ` Seeeeeee.eeemmmmm.mmmmmmm ...`  double                     |
+| STREAM_CFP32      | 35   | ` Seeeeeee.mmmmmmmm.mmmmmmmm.m..+Seee..`  (I Q)              |
+| STREAM_FP128      | 36   | ` Seeeeeee.eeeeeeee.mmmmmmm ...`  quadruple precision        |
+| STREAM_CFP64      | 37   | fp64 + fp64 (I Q)                                            |
+| STREAM_FP256      | 38   | ` Seeeeeee.eeeeeeee.eeeeemm ...`  octuple precision          |
+| STREAM_TIME16     | 39   | `ssssssssssssssqq` q14.2 [s]  4 hours,30mn step = 0.25s      |
+| STREAM_TIME16D    | 40   | `sqqqqqqqqqqqqqqq` q1.15 [s]  2 seconds, step=30us           |
+| STREAM_TIME32     | 41   | `ssssss...ssssssqq` q30.2  [s] (34 years  step = 0.25s)      |
+| STREAM_TIME32D    | 42   | `sss...ssssqqqqqq...qqqq` q17.15 [s] (36h, step=30us)        |
+| STREAM_TIME64     | 43   | `____sssssssssss..qqqqqqqqqq` q32.26 [s] 140 Y +Q28 [s]      |
+| STREAM_TIME64MS   | 44   | `___________mmmmmmmmmmmmmmm` u42 [ms], 140Y                  |
+| STREAM_TIME64ISO  | 45   | `___..YY .. MM..MM..DD..DD..SS..SS.....offs..MM ..` ISO8601 with time offset |
+| STREAM_WGS84      | 46   | `<--LAT 32B--><--LONG 32B-->`                                |
+| STREAM_HEXBINARY  | 47   | UTF-8 lower case hexadecimal byte stream                     |
+| STREAM_BASE64     | 48   | RFC-2045 base64 for xsd:base64Binary XML data                |
+| STREAM_STRING8    | 49   | UTF-8 string of char terminated by 0                         |
+| STREAM_STRING16   | 50   | UTF-16 string of char terminated by 0                        |
 
 ------
 

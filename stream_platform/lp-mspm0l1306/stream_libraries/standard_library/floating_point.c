@@ -30,7 +30,6 @@
 #endif
 
 #include <stdint.h>
-#include "stream_types" 
 
 
 

@@ -210,7 +210,8 @@ struct node_memory_bank
     uint32_t speed;             /* enum mem_speed_type */
     uint32_t relocatable;       /* enum buffer_relocation_type */
     uint32_t data0prog1;        /* data / program memory */
-    uint32_t toSwap, swapVID;   /* @@@@ memory bank to swap to swapVID */
+    uint32_t toSwap, swapVID;   /* memory bank to swap to swapVID */
+    uint32_t toClear;           /* memory bank to clear */
     uint32_t malloc_add;        /* added from graph */
 
     uint32_t mem_VID;           /* optimization during graphTXT node declaration */
@@ -296,7 +297,6 @@ struct arcStruct
 
     uint32_t set0copy1;                // SET0COPY1_IOFMT data move through pointer setting of data copy 
     uint32_t commander0_servant1;       // SERVANT1_IOFMT selection for polling protocol 
-    uint32_t graphalloc_X_bsp_0;        // buffer declared in BSP (0) or Graph x (multiplication factor of the Frame size, 2 for a ping-pong buffer for example 
     uint32_t sram0_hwdmaram1;           // buffer in standard RAM=0, in HW IO RAM=1 
     uint32_t processorBitFieldAffinity; // indexes of the processor in charge of this stream 
     uint32_t clockDomain;               // indication for the need of ASRC insertion 
@@ -406,7 +406,7 @@ struct stream_node_manifest
     uint32_t subtype_units;             // triggers the need for rescaling and data conversion
     uint32_t architecture;              // arch compatible with (default: 0 = source code) to merge and sort for ARCHID_LW0
     uint32_t fpu_used;                  // fpu option used (default 0: none, no FPU assembly or intrinsic)
-    uint32_t node_version;              // version of the computing node
+    uint32_t node_node_version;         // version of the computing node
     uint32_t stream_version;            // version of the stream scheduler it is compatible with
     uint32_t graph_instance;            // occurence of the same node
     
@@ -418,8 +418,8 @@ struct stream_node_manifest
     uint32_t lock_proc;
     uint32_t lock_arch;                 
     uint32_t headerPACK;
-    uint32_t use_boot_key, boot_key[MAXNB_WORD32_BOOT_KEY];    /* max 1024 bits boot key */
-    uint32_t use_user_key, user_key[MAXNB_WORD32_USER_KEY];    /* max 1024 bits user key */
+    uint64_t use_boot_key;              /* scheduler shares max 1024 bits boot key during the reset sequence */
+    uint64_t use_user_key, user_key[MAXNB_WORD32_USER_KEY];    /* max 1024 bits user key */
 
     /* memory */
     uint32_t nbMemorySegment;

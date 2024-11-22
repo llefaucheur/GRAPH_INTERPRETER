@@ -11,8 +11,7 @@
  *
  * $Date:        15 February 2023
  * $Revision:    V0.0.1
- * -------------------------------------------------------------------- */
-/*
+ * --------------------------------------------------------------------
  * Copyright (C) 2010-2023 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -237,7 +236,7 @@ static void readreg(arm_script_instance_t *I, regdata32_t *data, int32_t srcID, 
                 switch (RD(instruction, DTYPE_REGS1))
                 {
                 case DTYPE_UINT8 : case DTYPE_UINT16: case DTYPE_INT16 : case DTYPE_UINT32: 
-                case DTYPE_INT32 : case DTYPE_TIME16: case DTYPE_TIME32: case DTYPE_PTR28B: 
+                case DTYPE_INT32 : case DTYPE_TIME32: case DTYPE_PTR28B: 
                     /* k = reg_src2K.v_i32[REGS_DATA].i32; */
                     break;
                 case DTYPE_FP16  : case DTYPE_FP32  : //case DTYPE_FP64  : 
@@ -415,7 +414,7 @@ static void jmov_operation(arm_script_instance_t *I)
         switch (dsttype)
         {
         case DTYPE_UINT8:  nbytes = 1; break;
-        case DTYPE_INT16: case DTYPE_FP16: case DTYPE_TIME16:  nbytes = 2; break;
+        case DTYPE_INT16: case DTYPE_FP16: nbytes = 2; break;
         case DTYPE_UINT32:case DTYPE_INT32:case DTYPE_FP32:case DTYPE_TIME32:case DTYPE_PTR28B: nbytes = 4; break;
         }
 
@@ -468,7 +467,7 @@ static void jmov_operation(arm_script_instance_t *I)
         switch (srctype)
         {
         case DTYPE_UINT8:  nbytes = 1; memset(p8dst, 0, sizeof(uint32_t)); break;
-        case DTYPE_INT16: case DTYPE_FP16: case DTYPE_TIME16:  nbytes = 2; memset(p8dst, 0, sizeof(uint32_t)); break;
+        case DTYPE_INT16: case DTYPE_FP16: nbytes = 2; memset(p8dst, 0, sizeof(uint32_t)); break;
         case DTYPE_UINT32:case DTYPE_INT32:case DTYPE_FP32:case DTYPE_TIME32:case DTYPE_PTR28B: nbytes = 4; break;
         }
         memcpy (p8dst, p8src, nbytes);              // write 8b, 16b or 32b

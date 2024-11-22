@@ -193,7 +193,8 @@ void read_platform_digital_manifest(char* inputFile, struct stream_platform_mani
 {
     char* pt_line;
     uint32_t nb_io_stream;
-    uint32_t iproc, iarch, ibank;
+    uint32_t iproc, iarch, ibank, i;
+    struct processor_memory_bank *mem;
 
     pt_line = inputFile;
     nb_io_stream = 0;
@@ -205,6 +206,23 @@ void read_platform_digital_manifest(char* inputFile, struct stream_platform_mani
         &(platform->nbMemoryBank_detailed),
         &(platform->nbOffset)
         );
+
+    for (i = 0; i < MAX_PROC_MEMBANK; i++)
+    {   mem = &(platform->membank[i]); 
+        mem->offsetID = 0;
+        mem->virtualID= 0;     
+        mem->speed= 0;         
+        mem->stat0work1ret2= 0;
+        mem->private_ram= 0;   
+        mem->hwio= 0;          
+        mem->data0prog1= 0;    
+        mem->size= 0;          
+        mem->base64= 0;        
+        mem->ptalloc_static= 0;    
+        mem->max_working= 0;       
+        mem->max_working_alignement = 0;
+        mem->max_working_booking= 0;
+    }
 
     /*  memory mapping managed using several memory bank */
     for (ibank = 0; ibank <platform->nbMemoryBank_detailed; ibank ++)
@@ -271,9 +289,6 @@ void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *arc)
     {
         if (COMPARE(io_commander0_servant1))
         {   fields_extract(&pt_line, "CI", cstring, &(arc->commander0_servant1)); 
-        }
-        if (COMPARE(io_buffer_allocation))
-        {   fields_extract(&pt_line, "CII", cstring, &(arc->graphalloc_X_bsp_0), &(arc->sram0_hwdmaram1)); //TODO : sram0_hwdmaram1
         }
         if (COMPARE(io_direction_rx0tx1))
         {   fields_extract(&pt_line, "CI", cstring, &(arc->rx0tx1));
@@ -430,14 +445,11 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         if (COMPARE(node_architecture))
         {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
-        if (COMPARE(node_fpu_used))
+        if (COMPARE(node_fpu_used)) 
         {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
-        if (COMPARE(node_use_boot_key))
-        {   fields_extract(&pt_line, "CI", ctmp, &(node->use_boot_key)); 
-        }
-        if (COMPARE(node_node_version))
-        {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
+        if (COMPARE(node_version))
+        {   fields_extract(&pt_line, "CI", ctmp, &(node->node_node_version));  // TBC
         }
         if (COMPARE(node_stream_version))
         {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
@@ -491,6 +503,9 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         if (COMPARE(node_new_arc))
         {   fields_extract(&pt_line, "CI", ctmp, &idx_arc);  
         }
+        if (COMPARE(node_arc_name))
+        {   fields_extract(&pt_line, "CC", ctmp, &(node->arc[idx_arc].IO_name));  
+        }
         if (COMPARE(node_arc_rx0tx1))
         {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
         }
@@ -543,19 +558,17 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
  */
 void arm_stream_read_manifests (struct stream_platform_manifest *platform, char *all_files)
 {
-    char* pt_line;
     char file_name[NBCHAR_LINE];
     char graph_platform_manifest_name[NBCHAR_LINE];
-    uint32_t nb_stream, istream;
     char node_name_[NBCHAR_LINE];
     char IO_name[NBCHAR_LINE];
     char paths[MAX_NB_PATH][NBCHAR_LINE];
+    char* pt_line;
+    uint32_t nb_stream, istream;
     int32_t nb_paths, ipath, fw_io_idx, processorBitFieldAffinity, clockDomain;
     extern uint8_t globalEndFile;
     int forScanf;
     char *forStr;
-    
-#define MAXINPUT 100000
     char *inputFile;
 
     strcpy(graph_platform_manifest_name, "");
@@ -646,7 +659,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     } while (1);
 
 
-    fprintf(stderr, " %d nodes ", platform->nb_nodes);
+    printf("\n %d nodes ", platform->nb_nodes);
 }
 
 

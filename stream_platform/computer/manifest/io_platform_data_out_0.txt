@@ -7,6 +7,6 @@ data_out               ; domain name,   no specific field
 
 io_direction_rx0tx1 1
 
-io_frame_length        {1 64 128}
+io_frame_length        {32}
 
     end

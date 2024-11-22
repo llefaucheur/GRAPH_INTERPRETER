@@ -110,7 +110,7 @@ int vid_malloc (uint32_t VID, intPtr_t size, uint32_t alignment,
      
     *pack27b = 0;
     ST(*pack27b, DATAOFF_ARCW0, offsetID);
-    ST(*pack27b, BASEIDX_ARCW0, offset >> 2);   /* offset is in WORD32 !! */
+    ST(*pack27b, BASEIDX_ARCW0, offset);   /* offset is in BYTES !! */
 
     if (working == MEM_TYPE_WORKING)
     {   if (size > platform->membank[ibank].max_working_booking)

@@ -33,7 +33,7 @@
 #ifndef cSTREAM_TOOL_DEFINE_H
 #define cSTREAM_TOOL_DEFINE_H
 
-#define MAX_NB_NODES 100
+#define MAX_NB_NODES 50
 #define MAX_NB_FORMAT 32
 
 #define MAXINPUT 100000
@@ -71,7 +71,6 @@
 #define SECTION_END "end"
 /*----------------------------------------------------------------------- IO MANIFESTS ------------- */
 #define io_commander0_servant1      "io_commander0_servant1"
-#define io_buffer_allocation        "io_buffer_allocation"
 #define io_direction_rx0tx1         "io_direction_rx0tx1"
 #define io_raw_format               "io_raw_format"
 #define io_nb_channels              "io_nb_channels"
@@ -169,8 +168,7 @@
 #define node_subtype_units              "node_subtype_units"
 #define node_architecture               "node_architecture"
 #define node_fpu_used                   "node_fpu_used"
-#define node_use_boot_key               "node_use_boot_key"
-#define node_node_version               "node_node_version"
+#define node_version                    "node_version"
 #define node_stream_version             "node_stream_version"
 #define node_mem                        "node_mem "
 #define node_mem_alloc                  "node_mem_alloc"
@@ -184,6 +182,7 @@
 #define node_mem_data0prog1             "node_mem_data0prog1"
 #define node_not_reentrant              "node_not_reentrant"
 #define node_new_arc                    "node_arc "
+#define node_arc_name                   "node_arc_name"
 #define node_arc_rx0tx1                 "node_arc_rx0tx1"
 #define node_arc_sampling_rate          "node_arc_sampling_rate"
 #define node_arc_nb_channels            "node_arc_nb_channels"
@@ -238,7 +237,6 @@
 #define node_preset                     "node_preset"
 #define node_map_hwblock                "node_map_hwblock"
 #define node_malloc_add                 "node_malloc_add"
-#define node_map_copy                   "node_map_copy"
 #define node_map_swap                   "node_map_swap"
 #define node_trace_id                   "node_trace_id"
 #define node_map_proc                   "node_map_proc"
@@ -249,6 +247,7 @@
 #define node_memory_clear               "node_memory_clear"
 #define node_parameters                 "node_parameters"
 #define node_script_code                "node_script_code"
+#define node_user_key                   "node_user_key"
 
 /*----------------------------------------------------------------------- GRAPH SCRIPTS ------------- */
 #define common_script                   "script "

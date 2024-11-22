@@ -81,26 +81,22 @@
     __________DST_SRC1__________SRC2  Destination and source registers
                       xx<----K12--->  small signed constant [-2016 .. 2047]
     __________________0000000001TTTT  extra word constant and its type
-    ____________________<-MSB><-LSB>  Bit-field operations
+    __________DST_SRC1__<-MSB><-LSB>  Bit-field operations
     __________SRC0SRC1SRC3SRC4__SRC2  Up to 5 Registers save/restore
+    IIyyy-OPARSRC0SRC1SRC3SRC4<-K6->  callsys    
 
-    IIyyy-OPARDST_SRC1__<--K12-0SRC2
-
+    
                 <---- MSB word ----------------> <---- LSB word ---------------->  
                 FEDCBA9876543210FEDCBA987654TYPE FEDCBA9876543210FEDCBA987654321|  
     uint8       _______H<---BASE----SIZE--->   0 000000000000000000000000<------>  computed as int32
-    uint16      _______H<---BASE----SIZE--->   1 0000000000000000<-------------->  'H1C0' offset to heap(1) or code(0)
-    int16       _______H<---BASE----SIZE--->   2 ssssssssssssssss<-------------->  
+    uint16      _______H<---BASE----SIZE--->   1 0000000000000000<-------------->  
+    int16       _______H<---BASE----SIZE--->   2 ssssssssssssssss<-------------->  'H1C0' offset to heap(1) or code(0)
     uint32      _______H<---BASE----SIZE--->   3 <------------------------------>  computed as int32 !
     int32       _______H<---BASE----SIZE--->   4 <------------------------------>  
-    int64       unused
-    fp16        _______H<---BASE----SIZE--->   6 <------------------------------>  translated to FP32
-    fp32        _______H<---BASE----SIZE--->   7 <------------------------------>  
-    fp64        unused
-    TIME16      0000000000000000000000000000   9 0000000000000000<-------------->  
-    TIME32      0000000000000000000000000000  10 <------------------------------>  
-    TIME64      <-------------------------->  11 <------------------------------> DTYPE moved to MSB
-    28b + DTYPE _______H<---BASE----SIZE--->  12 TYPE<------ 28bits address-----> typed pointer + circular option (10+10)
+    fp16        _______H<---BASE----SIZE--->   5 <------------------------------>  translated to FP32
+    fp32        _______H<---BASE----SIZE--->   6 <------------------------------>  
+    TIME32      ____________________________   7 <------------------------------> 
+    28b + DTYPE _______H<---BASE----SIZE--->   8 TYPE<------ 28bits address-----> typed pointer + circular option (10+10)
 
     ---------SYSCALL--------
     callsys 63 r1 r2 r3 r4           ; OP_JMOV CALLSYS   R1 R2 R3 R4 + K@
@@ -233,20 +229,16 @@
 #define IF_EXTRA 3  
 /*---------------------------------------------------------------------------------------------------------*/
 
-/* DTYPE int64 translated to fp32 in source code */
+/* DTYPE to int32/fp32 in source code */
 #define DTYPE_UINT8     0
 #define DTYPE_UINT16    1
 #define DTYPE_INT16     2
 #define DTYPE_UINT32    3
 #define DTYPE_INT32     4
-//#define DTYPE_INT64     5
-#define DTYPE_FP16      6
-#define DTYPE_FP32      7
-//#define DTYPE_FP64      8
-#define DTYPE_TIME16    9
-#define DTYPE_TIME32   10
-#define DTYPE_TIME64   11
-#define DTYPE_PTR28B   12
+#define DTYPE_FP16      5
+#define DTYPE_FP32      6
+#define DTYPE_TIME32    7
+#define DTYPE_PTR28B    8
                        
 /*---------------------------------------------------------------------------------------------------------*/
 /*----- MAIN OPCODES ----   SYNTAX EXAMPLES   */

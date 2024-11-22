@@ -26,7 +26,7 @@
  * limitations under the License.
  */
 
-#include "../../Include/dsp/Computer_filtering_functions.h"
+#include "dsp/mspm0l1306_filtering_functions.h"
 
 /**
   @ingroup groupFilters

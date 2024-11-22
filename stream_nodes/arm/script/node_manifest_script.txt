@@ -7,7 +7,7 @@ node_name                arm_stream_script               ; node name
 
 node_nb_arcs         0 1                 ; nb arc input, output (default configuration)
 node_mask_library    15                  ; default 0 bit-field of dependencies to computing libraries
-node_node_version    101                 ; version of the computing node
+node_version    	 101                 ; version of the computing node
 node_stream_version  001                 ; version of the stream scheduler it is compatible with
 
 ;----------------------------------------------------------------------------------------

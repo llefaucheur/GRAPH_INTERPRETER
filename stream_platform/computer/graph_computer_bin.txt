@@ -1,22 +1,22 @@
 //--------------------------------------
-//  DATE Thu Nov  7 09:10:09 2024
+//  DATE Fri Nov 22 12:50:35 2024
 //  AUTOMATICALLY GENERATED CODES
 //  DO NOT MODIFY !
 //--------------------------------------
-0x00000074, // ------- Graph size = Flash=77[W]+RAM39[W]  +Buffers=48[B] 12[W] 
-0x00000000, // 000 000 [0] Destination in RAM 0, and RAM split 0 
+0x00000074, // ------- Graph size = Flash=77[W]+RAM39[W]  +Buffers=96[B] 24[W] 
+0x10000000, // 000 000 [0] Destination in RAM 0, and RAM split 1 
 0x00006042, // 004 001 [1] Number of IOs 2, Formats 2, Scripts 5 
 0x00000038, // 008 002 LinkedList size = 56, ongoing IO bytes, Arc debug table size 0 
 0x00000005, // 00C 003 [3] Nb arcs 5  SchedCtrl 0 ScriptCtrl 0   
 0x00000001, // 010 004 [4] Processors allowed 
 0x00000000, // 014 005 [5] memory consumed 0,1,2,3 
 0x00000000, // 018 006 [6] memory consumed 4,5,6,7 ...  
-0x00083000, // 01C 007 IO(graph0) 1 arc 0 set0copy1=1 rx0tx1=0 servant1 1 shared 0 domain 0 
-0x00000000, // 020 008 IO(settings 0, fmtProd 0 (L=8) fmtCons 0 (L=8) 
+0x00041000, // 01C 007 IO(graph0) 1 arc 0 set0copy1=0 rx0tx1=0 servant1 1 domain 0 
+0x00000000, // 020 008 IO(settings 0, fmtProd 0 (L=16) fmtCons 0 (L=16) 
 0x00000000, // 024 009  
 0x00000000, // 028 00A  
-0x00483801, // 02C 00B IO(graph1) 9 arc 1 set0copy1=1 rx0tx1=1 servant1 1 shared 0 domain 0 
-0x00000000, // 030 00C IO(settings 0, fmtProd 1 (L=16) fmtCons 1 (L=16) 
+0x00241801, // 02C 00B IO(graph1) 9 arc 1 set0copy1=0 rx0tx1=1 servant1 1 domain 0 
+0x00000000, // 030 00C IO(settings 0, fmtProd 1 (L=32) fmtCons 1 (L=32) 
 0x00000000, // 034 00D  
 0x00000000, // 038 00E  
 0x00600001, // 03C 00F Script 0 CodeSize 5 (10h) shared0 format0 arc 3 
@@ -26,29 +26,29 @@
 0x3C33330B, // 04C 013 IF0 7_16 D12 S1 12 S2 11 K -1269 ; callsys 11 
 0x3CC00800, // 050 014 IF0 7_19 D 0 S1  0 S2  0 K     0 ; return 
 0x00C04807, // 054 015 -----  arm_stream_filter(0) idx:7 Nrx 1 Ntx 1 ArcFmt 1 lockArc 1 
-0x08040000, // 058 016 ARC 0 Rx0Tx1 0 L=8 dbgpage0 -- ARC 4 Rx0Tx1 1 L=16 dbgpage0     
-0x300000D2, // 05C 017 Nb Memreq-1 1  XDM11_same_rate 1 
-0x0000004C, // 060 018 Reserved static memory bank(0) = bank 0 stat0work1ret2 = 0 size 76  
-0x30800000, // 064 019  
-0x00000034, // 068 01A Scratch memory bank(1) = bank 2 stat0work1ret2 = 1  size 52  
+0x08040000, // 058 016 ARC 0 Rx0Tx1 0 L=16 dbgpage0 -- ARC 4 Rx0Tx1 1 L=32 dbgpage0     
+0x30000214, // 05C 017 Nb Memreq 2  XDM11_same_rate 1  ClearSwap 0 -Static memory bank  Swap 0  
+0x00000014, // 060 018  bank 0 stat0work1ret2 = 0 size d20(h14)  
+0x10800000, // 064 019 Scratch memory bank Swap 0  
+0x00000048, // 068 01A  bank 1 stat0work1ret2 = 1 size d72(h48)  
 0x01000007, // 06C 01B ParamLen 6+1 Preset 1 Tag0ALL 0 
-0x02A90102, // 070 01C (0) 
-0x02A901A6, // 074 01D (1) 
-0xC4C75D2D, // 078 01E (2) 
-0xFAC202A9, // 07C 01F (3) 
-0x669502A9, // 080 020 (4) 
-0x0000C41D, // 084 021 (5) 
+0x00000102, // 070 01C (0) 
+0x00003E80, // 074 01D (1) 
+0x00000000, // 078 01E (2) 
+0x3E800000, // 07C 01F (3) 
+0x00000000, // 080 020 (4) 
+0x00000000, // 084 021 (5) 
 0x00C04808, // 088 022 -----  sigp_stream_detector(0) idx:8 Nrx 1 Ntx 1 ArcFmt 1 lockArc 1 
-0x08010004, // 08C 023 ARC 4 Rx0Tx1 0 L=8 dbgpage0 -- ARC 1 Rx0Tx1 1 L=16 dbgpage0     
-0x300000E2, // 090 024 Nb Memreq-1 1  XDM11_same_rate 1 
-0x00000034, // 094 025 Reserved static memory bank(0) = bank 0 stat0work1ret2 = 0 size 52  
-0x300000EE, // 098 026  
-0x00000020, // 09C 027 Reserved static memory bank(1) = bank 0 stat0work1ret2 = 2 size 32  
+0x08010004, // 08C 023 ARC 4 Rx0Tx1 0 L=16 dbgpage0 -- ARC 1 Rx0Tx1 1 L=32 dbgpage0     
+0x30000224, // 090 024 Nb Memreq 2  XDM11_same_rate 1  ClearSwap 0 -Static memory bank  Swap 0  
+0x00000034, // 094 025  bank 0 stat0work1ret2 = 0 size d52(h34)  
+0x30000254, // 098 026 Static memory bank Swap 0  
+0x00000020, // 09C 027  bank 1 stat0work1ret2 = 2 size d32(h20)  
 0x03000001, // 0A0 028 ParamLen 0+1 Preset 3 Tag0ALL 0 
 0x00402401, // 0A4 029 -----  arm_stream_script(0) idx:1 Nrx 0 Ntx 1 ArcFmt 0 lockArc 1 
-0x00000002, // 0A8 02A ARC 2 Rx0Tx1 0 L=8 dbgpage0 
-0x100000F6, // 0AC 02B Nb Memreq-1 0  XDM11_same_rate 1 
-0x00000020, // 0B0 02C Reserved static memory bank(0) = bank 0 stat0work1ret2 = 0 size 32  
+0x00000002, // 0A8 02A ARC 2 Rx0Tx1 0 L=16 dbgpage0 
+0x10000274, // 0AC 02B Nb Memreq 1  XDM11_same_rate 1  ClearSwap 0 -Static memory bank  Swap 0  
+0x00000020, // 0B0 02C  bank 0 stat0work1ret2 = 0 size d32(h20)  
 0x0000001F, // 0B4 02D ParamLen 31+1 Preset 0 Tag0ALL 0 
 0x301408FF, // 0B8 02E IF0 6_ 0 D 5 S1  0 S2 15 K   255 ; r5 =  0xFF    
 0x3A4D4281, // 0BC 02F IF0 7_ 9 D 3 S1  5 S2  1 K -1407 ; r3 |1 10| = r5 
@@ -81,42 +81,52 @@
 0x00000000, // 128 04A IF0 0_ 0 D 0 S1  0 S2  0 K -2048  
 0x00000000, // 12C 04B IF0 0_ 0 D 0 S1  0 S2  0 K -2048  
 0x000003FF, // 130 04C ^^^^^^^^^ LINKED-LIST END ^^^^^^^^^ vvvvvvvvvvv RAM vvvvvvvvvvv 
-0xFFFF7F7F, // 134 04D LinkedList size = 56, ongoing IO bytes, Arc debug table size 0 
-0x00000008, // 138 04E Format  0 frameSize 8  
+0xFFFFFEFE, // 134 04D LinkedList size = 56, ongoing IO bytes, Arc debug table size 0 
+0x00000010, // 138 04E Format  0 frameSize 16  
 0x00004400, // 13C 04F           nchan 1 raw 17 
 0x00000000, // 140 050           domain-dependent 
 0x00000000, // 144 051           domain-dependent 
-0x00000010, // 148 052 Format  1 frameSize 16  
+0x00000020, // 148 052 Format  1 frameSize 32  
 0x00004400, // 14C 053           nchan 1 raw 17 
 0x00000000, // 150 054           domain-dependent 
 0x00000000, // 154 055           domain-dependent 
-0x00000074, // 158 056 ARC0 -IO- Base 74h (2h words) fmtProd_0 frameL 8.0 
-0x00000008, // 15C 057       Size 8h[B] fmtCons_0 FrameL 8.0 jitterScaling 1.0 
+0x0000009C, // 158 056 ARC0 -IO- Base 9Ch (0h words) fmtProd_0 frameL 16.0 
+0x00000010, // 15C 057 IO buffer with base address redirection, no memory allocation, the Size is from the producer 
 0x00000000, // 160 058       IO 1 ===> arm_stream_filter 
 0x00000000, // 164 059       fmtCons 0 fmtProd 0 dbgreg 0 dbgcmd 0 
 0x00000000, // 168 05A  
 0x00000000, // 16C 05B       trace/debug 
-0x00000076, // 170 05C ARC1 -IO- Base 76h (4h words) fmtProd_1 frameL 16.0 
-0x00000010, // 174 05D       Size 10h[B] fmtCons_1 FrameL 16.0 jitterScaling 1.0 
+0x0000009C, // 170 05C ARC1 -IO- Base 9Ch (0h words) fmtProd_1 frameL 32.0 
+0x00000020, // 174 05D IO buffer with base address redirection, no memory allocation, the Size is from the producer 
 0x00000000, // 178 05E       sigp_stream_detector ===> IO 9 
 0x00000000, // 17C 05F       fmtCons 1 fmtProd 1 dbgreg 0 dbgcmd 0 
 0x00000101, // 180 060  
 0x00000000, // 184 061       trace/debug 
-0x0000007A, // 188 062 ARC2  from arm_stream_script   sizeW32 38h (E0h) 
+0x0000009C, // 188 062 ARC2  from arm_stream_script   sizeW32 38h (E0h) 
 0x078000E0, // 18C 063       nb instructions 0x1e 
 0x00000000, // 190 064  
 0x00000000, // 194 065  
 0x0001C586, // 198 066       nregs+r12 11 x2   stack 6 x2  heap 16h 
 0x00000000, // 19C 067       trace/debug 
-0x000000B2, // 1A0 068 ARC3  from script0   sizeW32 1Ah (68h) 
+0x0000017C, // 1A0 068 ARC3  from script0   sizeW32 1Ah (68h) 
 0x01400068, // 1A4 069       nb instructions 0x5 
 0x00000000, // 1A8 06A  
 0x00000000, // 1AC 06B  
 0x0000D386, // 1B0 06C       nregs+r12 7 x2   stack 6 x2  heap 0h 
 0x00000000, // 1B4 06D       trace/debug 
-0x000000CC, // 1B8 06E ARC4  Base CCh (6h words) fmtProd_0 frameL 8.0 
-0x00000018, // 1BC 06F       Size 18h[B] fmtCons_1 FrameL 16.0 jitterScaling 1.5 
+0x000001E4, // 1B8 06E ARC4  Base 1E4h (Ch words) fmtProd_0 frameL 16.0 
+0x00000030, // 1BC 06F       Size 30h[B] fmtCons_1 FrameL 32.0 jitterScaling 1.5 
 0x00000000, // 1C0 070       arm_stream_filter ===> sigp_stream_detector 
 0x00000000, // 1C4 071       fmtCons 1 fmtProd 0 dbgreg 0 dbgcmd 0 
 0x00000100, // 1C8 072  
 0x00000000, // 1CC 073       trace/debug 
+// bank      size          consumed      static   +  working
+//  0     95526 ( 17526)   660 ( 294)   660 ( 294)     0 (   0)
+//  1     65526 (  FFF6)     0 (   0)     0 (   0)     0 (   0)
+//  2     30000 (  7530)     0 (   0)     0 (   0)     0 (   0)
+//  3     15000 (  3A98)     0 (   0)     0 (   0)     0 (   0)
+//  4    256000 ( 3E800)     0 (   0)     0 (   0)     0 (   0)
+//  5      8192 (  2000)    64 (  40)     0 (   0)    64 (  40)
+//  6      8192 (  2000)     0 (   0)     0 (   0)     0 (   0)
+//  7    200000 ( 30D40)     0 (   0)     0 (   0)     0 (   0)
+//  8     16384 (  4000)     0 (   0)     0 (   0)     0 (   0)

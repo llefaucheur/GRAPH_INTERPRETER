@@ -47,7 +47,7 @@
 
 
 /*  nbparam = 0 means any or "full set of parameters loaded from binary format" 
-    W32LENGTH_LW3 == 0 means no parameter to read
+    W32LENGTH_LW4 == 0 means no parameter to read
 */
 #define NODE_ALL_PARAM 0u 
 
@@ -837,14 +837,12 @@ enum stream_processor_sub_arch_fpu
 
 /*
     Up to 16 family of processing extensions "SERVICE_COMMAND_GROUP"
-    EXTDSPML EXTMATH EXTAUDIO EXTIMAGE EXTSTDLIB
+    EXTDSPML EXTMATH EXTSTDLIB
 */
 
 #define EXT_SERVICE_MATH   1u
 #define EXT_SERVICE_DSPML  2u
-#define EXT_SERVICE_AUDIO  3u
-#define EXT_SERVICE_IMAGE  4u
-#define EXT_SERVICE_STDLIB 5u
+#define EXT_SERVICE_STDLIB 3u
 
 
 
