@@ -95,7 +95,7 @@ extern p_stream_node TjpgDec;                    /* 21*/
 
 #define TBD 0
 
-p_stream_node node_entry_points[NB_NODE_ENTRY_POINTS] =
+const p_stream_node node_entry_points[NB_NODE_ENTRY_POINTS] =
 {
     /*  0*/ (void *)&arm_stream_null_task,       /* node disabled */
     /*  1*/ (void *)&arm_stream_script,         /* byte-code interpreter, index "arm_stream_script_INDEX" */
@@ -224,8 +224,10 @@ uint64_t global_stream_time64;
         metadata sharing from script
         allow execution of arm_graph_interpreter(STREAM_RESET..) after a graph remote reload (check IOs are ok)
 */
+extern void toggle_LED(void *cmd);
+
 const p_stream_al_services application_callbacks[MAX_NB_APP_CALLBACKS] =
-{   (void*)0,
+{   (void*)toggle_LED,
     (void*)0,
     (void*)0,
     (void*)0,
@@ -333,7 +335,7 @@ void * pack2linaddr_ptr(uint8_t **long_offset, uint32_t data, uint8_t extend)
 
 void platform_init_stream_instance(arm_stream_instance_t *S)
 {
-extern p_stream_node node_entry_points[];
+extern const p_stream_node node_entry_points[];
     uint32_t PIOoffsetWords, *graph_dst;
 
 #define STREAM_CURRENT_INSTANCE 0

@@ -34,18 +34,6 @@
 #define cSTREAM_COMMON_CONST_H
 
 
-/* ------------------------------------------------------------------------------------------
-   32bits / 64bits architectures 
-*/
-#define PLATFORM_ARCH_32BIT
-
-/* #define PLATFORM_ARCH_64BIT 
-*/
-
-
-
-
-
 /*  nbparam = 0 means any or "full set of parameters loaded from binary format" 
     W32LENGTH_LW4 == 0 means no parameter to read
 */
@@ -449,7 +437,7 @@ enum stream_processor_sub_arch_fpu
             Command + nb arcs, preset 0..15m TAG 0..255
         -  (STREAM_RESET, ptr1, ptr2, ptr3); 
             ptr1 = instance pointer, memory banks
-            ptr2 = stream_al_services function address, followed by all the arc format (node manifest node_using_arc_format =1)
+            ptr2 = stream_al_services function address, followed by all the arc format
         -  (STREAM_SET_PARAMETER, ptr1, ptr2, ptr3); 
             ptr1 = instance
             ptr2 = byte pointer to parameters, depends on the TAG 
@@ -461,7 +449,7 @@ enum stream_processor_sub_arch_fpu
             ptr2 = list of XDM arc buffers (X,n) , the size field means :
                  rx arc . size = amount of data available for processing
                  tx arc . size = amount of free area in the buffer 
-                when XDM11=0 (node_variable_rxtx_data_rate=1) NODE updates the XDM size fields with :
+                NODE updates the XDM size fields with :
                  rx arc . size = amount of data consumed
                  tx arc . size = amount of data produced
         -  (STREAM_STOP, ptr1, ptr2, ptr3); 
@@ -547,9 +535,11 @@ enum stream_processor_sub_arch_fpu
 #define      TAG_SSRV_MSB U(23)       
 #define      TAG_SSRV_LSB U(16) /* 8   parameter of the function  */
 #define FUNCTION_SSRV_MSB U(15)       
-#define FUNCTION_SSRV_LSB U( 4) /* 12  4k functions/group  */
+#define SUBFUNCT_SSRV_MSB U(15)       
+#define SUBFUNCT_SSRV_LSB U(12) /* 4   16 sub functions or parameters on MSB */
+#define FUNCTION_SSRV_LSB U( 4) /* 12  functions/group x 16 subfunct, total = 4K */
 #define    GROUP_SSRV_MSB U( 3)       
-#define    GROUP_SSRV_LSB U( 0) /* 4   16 groups */
+#define    GROUP_SSRV_LSB U( 0) /* 4   16 service groups */
 
 
 #define PACK_SERVICE(CTRL,OPTION,TAG,FUNC,GROUP) \
@@ -961,11 +951,11 @@ enum stream_processor_sub_arch_fpu
 #define STREAM_FP128     36u /* Seeeeeee.eeeeeeee.mmmmmmm ... quadruple precision */     /* 16 bytes per data */
 #define STREAM_CFP64     37u /* fp64 fp64 (I Q)  */
 #define STREAM_FP256     38u /* Seeeeeee.eeeeeeee.eeeeemm ... octuple precision  */      /* 32 bytes per data */
-#define STREAM_TIME16    39u /* ssssssssssssqqqq q14.2   1 hour + 8mn +/- 0.0625 */
-#define STREAM_TIME16D   40u /* qqqqqqqqqqqqqqqq q15 [s] time difference +/- 15us */
-#define STREAM_TIME32    41u /* ssssssssssssssssssssssssssssqqqq q28.4  [s] (8.5 years +/- 0.0625s) */ 
-#define STREAM_TIME32D   42u /* ssssssssssssssssqqqqqqqqqqqqqqqq q17.15 [s] (36h, +/- 30us) time difference */   
-#define STREAM_TIME64    43u /* ____10ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqq u32.26 [s] 140 Y +Q26 [s] */   
+#define STREAM_TIME16    39u /* ssssssssssssqqqq q14.2  maximum range 4 hours 30mn, 0.25s steps */
+#define STREAM_TIME16D   40u /* qqqqqqqqqqqqqqqq q1.15 [s] 2 seconds, for time differences, step=30us */
+#define STREAM_TIME32    41u /* ssssssssssssssssssssssssssssssqq q30.2 seconds, maximum 34 years , 0.25s steps */ 
+#define STREAM_TIME32D   42u /* sssssssssssssssssqqqqqqqqqqqqqqq q17.15 seconds, maximum 36hours, steps 30us */   
+#define STREAM_TIME64    43u /* ____10ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqq u32.26 [s] 140 Y, steps 4ns */   
 #define STREAM_TIME64MS  44u /* ____011000000000000000mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm u42 [ms] 140 years, 4b MSB=DTYPE */   
 #define STREAM_TIME64ISO 45u /* ____0YY..YY..YY..YY..MM..MM..DD..DD..SS..SS.....offs..MM..MM..MM ISO8601 signed offset 2024-05-04T21:12:02+07:00  */   
 #define STREAM_WGS84     46u /* <--LATITUDE 32B--><--LONGITUDE 32B-->  lat="52.518611" 0x4252130f   lon="13.376111" 0x4156048d - dual IEEE754 */   

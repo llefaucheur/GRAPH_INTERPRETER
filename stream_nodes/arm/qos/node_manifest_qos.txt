@@ -5,8 +5,6 @@
 node_developer_name  ARM                ; developer name
 node_name            arm_stream_qos     ; node name
 
-node_using_arc_format  1                ; will manage q15 and fp32
-
 ;----------------------------------------------------------------------------------------
 ;   MEMORY ALLOCATIONS
 

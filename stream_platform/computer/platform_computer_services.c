@@ -122,7 +122,7 @@ uint8_t itoab(char *s, int32_t n, int base)
        
   @remark
  */
-static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_t *ptr2, uint8_t* ptr3, uint32_t n)
+static void arm_stream_services_internal(uint32_t command, void *ptr1, void *ptr2, void* ptr3, uint32_t n)
 {
     switch (command)
     {   case SERV_INTERNAL_NODE_REGISTER: /* called during STREAM_NODE_DECLARATION to register the NODE callback */
@@ -134,11 +134,15 @@ static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_
         }
 
         /* ----------------------------------------------------------------------------------
-            arm_stream_services(PACK_SERVICE(instance index, NOTAG_SSRV,  SERV_INTERNAL_DEBUG_TRACE), *int8_t, 0, nb bytes);
-                the Stream instance index
-            arm_stream_services(DEBUG_TRACE_STAMPS, disable_0 / enable_1 time stamps);
+            arm_stream_services(PACK_SERVICE(instance index, NOTAG_SSRV,  SERV_INTERNAL_DEBUG_TRACE), *string_address, 0, nb bytes);
 
-            used to share the NODE version numbers, authors, .., real-time trace data
+            1: trace type bits 0,1,2(3) = OPTION_SSRV
+                bit0: bit-data on bit3, 
+                bit1: byte-data = TAG_SSRV 
+                bit2:string of characters at the address of parameter
+
+            2: address of the string of characters
+
          */
         case SERV_INTERNAL_DEBUG_TRACE:
         {   break;
@@ -160,8 +164,10 @@ static void arm_stream_services_internal(uint32_t command, uint8_t *ptr1, uint8_
             graph/user activation key to activate specific features  
          */
         case SERV_INTERNAL_KEYEXCHANGE : 
-        {   const uint32_t platform_private_key [2] = { 2452526671,  1812651256 };
-            ptr1 = (uint8_t *) platform_private_key;
+        {   const uint32_t platform_private_key [2] = { 12, 13 }; //{ 2452526671,  1812651256 };
+            uint32_t **dst;
+            dst = (uint32_t **)ptr1;
+            *dst = (uint32_t *) platform_private_key;
             break;
         }
     }

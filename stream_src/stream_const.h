@@ -70,6 +70,7 @@
        Word0   : header processor/architecture, nb arcs, SWCID, arc
        Word1+n : arcs * 2  + debug page
        Word2+2n: ADDR + SIZE of memory segments
+       Word3   : optional 4 words User key + Platform Key
        Word4+n : 1+data Preset, New param!, Skip length, 
           byte stream: nbparams (ALLPARAM), {tag, nbWord32, params}
 
@@ -425,27 +426,25 @@
 #define   ARCHID_LW0_MSB U(26) /*   same as ARCHID_PARCH */
 #define   ARCHID_LW0_LSB U(24) /* 3 execution reserved to this processor architecture (1..7)  */
 /*---------------------------*/
-#define  LOADFMT_LW0_MSB U(23) /* 1 optional arcs format loading in reset_component() */
-#define  LOADFMT_LW0_LSB U(23) /*   controled by "node_using_arc_format" in the graph, default = NO /0 */
-#define  ARCLOCK_LW0_MSB U(22) /* 1 0/1 the first/second arc locks the components */
-#define  ARCLOCK_LW0_LSB U(22) /*   */
-#define   SCRIPT_LW0_MSB U(21) /*   script called Before/After (debug, verbose trace control) */
-#define   SCRIPT_LW0_LSB U(15) /* 7 script ID to call before and after calling NODE */
-#define  ARCSRDY_LW0_MSB U(14) 
-#define  ARCSRDY_LW0_LSB U(13) /* 2  first arcs, nb arcs used to check data availability before RUN */
-#define   NBARCW_LW0_MSB U(12) 
-#define   NBARCW_LW0_LSB U(10) /* 3  total nb arcs, streaming and metadata/control {0 .. MAX_NB_STREAM_PER_NODE} */
-#define  NODE_IDX_LW0_MSB U( 9) 
-#define  NODE_IDX_LW0_LSB U( 0) /* 10 0=nothing, node index of node_entry_points[] */
+#define   SCRIPT_LW0_MSB U(23) /*   script called Before/After (debug, verbose trace control) */
+#define   SCRIPT_LW0_LSB U(17) /* 7 script ID to call before and after calling NODE */
+#define   NBARCW_LW0_MSB U(16) 
+#define   NBARCW_LW0_LSB U(13) /* 4  total nb arcs, streaming and metadata/control {0 .. MAX_NB_STREAM_PER_NODE} */
+#define unused___LW0_MSB U(12) 
+#define unused___LW0_LSB U(10) /* 3 0=nothing, node index of node_entry_points[] */
+#define NODE_IDX_LW0_MSB U( 9) 
+#define NODE_IDX_LW0_LSB U( 0) /* 10 0=nothing, node index of node_entry_points[] */
 
 
         /* word 1+n -arcs
 
             starting with the one used for locking, the streaming arcs, then the metadata arcs 
             arc(tx) used for locking is ARC0_LW1
+
+            input parameter arcs are declared as TX-arcs, 
+            preset "empty" and let untouched by the node
         */
 
-#define MAX_NB_STREAM_PER_NODE 4u /* no limit in practice */
 
 #define ARC_RX0TX1_TEST  0x0800u /* MSB gives the direction of the arc */
 #define ARC_RX0TX1_CLEAR 0x07FFu 
@@ -468,7 +467,7 @@
 #define  ARC0_LW1_MSB 11u
 #define ARC0D_LW1_LSB 11u /*  1  ARC0 direction */
 #define ARC0D_LW1_MSB 11u
-#define  ARC0_LW1_LSB  0u /* 11  ARC0, (11 + 1 rx0tx1) up to 2K ARCs */
+#define  ARC0_LW1_LSB  0u /* 11  ARC0, (10 + 1 rx0tx1) up to 2K ARCs */
 
 #if IOARCID_IOFMT0_MSB != (ARC0D_LW1_MSB-1)
 #error "IOFORMAT ARC SIZE"
@@ -482,8 +481,8 @@
             /* word 2 first word = base address of the memory segment + control on the first segment */
 #define  NALLOCM1_LW2_MSB U(31) /*      number of memory segments (pointer + size) to give at RESET [0..MAX_NB_MEM_REQ_PER_NODE-1] */  
 #define  NALLOCM1_LW2_LSB U(29) /*  3   2 words each  */
-#define     XDM11_LW2_MSB U(28) /*      0: Rx/Tx flow is asynchronous  1: same consumption on RSx/Tx */   
-#define     XDM11_LW2_LSB U(28) /*  1   the input and output frame size of all arcs are identical (manifest: 0=node_variable_rxtx_data_rate)*/ 
+#define    unused_LW2_MSB U(28) /*     */
+#define    unused_LW2_LSB U(28) /*  1  */
 #define BASEIDXOFFLW2_MSB U(27) 
 #define   DATAOFF_LW2_MSB DATAOFF_ARCW0_MSB
 #define   DATAOFF_LW2_LSB DATAOFF_ARCW0_LSB
@@ -521,6 +520,14 @@
 #define SWAPBUFID_LW2S_MSB ARC0_LW1_MSB /*     ARC => swap source address in slow memory + swap length */
 #define SWAPBUFID_LW2S_LSB ARC0_LW1_LSB /* 12  ARC0, (11 + 1) up to 2K FIFO */
 
+  /* Word3   : optional 4 words User key + Platform Key
+                if KEY_LW1 == 1
+
+     0x11223344 User key word 0
+     0x11223344 User key word 1
+
+  */
+#define NBWORDS_KEY_USER_PLATFORM 2
 
   /* word 4+n - parameters 
     NODE header can be in RAM (to patch the parameter area, cancel the component..)

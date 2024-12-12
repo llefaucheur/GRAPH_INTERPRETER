@@ -14,56 +14,32 @@ graph_location          1           ; script and linked-list stays in flash
 format_index            0
 format_frame_length     2           ; minimum = frame of one int16
 format_index            1
-format_frame_length     128         ; "ADC_SAMPLE_SIZE" 64 samples = 128 Bytes
+format_frame_length     64         ; "ADC_SAMPLE_SIZE" 32 samples = 64 Bytes
 ;----------------------------------------------------------------------
 stream_io               0           ;
-stream_io_hwid          1           ; io_platform_data_in_1.txt
+stream_io_hwid          2           ; io_platform_analog_sensor_0 (DMA interface)
 stream_io               1           ;
-stream_io_hwid          9           ; io_platform_data_out_0.txt
+stream_io_hwid          8           ; gpio_out_1
 ;----------------------------------------------------------------------
 node arm_stream_filter  0 
     node_preset         1                       ; Q15 filter
     node_parameters     0                       ; TAG = "all parameters"
         1  u8;  2                               ; Two biquads
         1  u8;  1                               ; postShift
-        5 s16; 681   422   681 23853 -15161     ;  elliptic band-pass 1450..1900/16kHz
-        5 s16; 681 -1342   681 26261 -15331     ; 
+        5 s16;  13519 -27019 13519 23358 -8819  ;  elliptic high-pass 600Hz/16kHz
+        5 s16;  13519 -26929 13519 29806 -14580
     end
 ;----------------------------------------------------------------------
 node sigp_stream_detector 0     
-    node_preset         3               detector preset 
-;----------------------------------------------------------------------
-node arm_stream_script     0     
-    node_preset            0
-    script_register        4    ; number of word64 registers
-    script_stack           1    ; size of the stack in word64      
-                                                             
-    node_script_code       
-        r5 =  0xFF              ; r5 =  0xFF   
-        set r2 graph sigp_stream_detector_0 ; r2 = sigp_stream_detector_0         
-        r0 = 0x412              ; r0 = TAG(4) + RESET(1) + STREAM_SET_PARAMETER(2)
-        set r3 param BBB        ; set r3 param BBB 
-        sp0 = 1                 ; push 1 Byte (threshold size in BBB)
-        callsys 1 r2 r0 r3 sp0  ; callsys NODE(1) r2(cmd=set_param) r0(set) r3(data) sp0(1 bytes)
-        return                  ; return              
-    end
-;----------------------------------------------------------------------
-script  0                   ; script name           
-
-    script_code       
-        r1 = add r2 3       ; r1 = add r2 3
-        r2 = -9000          ; r2 = -9000
-        callsys 11          ; callsys 11
-        return              ; return
-    end                     ; end script 0
+    node_preset         3           ;    detector preset 
 ;----------------------------------------------------------------------
 ; arc_input   { io / set0copy1 / fmtProd } + { node / inst / arc / fmtCons }
 ; arc_output  { io / set0copy1 / fmtCons } + { node / inst / arc / fmtProd }
-; arc         { inst / arc / fmtProd }     + { inst / arc / fmtProd }
+; arc         { inst / arc / fmtProd }     + { inst / arc / fmtCons }
 ;
-arc_input   0 0 1 arm_stream_filter     0 0 1  ; io0 set0copy1 fmt0     ; INPUT => IIR, format 1
-arc_output  1 0 0 sigp_stream_detector  0 0 0  ; io1 set0copy1 fmt1     ; DETECT => OUTPUT 
+arc_input   0 0 1 arm_stream_filter     0 0 1  ; io0 set0copy1 fmt1     ; INPUT => IIR, format 1 (array of samples)
+arc_output  1 0 0 sigp_stream_detector  0 1 0  ; io1 set0copy1 fmt0     ; DETECT => OUTPUT (one int16 for the detector output)
 
-arc arm_stream_filter 0 1 0 sigp_stream_detector 0 0 0                  ; IIR => DETECT
+arc arm_stream_filter 0 1 1 sigp_stream_detector 0 0 1                  ; IIR => DETECT  fmtProd = fmtCons = 64Bytes
 
 end

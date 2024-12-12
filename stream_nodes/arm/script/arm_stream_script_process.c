@@ -190,19 +190,19 @@ static void readsrc2K (arm_script_instance_t *I, regdata_t *data, uint8_t *src2I
     {   
         if (1 == RD(instruction, OP_RKEXT_INST))                    // extended constant
         {   *src2ID = RegNone;
-            data->v_i32[REGS_DATA] = I->byte_code[I->PC++];    // read next word of the program
+            data->v_i32[REGS_DATA] = I->byte_code[I->PC++];         // read next word of the program
             ST(data->v_i32[REGS_TYPE], DTYPE_REGS1, 
                 RD(instruction, DTYPE_REGS1));                      // set the type
         } 
         else                                                        // use register src2 
         {   
             if (*src2ID == RegSP0)                                  // simple stack read
-            {   *data = I->REGS[I->SP];                        //  read data and type 
+            {   *data = I->REGS[I->SP];                             //  read data and type 
             }
             else if (*src2ID == RegSP1)                             // pop data (SP --)
-            {   *data = I->REGS[I->SP];                        //  read data and type 
+            {   *data = I->REGS[I->SP];                             //  read data and type 
                 I->SP --;
-                if (I->SP < I->nregs)                     // check stack underflow
+                if (I->SP < I->nregs)                               // check stack underflow
                 {   I->errors |= ERROR_STACK_UNDERFLOW;
                     I->SP ++;
                 }

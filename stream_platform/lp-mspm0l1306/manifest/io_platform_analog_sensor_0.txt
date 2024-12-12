@@ -5,6 +5,9 @@
 io_platform_sensor_in_0                     ; name for the tools                            
 analog_in                                   ; domain name,   unit: dB, Vrms, mV/Gauss, dps, kWh, ...
 
-io_commander0_servant1  0
+io_commander0_servant1  0                   ; Master 
+io_frame_length        {1 128}              ; gADCSamplesPing[] buffer length in Bytes
+io_nb_channels          1                   ; Mono
+io_direction_rx0tx1     0                   ; RX
 
 end

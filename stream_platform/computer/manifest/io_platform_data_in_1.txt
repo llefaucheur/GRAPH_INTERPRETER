@@ -5,6 +5,6 @@
 io_platform_data_in_1  ; name for the tools                            
 data_in                ; domain name,   no specific field
 
-io_frame_length        {32}
+io_frame_length        {1 32} ; #define size_data_in_1 32 // bytes
 
     end

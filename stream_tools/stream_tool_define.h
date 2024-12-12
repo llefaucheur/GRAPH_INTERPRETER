@@ -61,8 +61,8 @@
 
 #define MAX_PROC_MEMBANK 63     /* number of physical memory banks of the processor, for the graph processing */
 
-#define MAXNB_WORD32_BOOT_KEY 32    /* 1024 bits boot key */
-#define MAXNB_WORD32_USER_KEY 32    /* 1024 bits user key */
+#define MAXNB_WORD32_PLAFORM_KEY 32    /* 1024 bits boot key */
+#define MAXNB_WORD32_USER_KEY 32    /* 32x32 = 1024 bits user key */
 
 #define VID_default 0
 
@@ -160,10 +160,7 @@
 #define node_name                       "node_name"
 #define node_logo                       "node_logo"
 #define node_nb_arcs                    "node_nb_arcs"
-#define node_arc_parameter              "node_arc_parameter"
-#define node_variable_rxtx_data_rate    "node_variable_rxtx_data_rate"
 #define node_use_mpdtcm                 "node_use_mpdtcm"
-#define node_using_arc_format           "node_using_arc_format"
 #define node_mask_library               "node_mask_library"
 #define node_subtype_units              "node_subtype_units"
 #define node_architecture               "node_architecture"

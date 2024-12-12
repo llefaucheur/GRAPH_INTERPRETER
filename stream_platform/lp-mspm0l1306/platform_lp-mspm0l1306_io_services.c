@@ -76,7 +76,7 @@ uint16_t buffer_gpio_out_1[size_gpio_out_1 / 2 /* sizeof(uint16_t) */];
 
 void data_in_0 (uint32_t command, stream_xdmbuffer_t *data) 
 {
-extern uint32_t *gADCSamplesPing;
+extern uint16_t gADCSamplesPing[64];
 #define SIZEOF_ADC_BUFFER 128   // ADC_SAMPLE_SIZE * sizeof(uint16_t);
     
     switch (command)
@@ -89,7 +89,7 @@ extern uint32_t *gADCSamplesPing;
     case STREAM_SET_BUFFER:     /* if memory allocation is made in the graph */
         {   stream_xdmbuffer_t *pt_pt;
             pt_pt = (stream_xdmbuffer_t *)data;
-            pt_pt->address = (intPtr_t)gADCSamplesPing;
+            pt_pt->address = (intPtr_t)(&(gADCSamplesPing[0]));
             pt_pt->size = SIZEOF_ADC_BUFFER;
         }    
         break;
@@ -132,6 +132,8 @@ void data_in_1 (uint32_t command, stream_xdmbuffer_t *data)
 
 /*
 *  Manifest declaration : io_set0copy1 1
+*   This is a RX servant port : there is no need to return a buffer address (STREAM_SET_BUFFER)
+*       the servant driver will provide it when calling for ACK of data transfers
 */
 void analog_sensor_0 (uint32_t command, stream_xdmbuffer_t *data) 
 {   
@@ -281,7 +283,7 @@ void gpio_out_0 (uint32_t command, stream_xdmbuffer_t *data)
 */
 void gpio_out_1 (uint32_t command, stream_xdmbuffer_t *data) 
 {   
-extern void DL_GPIO_clearPins(GPIO_Regs* gpio, uint32_t pins);
+    extern void platform_gpio_out_1(uint8_t bit);
     switch (command)
     {
     case STREAM_RESET:
@@ -295,9 +297,15 @@ extern void DL_GPIO_clearPins(GPIO_Regs* gpio, uint32_t pins);
         data->size = size_gpio_out_1;
         break;
     case STREAM_RUN:            /* data moves */
-        if (0 == (*(uint32_t *)(data->address))) DL_GPIO_clearPins(GPIOA, GPIO_ALERT_A1_PIN);
-        else DL_GPIO_setPins  (GPIOA, GPIO_ALERT_A1_PIN);                   
+        {   uint16_t x;
+            x = (*(uint16_t *)(data->address));
+
+            if (0 == x) platform_gpio_out_1(0);
+        else platform_gpio_out_1(1);
+
+            arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_GPIO_OUT_1], buffer_gpio_out_1, 2);
         break;
+        }
     case STREAM_STOP:           /* stop data moves */
         break;
     case STREAM_READ_PARAMETER: /* setting done ? device is ready ? calibrated ? */

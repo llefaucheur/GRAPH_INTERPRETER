@@ -5,17 +5,16 @@
 node_developer_name   ARM                    ; developer name
 node_name             arm_stream_filter      ; node name
 
-node_using_arc_format  1           ; to let filter manage q15 and fp32
 node_mask_library     64           ; dependency with DSP services
 
 ;----------------------------------------------------------------------------------------
 ;   MEMORY ALLOCATIONS
 
 node_mem                0		    ; first memory bank (node instance)
-node_mem_alloc         20			; 20 bytes for the instance 
+node_mem_alloc         24			; 24 bytes for the instance (2xint32 + 2xptr64)
 
 node_mem                1			; second memory bank (node fast working area)
-node_mem_alloc         70           ; (coef + state)50 + (pointers + index)20
+node_mem_alloc         78           ; (coef + state)50 + (pointers + index)24
 node_mem_type           1           ; working memory
 node_mem_speed          2           ; critical fast 
 ;--------------------------------------------------------------------------------------------

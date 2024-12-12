@@ -29,7 +29,10 @@
 #define cPLATFORM_COMPUTER_H
 
 
-#define PLATFORM_COMPUTER               //Windows 32/64bits
+#define PLATFORM_COMPUTER                 //Windows 32/64bits
+    #define PLATFORM_ARCH_32BIT
+    //#define PLATFORM_ARCH_64BIT
+
 //#define PLATFORM_WIOTERMINAL            //<<<<
 //#define PLATFORM_LPC55S69EVK            //LPCXPRESSO line-in line-out
 //#define PLATFORM_MSPM0L1306             //SYSOSC 24MHz/320 = FS 75kHz
@@ -172,6 +175,11 @@
 #define SIZE_MBANK_FLASH3       0x20    /* FLASH */
 
 
+#ifdef _MSC_VER 
+#define RUN_ON_COMPUTER_ 1
+#else
+#define RUN_ON_COMPUTER_ 0
+#endif
 
 /*
  * --- maximum number of processors using STREAM in parallel - read by the graph compiler
@@ -208,5 +216,8 @@
 #define MAX_NB_MEMORY_OFFSET 4
 #define CRITICAL_FAST_SEGMENT_IDX (MAX_NB_MEMORY_OFFSET-1)
 
+
+/* memory consumption optimization */
+#define MAX_NB_STREAM_PER_NODE 16u 
 
 #endif /* ifndef cPLATFORM_COMPUTER_H */

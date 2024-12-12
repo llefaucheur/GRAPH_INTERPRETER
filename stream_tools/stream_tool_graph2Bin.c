@@ -118,14 +118,11 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         depends on the domain of the IO
     */
     for (j = iarc = 0; iarc < graph->nb_arcs; iarc++)
-    {  
+    {   
         arc = &(graph->arc[iarc]);
         if (arc->ioarc_flag)
         {   
             FMT0 = FMT1 = FMT2 = FMT3 = 0;
-            FMT1 = arc->settings[0]; 
-            FMT2 = arc->settings[1]; 
-            FMT3 = arc->settings[2]; 
 
             ST(FMT0,   FWIOIDX_IOFMT0, arc->fw_io_idx);
             ST(FMT0, IO_DOMAIN_IOFMT0, arc->domain);
@@ -140,6 +137,26 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
             sprintf(tmpstring, "IO(settings %d, fmtProd %d (L=%d) fmtCons %d (L=%d)", FMT1, graph->arc[iarc].fmtProd, (int)(graph->arcFormat[graph->arc[iarc].fmtProd].frame_length), 
                 graph->arc[iarc].fmtCons, (int)(graph->arcFormat[graph->arc[iarc].fmtCons].frame_length));
+
+            //switch(arc->domain)
+            //{   case IO_DOMAIN_GENERAL:break;
+            //    case IO_DOMAIN_AUDIO_IN:    pack_AUDIO_IN_IO_setting(arc);break;
+            //    case IO_DOMAIN_AUDIO_OUT:   pack_AUDIO_OUT_IO_setting(arc);break;
+            //    case IO_DOMAIN_GPIO_IN:break;
+            //    case IO_DOMAIN_GPIO_OUT:break;
+            //    case IO_DOMAIN_MOTION:      pack_motion_IO_setting(arc);break;
+            //    case IO_DOMAIN_2D_IN:       pack_2D_IN_IO_setting(arc);break;
+            //    case IO_DOMAIN_2D_OUT:      pack_2D_OUT_IO_setting(arc);break;
+            //    case IO_DOMAIN_ANALOG_IN:   pack_ANALOG_IN_IO_setting(arc);break;
+            //    case IO_DOMAIN_ANALOG_OUT:  pack_ANALOG_OUT_IO_setting(arc);break;
+            //    case IO_DOMAIN_RTC:break;
+            //    case IO_DOMAIN_USER_INTERFACE_IN:break;
+            //    case IO_DOMAIN_USER_INTERFACE_OUT:break;
+            //}
+
+            FMT1 = arc->settings[0]; 
+            FMT2 = arc->settings[1]; 
+            FMT3 = arc->settings[2]; 
             GTEXT(tmpstring); GWORDINC(FMT1);   strcpy(tmpstring, "");
             GTEXT(tmpstring); GWORDINC(FMT2);   strcpy(tmpstring, "");
             GTEXT(tmpstring); GWORDINC(FMT3);   strcpy(tmpstring, "");
@@ -251,15 +268,12 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         ST(FMT0, PRIORITY_LW0,  node->NODE_assigned_priority);
         ST(FMT0, PROCID_LW0,    node->NODE_assigned_proc);
         ST(FMT0, ARCHID_LW0,    node->NODE_assigned_arch);
-        ST(FMT0, LOADFMT_LW0,   node->using_arc_format);
-        ST(FMT0, ARCLOCK_LW0,   node->locking_arc);
         ST(FMT0, SCRIPT_LW0,    node->local_script_index);
-        ST(FMT0, ARCSRDY_LW0,   node->nbInputArc + node->nbOutputArc);
         ST(FMT0, NBARCW_LW0,    node->nbParamArc + node->nbInputArc + node->nbOutputArc);
         ST(FMT0, NODE_IDX_LW0,  node->platform_NODE_idx);
 
-        sprintf(tmpstring, "-----  %s(%d) idx:%d Nrx %d Ntx %d ArcFmt %d lockArc %d", 
-            node->nodeName, node->graph_instance, node->platform_NODE_idx, node->nbInputArc, node->nbOutputArc, node->using_arc_format, node->locking_arc);
+        sprintf(tmpstring, "-----  %s(%d) idx:%d nRX %d nTX %d lockArc %d", 
+            node->nodeName, node->graph_instance, node->platform_NODE_idx, node->nbInputArc, node->nbOutputArc, node->locking_arc);
         GTEXT(tmpstring); GWORDINC(FMT0);
         
         node->node_position_in_graph = addrW32s - 1;
@@ -280,6 +294,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             {   sprintf(tmpstring, "_%d_arc_%d",node->graph_instance, arc[iarc].arcID); HCDEF_SSDC(node->nodeName, tmpstring, addrW32s, " node arc");  
             }
 
+            ST(FMT0, KEY_LW1,   node->use_user_key);       
             ST(FMT0, ARC0_LW1,  arc[iarc].arcID);           ST(FMT0, ARC1_LW1,  arc[iarc+1].arcID);          
             ST(FMT0, ARC0D_LW1, arc[iarc].rx0tx1);          ST(FMT0, ARC1D_LW1, arc[iarc+1].rx0tx1);    
             ST(FMT0, DBGB0_LW1, arc[iarc].debug_page);      ST(FMT0, DBGB1_LW1, arc[iarc+1].debug_page);    
@@ -287,23 +302,28 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             Lin  = (int)(graph->arcFormat[graph->arc[arc[iarc  ].arcID].fmtProd].frame_length);
             Lout = (int)(graph->arcFormat[graph->arc[arc[iarc+1].arcID].fmtCons].frame_length);
             if (Lin>Lout)
-            {   strcpy(tmpstring2, "!?!");
+            {   strcpy(tmpstring2, ">>>");
             } else
             {   strcpy(tmpstring2, "   ");
             }
             if (iarc +1 < nb_arcs)
-            {   sprintf(tmpstring, "ARC %d Rx0Tx1 %d L=%d dbgpage%d -- ARC %d Rx0Tx1 %d L=%d dbgpage%d %s",
+            {   sprintf(tmpstring, "ARC %d Rx0Tx1 %d L=%d dbgpage%d -- ARC %d Rx0Tx1 %d L=%d dbgpage%d KEY%d %s",
                     arc[iarc  ].arcID, arc[iarc  ].rx0tx1, Lin, arc[iarc  ].debug_page, 
-                    arc[iarc+1].arcID, arc[iarc+1].rx0tx1, Lout, arc[iarc+1].debug_page, tmpstring2); /* check production < consumption capability */
+                    arc[iarc+1].arcID, arc[iarc+1].rx0tx1, Lout, arc[iarc+1].debug_page, node->use_user_key, tmpstring2); /* check production < consumption capability */
             }   else
-            {   sprintf(tmpstring, "ARC %d Rx0Tx1 %d L=%d dbgpage%d",
-                    arc[iarc  ].arcID, arc[iarc  ].rx0tx1, Lin, arc[iarc  ].debug_page);
+            {   sprintf(tmpstring, "ARC %d Rx0Tx1 %d L=%d dbgpage%d KEY%d %s",
+                    arc[iarc  ].arcID, arc[iarc  ].rx0tx1, Lin, arc[iarc  ].debug_page,  node->use_user_key, tmpstring2);
             }
             GTEXT(tmpstring); GWORDINC(FMT0);
         }
 
         /* word 2 - memory banks  ---  allocations and comments are made in the second pass */
         for (imem = 0; imem < node->nbMemorySegment; imem++) 
+        {   GINC
+            GINC
+        }
+
+        if (node->use_user_key == 1)
         {   GINC
             GINC
         }
@@ -789,7 +809,6 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
             FMT0 = FMT1 = 0;
             ST(FMT0, NALLOCM1_LW2, (node->nbMemorySegment) - 1); 
-            ST(FMT0, XDM11_LW2, (0 == node->variable_data_rate));      /* same data rate on Rx and Tx, invert the flag */
             ST(FMT1, CLEARSWAP_LW2S, clearswap_lw2s); 
             ST(FMT1, CLEAR_LW2S, membank->toClear); 
             ST(FMT1, SWAP_LW2S, membank->toSwap); 
@@ -800,8 +819,8 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             if (membank->stat0work1ret2 != MEM_TYPE_WORKING)
             {
                 if (imem == 0) 
-                {   sprintf(tmpstring, "Nb Memreq %d  XDM11_same_rate %d  ClearSwap %d -Static memory bank  Swap %d ", 
-                    (node->nbMemorySegment), (0 == node->variable_data_rate), clearswap_lw2s, (membank->toSwap));
+                {   sprintf(tmpstring, "Nb Memreq %d  ClearSwap %d -Static memory bank  Swap %d ", 
+                    (node->nbMemorySegment), clearswap_lw2s, (membank->toSwap));
                 } else
                 {   sprintf(tmpstring, "Static memory bank Swap %d ", membank->toSwap);
                 }
@@ -832,6 +851,10 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             }
         }
 
+        if (node->use_user_key == 1)
+        {   GINC
+            GINC
+        }
 
         /* word 3 - parameters  + header */
         for (j = 0; j < node->ParameterSizeW32  +1; j++)
@@ -864,8 +887,8 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             if (membank->stat0work1ret2 == MEM_TYPE_WORKING)
             {
                 if (imem == 0) 
-                {   sprintf(tmpstring, "Nb Memreq %d  XDM11_same_rate %d  ClearSwap %d -Scratch memory bank  Swap %d ", 
-                    (node->nbMemorySegment), (0 == node->variable_data_rate), clearswap_lw2s, (membank->toSwap));
+                {   sprintf(tmpstring, "Nb Memreq %d  ClearSwap %d -Scratch memory bank  Swap %d ", 
+                    (node->nbMemorySegment), clearswap_lw2s, (membank->toSwap));
                 } else
                 {   sprintf(tmpstring, "Scratch memory bank Swap %d ", membank->toSwap);
                 }
@@ -895,6 +918,15 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             {   GINC    /* address */
                 GINC    /* size */
             }
+        }
+
+        if (node->use_user_key == 1)
+        {   FMT0 = node->user_key[0];
+            sprintf(tmpstring, " user Key0 %ld %08X", FMT0, FMT0);
+            GTEXT(tmpstring);  GWORDINC(FMT0);
+            FMT0 = node->user_key[1];
+            sprintf(tmpstring, " user Key1 %ld %08X", FMT0, FMT0);
+            GTEXT(tmpstring);  GWORDINC(FMT0);
         }
 
         /* word 3 - parameters + header */
@@ -946,8 +978,15 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
     for (j = 0; j < addrW32s; j ++)
     {
-        fprintf (graph->ptf_graph_bin, "0x%08X, // %03X %03X %s \n", 
-            graph->binary_graph[j], j*4, j, graph->binary_graph_comments[j]);
+        if (j < LK_PIO)
+        {
+            fprintf (graph->ptf_graph_bin, "0x%08X, // %03X %03X %s \n", 
+                graph->binary_graph[j], j*4, j, graph->binary_graph_comments[j]);
+        } else
+        {
+            fprintf (graph->ptf_graph_bin, "0x%08X, // %03X %03X %03X %03X %s \n", 
+                graph->binary_graph[j], j*4, j, (j-LK_PIO)*4, (j-LK_PIO), graph->binary_graph_comments[j]);
+        }
     }
 
 

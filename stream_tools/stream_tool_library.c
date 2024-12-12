@@ -54,8 +54,56 @@ int stream_bitsize_of_raw(uint8_t raw)
     }
 }
 
-
-
+///**
+//  @brief            Bit packing of IO domains setting
+//  @param[in/out]    
+//  @return           
+//
+//  @par             
+//  @remark
+// */
+//void pack_AUDIO_IN_IO_setting(struct arcStruct *arc)
+//{
+//    arc->settings[0] = 0; 
+//    arc->settings[1] = 0; 
+//    arc->settings[2] = 0; 
+//}
+//void pack_AUDIO_OUT_IO_setting(struct arcStruct *arc)
+//{
+//    arc->settings[0] = 0; 
+//    arc->settings[1] = 0; 
+//    arc->settings[2] = 0; 
+//}
+//void pack_motion_IO_setting(struct arcStruct *arc)
+//{
+//    arc->settings[0] = 0; 
+//    arc->settings[1] = 0; 
+//    arc->settings[2] = 0; 
+//}
+//void pack_2D_IN_IO_setting(struct arcStruct *arc)
+//{
+//    arc->settings[0] = 0; 
+//    arc->settings[1] = 0; 
+//    arc->settings[2] = 0; 
+//}
+//void pack_2D_OUT_IO_setting(struct arcStruct *arc)
+//{
+//    arc->settings[0] = 0; 
+//    arc->settings[1] = 0; 
+//    arc->settings[2] = 0; 
+//}
+//void pack_ANALOG_IN_IO_setting(struct arcStruct *arc)
+//{
+//    arc->settings[0] = 0; 
+//    arc->settings[1] = 0; 
+//    arc->settings[2] = 0; 
+//}
+//void pack_ANALOG_OUT_IO_setting(struct arcStruct *arc)
+//{
+//    arc->settings[0] = 0; 
+//    arc->settings[1] = 0; 
+//    arc->settings[2] = 0; 
+//}
 
 /**
   @brief            MALLOC with VIDs
@@ -93,7 +141,7 @@ int vid_malloc (uint32_t VID, intPtr_t size, uint32_t alignment,
     }
 
     if (found == 0) 
-    {   fprintf (stderr, "\n vid_malloc error not found \n");
+    {   printf ("\n vid_malloc error not found \n");
         exit(-5);
     }
 
@@ -105,7 +153,9 @@ int vid_malloc (uint32_t VID, intPtr_t size, uint32_t alignment,
     {   alignment = MEM_REQ_4BYTES_ALIGNMENT;
     }
 
-    alignmask =  ~((1u << (7&alignment)) -1u);
+    //@@@@@ 
+    //alignmask =  ~((1u << (7&alignment)) -1u);
+    alignmask =  ~((1u << (2)) -1u);
     size = (intPtr_t)((uint32_t)(size + 3u) & alignmask);
      
     *pack27b = 0;
@@ -125,7 +175,9 @@ int vid_malloc (uint32_t VID, intPtr_t size, uint32_t alignment,
     if (platform->membank[ibank].ptalloc_static +
         platform->membank[ibank].max_working_booking > 
         platform->membank[ibank].size)
-    {   fprintf (stderr, "\n vid_malloc error overflow \n");/* check overflow */
+    {   printf ("\n vid_malloc error overflow %d > %d \n", 
+        platform->membank[ibank].ptalloc_static +
+        platform->membank[ibank].max_working_booking, platform->membank[ibank].size );/* check overflow */
         exit(-7);
     }
 
@@ -319,7 +371,7 @@ void read_input_file(char* file_name, char * inputFile)
     uint32_t idx;
 
     if (0 == (ptf_platform_manifest_file = fopen(file_name, "rt")))
-    {   fprintf (stderr, "\n read_input_file, not found \n");
+    {   printf ("\n read_input_file, not found \n");
         exit(-1);
     }
     idx = 0;

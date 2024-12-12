@@ -5,9 +5,6 @@
 node_developer_name  ARM                    ; developer name
 node_name            arm_stream_modulator   ; node name
 
-node_variable_rxtx_data_rate   1            ; (1) the data flow is variable 
-node_using_arc_format  1                    ; will manage q15 and fp32
-
 ;----------------------------------------------------------------------------------------
 ;   MEMORY ALLOCATIONS
 

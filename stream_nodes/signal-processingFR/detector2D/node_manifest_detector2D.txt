@@ -6,9 +6,6 @@
 node_developer_name      sigp                        ; developer name
 node_name                sigp_stream_detector2D      ; node name
 
-node_variable_rxtx_data_rate   1                    ; the data flow is variable 
-node_using_arc_format 1                             ; manage different format
-
 ;----------------------------------------------------------------------------------------
 ;   MEMORY ALLOCATIONS
 

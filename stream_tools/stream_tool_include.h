@@ -80,6 +80,14 @@ extern void stream_tool_read_code(char **pt_line, struct stream_platform_manifes
 extern void stream_tool_read_assembler(char **pt_line, struct stream_platform_manifest *platform,
                             struct stream_graph_linkedlist *graph, struct stream_script *script);
 
+//extern void pack_AUDIO_IN_IO_setting(struct arcStruct *arc);
+//extern void pack_AUDIO_OUT_IO_setting(struct arcStruct *arc);
+//extern void pack_motion_IO_setting(struct arcStruct *arc);
+//extern void pack_2D_IN_IO_setting(struct arcStruct *arc);
+//extern void pack_2D_OUT_IO_setting(struct arcStruct *arc);
+//extern void pack_ANALOG_IN_IO_setting(struct arcStruct *arc);
+//extern void pack_ANALOG_OUT_IO_setting(struct arcStruct *arc);
+
 #endif /* #ifndef cSTREAM_TOOL_INCLUDE_H */
 
 #ifdef __cplusplus

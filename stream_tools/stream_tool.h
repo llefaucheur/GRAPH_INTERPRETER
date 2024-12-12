@@ -393,15 +393,12 @@ struct stream_node_manifest
     uint32_t nbArch, arch[MAXNBARCH];   /* stream_processor_architectures (max 256) */
     uint32_t fpu[MAXNBARCH];            /* stream_processor_sub_arch_fpu */
     uint32_t NODE_assigned_arch, NODE_assigned_proc, NODE_verbose, NODE_assigned_priority;
-    uint32_t RWinSWC;                   /* XDM11 read/write index is managed in SWC, for variable buffer consumption */
     uint32_t formatUsed;                /* buffer format is used by the component */
     uint32_t masklib;                   /* mask of up to 16 family of processing extensions "SERVICE_COMMAND_GROUP" */
     uint32_t codeVersion, schedulerVersion;  /* version of the scheduler it is compatible with */
     uint32_t deliveryMode;               /* 0:source, 1:binary 2:2 binaries (fat binary)*/
 
     uint32_t arc_parameter;             // SWC with extra-large amount of parameters (NN models) will declare it with extra arcs
-    uint32_t variable_data_rate;        // (1) the arcs have different data rates, (0 DEFAULT) all arcs have the same data rate on all input and output arcs
-    uint32_t using_arc_format;          // default 0 : the scheduler must push each arc format (LOADFMT_LW0_LSB)
     uint32_t mask_library;              // default 0 bit-field of dependencies to computing libraries
     uint32_t subtype_units;             // triggers the need for rescaling and data conversion
     uint32_t architecture;              // arch compatible with (default: 0 = source code) to merge and sort for ARCHID_LW0
@@ -418,8 +415,7 @@ struct stream_node_manifest
     uint32_t lock_proc;
     uint32_t lock_arch;                 
     uint32_t headerPACK;
-    uint64_t use_boot_key;              /* scheduler shares max 1024 bits boot key during the reset sequence */
-    uint64_t use_user_key, user_key[MAXNB_WORD32_USER_KEY];    /* max 1024 bits user key */
+    uint32_t use_user_key, user_key[MAXNB_WORD32_USER_KEY];    /* max 1024 bits user key */
 
     /* memory */
     uint32_t nbMemorySegment;
@@ -492,6 +488,8 @@ struct stream_platform_manifest
 
     /* desired platform domains mapping to platform capabilities (fw_io_idx) */
     int domains_to_fw_io_idx[IO_DOMAIN_MAX_NB_DOMAINS];
+
+    uint32_t platform_key[MAXNB_WORD32_PLAFORM_KEY];
 };
 
 typedef struct stream_platform_manifest stream_platform_manifest_t;

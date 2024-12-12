@@ -188,6 +188,9 @@
     <Text Include="..\..\..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306.txt">
       <Filter>Resource Files</Filter>
     </Text>
+    <Text Include="..\..\..\..\stream_platform\computer\graph_filter.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\stream_src\stream_const.h">
@@ -218,6 +221,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\stream_platform\platform_lp-mspm0l1306.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\stream_nodes\arm\script\arm_stream_script.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\stream_nodes\arm\script\arm_stream_script_instructions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

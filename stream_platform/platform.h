@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS Stream
- * Title:        platform_mspm0l1306.h
+ * Title:        platform_computer.h
  * Description:  constants specific to this platform
  *
  * $Date:        15 February 2023
@@ -25,8 +25,38 @@
 * 
  */
 
+#ifndef cPLATFORM_COMPUTER_H
+#define cPLATFORM_COMPUTER_H
 
-#define PLATFORM_MSPM0L1306             //SYSOSC 24MHz/320 = FS 75kHz
+
+#define PLATFORM_COMPUTER                 //Windows 32/64bits
+    #define PLATFORM_ARCH_32BIT
+    //#define PLATFORM_ARCH_64BIT
+
+//#define PLATFORM_WIOTERMINAL            //<<<<
+//#define PLATFORM_LPC55S69EVK            //LPCXPRESSO line-in line-out
+//#define PLATFORM_MSPM0L1306             //SYSOSC 24MHz/320 = FS 75kHz
+//#define PLATFORM_MCXC041                //2K RAM IMU temp LED
+//#define PLATFORM_MCXN236                //DMIC, audio, dual M33, crypto, display
+//#define PLATFORM_CY8CKIT_062S2          //M4
+//#define PLATFORM_CY8CKIT_E84            //M55
+//#define PLATFORM_GROVEVISIONAIV2        //
+//#define PLATFORM_EFM32PG32              //Simplicity Studio
+//#define PLATFORM_RP2040                 //<<<<
+//#define PLATFORM_RP2350                 //<<<<
+//#define PLATFORM_STM32U083DK            //<<<<
+//#define PLATFORM_STM32C0116DK           //PACK
+//#define PLATFORM_STM32L475EIOT01        //---
+//#define PLATFORM_STM32U585IOT02A        //PACK    Light,TOF,Pressure,IMU,Temp,MIC
+//#define PLATFORM_STEVALMKBOXPRO         //CubeIDE Pressure,IMU,Temp,MIC
+//#define PLATFORM_NUVOTON_M2003          //CM0 24MHz, SAR, PWM, 4kB/32kB
+//#define PLATFORM_RENESAS_RA4M1          //CM4 48MHz, 16kB/256kB
+//#define PLATFORM_ARDU_NANO33SENSEV2     //Arduino 
+//#define PLATFORM_ARDU_RP2040            //Arduino IMU,MIC
+//#define PLATFORM_ARDU_UNOR4W            //Arduino 
+//#define PLATFORM_ARDU_ZERO              //Arduino 
+//#define PLATFORM_PORTENTAC33            //Arduino SE050C2 Secure Element
+
 
 /*----- ALL THE NODES ARE DISABLED BY DEFAULT ------------------------------------------------------------------------*/
 #undef STREAM_PLATFORM_SERVICES      /* call the platform service with its fast libraries w/wo accelerators */
@@ -54,39 +84,41 @@
 /*---------------------------------------------------------------------------------------------------------------------*/
 
 
-#define STREAM_PLATFORM_SERVICES        /* call the platform with its fast libraries w/wo accelerators */
 
 /* conditional compilation */
-#define CODE_ARM_STREAM_SCRIPT         /* byte-code interpreter, index "arm_stream_script_INDEX" */
-//#define CODE_ARM_STREAM_GRAPH_CONTROL  /* scheduler control : lock, bypass, loop, if-then */
-//#define CODE_ARM_STREAM_ROUTER         /* copy input arcs and subchannel and output arcs and subchannels   */     
-#define CODE_ARM_STREAM_CONVERTER      /* raw data format converter */
-//#define CODE_ARM_STREAM_AMPLIFIER      /* amplifier mute and un-mute with ramp and delay control */
-//#define CODE_ARM_STREAM_MIXER          /* multichannel mixer with mute/unmute and ramp control */
-#define CODE_ARM_STREAM_FILTER         /* cascade of DF1 filters */
-#define CODE_ARM_STREAM_DETECTOR       /* estimates peaks/floor of the mono input and triggers a flag on high SNR */
-//#define CODE_ARM_STREAM_RESCALER       /* raw data values remapping using "interp1" */
-//#define CODE_ARM_STREAM_COMPRESSOR     /* raw data compression with adaptive prediction */
-//#define CODE_ARM_STREAM_DECOMPRESSOR   /* raw data decompression */
-//#define CODE_ARM_STREAM_MODULATOR      /* signal generator with modulation */
-//#define CODE_ARM_STREAM_DEMODULATOR    /* signal demodulator, frequency estimator */
-//#define CODE_ARM_STREAM_RESAMPLER      /* asynchronous sample-rate converter */
-//#define CODE_ARM_STREAM_QOS            /* raw data interpolator with synchronization to one HQoS stream */
-//#define CODE_ARM_STREAM_SPLIT          /* let a buffer be used by several nodes */
-//#define CODE_ARM_STREAM_DETECTOR2D     /* activity detection, pattern detection */
-//#define CODE_ARM_STREAM_FILTER2D       /* Filter, rescale, rotate, exposure compensation */
-//#define CODE_ARM_STREAM_ANALYSIS       /* arm_stream_analysis, */
+#define STREAM_PLATFORM_SERVICES        /* call the platform service with its fast libraries w/wo accelerators */
+
+#define CODE_ARM_STREAM_SCRIPT          /* byte-code interpreter, index "arm_stream_script_INDEX" */
+//#define CODE_SIGP_CONVERTER             /* raw data format converter */
+//#define CODE_ARM_STREAM_ROUTER          /* copy input arcs and subchannel and output arcs and subchannels   */     
+//#define CODE_ARM_STREAM_AMPLIFIER       /* amplifier mute and un-mute with ramp and delay control */
+//#define CODE_ARM_STREAM_MIXER           /* multichannel mixer with mute/unmute and ramp control */
+#define CODE_ARM_STREAM_FILTER          /* cascade of DF1 filters */
+#define CODE_SIGP_STREAM_DETECTOR       /* estimates peaks/floor of the mono input and triggers a flag on high SNR */
+//#define CODE_ARM_STREAM_RESCALER        /* raw data values remapping using "interp1" */
+#define CODE_SIGP_STREAM_COMPRESSOR     /* raw data compression with adaptive prediction */
+#define CODE_SIGP_STREAM_DECOMPRESSOR   /* raw data decompression */
+//#define CODE_ARM_STREAM_MODULATOR       /* signal generator with modulation */
+//#define CODE_ARM_STREAM_DEMODULATOR     /* signal demodulator, frequency estimator */
+//#define CODE_SIGP_STREAM_RESAMPLER      /* asynchronous sample-rate converter */
+//#define CODE_ARM_STREAM_QOS             /* raw data interpolator with synchronization to one HQoS stream */
+//#define CODE_ARM_STREAM_SPLIT           /* let a buffer be used by several nodes */
+//#define CODE_SIGP_STREAM_DETECTOR2D     /* activity detection, pattern detection */
+//#define CODE_ARM_STREAM_FILTER2D        /* Filter, rescale, rotate, exposure compensation */
+//#define CODE_ARM_STREAM_ANALYSIS        /* arm_stream_analysis, */
+//#define CODE_BITBANK_JPEGENC            /* bitbank_JPEGENC */
+//#define CODE_TJPGDEC                    /* TjpgDec */
+//#define CODE_ARM_STREAM_FMTCONV         /* arm_stream_format_converter */    
 
 
 /*------ Floating point allowed ------*/
-#define STREAM_FLOAT_ALLOWED 0
+#define STREAM_FLOAT_ALLOWED 1
 
 /* max number of nodes installed at compilation time */
-#define NB_NODE_ENTRY_POINTS 22
+#define NB_NODE_ENTRY_POINTS 30
 
 /* max number of application callbacks used from NODE and scripts */
 #define MAX_NB_APP_CALLBACKS 8
-
 
 /* code size saving switch */
 #define STREAM_SERVICE_LOW_MEMORY 1 /* FFT tables are computed */
@@ -115,8 +147,9 @@
 
 #define WR_BYTE_MP_(address,x) { *(volatile uint8_t *)(address) = (x); DATA_MEMORY_BARRIER; }
 #define RD_BYTE_MP_(x,address) { DATA_MEMORY_BARRIER; (x) = *(volatile uint8_t *)(address);}
-#define CLEAR_BIT_MP(arg, bit) {((arg) = U(arg) & U(~(U(1) << U(bit)))); DATA_MEMORY_BARRIER; }
- 
+#define CLEAR_BIT_MP(arg, bit) {((arg) = U(arg) & U(~(U(1) << U(bit)))); DATA_MEMORY_BARRIER; } 
+
+
 
 /*----------------------------------------PLATFORM MANIFEST--------------------------------------------
                   +-----------------+
@@ -136,10 +169,10 @@
 
 #define MBANK_GRAPH     0               /* graph base address (shared) */
 #define MBANK_DMEMFAST  1               /* not shared DTCM Cortex-M/LLRAM Cortex-R, swapped between NODE calls if static */
-#define SIZE_MBANK_DMEM_EXT     600     /* partial graph + buffers + IOs */
-#define SIZE_MBANK_BACKUPMEM1    0x4    /* OFFSET 1 */
-#define SIZE_MBANK_TCM2          0x4    /* TCM (fast RAM) */
-#define SIZE_MBANK_FLASH3        0x4    /* FLASH (fast RAM) */
+#define SIZE_MBANK_DMEM_EXT    0x1000   /* 4K external (buffers) */
+#define SIZE_MBANK_BACKUPMEM1   0x20    /* OFFSET 1 */
+#define SIZE_MBANK_TCM2         0x20    /* TCM (fast RAM) */
+#define SIZE_MBANK_FLASH3       0x20    /* FLASH */
 
 
 #ifdef _MSC_VER 
@@ -169,6 +202,7 @@
 #define IO_PLATFORM_GPIO_OUT_1       8 
 #define IO_PLATFORM_DATA_OUT_0       9
 
+
 #define LAST_IO_FUNCTION_PLATFORM (IO_PLATFORM_DATA_OUT_0+1)  /* table of platform_io[io_al_idx] */
 
 //#define MAX_IO_FUNCTION_PLATFORM 128     /* table of platform_io[io_al_idx] */
@@ -183,4 +217,7 @@
 #define CRITICAL_FAST_SEGMENT_IDX (MAX_NB_MEMORY_OFFSET-1)
 
 
+/* memory consumption optimization */
+#define MAX_NB_STREAM_PER_NODE 16u 
 
+#endif /* ifndef cPLATFORM_COMPUTER_H */

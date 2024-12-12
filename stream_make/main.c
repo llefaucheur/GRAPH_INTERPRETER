@@ -40,13 +40,11 @@ int main(void)
 
     main_init();
 
-    for (i = 0; i < 30000; i++)
+    for (i = 0; i < 240000; i++)
     {   main_run();
     }
 
     main_stop();
-
-    fprintf(stderr, "------------------\n end of simulation \n------------------");
 }
 
 //#endif

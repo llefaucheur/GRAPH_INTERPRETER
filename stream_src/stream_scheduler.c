@@ -30,6 +30,7 @@
 #endif
     
 #include <stdint.h>
+#include "platform.h"
 #include "stream_common_const.h"
 #include "stream_common_types.h"
 #include "stream_const.h"      /* graph list */
@@ -314,7 +315,7 @@ static uint8_t arc_ready_for_write(arm_stream_instance_t *S, uint32_t *arc, uint
 static uint8_t arc_ready_for_read(arm_stream_instance_t *S, uint32_t *arc, uint32_t *frame_size)
 {
     uint32_t consumer_frame_size, consumer_frame_format;   
-    uint32_t fifosize, read, write, *all_formats, fifo_data_amount;
+    uint32_t fifosize, read, write, *all_formats;
     uint8_t ret;
 
     all_formats = S->all_formats;
@@ -324,10 +325,9 @@ static uint8_t arc_ready_for_read(arm_stream_instance_t *S, uint32_t *arc, uint3
 
     consumer_frame_format = all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc[4u],CONSUMFMT_ARCW4)];
     consumer_frame_size = RD(consumer_frame_format, FRAMESIZE_FMT0);
-    *frame_size = consumer_frame_size;
-    fifo_data_amount = (uint32_t)(write - read);
+    *frame_size = (uint32_t)(write - read);     /* size of data ready for read */
 
-    if (fifo_data_amount >= consumer_frame_size)
+    if (*frame_size >= consumer_frame_size)
     {   ret = 1;
     }
     else
@@ -466,8 +466,8 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
     uint32_t fifosize, read, write;
     uint32_t *arc;
     uint32_t iarc, arcID;
-    uint8_t xdm11, ret, narc;
-    uint32_t xdm11_frame_size, tmp;      // same frame size between input and output arcs "1 to 1 XDM frame size"
+    uint8_t ret, narc;
+    uint32_t tmp;      // same frame size between input and output arcs "1 to 1 XDM frame size"
      
     /* all is fine by default */
     ret = 1;        
@@ -486,8 +486,6 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
         return (ret);
     }
 
-    xdm11 = TEST_BIT(S->node_header[S->node_memory_banks_offset+ADDR_LW2], XDM11_LW2_LSB);
-
     /*
        The arc descriptor gives, in the 2nd word, the stream format used by
        the node consuming data from this arc. On the input streams side, 
@@ -497,13 +495,8 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
        looking at the remaining free space in the buffer and the frame-size
        used by the producer (the minimum amount of byte produced per call), the
        function updates the go/no-go flag.
-
-       when xdm11 is set the parameter data size is the minimum of all the 
-       arc rx data and arc tx free area.
-       when xdm11 is reset the parameter data size is the maximum value possible
-       and the node is reponsible to update the pointer_size field 
     */
-    xdm11_frame_size = MAXINT32;
+
     narc = (uint8_t) RD((S->node_header)[0], NBARCW_LW0);
 
     for (iarc = 0; iarc < narc; iarc++)
@@ -514,12 +507,10 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
         if (ARC_RX0TX1_TEST & arcID)
         {   /* TX arc */
             ret &= arc_ready_for_write(S, arc, &tmp);
-            xdm11_frame_size = MIN(xdm11_frame_size, tmp);
         }
         else
         {   /* RX arc */
             ret &= arc_ready_for_read(S, arc, &tmp);
-            xdm11_frame_size = MIN(xdm11_frame_size, tmp);
         } 
     }   
 
@@ -539,26 +530,12 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
         if (ARC_RX0TX1_TEST & arcID)        /* is it a TX arc ? */
         {   if (0u == pre0post1)
             {   xdm_data[iarc].address = (intPtr_t)(arc_extract_info_pt (S, arc, arc_write_address));
-
-                if (xdm11) /* output buffer of the NODE : size = common with RX and TX */   
-                {   xdm_data[iarc].size = xdm11_frame_size;
-                }
-                else /* output buffer of the NODE : size = free area in the original buffer */  
-                {   xdm_data[iarc].size    = arc_extract_info_int (arc, arc_free_area);
-                }
+                xdm_data[iarc].size    = arc_extract_info_int (arc, arc_free_area);
             }
-            else
-            {   uint32_t increment;
-                /* to save cycles and code size, the NODE can avoid incrementing the pointers */
-                if (xdm11) 
-                {   increment = xdm11_frame_size;
-                }
-                else
-                {   /* the NODE put the amount of data produced in "size"
+            else /* TX - post-processing */
+            {   /* the NODE put the amount of data produced in "size"
                         output buffer of the NODE : check the pointer increment */
-                    increment = (uint32_t)(xdm_data[iarc].size);
-                }
-                write = write + increment;
+                write = write + (uint32_t)(xdm_data[iarc].size);
                 ST(arc[3], WRITE_ARCW3, write);
 
                 /* set ALIGNBLCK_ARCW3 if (fifosize - write < producer_frame_size) */
@@ -581,14 +558,17 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
         } 
         else                                /* RX arc case */
         {   if (0u == pre0post1)
-            {   xdm_data[iarc].address = (intPtr_t)(arc_extract_info_pt (S, arc, arc_read_address));
-
-                if (xdm11) /* input buffer of the NODE : size = common with RX and TX */   
-                {   xdm_data[iarc].size = xdm11_frame_size;
-                }
-                else /* input buffer of the NODE : size = data amount in the buffer */
-                {   xdm_data[iarc].size    = arc_extract_info_int (arc, arc_data_amount);
-                }
+            {   
+                /* if the NODE generating the input data was blocked (ALIGNBLCK_ARCW3=1) 
+                    then it is the responsibility of the consumer node (current SWC) to realign the 
+                    data, and clear the flag. 
+                */
+                if (TEST_BIT (arc[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB))
+                {   arc_data_operations (S, arc, arc_data_realignment_to_base, 0, 0);
+                }            
+            
+                xdm_data[iarc].address = (intPtr_t)(arc_extract_info_pt (S, arc, arc_read_address));
+                xdm_data[iarc].size    = arc_extract_info_int (arc, arc_data_amount);
 
                 /* is there debug/monitoring activity to do ? */
                 if (RD(arc[4], COMPUTCMD_ARCW4) != 0u)
@@ -599,19 +579,12 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
                    */
                 }
             }
-            else
-            {   uint32_t increment, producer_frame_size, fmt;
+            else /* RX - post-processing */
+            {   uint32_t producer_frame_size, fmt;
                 /* to save code and cycles, the NODE is not incrementing the pointers*/
-                if (xdm11) 
-                {   increment = xdm11_frame_size;
-                }
-                else
-                {
-                    /* the NODE put the amount of data consumed in "size"
+                /* the NODE put the amount of data consumed in "size"
                         input buffer of the SWC, update the read index*/
-                    increment = (uint32_t)(xdm_data[iarc].size);
-                }
-                read = read + increment;
+                read = read + (uint32_t)(xdm_data[iarc].size);
                 ST(arc[2], READ_ARCW2, read);
 
                 /* does data realignement must be done ? : realign and clear the bit */
@@ -625,7 +598,7 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
     }
 
 
-#if 0    /* if critical fast memory is relacatble => use STREAM_UPDATE_RELOCATABLE instead 
+#if 0    /* if critical fast memory is relocatble => use STREAM_UPDATE_RELOCATABLE instead 
     *  in cases where the memory is not relocatable the node will be assigned to a processor
     */
     // DTCM/FastMem in stack : AL gives the address of the the fast memory
@@ -741,8 +714,8 @@ static int dbgc;
         }
 
         {   uint8_t arc_idx;
-            arc_idx = (uint8_t)(SIZEOF_ARCDESC_W32 * RD(*pio_control, IOARCID_IOFMT0));
-            arc = &(S->all_arcs[ARC_RX0TX1_CLEAR & arc_idx]);
+            arc_idx = (uint8_t)(ARC_RX0TX1_CLEAR & RD(*pio_control, IOARCID_IOFMT0));
+            arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * arc_idx]);
         }
 
         size = 0;
@@ -751,7 +724,7 @@ static int dbgc;
         if (RX0_TO_GRAPH == TEST_BIT(*pio_control, RX0TX1_IOFMT0_LSB))
         {   need_data_move = arc_ready_for_write(S, arc, &size);
             buffer = arc_extract_info_pt(S, arc, arc_write_address);
-            if (size == 0u)
+            if (size == 0u) /* size free for writes = 0 ? */
             {   continue;   /* look next IO */
             }
         }
@@ -760,7 +733,7 @@ static int dbgc;
         else
         {   need_data_move = arc_ready_for_read(S, arc, &size);
             buffer = arc_extract_info_pt(S, arc, arc_read_address);
-            if (size == 0u)
+            if (size == 0u)     /* size free for read = 0 ? */
             {   continue;       /* look next IO */
             }
         }
@@ -883,7 +856,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
 
         /* read the linked-list until finding the NODE index "LAST_WORD" */
 	    do 
-        {   DEBUG_CNT++; if (DEBUG_CNT == 4)
+        {   DEBUG_CNT++; if (DEBUG_CNT == 3)
                 DEBUG_CNT = DEBUG_CNT;
             
             /* check the boundaries of the graph, not during end/stop periods */
@@ -921,28 +894,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
             if (command == STREAM_STOP)
             {   uint32_t returned;
                 ST(S->pack_command, COMMAND_CMD, STREAM_STOP);
-                stream_calls_node (S,
-                    S->node_instance_addr, 0u, &returned);
-            }
-
-            /* if the NODE generating the input data was blocked (ALIGNBLCK_ARCW3=1) 
-                then it is the responsibility of the consumer node (current SWC) to realign the 
-                data, and clear the flag. 
-            */
-            {   uint32_t iarc;
-                uint32_t arcID;
-                uint32_t *arc;
-
-                for (iarc = 0; iarc < RD(S->node_header[0], NBARCW_LW0); iarc++)
-                {   /* search the RX arcs being blocked in producer's side */
-                    arcID = (S->arcID[iarc]);
-                    if (0u == (ARC_RX0TX1_TEST & arcID))
-                    {   arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
-                        if (TEST_BIT (arc[WRIOCOLL_ARCW3], ALIGNBLCK_ARCW3_LSB))
-                        {   arc_data_operations (S, arc, arc_data_realignment_to_base, 0, 0);
-                        }
-                    }
-                }
+                stream_calls_node (S, S->node_instance_addr, 0u, &returned);
             }
 
             /* check input arc has enough data and output arc is free */
@@ -992,8 +944,9 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
 static void read_header (arm_stream_instance_t *S)
 {
     uint32_t x;
-    uint32_t narc, iarc;
-    uint32_t idx_node;
+    uint16_t narc, iarc;
+    uint16_t idx_node;
+    uint8_t TX_found;
 
     S->node_header = S->linked_list_ptr;                             // linked_list_ptr => HEADER
     narc = (uint8_t) RD(S->node_header[0], NBARCW_LW0);
@@ -1003,6 +956,10 @@ static void read_header (arm_stream_instance_t *S)
     S->node_parameters_offset = S->node_memory_banks_offset;
     x = S->node_header[S->node_memory_banks_offset];
     S->node_parameters_offset  += NBW32_MEMREQ_LW2 * (1u + RD(x, NALLOCM1_LW2));
+    
+    if (0 != RD(S->node_header[1], KEY_LW1))
+    {   S->node_parameters_offset += NBWORDS_KEY_USER_PLATFORM;
+    }
 
     /* default parameters of the node */
     S->pack_command = PACK_COMMAND(
@@ -1025,22 +982,31 @@ static void read_header (arm_stream_instance_t *S)
     S->address_node = S->node_entry_points[idx_node];
 
     /* read the arc indexes */
+    TX_found = 0;
     for (iarc = 0; iarc < MIN(narc, MAX_NB_STREAM_PER_NODE); iarc+=2)
-    {   uint32_t arcs;
-        arcs = (S->node_header)[1+iarc/2];
-        S->arcID[iarc]   = (uint16_t)arcs;
-        S->arcID[iarc+1u]= (uint16_t)(arcs>>16);
+    {   
+        S->arcID[iarc]   = (S->node_header)[1+iarc/2];
+        S->arcID[iarc+1u]= ((S->node_header)[1+iarc/2]) >> 16;
+
+        if (TX_found == 0)
+        {   if (ARC_RX0TX1_TEST & S->arcID[iarc])
+            {   TX_found = 1;
+                /* the first TX arc holds the byte pointer for locking the node */
+                x = WRIOCOLL_ARCW3 + SIZEOF_ARCDESC_W32 * iarc;  
+                S->pt8b_collision_arc = (uint8_t *)&(S->all_arcs[x]);
+                S->pt8b_collision_arc = &(S->pt8b_collision_arc[COLLISION_ARC_OFFSET_BYTE]);
+            }
+        }
+        if (TX_found == 0)
+        {   if (ARC_RX0TX1_TEST & S->arcID[iarc+1u])
+            {   TX_found = 1;
+                /* the first TX arc holds the byte pointer for locking the node */
+                x = WRIOCOLL_ARCW3 + SIZEOF_ARCDESC_W32 * (iarc +1u);  
+                S->pt8b_collision_arc = (uint8_t *)&(S->all_arcs[x]);
+                S->pt8b_collision_arc = &(S->pt8b_collision_arc[COLLISION_ARC_OFFSET_BYTE]);
+            }
+        }
     }    
-
-    /* NODE arcs indexes = [0..narc-1], arcs of the associated script = narc (optionaly narc+1) */
-    /*S->script_arctx = (uint8_t)(ARC_RX0TX1_CLEAR & ((S->arcID)[narc]));*/
-
-    /* byte pointer for locking the node, can be the arc 0/1 ARCLOCK_LW0 */
-    x = RD(S->node_header[0], ARCLOCK_LW0);
-    iarc = ARC_RX0TX1_CLEAR & S->arcID[x];
-    x = WRIOCOLL_ARCW3 + SIZEOF_ARCDESC_W32 * iarc;
-    S->pt8b_collision_arc = (uint8_t *)&(S->all_arcs[x]);
-    S->pt8b_collision_arc = &(S->pt8b_collision_arc[COLLISION_ARC_OFFSET_BYTE]);
 
     /* set the linkedList pointer to the next node */
     x = (uint16_t)RD((S->node_header)[S->node_parameters_offset], W32LENGTH_LW4) +
@@ -1160,29 +1126,28 @@ static void reset_component (arm_stream_instance_t *S)
         memreq_physical[imem] = key[1]; imem ++;
     }
 
-    if (TEST_BIT(S->node_header[0], LOADFMT_LW0_LSB))
-    {   /* push the FORMAT of the arcs */
-        narc = (uint8_t) (MIN(MAX_NB_STREAM_PER_NODE, RD(S->node_header[0], NBARCW_LW0)));
+    /* push the FORMAT of the arcs */
+    narc = (uint8_t) (MIN(MAX_NB_STREAM_PER_NODE, RD(S->node_header[0], NBARCW_LW0)));
 
-        for (j = 0; j < narc; j++)
-        {   uint32_t *F, ifmt, arcID, *arc, tmp;
+    for (j = 0; j < narc; j++)
+    {   uint32_t *F, ifmt, arcID, *arc, tmp;
 
-            arcID = (S->arcID)[j];
-            arc = &((S->all_arcs)[arcID]);
-            if (ARC_RX0TX1_TEST & arcID)        // is it a TX arc ? push the "producer" format 
-            {   tmp =  RD(arc[4],PRODUCFMT_ARCW4);
-            }
-            else
-            {   tmp =  RD(arc[4],CONSUMFMT_ARCW4); // is it a RX arc ? push the "consumer" format 
-            }
+        arcID = (S->arcID)[j];
+        arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
+        if (ARC_RX0TX1_TEST & arcID)        // is it a TX arc ? push the "producer" format 
+        {   tmp =  RD(arc[4],PRODUCFMT_ARCW4);
+        }
+        else
+        {   tmp =  RD(arc[4],CONSUMFMT_ARCW4); // is it a RX arc ? push the "consumer" format 
+        }
 
-            ifmt = STREAM_FORMAT_SIZE_W32 * tmp;
-            F = &(S->all_formats[ifmt]);
-            for (iformat = 0; iformat < STREAM_FORMAT_SIZE_W32; iformat++)
-            {   memreq_physical[imem++] = F[iformat]; 
-            }
-        }      
-    }
+        ifmt = STREAM_FORMAT_SIZE_W32 * tmp;
+        F = &(S->all_formats[ifmt]);
+        for (iformat = 0; iformat < STREAM_FORMAT_SIZE_W32; iformat++)
+        {   memreq_physical[imem++] = F[iformat]; 
+        }
+    }      
+    
 
     /* reset the component with the parameter TraceID (6bits) */
     ST(S->pack_command, COMMAND_CMD, STREAM_RESET);
@@ -1262,10 +1227,6 @@ static void run_node (arm_stream_instance_t *S)
     /* flag : still one component is processing data in the graph */
     SET_BIT(S->scheduler_control, STILDATA_SCTRL_LSB);
    
-    ST(S->pack_command, COMMAND_CMD, STREAM_RUN);
-
-    /* check memory segments for copy/swap from TCM/fast memory @@@*/
-
     /* list of memory segment to swap */
     if (TEST_BIT(((uint32_t *)S->node_instance_addr)[SIZE_LW2], CLEARSWAP_LW2S_LSB))
     {   load_clear_memory_segments (S, 0);
@@ -1274,6 +1235,7 @@ static void run_node (arm_stream_instance_t *S)
     /* pre-execution script */
     script_processing (RD(S->node_header[0], SCRIPT_LW0), SCRIPT_PRERUN);
 
+    ST(S->pack_command, COMMAND_CMD, STREAM_RUN);
     loop_counter = MAX_NODE_REPEAT;
     do 
     {

@@ -33,6 +33,7 @@
 #ifndef cSTREAM_COMMON_TYPES_H
 #define cSTREAM_COMMON_TYPES_H
 
+#include "platform.h"
 #include "stream_common_const.h"
 
 /* ------------------------------------------------------------------------------------------
@@ -45,12 +46,13 @@ typedef void *stream_handle_t;
     #define intPtr_t uint64_t
     #define MAX_ADD_OFFSET 0x7FFFFFFFFFFFFFFFL
 */
-#ifdef PLATFORM_ARCH_32BIT
-typedef uint32_t  intPtr_t;
-typedef  int32_t sintPtr_t;
-#else
+#ifdef PLATFORM_ARCH_64BIT
 typedef uint64_t  intPtr_t;
 typedef  int64_t sintPtr_t;
+
+#else   // default configuration is PLATFORM_ARCH_32BIT
+typedef uint32_t  intPtr_t;
+typedef  int32_t sintPtr_t;
 #endif
 
 /* ------------------------------------------------------------------------------------------

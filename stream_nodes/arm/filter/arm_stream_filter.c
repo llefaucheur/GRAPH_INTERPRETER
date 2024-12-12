@@ -247,17 +247,23 @@ void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *
         {
             arm_filter_instance *pinstance;
             intPtr_t nb_data;
-            intPtr_t stream_xdmbuffer_size;
+            intPtr_t stream_xdmbuffer_size_in, stream_xdmbuffer_size_out;
             stream_xdmbuffer_t *pt_pt;
             int16_t *inBuf;
             int16_t *outBuf;
 
             pinstance = (arm_filter_instance *) instance;
-            /* the node is declared with node_variable_rxtx_data_rate=0, there is no need to update stream_xdmbuffer_t after processing */
+
             pt_pt = data;   inBuf = (int16_t *)pt_pt->address;   
-                            stream_xdmbuffer_size = pt_pt->size;  /* data amount in the input buffer */
+                            stream_xdmbuffer_size_in = pt_pt->size;  /* data amount in the input buffer */
             pt_pt++;        outBuf = (int16_t *)(pt_pt->address); 
-            nb_data = stream_xdmbuffer_size / sizeof(int16_t);
+                            stream_xdmbuffer_size_out = pt_pt->size;  /* data free in the input buffer */
+                            
+            if (stream_xdmbuffer_size_in > stream_xdmbuffer_size_out) {
+                nb_data = stream_xdmbuffer_size_out / sizeof(int16_t);
+            } else  {
+                nb_data = stream_xdmbuffer_size_in / sizeof(int16_t);
+            }
 
 #ifdef STREAM_PLATFORM_SERVICES
             /* optimized kernels RUN */
@@ -271,6 +277,9 @@ void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *
                 nb_data
                 );
 
+            pt_pt = data;   *(&(pt_pt->size)) = nb_data * sizeof(int16_t); /* amount of data consumed */
+            pt_pt ++;       *(&(pt_pt->size)) = nb_data * sizeof(int16_t); /* amount of data produced */
+            
             break;
 #else
        //  #error call CMSIS-DSP

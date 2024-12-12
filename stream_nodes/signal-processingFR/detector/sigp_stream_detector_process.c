@@ -42,9 +42,7 @@
 
 
 
-#define PRINTF 0 // debug
-
-#if PRINTF
+#ifdef PLATFORM_COMPUTER
 #include <stdio.h>
 #endif
 
@@ -135,16 +133,16 @@ void sigp_stream_detector_process (sigp_detector_instance *pinstance,
         else
         	pResult[0] = 0x0000;
 
-#if PRINTF        
+#ifdef PLATFORM_COMPUTER        
         {   
-            extern FILE *pttf_data_out_0;
+            extern FILE *ptf_data_out_0;
             long x, SD=4; 
-            x = input_data<<SD;                         fwrite(&x, 1, 4, pttf_data_out_0);    //1
-            x = Z7<<SD;                                 fwrite(&x, 1, 4, pttf_data_out_0);    //2
-            x = Z8<<SD;                                 fwrite(&x, 1, 4, pttf_data_out_0);    //3
-            x = ACCVAD;                                 fwrite(&x, 1, 4, pttf_data_out_0);    //4
-            x = FLAG;                                   fwrite(&x, 1, 4, pttf_data_out_0);    //5
-            x = 0; if (DOWNCOUNTER > 0) x=0x7fffffff;   fwrite(&x, 1, 4, pttf_data_out_0);    //6
+            x = input_data<<SD;                         fwrite(&x, 1, 4, ptf_data_out_0);    //1
+            x = Z7<<SD;                                 fwrite(&x, 1, 4, ptf_data_out_0);    //2
+            x = Z8<<SD;                                 fwrite(&x, 1, 4, ptf_data_out_0);    //3
+            x = ACCVAD;                                 fwrite(&x, 1, 4, ptf_data_out_0);    //4
+            x = FLAG;                                   fwrite(&x, 1, 4, ptf_data_out_0);    //5
+            x = 0; if (DOWNCOUNTER > 0) x=0x7fffffff;   fwrite(&x, 1, 4, ptf_data_out_0);    //6
         }
 #endif     
         isamp++;

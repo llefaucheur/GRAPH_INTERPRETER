@@ -1,1 +1,0 @@
-platform abstraction layer and manifest of Nuvoton M55M1

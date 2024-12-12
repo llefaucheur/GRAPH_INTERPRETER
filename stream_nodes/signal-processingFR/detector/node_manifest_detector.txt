@@ -5,13 +5,11 @@
 node_developer_name      signal-processing.fr   ; developer name
 node_name                sigp_stream_detector   ; node name
 
-node_using_arc_format  1                        ; manage different format
-
 ;----------------------------------------------------------------------------------------
 ;   MEMORY ALLOCATIONS
 
 node_mem                0
-node_mem_alloc         50                       ; filter static
+node_mem_alloc         54                       ; filter static
 
 node_mem                1
 node_mem_alloc         30

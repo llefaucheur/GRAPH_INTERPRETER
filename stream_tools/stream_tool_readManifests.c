@@ -424,17 +424,8 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         if (COMPARE(node_logo))                     // file name (file path of the manifest) 
         {   //fields_extract(&pt_line, "CIC", ctmp, node->nodeName);  
         }
-        if (COMPARE(node_arc_parameter))              
-        {   fields_extract(&pt_line, "CI", ctmp, &(node->nbParamArc)); 
-        }
-        if (COMPARE(node_variable_rxtx_data_rate))     // (default 0)  all arcs have the same data rate (1) the arcs have different data rates
-        {   fields_extract(&pt_line, "CI", ctmp, &(node->variable_data_rate)); 
-        }
         if (COMPARE(node_use_mpdtcm))                
         {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
-        }
-        if (COMPARE(node_using_arc_format))
-        {   fields_extract(&pt_line, "CI", ctmp, &(node->using_arc_format));  // TBC
         }
         if (COMPARE(node_mask_library))
         {   fields_extract(&pt_line, "CI", ctmp, &i);  // TBC
@@ -600,7 +591,6 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
 
     read_platform_digital_manifest(inputFile, platform);
 
-
     /*
         STEP 2 : loop on all the list of IO stream manifests
     */
@@ -639,7 +629,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
 
     do
     {   if (platform->nb_nodes > MAX_NB_NODES)
-        {   fprintf(stderr, "too much nodes !"); exit(-4);
+        {   printf("too much nodes !"); exit(-4);
         }
 
         forScanf= sscanf (pt_line, "%d %s", &ipath, node_name_); /* read the node's manifest name */
@@ -659,7 +649,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     } while (1);
 
 
-    printf("\n %d nodes ", platform->nb_nodes);
+    //printf("\n %d nodes ", platform->nb_nodes);
 }
 
 

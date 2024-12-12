@@ -1,1 +1,0 @@
-platform abstraction layer and manifest of Raspberry RP2040

@@ -167,7 +167,7 @@ void dst_srcx_register (uint32_t *INST, char *s, uint32_t msb, uint32_t lsb, uin
         {   INSERT_BITS(INST[0], msb, lsb, RegSP0);         // DST = S0   
         }   else
         {   if (not_sp1)
-            {   fprintf(stderr, "SP1 cannot be used on instruction %d !", INST[0]); exit(-4);
+            {   printf("SP1 cannot be used on instruction %d !", INST[0]); exit(-4);
             } 
             else
             {   INSERT_BITS(INST[0], msb, lsb, RegSP1);      // DST = S1
@@ -822,7 +822,7 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
                 dst_srcx_register (INST, s[0],  OP_DST_INST_MSB,  OP_DST_INST_LSB, 0); 
                 if (s[1][0] == '|')
                 {   if (s[4][0] != '|' || s[5][0] != '=')  
-                    {   fprintf(stderr, " missing '|' or '='  !"); exit(-4);
+                    {   printf(" missing '|' or '='  !"); exit(-4);
                     }
                     tmp = sscanf(s[2], "%d", &lsb); tmp = sscanf(s[3], "%d", &msb);
                     ST(INST[0], BITFIELD_LSB_INST, lsb);
@@ -832,7 +832,7 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
                 }
                 else
                 {   if (s[3][0] != '|' || s[1][0] != '=')  
-                    {   fprintf(stderr, " missing '|' or '='  !"); exit(-4);
+                    {   printf( " missing '|' or '='  !"); exit(-4);
                     }
                     tmp = sscanf(s[4], "%d", &lsb); tmp = sscanf(s[5], "%d", &msb);
                     ST(INST[0], BITFIELD_LSB_INST, lsb);

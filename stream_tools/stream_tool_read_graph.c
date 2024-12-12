@@ -279,7 +279,7 @@ void search_graph_node(char *cstring,  struct stream_node_manifest **graph_node,
     }   
 
     if (found == 0)
-    {   fprintf(stderr, "\n search_graph_node not found \n");
+    {   printf("\n search_graph_node not found \n");
         exit (-1);
     }
     *graph_NODE_idx = inode;
@@ -326,13 +326,10 @@ void LoadPlatformNode(struct stream_node_manifest *graph_node, struct stream_nod
     graph_node->nbInputArc         = platform_node->nbInputArc;        
     graph_node->nbOutputArc        = platform_node->nbOutputArc;       
     graph_node->nbParamArc         = platform_node->nbParamArc;        
-    graph_node->RWinSWC            = platform_node->RWinSWC;              
     graph_node->formatUsed         = platform_node->formatUsed;           
     graph_node->masklib            = platform_node->masklib;              
     graph_node->codeVersion        = platform_node->codeVersion;          
     graph_node->arc_parameter      = platform_node->arc_parameter;        
-    graph_node->variable_data_rate = platform_node->variable_data_rate;       
-    graph_node->using_arc_format   = platform_node->using_arc_format;       
     graph_node->mask_library       = platform_node->mask_library;         
     graph_node->subtype_units      = platform_node->subtype_units;        
     graph_node->architecture       = platform_node->architecture;         
@@ -557,8 +554,12 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(node_map_rtos))
         {   
         }   
-        if (COMPARE(node_user_key))
-        {   
+        if (COMPARE(node_user_key))     //   node_user_key 0x2334809458	; 64 bits key
+        {   uint32_t K0, K1; 
+            fields_extract(&pt_line, "CII", ctmp, &K0, &K1);
+            graph->all_nodes[graph->nb_nodes -1].use_user_key = 1;
+            graph->all_nodes[graph->nb_nodes -1].user_key[0] = K0;
+            graph->all_nodes[graph->nb_nodes -1].user_key[1] = K1;
         }   
         if (COMPARE(node_map_verbose))
         {   

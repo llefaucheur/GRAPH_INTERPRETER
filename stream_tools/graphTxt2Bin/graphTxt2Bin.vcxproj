@@ -62,6 +62,7 @@
     <Text Include="..\..\stream_platform\computer\graph_computer.txt" />
     <Text Include="..\..\stream_platform\computer\graph_computer_bin.txt" />
     <Text Include="..\..\stream_platform\computer\graph_computer_debug.txt" />
+    <Text Include="..\..\stream_platform\computer\graph_filter.txt" />
     <Text Include="..\..\stream_platform\computer\manifest\io_platform_2d_in_0.txt" />
     <Text Include="..\..\stream_platform\computer\manifest\io_platform_analog_sensor_0.txt" />
     <Text Include="..\..\stream_platform\computer\manifest\io_platform_audio_in_0.txt" />
@@ -81,20 +82,8 @@
     <Text Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306.txt" />
     <Text Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_bin.txt" />
     <Text Include="..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_debug.txt" />
-    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_2d_in_0.txt" />
     <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_analog_sensor_0.txt" />
-    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_audio_in_0.txt" />
-    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_data_in_0.txt" />
-    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_data_in_1.txt" />
-    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_data_out_0.txt" />
-    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_gpio_out_0.txt" />
     <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_gpio_out_1.txt" />
-    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_imu_temperature_0.txt" />
-    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_line_in_0.txt" />
-    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_line_out_0.txt" />
-    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_motion_in_0.txt" />
-    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_node_trace_0.txt" />
-    <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\io_platform_stream_in_0.txt" />
     <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\procmap_manifest_lp-mspm0l1306.txt" />
     <Text Include="..\..\stream_platform\lp-mspm0l1306\manifest\top_manifest_lp-mspm0l1306.txt" />
     <Text Include="..\..\stream_platform\lpc55s69evk\graph_lpc55s69evk.txt" />
@@ -115,7 +104,6 @@
     <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_node_trace_0.txt" />
     <Text Include="..\..\stream_platform\lpc55s69evk\manifest\io_platform_stream_in_0.txt" />
     <Text Include="..\..\stream_platform\lpc55s69evk\manifest\procmap_manifest_lpc55s69evk.txt" />
-    <Text Include="..\..\stream_platform\lpc55s69evk\manifest\top_manifest_lpc55s69evk.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\stream_tool_graph2Bin.c" />

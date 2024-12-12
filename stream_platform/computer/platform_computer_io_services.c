@@ -89,7 +89,7 @@ FILE *ptf_gpio_out_0;
 FILE *ptf_data_out_0;
 
 
-#define size_data_in_1 16
+#define size_data_in_1 32
 static int16_t buffer_data_in_1[size_data_in_1/2];
 
 #define size_data_out_0 32
@@ -196,11 +196,6 @@ void analog_sensor_0 (uint32_t command, stream_xdmbuffer_t *data)
     case STREAM_SET_PARAMETER:
         break;
     case STREAM_SET_BUFFER:
-        {   stream_xdmbuffer_t *pt_pt;
-            pt_pt = (stream_xdmbuffer_t *)data;
-            pt_pt->address = (intPtr_t)buffer_data_out_0;
-            pt_pt->size = size_data_out_0;
-        }
         break;
     case STREAM_RUN:
         /* "io_platform_stream_in_0," frame_size option in samples + FORMAT-0 in the example graph */
@@ -391,8 +386,8 @@ void data_out_0 (uint32_t command, stream_xdmbuffer_t *data)
         break;
     case STREAM_RUN:
             arm_graph_interpreter_io_ack(platform_io_al_idx_to_graph[IO_PLATFORM_DATA_OUT_0], buffer_data_out_0, size_data_out_0);
-            fwrite(buffer_data_out_0, 1, size_data_out_0, ptf_data_out_0);
-            fflush(ptf_data_out_0);
+            //fwrite(buffer_data_out_0, 1, size_data_out_0, ptf_data_out_0);
+            //fflush(ptf_data_out_0);
         break;
     case STREAM_STOP:
             fclose (ptf_data_out_0);

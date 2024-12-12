@@ -190,8 +190,6 @@ void sigp_stream_converter (unsigned int command, void *instance, void *data, un
             sigp_stream_converter_process3 (&(pinstance->output),  
                 pinstance->buff2, outBuf);
 
-            /* the node is producing an amount of data different from the consumed one 
-                see node_variable_rxtx_data_rate = 1 in the manifest */
             pt_pt = data;   *(&(pt_pt->size)) = nb_data_read;   /* amount of data consumed */
             pt_pt ++;       *(&(pt_pt->size)) = nb_data_write;  /* amount of data produced */
             break;

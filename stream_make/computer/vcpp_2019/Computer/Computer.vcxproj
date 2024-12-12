@@ -198,11 +198,14 @@
   <ItemGroup>
     <Text Include="..\..\..\..\stream_platform\computer\graph_computer.txt" />
     <Text Include="..\..\..\..\stream_platform\computer\graph_computer_bin.txt" />
+    <Text Include="..\..\..\..\stream_platform\computer\graph_filter.txt" />
     <Text Include="..\..\..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306.txt" />
     <Text Include="..\..\..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_bin.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\stream_nodes\arm\filter\arm_stream_filter.h" />
+    <ClInclude Include="..\..\..\..\stream_nodes\arm\script\arm_stream_script.h" />
+    <ClInclude Include="..\..\..\..\stream_nodes\arm\script\arm_stream_script_instructions.h" />
     <ClInclude Include="..\..\..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector.h" />
     <ClInclude Include="..\..\..\..\stream_nodes\stream_common_const.h" />
     <ClInclude Include="..\..\..\..\stream_nodes\stream_common_types.h" />

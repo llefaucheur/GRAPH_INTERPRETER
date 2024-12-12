@@ -39,13 +39,6 @@
 
 #include "sigp_stream_detector.h"
 
-
-#define PRINTF 0 // debug
-
-#if PRINTF
-#include <stdio.h>
-#define _CRT_SECURE_NO_DEPRECATE
-#endif
 /*
 ;----------------------------------------------------------------------------------------
 ;7.	sigp_stream_detector
@@ -127,7 +120,7 @@ void sigp_stream_detector (unsigned int command, void *instance, void *data, uns
 
             /* reset the instance */            
             /* floor noise is preserved after a wsigp boot */
-            if (STREAM_COLD_BOOT == RD(command, PRESET_CMD))
+            if (STREAM_COLD_BOOT == RD(command, COMMDEXT_CMD))
             {
                 /* here COLD reset */
                 pinstance->z1 = F2Q31(0.00001);
@@ -206,7 +199,6 @@ void sigp_stream_detector (unsigned int command, void *instance, void *data, uns
             bufferout_free        = pt_pt->size;
 
             nb_data = stream_xdmbuffer_size / sizeof(SAMP_IN);
-            { int i; for (i=0; i< (int)nb_data; i++) outBuf[i]=0; }
 
             sigp_stream_detector_process (pinstance, inBuf, (int32_t)nb_data, outBuf);
 
@@ -214,20 +206,6 @@ void sigp_stream_detector (unsigned int command, void *instance, void *data, uns
             *(&(pt_pt->size)) = nb_data * sizeof(SAMP_IN); /* amount of data consumed */
             pt_pt ++;
             *(&(pt_pt->size)) = 1 * sizeof(SAMP_OUT);   /* amount of data produced */
-
-            //--------------------DEBUG---------------------
-            //sprintf (dbg, "Z2%5d Z7%3d Z8%4d VAD%2d", (pinstance->z2)>>12, (pinstance->z7)>>12, (pinstance->z8)>>12, outBuf[0]);
-            //sigp_stream_services(PACK_SERVICE(RD(command,INST_CMD), NOTAG_SSRV, STREAM_SERVICE_INTERNAL_DEBUG_TRACE), dbg, (uint8_t *)strlen(dbg), 0);  
-            // pinstance->traceID_tag
-            //{   extern uint8_t itoab(char *s, int32_t n, int base);
-            //    const char dbg0[] = "                     Z2 Z7 Z8 VAD";
-            //    char dbg[40], cl = sizeof(dbg0);
-            //    MEMCPY (dbg, dbg0, (uint32_t)cl);
-            //    itoab(&(dbg[0]), (pinstance->z2)>>12, C_BASE10);
-            //    itoab(&(dbg[6]), (pinstance->z7)>>12, C_BASE10);
-            //    itoab(&(dbg[12]), (pinstance->z8)>>12, C_BASE10);
-            //    pinstance->services(PACK_SERVICE(0, NOTAG_SSRV, STREAM_SERVICE_INTERNAL_DEBUG_TRACE, STREAM_SERVICE_INTERNAL), dbg, 0, 0, cl);
-            //}
             break;
         }
         case STREAM_STOP :

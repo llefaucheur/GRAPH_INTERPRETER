@@ -73,7 +73,7 @@ void main_run(void)
 
 void Push_Ping_Pong(uint32_t *data, uint32_t size)
 {
-    extern void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, void *data,  uint32_t size);
+    extern void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, void *data, uint32_t size);
     extern uint8_t platform_io_al_idx_to_graph[];
 
     arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data, size);

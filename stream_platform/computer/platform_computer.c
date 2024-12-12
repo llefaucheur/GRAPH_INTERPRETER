@@ -609,6 +609,8 @@ void platform_init_io(arm_stream_instance_t *S)
 
         /* 
             IO-Interface expects the buffer to be declared outside of the graph
+            
+            set the arc base address to the IO desired buffer address and size
         */
         if (IO_COMMAND_SET_BUFFER == RD(*pio_control, SET0COPY1_IOFMT0))
         {   

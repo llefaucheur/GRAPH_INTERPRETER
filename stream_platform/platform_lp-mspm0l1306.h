@@ -25,8 +25,9 @@
 * 
  */
 
-
 #define PLATFORM_MSPM0L1306             //SYSOSC 24MHz/320 = FS 75kHz
+
+#define PLATFORM_ARCH_32BIT
 
 /*----- ALL THE NODES ARE DISABLED BY DEFAULT ------------------------------------------------------------------------*/
 #undef STREAM_PLATFORM_SERVICES      /* call the platform service with its fast libraries w/wo accelerators */
@@ -64,7 +65,7 @@
 //#define CODE_ARM_STREAM_AMPLIFIER      /* amplifier mute and un-mute with ramp and delay control */
 //#define CODE_ARM_STREAM_MIXER          /* multichannel mixer with mute/unmute and ramp control */
 #define CODE_ARM_STREAM_FILTER         /* cascade of DF1 filters */
-#define CODE_ARM_STREAM_DETECTOR       /* estimates peaks/floor of the mono input and triggers a flag on high SNR */
+#define CODE_SIGP_STREAM_DETECTOR      /* estimates peaks/floor of the mono input and triggers a flag on high SNR */
 //#define CODE_ARM_STREAM_RESCALER       /* raw data values remapping using "interp1" */
 //#define CODE_ARM_STREAM_COMPRESSOR     /* raw data compression with adaptive prediction */
 //#define CODE_ARM_STREAM_DECOMPRESSOR   /* raw data decompression */
@@ -136,7 +137,7 @@
 
 #define MBANK_GRAPH     0               /* graph base address (shared) */
 #define MBANK_DMEMFAST  1               /* not shared DTCM Cortex-M/LLRAM Cortex-R, swapped between NODE calls if static */
-#define SIZE_MBANK_DMEM_EXT     600     /* partial graph + buffers + IOs */
+#define SIZE_MBANK_DMEM_EXT     540     /* partial graph + buffers + IOs */
 #define SIZE_MBANK_BACKUPMEM1    0x4    /* OFFSET 1 */
 #define SIZE_MBANK_TCM2          0x4    /* TCM (fast RAM) */
 #define SIZE_MBANK_FLASH3        0x4    /* FLASH (fast RAM) */
@@ -183,4 +184,5 @@
 #define CRITICAL_FAST_SEGMENT_IDX (MAX_NB_MEMORY_OFFSET-1)
 
 
-
+/* memory consumption optimization */
+#define MAX_NB_STREAM_PER_NODE 2u 

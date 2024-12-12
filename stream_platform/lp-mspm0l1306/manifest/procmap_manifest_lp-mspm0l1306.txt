@@ -16,7 +16,7 @@
 ;   - Size      minimum sizes guaranteed per VID starting from @[ID]+offset below
 ;   - Offset    maximum offset from the base offset ID, (continuous banks means = previous size + previous offset)
 ;   ID VID  S W P H D     Size offset from offsetID 
-    0   0   1 0 0 0 0     510     0        VID0=DEFAULT flat memory bank, can overlap with the others
+    0   0   1 0 0 0 0     540     0        VID0=DEFAULT flat memory bank, can overlap with the others
 
 ;   memory offsets ID, for information
     0       h20000000   Internal RAM  

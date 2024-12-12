@@ -12,9 +12,9 @@
 graph_location          1           ; script and linked-list stays in flash 
 ;----------------------------------------------------------------------
 format_index            0
-format_frame_length     16
+format_frame_length     2           ; minimum = frame of one int16
 format_index            1
-format_frame_length     2           ; output of the VAD
+format_frame_length     16          ; size_data_in_1
 ;----------------------------------------------------------------------
 stream_io               0           ;
 stream_io_hwid          1           ; io_platform_data_in_1.txt
@@ -27,14 +27,15 @@ node arm_stream_filter  0
     node_parameters     0                       ; TAG = "all parameters"
         1  u8;  2                               ; Two biquads
         1  u8;  1                               ; postShift
-        5 s16; 0 16000 0 0 0      
-        5 s16; 0 16000 0 0 0      
+        5 s16; 0 16383 0 0 0      
+        5 s16; 0 16383 0 0 0      
         ; 5 s16; 681   422   681 23853 -15161     ;  elliptic band-pass 1450..1900/16kHz
         ; 5 s16; 681 -1342   681 26261 -15331     ; 
     end
 ;----------------------------------------------------------------------
 node sigp_stream_detector 0     
-    node_preset           3               detector preset 
+    node_preset           3                 ; detector preset 
+    node_user_key         17 34             ; unlocking keys (11 22)
 ;----------------------------------------------------------------------
 node arm_stream_script     0     
     node_preset            0
@@ -105,10 +106,11 @@ script  0                   ; script name
 ;----------------------------------------------------------------------
 ; arc_input   { io / set0copy1 / fmtProd } + { node / inst / arc / fmtCons }
 ; arc_output  { io / set0copy1 / fmtCons } + { node / inst / arc / fmtProd }
+; arc         { inst / arc / fmtProd }     + { inst / arc / fmtCons }
 ;
-arc_input   0 0 0 arm_stream_filter     0 0 0  ; io0 set0copy1 fmt0     ; DETECT => OUTPUT 
-arc_output  1 0 1 sigp_stream_detector  0 1 1  ; io1 set0copy1 fmt1     ; INPUT => IIR
+arc_input   0 0 1 arm_stream_filter     0 0 1  ; io0 set0copy1 fmt1     ; INPUT => IIR, format 1 (array of samples)
+arc_output  1 0 0 sigp_stream_detector  0 1 0  ; io1 set0copy1 fmt0     ; DETECT => OUTPUT (one int16 for the detector output)
 
-arc arm_stream_filter 0 1 0 sigp_stream_detector 0 0 1                  ; IIR => DETECT
-    arc_jitter_ctrl  1.5  ; factor to apply to the minimum size between the producer and the consumer
+arc arm_stream_filter 0 1 1 sigp_stream_detector 0 0 1                  ; IIR => DETECT  fmtProd = fmtCons = 64Bytes
+
 end
