@@ -18,7 +18,7 @@
 RED.palette = (function() {
 
 	var exclusion = ['config','unknown','deprecated'];
-	var core = ['input', 'output', 'filter', 'ml','formatConversion', 'mixer', 'codec'];
+	var core = ['Platforms', 'input', 'output', 'arm', 'sigprocfr', 'bitbanksw', 'Company4', 'Company5', 'Company6', 'Company_etc'];
 	
 	function createCategoryContainer(category){
 

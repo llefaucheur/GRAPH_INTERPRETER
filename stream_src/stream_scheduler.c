@@ -129,17 +129,17 @@ static void script_processing(uint32_t script_index, uint32_t parameter)
 
 static intPtr_t pack2linaddr_int(uint8_t **long_offset, uint32_t x, uint32_t extend)
 {
-    uint8_t *dbg1;
-    intPtr_t dbg2;
-    uint8_t *dbg3;
+    uint8_t *long_base;
+    uint8_t *result8b;
     intPtr_t result;
+    int32_t signed_base;
 
-    dbg1 = long_offset[RD(x,DATAOFF_ARCW0)];             
-    dbg2 = (intPtr_t)(RD((x),BASEIDX_ARCW0));
-    dbg2 = dbg2 << (2*extend);
-    dbg3 = &(dbg1[dbg2]);
-    result = (intPtr_t)dbg3;
-
+    long_base = long_offset[RD(x,DATAOFF_ARCW0)];             
+    signed_base = x << (32-BAS_SIGN_ARCW0_MSB);
+    signed_base >>= (32-BAS_SIGN_ARCW0_MSB);
+    signed_base <<= extend;
+    result8b = &(long_base[signed_base]);
+    result = (intPtr_t)result8b;
     return result;  
 }
 
@@ -195,6 +195,7 @@ static uint8_t * arc_extract_info_pt (arm_stream_instance_t *S, uint32_t *arc, u
 {
     uint32_t read;
     uint32_t write;
+    int32_t signed_base;
     uint8_t *long_base;
     uint8_t *ret;
     uint8_t extend;
@@ -203,8 +204,10 @@ static uint8_t * arc_extract_info_pt (arm_stream_instance_t *S, uint32_t *arc, u
     write = RD(arc[3], WRITE_ARCW3);
     extend = RD(arc[2], ARCEXTEND_ARCW2);
 
-    long_base = (uint8_t *)(S->long_offset[RD(arc[0],DATAOFF_ARCW0)]);   /* platfom memory offsets */
-    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << (2*extend)]); /* BASE is in BYTE */
+    long_base = (uint8_t *)(S->long_offset[RD(arc[0],DATAOFF_ARCW0)]);  /* platfom memory offsets */
+    signed_base = arc[0] << (32-BAS_SIGN_ARCW0_MSB);
+    signed_base >>= (32-BAS_SIGN_ARCW0_MSB);
+    long_base = &(long_base[signed_base << extend]);        /* BASE is in BYTES shifted ARCEXTEND_ARCW2*/
 
     switch (tag)
     {
@@ -364,14 +367,17 @@ static void arc_data_operations (
     uint32_t read;
     uint32_t write;
     uint32_t size;
+    int32_t signed_base;
     uint8_t *long_base;
     uint8_t *src;
     uint8_t* dst;
     uint8_t extend;
 
     extend = RD(arc[2], ARCEXTEND_ARCW2);
-    long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];                /* platfom memory offsets */
-    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << (2*extend)]); /* BASE is in BYTES shift ARCEXTEND_ARCW2*/
+    long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];            /* platfom memory offsets */
+    signed_base = arc[0] << (32-BAS_SIGN_ARCW0_MSB);
+    signed_base >>= (32-BAS_SIGN_ARCW0_MSB);
+    long_base = &(long_base[signed_base << extend]);        /* BASE is in BYTES shifted ARCEXTEND_ARCW2*/
 
     switch (tag)
     {
@@ -607,7 +613,7 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
     //    const p_stream_al_services *al_func;
     //    uint32_t *fast_mem;
     //    al_func = &(S->al_services[0]);
-    //    (*al_func)(PACK_AL_SERVICE(0,AL_SERVICE_READ_MEMORY_FAST_MEM_ADDRESS,AL_SERVICE_READ_MEMORY), (uint8_t *)&fast_mem, 0, 0, 0);
+    //    (*al_func)(PACK_AL_SERVICE(0,SERV_READ_MEMORY_FAST_MEM_ADDRESS,SERV_READ_MEMORY), (uint8_t *)&fast_mem, 0, 0, 0);
     //    xdm_data[narc].address = (intPtr_t)(fast_mem);
 #endif     //}
     return ret;
@@ -1041,28 +1047,23 @@ static void read_header (arm_stream_instance_t *S)
 
 static uint8_t lock_this_component (arm_stream_instance_t *S)
 {
-    //uint8_t tmp;
-    //uint8_t check;
+    uint8_t check;
+    uint8_t whoAmI;
     const p_stream_al_services *al_func;
 
     al_func = &(S->al_services);
+    whoAmI = RD(S->whoami_ports, INST_ID_PARCH);  
+    (*al_func)(PACK_SERVICE(0,0,0,SERV_INTERNAL_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP,SERV_GROUP_INTERNAL), 
+        S->pt8b_collision_arc, &check, &whoAmI, 0);
 
-    /* ---------------------SWC reservation attempt -------------------*/            
-    /* if the NODE is already used skip it */
-    //(*al_func)(PACK_AL_SERVICE(0,AL_SERVICE_MUTUAL_EXCLUSION_RD_BYTE_MP,AL_SERVICE_MUTUAL_EXCLUSION), S->pt8b_collision_arc, &check, &tmp, 0);
-    //if (check != U8(0))
-    //{   return 0;
-    // }
- 
-    //tmp = RD(S->whoami_ports, INST_ID_PARCH);  
-    //(*al_func)(PACK_AL_SERVICE(0,AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP,AL_SERVICE_MUTUAL_EXCLUSION), S->pt8b_collision_arc, &check, &tmp, 0);
-
-    //if (0u == check)
-    //{   return 0;   /* a collision occured, don't wait, jump to next nanoAppRT */
-    //}
-    /* ------------------SWC is now locked for me ! --------------------*/            
-
-    return 1;
+    if (0u == check)
+    {   /* a collision occured, don't wait, jump to next nanoAppRT */
+        return 0;   
+    }
+    else
+    {   /* ------------------SWC is now locked for me ! --------------------*/            
+        return 1;
+    }
 }
 
 static uint8_t unlock_this_component (arm_stream_instance_t *S)
@@ -1070,7 +1071,8 @@ static uint8_t unlock_this_component (arm_stream_instance_t *S)
     p_stream_al_services *al_func = &(S->al_services);
     uint8_t tmp = 0;
 
-    (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV, AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP,AL_SERVICE_MUTUAL_EXCLUSION), 
+    /*  PACK_SERVICE(COMMAND,OPTION,TAG,FUNC,GROUP) */
+    (*al_func)(PACK_SERVICE(0,0,0,SERV_INTERNAL_MUTUAL_EXCLUSION_WR_BYTE_MP,SERV_GROUP_INTERNAL), 
         (void *)(S->pt8b_collision_arc), (void *)&tmp, 0, 0);
 
     return 1;

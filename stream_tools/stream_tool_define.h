@@ -195,7 +195,7 @@
 
 /*----------------------------------------------------------------------- GRAPH HEADER ------------- */
 #define subgraph                        "subgraph"
-#define set_file_path                   "set_file_path"
+#define graph_file_path                 "graph_file_path"
 #define graph_location                  "graph_location"
 #define graph_location_offset           "graph_location_offset"
 #define graph_memory_bank               "graph_memory_bank"

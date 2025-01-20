@@ -1,6 +1,7 @@
 | Table of content     |
 | --------------------- |
-| [Graph Interpreter Memory](#Graph-Interpreter-instance)     |
+| [How to start](#How-to-start) |
+| [Graph Interpreter instance](#Graph-Interpreter-instance) |
 | [Manifest Files](#Top-Manifest)                             |
 | [Processor Manifest](#Processor-Manifest)                   |
 | [Interfaces Manifests](#IO-Manifest)                        |
@@ -189,6 +190,20 @@ The development flow is :
 2) The node software developer is producing the code and the corresponding manifest
 3) Finally, the system integrator creates a binary file representing the graph of the DSP/ML components of its application. The system integrator adds other callbacks which will be used by the scripting capability of the graph.
 
+------
+
+# How to start
+
+It depends who you are.
+
+| User               | Actions                                                      |
+| ------------------ | ------------------------------------------------------------ |
+| platform vendor    | deliver an abstraction layer and a manifest of the platform capabilities : memory mapping, computing services, data streaming interface |
+| software developer | deliver a program with a manifest of the node capabilities: IO port description (data format), memory consumption |
+| system integrator  | use a GUI or the graph description  language  to create the arcs between the nodes, and progressively, if needed, tune the performance (memory overlays, FIFO sizes, node affinity to processors) |
+
+
+
 --------------------------------------
 
 # Graph Interpreter instance
@@ -199,7 +214,7 @@ Interpreter instance structure:
 
 | name of the field     | comments                                                     |
 | --------------------- | ------------------------------------------------------------ |
-| long_offset           | A pointer to the table of physical addresses of the memory banks (up to 64). The table is in the AL of each processor. The graph is not using physical memory but offsets to one of those 64 memory banks, defined in the "platform manifest". |
+| long_offset           | A pointer to the table of physical addresses of the memory banks (up to 64). The table is in the AL of each processor. The graph is not using physical memory but offsets to one of those 64 memory banks, defined in the "platform manifest". This table allows memory translation between processors, without the need of MMU. |
 | graph                 | A pointer to the compiled binary version of the graph remapped in RAM. </br>The original binary graph is usually in a flash memory area. The AL function (`platform_init_stream_instance()`) moves it in RAM starting from the first byte of the above "long_offset" index 0. When the device has a small internal RAM the graph can be split with a portion staying in Flash (this graph pointer is pointing to) and a portion RAM placed at long_offset[0] address. |
 | linked_list           | pointer to the linked-list of nodes of the graph             |
 | platform_io           | table of functions ([IO_AL_idx](#Top-Manifest)) associated to each IO stream of the platform |
@@ -1792,14 +1807,14 @@ Example :
 allowed_processors 0x81	; (10000001) processor ID 1 and 8 can read the graph
 ```
 
-### set_file_path "index"  "path"
+### graph_file_path "index"  "path"
 
 Index and its file path, used when including files (sub graphs, parameter files and scripts).
 
 Example :
 
 ```
-set_file_path 2  ../nodes/   ; file path index 2 to the folder ../nodes
+graph_file_path 2  ../nodes/   ; file path index 2 to the folder ../nodes
 ```
 
 ### graph_memory_bank "x"
@@ -2116,7 +2131,7 @@ In the above both cases the memory segment 1 is copied (next is swapped) from of
 
 ### node_trace_id "io"
 
-Selection of the graph IO interface used for sending the debug and trace informations.
+Selection of the graph IO interface used for sending the debug and trace information.
 Example : 
 
 ```  
@@ -2205,7 +2220,7 @@ Example of a packed structure of 22 bytes of parameters:
 
 Scripts are interpreted byte-codes designed for control and calls to the graph scheduler for node control and parameter settings. Scripts are declared as standard nodes with extra parameters to declare memory size and allowing it to be reused for several scripts. The script-nodes have the transmit arc used to hold the instance memory (registers, stack and heap memory).
 
-The virtual engine has 20 instructions and up to 12 registers. 
+The virtual engine has 20 instructions and up to 10 registers. 
 
 There are two formats of instructions:
 
@@ -2256,7 +2271,7 @@ addmod		addition with modulo defined by "base" and "size"
 submod		subtraction with modulo
 ```
 
-The 12 registers of the virtual machine are "r0" .. "r11". Using "sp0" (or simply "sp") means an access to the data located at the stack pointer position, "sp1" tells to increment the stack pointer **SP** after a write to the stack and to decrement it after a read. In case several stack accesses are made in the same instruction the update of the stack pointer are made when reading the instructions from right to left.
+The 10 registers of the virtual machine are "r0" .. "r9". Using "sp0" (or simply "sp") means an access to the data located at the stack pointer position, "sp1" tells to increment the stack pointer **SP** after a write to the stack and to decrement it after a read. In case several stack accesses are made in the same instruction the update of the stack pointer are made when reading the instructions from right to left.
 
 For example : ` sp1 = add sp1 #float 3.14 `  : the literal constant "3.14" is added to the data on top of the stack and SP is post-decremented after the read ("pop" operation), the result of the addition is saved on the stack ("push") with SP post-incremented. ` sp1 = add sp0 sp1 ` pops the stack adds the next stack value (without SP decrement) and the result is pushed.
 
@@ -2272,8 +2287,8 @@ if_yes r6 = add r5 3      conditional addition of r5 with 3 saved in r6
 Literal constants are signed integers by default, if other data types are needed the constant is preceded by "#float" or "uint8", for example :
 
 ```
-r3 = #float 3.14159       load PI in r3
-r4 = mul r3 12            floating-point multiplication saved in r4
+r3 = 3.14159              load PI in r3
+r4 = mul r3 12.0          floating-point multiplication saved in r4
 ```
 
 Other instructions examples :
@@ -2298,7 +2313,7 @@ r3 = [ r4 ]  r0           gather load
 r3 | 8 15 | = r2          bit-field load of r2 to the 2nd byte of r3
 r3 = r2 | 0 7 |           bit-field extract the LSB of r2 to r3
 return                    return from subroutine or script
-callsys 1 r1 r4 r5        system call (below)
+Syscall 1 r1 r4 r5        system call (below)
 ```
 
 ### Graph syntax
@@ -2331,26 +2346,34 @@ script 1  			      ; script (instance) index
 
 ### System calls
 
-The `"callsys"` instruction gives access to nodes (set/read parameters) and arc (read/write data). It allows the access to other system information: 
+The `"Syscall"` instruction gives access to nodes (set/read parameters) and arc (read/write data). It allows the access to other system information: 
 
 - FIFO content (read/write), filling status and access to the arc debug information (last time-stamp access, average of samples, etc ..)
 - Node parameters read and update, with / without a reset of the node
 - Basic compute and data move functions
 - The call-backs provided by the application (use-case, change the graph IO parameters, debug and trace)
 
-#### Callsys syntax
+#### Syscall syntax
 
-| Callsys 1st index                | register parameters                                          |
+Syscall instructions have five parameters 
+
+```
+syscall index command param1 param2 param3
+```
+
+
+
+| Syscall index                    | register parameters                                          |
 | -------------------------------- | ------------------------------------------------------------ |
-| 1 (access to nodes)              | 1: address of the node<br/>2: command (tag, reset id, cmd)<br/>    set/read parameter=2/3<br/>3: address of data<br/>4: number of bytes |
-| 2 (access to arcs)               | 1: arc's ID<br/>2: command <br/>    set/read data=8/9<br/>3: address of data<br/>4: number of bytes |
-| 3 (callbacks of the application) | 1: application_callback's ID<br/>2: parameter1 (depends on CB)<br/>3: parameter2 (depends on CB)<br/>4: parameter3 (depends on CB) |
-| 4 (IO settings)                  | 1: IO's graph index<br/>2: command <br/>    set/read parameter=2/3<br/>3: address of data<br/>4: number of bytes |
+| 1 (access to nodes)              | R1: command (set/read parameter)<br/>R2: address of the node<br/>R3: address of data<br/>R4: number of bytes |
+| 2 (access to arcs)               | R1: command  set/read data=8/9<br/>R2: arc's ID<br/>R3: address of data<br/>R4: number of bytes |
+| 3 (callbacks of the application) | R1: application_callback's ID<br/>R2: parameter1 (depends on CB)<br/>R3: parameter2 (depends on CB)<br/>R4: parameter3 (depends on CB) |
+| 4 (IO settings)                  | R1: command <br/>    set/read parameter=2/3<br/>R2: IO's graph index<br/>R3: address of data<br/>R4: number of bytes |
 | 5 (debug and trace)              | TBD                                                          |
 | 6 (computation)                  | TBD                                                          |
 | 7 (low-level functions)          | TBD, peek/poke directly to memory, direct access to IOs (I2C driver, GPIO setting, interrupts generation and settings) |
 | 8 (idle controls)                | TBD, Share to the application the recommended Idle strategy to apply (small or deep-sleep). |
-| 9 (time)                         | 1: command and time format <br/>2: parameter1 (depends on CB)<br/>3: parameter2 (depends on CB)<br/>4: parameter3 (depends on CB) |
+| 9 (time)                         | R1: command and time format <br/>R2: parameter1 (depends on CB)<br/>R3: parameter2 (depends on CB)<br/>R4: parameter3 (depends on CB) |
 
 ------
 
@@ -2852,7 +2875,7 @@ The default memory configuration is "shared" meaning the buffers associated with
 
 To have individual static memory associated to a script the "script_mem_shared" must be 0.
 
-Special functions activated with callsys and conditional instructions:
+Special functions activated with Syscall and conditional instructions:
       - lock   : a block of nodes to a processor to have good cache performance, 
             - if-then: a block of nodes based on script decision (FIFO content/debug registers, ..)
 
@@ -2874,7 +2897,7 @@ node arm_stream_script 1  ; script (instance) index
         r0 = 0x412              ; r0 = STREAM_SET_PARAMETER(2)
         set r3 param BBB        ; set r3 param BBB 
         sp0 = 1                 ; push 1 Byte (threshold size in BBB)
-        callsys 1 r2 r0 r3 sp0  ; callsys NODE(1) r2(cmd=set_param) r0(set) r3(data) 
+        Syscall 1 r2 r0 r3 sp0  ; Syscall NODE(1) r2(cmd=set_param) r0(set) r3(data) 
         return              ; return
     end
         

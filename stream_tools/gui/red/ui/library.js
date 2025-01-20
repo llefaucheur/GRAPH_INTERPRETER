@@ -141,6 +141,15 @@ RED.library = (function() {
 			'</ul></div>'
 		);
 	
+		$('#node-input-file').addClass('input-append-left').css("width","65%").after(
+			'<div class="btn-group" style="margin-left: -5px;">'+
+			'<button id="node-input-'+options.type+'-lookup" class="btn input-append-right" data-toggle="dropdown"><i class="icon-book"></i> <span class="caret"></span></button>'+
+			'<ul class="dropdown-menu pull-right" role="menu">'+
+			'<li><a id="node-input-'+options.type+'-menu-open-library" tabindex="-1" href="#">Open Library...</a></li>'+
+			'<li><a id="node-input-'+options.type+'-menu-save-library" tabindex="-1" href="#">Save to Library...</a></li>'+
+			'</ul></div>'
+		);
+	
 		
 		
 		$('#node-input-'+options.type+'-menu-open-library').click(function(e) {
@@ -208,6 +217,22 @@ RED.library = (function() {
 			e.preventDefault();
 		});
 	
+		$('#node-input-'+options.type+'-menu-save-library').click(function(e) {
+			var name = $("#node-input-file").val().replace(/(^\s*)|(\s*$)/g,"");
+
+			$("#node-dialog-library-save-folder").attr("value","");
+
+			var filename = name.replace(/[^\w-]/g,"-");
+			if (filename === "") {
+				filename = "unnamed-"+options.type;
+			}
+			$("#node-dialog-library-save-filename").attr("value",filename+".js");
+
+			$( "#node-dialog-library-save" ).dialog( "open" );
+			e.preventDefault();
+		});    
+    
+    
 		require(["orion/editor/edit"], function(edit) {
 			libraryEditor = edit({
 				parent:document.getElementById('node-select-library-text'),
@@ -311,6 +336,35 @@ RED.library = (function() {
 			$.post("library/"+options.url+'/'+fullpath+"?"+queryString,text,function() {
 					RED.notify("Saved "+options.type,"success");
 			});
+            
+            
+            
+			var name = $("#node-input-file").val().replace(/(^\s*)|(\s*$)/g,"");
+			if (name === "") {
+				name = "Unnamed "+options.type;
+			}
+			var filename = $("#node-dialog-library-save-filename").val().replace(/(^\s*)|(\s*$)/g,"");
+			var pathname = $("#node-dialog-library-save-folder").val().replace(/(^\s*)|(\s*$)/g,"");
+			if (filename === "" || !/.+\.js$/.test(filename)) {
+				RED.notify("Invalid filename","warning");
+				return;
+			}
+			var fullpath = pathname+(pathname===""?"":"/")+filename;
+			var queryArgs = [];
+			for (var i=0;i<options.fields.length;i++) {
+				var field = options.fields[i];
+				if (field == "name") {
+					queryArgs.push("name="+encodeURIComponent(name));
+				} else {
+					queryArgs.push(encodeURIComponent(field)+"="+encodeURIComponent($("#node-input-"+field).val()));
+				}
+			}
+			var queryString = queryArgs.join("&");
+			
+			var text = options.editor.getText();
+			$.post("library/"+options.url+'/'+fullpath+"?"+queryString,text,function() {
+					RED.notify("Saved "+options.type,"success");
+			});            
 		}
 		$( "#node-dialog-library-save-confirm" ).dialog({
 			title: "Save to library",

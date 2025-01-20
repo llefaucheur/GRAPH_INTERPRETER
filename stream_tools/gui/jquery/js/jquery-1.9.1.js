@@ -1416,6 +1416,7 @@ jQuery.support = (function() {
 	// #11217 - WebKit loses check when the name is after the checked attribute
 	input.setAttribute( "checked", "t" );
 	input.setAttribute( "name", "t" );
+	input.setAttribute( "file", "t" );
 
 	fragment = document.createDocumentFragment();
 	fragment.appendChild( input );
@@ -2566,7 +2567,7 @@ if ( !getSetAttribute ) {
 	nodeHook = jQuery.valHooks.button = {
 		get: function( elem, name ) {
 			var ret = elem.getAttributeNode( name );
-			return ret && ( name === "id" || name === "name" || name === "coords" ? ret.value !== "" : ret.specified ) ?
+			return ret && ( name === "id" || name === "name" || name === "file" || name === "coords" ? ret.value !== "" : ret.specified ) ?
 				ret.value :
 				undefined;
 		},

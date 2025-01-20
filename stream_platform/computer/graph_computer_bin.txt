@@ -1,9 +1,9 @@
 //--------------------------------------
-//  DATE Thu Dec 12 13:04:23 2024
+//  DATE Mon Jan 20 19:55:10 2025
 //  AUTOMATICALLY GENERATED CODES
 //  DO NOT MODIFY !
 //--------------------------------------
-0x00000076, // ------- Graph size = Flash=79[W]+RAM39[W]  +Buffers=34[B] 9[W] 
+0x00000076, // ------- Graph size = Flash=79[W]+RAM39[W]  +Buffers=66[B] 17[W] 
 0x10000000, // 000 000 [0] Destination in RAM 0, and RAM split 1 
 0x00006042, // 004 001 [1] Number of IOs 2, Formats 2, Scripts 5 
 0x0000003A, // 008 002 LinkedList size = 58, ongoing IO bytes, Arc debug table size 0 
@@ -12,7 +12,7 @@
 0x00000000, // 014 005 [5] memory consumed 0,1,2,3 
 0x00000000, // 018 006 [6] memory consumed 4,5,6,7 ...  
 0x00041000, // 01C 007 IO(graph0) 1 arc 0 set0copy1=0 rx0tx1=0 servant1 1 domain 0 
-0x00000000, // 020 008 IO(settings 0, fmtProd 1 (L=16) fmtCons 1 (L=16) 
+0x00000000, // 020 008 IO(settings 0, fmtProd 1 (L=32) fmtCons 1 (L=32) 
 0x00000000, // 024 009  
 0x00000000, // 028 00A  
 0x00241801, // 02C 00B IO(graph1) 9 arc 1 set0copy1=0 rx0tx1=1 servant1 1 domain 0 
@@ -21,15 +21,15 @@
 0x00000000, // 038 00E  
 0x00600001, // 03C 00F Script 0 CodeSize 5 (10h) shared0 format0 arc 3 
 0x30448803, // 040 010 IF0 6_ 1 D 1 S1  2 S2  3 K     3 ; r1 = add r2 3 
-0x30080814, // 044 011 IF0 6_ 0 D 2 S1  0 S2  4 K    20 ; r2 = -9000 
+0x30080816, // 044 011 IF0 6_ 0 D 2 S1  0 S2  6 K    22 ; r2 = -9000 
 0xFFFFDCD8, // 048 012 IF3 7_31 D15 S1 15 S2  8 K  1240  
-0x3C33330B, // 04C 013 IF0 7_16 D12 S1 12 S2 11 K -1269 ; callsys 11 
+0x3C2EEECB, // 04C 013 IF0 7_16 D11 S1 11 S2 11 K  1739 ; syscall 11 
 0x3CC00800, // 050 014 IF0 7_19 D 0 S1  0 S2  0 K     0 ; return 
 0x00004007, // 054 015 -----  arm_stream_filter(0) idx:7 nRX 1 nTX 1 lockArc 1 
-0x08040000, // 058 016 ARC 0 Rx0Tx1 0 L=16 dbgpage0 -- ARC 4 Rx0Tx1 1 L=16 dbgpage0 KEY0     
-0x200001F4, // 05C 017 Nb Memreq 2  ClearSwap 0 -Static memory bank  Swap 0  
+0x08040000, // 058 016 ARC 0 Rx0Tx1 0 L=32 dbgpage0 -- ARC 4 Rx0Tx1 1 L=32 dbgpage0 KEY0     
+0x20000204, // 05C 017 Nb Memreq 2  ClearSwap 0 -Static memory bank  Swap 0  
 0x00000018, // 060 018  bank 0 stat0work1ret2 = 0 size d24(h18)  
-0x00800000, // 064 019 Scratch memory bank Swap 0  
+0x04000000, // 064 019 Scratch memory bank Swap 0  
 0x00000050, // 068 01A  bank 1 stat0work1ret2 = 1 size d80(h50)  
 0x01000007, // 06C 01B ParamLen 6+1 Preset 1 Tag0ALL 0 
 0x00000102, // 070 01C (0) 
@@ -39,42 +39,42 @@
 0x00000000, // 080 020 (4) 
 0x00000000, // 084 021 (5) 
 0x00004008, // 088 022 -----  sigp_stream_detector(0) idx:8 nRX 1 nTX 1 lockArc 1 
-0x08014004, // 08C 023 ARC 4 Rx0Tx1 0 L=16 dbgpage0 -- ARC 1 Rx0Tx1 1 L=2 dbgpage0 KEY1 >>> 
-0x2000020C, // 090 024 Nb Memreq 2  ClearSwap 0 -Static memory bank  Swap 0  
+0x08014004, // 08C 023 ARC 4 Rx0Tx1 0 L=32 dbgpage0 -- ARC 1 Rx0Tx1 1 L=2 dbgpage0 KEY1 >>> 
+0x2000021C, // 090 024 Nb Memreq 2  ClearSwap 0 -Static memory bank  Swap 0  
 0x00000038, // 094 025  bank 0 stat0work1ret2 = 0 size d56(h38)  
-0x20000244, // 098 026 Static memory bank Swap 0  
+0x20000254, // 098 026 Static memory bank Swap 0  
 0x00000020, // 09C 027  bank 1 stat0work1ret2 = 2 size d32(h20)  
 0x00000011, // 0A0 028  user Key0 17 00000011 
 0x00000022, // 0A4 029  user Key1 34 00000022 
 0x03000001, // 0A8 02A ParamLen 0+1 Preset 3 Tag0ALL 0 
 0x00002001, // 0AC 02B -----  arm_stream_script(0) idx:1 nRX 0 nTX 1 lockArc 1 
 0x00000002, // 0B0 02C ARC 2 Rx0Tx1 0 L=2 dbgpage0 KEY0     
-0x00000264, // 0B4 02D Nb Memreq 1  ClearSwap 0 -Static memory bank  Swap 0  
+0x00000274, // 0B4 02D Nb Memreq 1  ClearSwap 0 -Static memory bank  Swap 0  
 0x00000020, // 0B8 02E  bank 0 stat0work1ret2 = 0 size d32(h20)  
 0x0000001F, // 0BC 02F ParamLen 31+1 Preset 0 Tag0ALL 0 
 0x301408FF, // 0C0 030 IF0 6_ 0 D 5 S1  0 S2 15 K   255 ; r5 =  0xFF    
 0x3A4D4281, // 0C4 031 IF0 7_ 9 D 3 S1  5 S2  1 K -1407 ; r3 |1 10| = r5 
 0x3A90C143, // 0C8 032 IF0 7_10 D 4 S1  3 S2  3 K -1725 ; r4 = r3 |3 5| 
-0x39880014, // 0CC 033 IF0 7_ 6 D 2 S1  0 S2  4 K -2028 ; r2 = sigp_stream_detector_0          
+0x39880016, // 0CC 033 IF0 7_ 6 D 2 S1  0 S2  6 K -2026 ; r2 = sigp_stream_detector_0          
 0x00000022, // 0D0 034 IF0 2_ 8 D13 S1  1 S2  8 K  -392  
 0x30000C12, // 0D4 035 IF0 6_ 0 D 0 S1  0 S2  2 K  1042 ; r0 = TAG(4) + RESET(1) + STREAM_SET_PARAMETER(2) 
-0x390C0014, // 0D8 036 IF0 7_ 4 D 3 S1  0 S2  4 K -2028 ; set r3 param BBB  
+0x390C0016, // 0D8 036 IF0 7_ 4 D 3 S1  0 S2  6 K -2026 ; set r3 param BBB  
 0x00000001, // 0DC 037 IF0 0_ 0 D 0 S1  0 S2  1 K -2047  
 0x30380801, // 0E0 038 IF0 6_ 0 D14 S1  0 S2  1 K     1 ; push 1 Byte (threshold size in BBB) 
-0x3C080F81, // 0E4 039 IF0 7_16 D 2 S1  0 S2  1 K  1921 ; callsys NODE(1) r2(cmd=set_param) r0(set) r3(data) sp0(1 bytes) 
+0x3C008F81, // 0E4 039 IF0 7_16 D 0 S1  2 S2  1 K  1921 ; syscall NODE(1) r2(cmd=set_param) r0(set) r3(data) sp0(1 bytes) 
 0x30444801, // 0E8 03A IF0 6_ 1 D 1 S1  1 S2  1 K     1 ; r1 = add r1 1      Label AAA  
-0x32088003, // 0EC 03B IF0 6_ 8 D 2 S1  2 S2  3 K -2045 ; r2 = xor r2 r3       
+0x32888003, // 0EC 03B IF0 6_10 D 2 S1  2 S2  3 K -2045 ; r2 = xor r2 r3       
 0x28040801, // 0F0 03C IF0 5_ 0 D 1 S1  0 S2  1 K     1 ; test_gt r1 1         
-0xBB7337FD, // 0F4 03D IF2 7_13 D12 S1 12 S2 13 K    -3 ; if_no jump AAA       
-0x3C08D30F, // 0F8 03E IF0 7_16 D 2 S1  3 S2 15 K -1265 ; callsys 15 r2 r3 r4  
-0x39000014, // 0FC 03F IF0 7_ 4 D 0 S1  0 S2  4 K -2028 ; set r0 CCC           
+0xBB6EE7FD, // 0F4 03D IF2 7_13 D11 S1 11 S2 13 K    -3 ; if_no jump AAA       
+0x3C08D2CF, // 0F8 03E IF0 7_16 D 2 S1  3 S2 15 K -1329 ; syscall 15 r2 r3 r4  
+0x39000016, // 0FC 03F IF0 7_ 4 D 0 S1  0 S2  6 K -2026 ; set r0 CCC           
 0x00000009, // 100 040 IF0 0_ 0 D 0 S1  0 S2  9 K -2039  
-0x394C0014, // 104 041 IF0 7_ 5 D 3 S1  0 S2  4 K -2028 ; set r3 EEE           
+0x394C0016, // 104 041 IF0 7_ 5 D 3 S1  0 S2  6 K -2026 ; set r3 EEE           
 0x00000011, // 108 042 IF0 0_ 0 D 0 S1  0 S2  1 K -2031  
-0x38000804, // 10C 043 IF0 7_ 0 D 0 S1  0 S2  4 K     4 ; set r0 type uint8    
+0x38000806, // 10C 043 IF0 7_ 0 D 0 S1  0 S2  6 K     6 ; set r0 type uint8    
 0x3A082801, // 110 044 IF0 7_ 8 D 2 S1  0 S2  1 K     1 ; r2 = [ r0 ]+ 1       
 0x39CCA801, // 114 045 IF0 7_ 7 D 3 S1  2 S2  1 K     1 ; [ r3 ]+ 1 = r2       
-0x38000804, // 118 046 IF0 7_ 0 D 0 S1  0 S2  4 K     4 ; set r0 type uint32   
+0x38000806, // 118 046 IF0 7_ 0 D 0 S1  0 S2  6 K     6 ; set r0 type uint32   
 0x3A082804, // 11C 047 IF0 7_ 8 D 2 S1  0 S2  4 K     4 ; r2 = [ r0 ]+ 4       
 0x39CCA804, // 120 048 IF0 7_ 7 D 3 S1  2 S2  4 K     4 ; [ r3 ]+ 4 = r2         
 0x3CC00800, // 124 049 IF0 7_19 D 0 S1  0 S2  0 K     0 ; return               
@@ -88,12 +88,12 @@
 0x00004400, // 144 051 008 002           nchan 1 raw 17 
 0x00000000, // 148 052 00C 003           domain-dependent 
 0x00000000, // 14C 053 010 004           domain-dependent 
-0x00000010, // 150 054 014 005 Format  1 frameSize 16  
+0x00000020, // 150 054 014 005 Format  1 frameSize 32  
 0x00004400, // 154 055 018 006           nchan 1 raw 17 
 0x00000000, // 158 056 01C 007           domain-dependent 
 0x00000000, // 15C 057 020 008           domain-dependent 
-0x0000009C, // 160 058 024 009 ARC0 -IO- Base 9Ch (0h words) fmtProd_1 frameL 16.0 
-0x00000010, // 164 059 028 00A IO buffer with base address redirection, no memory allocation, the Size is from the producer 
+0x0000009C, // 160 058 024 009 ARC0 -IO- Base 9Ch (0h words) fmtProd_1 frameL 32.0 
+0x00000020, // 164 059 028 00A IO buffer with base address redirection, no memory allocation, the Size is from the producer 
 0x00000000, // 168 05A 02C 00B       IO 1 ===> arm_stream_filter 
 0x00000000, // 16C 05B 030 00C       fmtCons 1 fmtProd 1 dbgreg 0 dbgcmd 0 
 0x00000101, // 170 05C 034 00D  
@@ -116,14 +116,14 @@
 0x00000000, // 1B4 06D 078 01E  
 0x0000D386, // 1B8 06E 07C 01F       nregs+r12 7 x2   stack 6 x2  heap 0h 
 0x00000000, // 1BC 06F 080 020       trace/debug 
-0x000001E4, // 1C0 070 084 021 ARC4  Base 1E4h (4h words) fmtProd_1 frameL 16.0 
-0x00000010, // 1C4 071 088 022       Size 10h[B] fmtCons_1 FrameL 16.0 jitterScaling 1.0 
+0x000001E4, // 1C0 070 084 021 ARC4  Base 1E4h (8h words) fmtProd_1 frameL 32.0 
+0x00000020, // 1C4 071 088 022       Size 20h[B] fmtCons_1 FrameL 32.0 jitterScaling 1.0 
 0x00000000, // 1C8 072 08C 023       arm_stream_filter ===> sigp_stream_detector 
 0x00000000, // 1CC 073 090 024       fmtCons 1 fmtProd 1 dbgreg 0 dbgcmd 0 
 0x00000101, // 1D0 074 094 025  
 0x00000000, // 1D4 075 098 026       trace/debug 
 // bank      size          consumed      static   +  working
-//  0     95526 ( 17526)   644 ( 284)   644 ( 284)     0 (   0)
+//  0     95526 ( 17526)   660 ( 294)   660 ( 294)     0 (   0)
 //  1     65526 (  FFF6)     0 (   0)     0 (   0)     0 (   0)
 //  2     30000 (  7530)     0 (   0)     0 (   0)     0 (   0)
 //  3     15000 (  3A98)     0 (   0)     0 (   0)     0 (   0)

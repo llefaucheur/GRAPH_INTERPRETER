@@ -380,8 +380,8 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
     {
         if (COMPARE(subgraph))
         {   stream_tool_read_subgraph (&pt_line, platform, graph);
-        }
-        if (COMPARE(set_file_path))         // set_file_path 0 ./  
+        }   
+        if (COMPARE(graph_file_path))       // graph_file_path 0 ./  
         {   fields_extract(&pt_line, "CIC", ctmp, &idx_path, paths[idx_path]); 
         }
         if (COMPARE(graph_location))        // graph_location 1 : keep the graph in Flash and copy in RAM a portion  

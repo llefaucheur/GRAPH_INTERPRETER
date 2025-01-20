@@ -47,8 +47,8 @@
 static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, sfloat *dst, sfloat src1, sfloat src2);
 static void int_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, int32_t *dst, int32_t src1, int32_t src2);
 static void test_arithmetic_operation(arm_script_instance_t *I);
-static void readreg(arm_script_instance_t *I, regdata32_t *data, int32_t srcID, uint8_t K);
-static void writreg(arm_script_instance_t *I, int32_t dstID, regdata32_t src, uint8_t dtype);
+static void readreg(arm_script_instance_t *I, regdata_t *data, int32_t srcID, uint8_t K);
+static void writreg(arm_script_instance_t *I, int32_t dstID, regdata_t *src, uint8_t dtype);
 static void jmov_operation(arm_script_instance_t *I);
 
 
@@ -60,24 +60,30 @@ static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t,
 {
     sfloat tmp; 
 
+    tmp = 0.0f;
+
     switch (opar)
     {
-    case OPAR_ADD  : FADD(tmp, src1, src2); break;  
-    case OPAR_SUB  : FSUB(tmp, src1, src2); break; 
-    case OPAR_MUL  : FMUL(tmp, src1, src2); break; 
-    case OPAR_DIV  : FDIV(tmp, src1, src2); break; 
-    case OPAR_MAX  : FMAX(tmp, src2, src1); break;
-    case OPAR_MIN  : FMIN(tmp, src2, src1); break;
-    case OPAR_AMAX : FAMAX(tmp, src2, src1); break;
-    case OPAR_AMIN : FAMAX(tmp, src2, src1); break;
-    case OPAR_OR   : tmp = I2F(F2I(src1) |  F2I(src2));         break;  // OR  iSRC1 | iSRC2 (or K)        if iSRC is a pointer then it is decoded as *(iSRC)
-    case OPAR_NOR  : tmp = I2F(!F2I(src1)|  F2I(src2));         break;  // NOR !(iSRC1 | iSRC2) (or K)         example TEST (*R1) > (*R2) + 3.14   or   R1 = (*R2) + R4
-    case OPAR_AND  : tmp = I2F(F2I(src1) &  F2I(src2));         break;  // AND iSRC1 & iSRC2 (or K)        
-    case OPAR_XOR  : tmp = I2F(F2I(src1) ^  F2I(src2));         break;  // XOR iSRC1 ^ iSRC2 (or K)        
-    case OPAR_SHR  : tmp = I2F(F2I(src1) >> F2I(src2));         break;  // SHR iSRC1 << iSRC2 (or K)       SHIFT   
-    case OPAR_SHL  : tmp = I2F(F2I(src1) << F2I(src2));         break;  // SHL iSRC1 >> iSRC2 (or K)       
-    case OPAR_SET  : tmp = I2F(F2I(src1) | (1<<F2I(src2)));     break;  // SET iSRC1 | (1 << iSRC2 (or K)) BSET      
-    case OPAR_CLR  : tmp = I2F(F2I(src1) & (~(1<<F2I(src2))));  break;  // CLR iSRC1 & (1 << iSRC2 (or K)) BCLR     TESTBIT 0/R0 OPAR_SHIFT(iSRC1, 1<<K5)
+    case OPAR_ADD  : FADD(tmp, src1, src2);                     break;  
+    case OPAR_SUB  : FSUB(tmp, src1, src2);                     break; 
+    case OPAR_RSUB : FSUB(tmp, src2, src1);                     break; 
+    case OPAR_MUL  : FMUL(tmp, src1, src2);                     break; 
+    case OPAR_DIV  : FDIV(tmp, src1, src2);                     break; 
+    case OPAR_RDIV : FDIV(tmp, src2, src1);                     break; 
+
+    case OPAR_MAX  : FMAX(tmp, src2, src1);                     break;
+    case OPAR_MIN  : FMIN(tmp, src2, src1);                     break;
+    case OPAR_AMAX : FAMAX(tmp, src2, src1);                    break;
+    case OPAR_AMIN : FAMAX(tmp, src2, src1);                    break;
+
+    case OPAR_OR   : tmp = I2F(F2I(src1) |  F2I(src2));         break;  
+    case OPAR_NOR  : tmp = I2F(!F2I(src1)|  F2I(src2));         break;  
+    case OPAR_AND  : tmp = I2F(F2I(src1) &  F2I(src2));         break;  
+    case OPAR_XOR  : tmp = I2F(F2I(src1) ^  F2I(src2));         break;  
+    case OPAR_SHR  : tmp = I2F(F2I(src1) >> F2I(src2));         break;  
+    case OPAR_SHL  : tmp = I2F(F2I(src1) << F2I(src2));         break;  
+    case OPAR_SET  : tmp = I2F(F2I(src1) | (1<<F2I(src2)));     break;  
+    case OPAR_CLR  : tmp = I2F(F2I(src1) & (~(1<<F2I(src2))));  break;  
     case OPAR_NORM :  //  NORM *iDST = normed on MSB(*iSRC1), applied shift in *iSRC2 
             {   uint32_t count = 0U, mask = 1UL << 31;  
                 
@@ -119,8 +125,10 @@ static void int_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, i
     case OPAR_NOP  : tmp = src2;                            break;
     case OPAR_ADD  : tmp = src1 + (src2);                   break;
     case OPAR_SUB  : tmp = src1 - (src2);                   break;
+    case OPAR_RSUB : tmp = src2 - (src1);                   break;
     case OPAR_MUL  : tmp = src1 * (src2);                   break;
     case OPAR_DIV  : tmp = (src2 == 0) ? 0 : src1 / src2;   break;
+    case OPAR_RDIV : tmp = (src1 == 0) ? 0 : src2 / src1;   break;
                   
     case OPAR_MAX  : tmp = MAX(src2, src1);                 break;
     case OPAR_MIN  : tmp = MIN(src2, src1);                 break;
@@ -175,102 +183,41 @@ static void optional_push (arm_script_instance_t *I, int32_t src1)
 
 
 /**
-  @brief  read SRC2/K  (SP0/SP1/regs/K) to data->i32
-          *data <- *(srcID)
-          when reading stack with SP0 the stack pointer does not move
-          when reading stack with SP1 the stack pointer is post-decremented after the move
-*/
-static void readsrc2K (arm_script_instance_t *I, regdata_t *data, uint8_t *src2ID)
-{
-    uint32_t instruction = I->instruction;
-
-    *src2ID = (uint8_t) RD(instruction, OP_SRC2_INST);
-
-    if (0 == RD(instruction, SRC2LONGK_PATTERN_INST))               // not a short constant ?
-    {   
-        if (1 == RD(instruction, OP_RKEXT_INST))                    // extended constant
-        {   *src2ID = RegNone;
-            data->v_i32[REGS_DATA] = I->byte_code[I->PC++];         // read next word of the program
-            ST(data->v_i32[REGS_TYPE], DTYPE_REGS1, 
-                RD(instruction, DTYPE_REGS1));                      // set the type
-        } 
-        else                                                        // use register src2 
-        {   
-            if (*src2ID == RegSP0)                                  // simple stack read
-            {   *data = I->REGS[I->SP];                             //  read data and type 
-            }
-            else if (*src2ID == RegSP1)                             // pop data (SP --)
-            {   *data = I->REGS[I->SP];                             //  read data and type 
-                I->SP --;
-                if (I->SP < I->nregs)                               // check stack underflow
-                {   I->errors |= ERROR_STACK_UNDERFLOW;
-                    I->SP ++;
-                }
-            }
-            else                                                    // read register data
-            {   *data = I->REGS[*src2ID];                           //  read data and type 
-            }
-        }
-    }
-    else 
-    {   *src2ID = RegNone;
-        data->i32 = RD(instruction, OP_K_INST)-UNSIGNED_K_OFFSET;   // 12bits signed short constant
-        ST(data->v_i32[REGS_TYPE], DTYPE_REGS1, DTYPE_INT32);       //  signed int32
-    }        
-}
-
-
-
-/**
   @brief  read register
           *data <- *(srcID)
 */
-static void readreg(arm_script_instance_t *I, regdata32_t *data, int32_t srcID, uint8_t K)
+static void readreg(arm_script_instance_t *I, regdata_t *data, int32_t srcID, uint8_t K) 
 {
     uint32_t instruction = I->instruction;
 
     if (K)
     {   if (0 == RD(instruction, SRC2LONGK_PATTERN_INST))
         {   if (1 == RD(instruction, OP_RKEXT_INST))    // extended constant
-            {   data->i32 = I->byte_code[I->PC++];
-                switch (RD(instruction, DTYPE_REGS1))
-                {
-                case DTYPE_UINT8 : case DTYPE_UINT16: case DTYPE_INT16 : case DTYPE_UINT32: 
-                case DTYPE_INT32 : case DTYPE_TIME32: case DTYPE_PTR28B: 
-                    /* k = reg_src2K.v_i32[REGS_DATA].i32; */
-                    break;
-                case DTYPE_FP16  : case DTYPE_FP32  : //case DTYPE_FP64  : 
-                    /* kl.f32 */
-                    break;
-                //case DTYPE_INT64 : case DTYPE_TIME64: 
-                //    /* read one more word */
-                //    data->i32 = I->byte_code[I->PC++];
-                //    break;
-                }
+            {   data->v_i32[REGS_DATA] = I->byte_code[I->PC++];
+                data->v_i32[REGS_TYPE] = RD(instruction, DTYPE_REGS1);
             } 
-            else                                        // use register src2 
-            {   
-                if (srcID == RegSP0)                    // simple stack read
-                {   data->i32 = I->REGS[I->SP].v_i32[REGS_DATA];
+            else                                        
+            {   if (srcID == RegSP0)                    // simple stack read + dtype
+                {   *data = I->REGS[I->SP];
                 }
                 else if (srcID == RegSP1)               // pop data (SP --)
-                {   data->i32 = I->REGS[I->SP].v_i32[REGS_DATA]; 
+                {   *data = I->REGS[I->SP]; 
                     I->SP --;
                 }
-                else                                    // read register data
-                {   data->i32 = I->REGS[srcID].v_i32[REGS_DATA];
+                else                                    // read register data + dtype
+                {   *data = I->REGS[srcID];
                 }
             }
         }
         else 
-        {   data->i32 = RD(instruction, OP_K_INST);     // 14bits signed short constant
-            data->i32 = (data->i32) - UNSIGNED_K_OFFSET; // [-2016  2048]
+        {   data->v_i32[REGS_DATA] = RD(instruction, OP_K_INST);    // 12bits signed short constant
+            data->v_i32[REGS_DATA] -= UNSIGNED_K_OFFSET;            // [-2016  2048]
+            data->v_i32[REGS_TYPE] = DTYPE_INT32;
         }        
     }
     /* read src2 */
     else
-    {
-        data->i32 = I->REGS[srcID].v_i32[REGS_DATA];
+    {   *data = I->REGS[srcID];                         // read src2 data + dtype
     }
 }
 
@@ -280,7 +227,7 @@ static void readreg(arm_script_instance_t *I, regdata32_t *data, int32_t srcID, 
         operation : 
           (*dstID)  <-  *(src data) + dtype
 */
-static void writreg(arm_script_instance_t *I, int32_t dstID, regdata32_t src, uint8_t dtype)
+static void writreg(arm_script_instance_t *I, int32_t dstID, regdata_t *src, uint8_t dtype)
 {
     regdata_t *pdst;
 
@@ -299,7 +246,7 @@ static void writreg(arm_script_instance_t *I, int32_t dstID, regdata32_t src, ui
     {   pdst = &(I->REGS[dstID]);
     }
 
-    pdst->v_i32[REGS_DATA] = src.i32;
+    pdst->v_i32[REGS_DATA] = src->v_i32[REGS_DATA];
     pdst->v_i32[REGS_TYPE] = dtype;
 }
 
@@ -317,11 +264,10 @@ static void jmov_operation(arm_script_instance_t *I)
 
     // stack pointer increment is interpreted from right to left when reading the line 
     // STACK INCREMENT : pre-check SRC2 on :
-    //  test SRC2=SP1 on OPLJ_BASE OPLJ_SIZE OPLJ_SCATTER OPLJ_GATHER OPLJ_CALLSYS
-    if (opar == OPLJ_BASE || opar == OPLJ_SIZE || opar == OPLJ_SCATTER || opar == OPLJ_GATHER ||opar == OPLJ_CALLSYS)
+    //  test SRC2=SP1 on OPLJ_BASE OPLJ_SIZE OPLJ_SCATTER OPLJ_GATHER OPLJ_SYSCALL
+    if (opar == OPLJ_BASE || opar == OPLJ_SIZE || opar == OPLJ_SCATTER || opar == OPLJ_GATHER ||opar == OPLJ_SYSCALL)
     {   
     }
-
 
     src1= (uint8_t)RD(instruction, OP_SRC1_INST);
     if (src1 == RegSP0) 
@@ -342,9 +288,16 @@ static void jmov_operation(arm_script_instance_t *I)
 
 
     reg_src2K.v_i32[REGS_DATA] = 0; reg_src2K.v_i32[REGS_TYPE] = 0;
-    readsrc2K(I, &reg_src2K, &src2);
-    K = reg_src2K.v_i32[REGS_DATA]; // can be float ..
+    src2 =  RD(instruction, OP_SRC2_INST);
+    readreg(I, &reg_src2K, src2, 1);
 
+    // can be a float, convert it to int32
+    if (RD(I->REGS[src2].v_i32[REGS_TYPE], DTYPE_REGS1) > DTYPE_INT32)
+    {   I->REGS[src2].v_i32[REGS_DATA] = (int32_t)(I->REGS[src2].v_f32[REGS_DATA]);
+        ST(I->REGS[src2].v_i32[REGS_TYPE], DTYPE_REGS1, DTYPE_INT32);
+    }
+
+    K = reg_src2K.v_i32[REGS_DATA]; 
 
     switch (opar)
     {
@@ -410,7 +363,7 @@ static void jmov_operation(arm_script_instance_t *I)
         p8src = (uint8_t *)&(I->REGS[src1].v_i32[REGS_DATA]);
         p8dst = &(p8dst[index]);
 
-        /* cast the source to the type of the destination to allow by te addressing */ 
+        /* cast the source to the type of the destination to allow byte addressing */ 
         switch (dsttype)
         {
         case DTYPE_UINT8:  nbytes = 1; break;
@@ -557,17 +510,31 @@ static void jmov_operation(arm_script_instance_t *I)
         optional_push(I, dst);  optional_push(I, src1);  
         break;
 
-    // system call : callsys 63 r1 r2 r3 r4
-    // IIyyy-OPARDST_SRC1SRC3SRC4<-K6->  OPLJ_CALLSYS
-    case OPLJ_CALLSYS : // CALLSYS  {K11} system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW, Pointers)  
+    // IIyyy-OPARDST_SRC1SRC3SRC4<-K6->  OPLJ_SYSCALL K6 R1(dst) R2(src1) R3(src3) R4(src4)
+    // FEDCBA9876543210FEDCBA9876543210
+    /*
+    | Syscall 1st index                | register parameters                                          |
+    | -------------------------------- | ------------------------------------------------------------ |
+    | 1 (access to nodes)              | R1: address of the node<br/>R2: command (tag, reset id, cmd)<br/>    set/read parameter=2/3<br/>R3: address of data<br/>R4: number of bytes |
+    | 2 (access to arcs)               | R1: arc's ID<br/>R2: command <br/>    set/read data=8/9<br/>R3: address of data<br/>R4: number of bytes |
+    | 3 (callbacks of the application) | R1: application_callback's ID<br/>R2: parameter1 (depends on CB)<br/>R3: parameter2 (depends on CB)<br/>R4: parameter3 (depends on CB) |
+    | 4 (IO settings)                  | R1: IO's graph index<br/>R2: command <br/>    set/read parameter=2/3<br/>R3: address of data<br/>R4: number of bytes |
+    | 5 (debug and trace)              | TBD                                                          |
+    | 6 (computation)                  | TBD                                                          |
+    | 7 (low-level functions)          | TBD, peek/poke directly to memory, direct access to IOs (I2C driver, GPIO setting, interrupts generation and settings) |
+    | 8 (idle controls)                | TBD, Share to the application the recommended Idle strategy to apply (small or deep-sleep). |
+    | 9 (time)                         | R1: command and time format <br/>R2: parameter1 (depends on CB)<br/>R3: parameter2 (depends on CB)<br/>R4: parameter3 (depends on CB) |
+    */
+    case OPLJ_SYSCALL : // SYSCALL  {K11} system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW, Pointers)  
         {   
         const p_stream_al_services *al_func;
-        uint8_t K_service = (uint8_t)RD(instruction, CALLSYS_K_INST); 
+        uint8_t K_service = (uint8_t)RD(instruction, SYSCALL_K_INST); 
         uint8_t src3 = (uint8_t)RD(instruction, OP_SRC3_INST); 
         uint8_t src4 = (uint8_t)RD(instruction, OP_SRC4_INST); 
 
+        /* void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3, uint32_t n); */
         al_func = &(I->S->al_services);
-        (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV, PLATFORM_CLEAR_BACKUP_MEM, K_service), 
+        (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV, SERV_INTERNAL_PLATFORM_CLEAR_BACKUP_MEM, K_service), 
             (void *)(I->REGS[dst].v_i32[REGS_DATA]),  
             (void *)(I->REGS[src1].v_i32[REGS_DATA]),
             (void *)(I->REGS[src3].v_i32[REGS_DATA]),
@@ -620,24 +587,40 @@ static void jmov_operation(arm_script_instance_t *I)
 */
 static void test_arithmetic_operation(arm_script_instance_t *I)
 {
-    regdata32_t dst, src1, src2;
+    regdata_t dst, src1, src2;
+    uint8_t db1, db2, dbdst;
+
     uint8_t t = (uint8_t)(I->test_flag); 
     int32_t instruction = I->instruction;
     int8_t opcode = (uint8_t)RD(instruction, OP_INST);
     int8_t opar = (uint8_t)RD(instruction, OP_OPAR_INST);
 
-    /* ONLY INTEGERS */
-    {   uint8_t db1, db2, dbdst;
-        db1 = (uint8_t)RD(instruction, OP_SRC1_INST);
-        db2 = (uint8_t)RD(instruction, OP_SRC2_INST);
-        dbdst=(uint8_t)RD(instruction, OP_DST_INST);
-        db2 = db2;
+    db1 = (uint8_t)RD(instruction, OP_SRC1_INST);
+    db2 = (uint8_t)RD(instruction, OP_SRC2_INST);
+    dbdst=(uint8_t)RD(instruction, OP_DST_INST);
+    db1 = (uint8_t)RD(I->REGS[db1].v_i32[REGS_TYPE], DTYPE_REGS1);
+    db2 = (uint8_t)RD(I->REGS[db2].v_i32[REGS_TYPE], DTYPE_REGS1);
 
-        readreg(I, &src2, RD(instruction, OP_SRC2_INST), 1);
-        readreg(I, &src1, RD(instruction, OP_SRC1_INST), 0);
-        readreg(I, &dst,  RD(instruction, OP_DST_INST) , 0);
-        int_arithmetic_operation(opcode, opar, &t, &(dst.i32), src1.i32, src2.i32);
-        writreg(I, RD(instruction, OP_DST_INST), dst, DTYPE_INT32);
+
+    readreg(I, &src2, db1,  1);
+    readreg(I, &src1, db2,  0);
+    readreg(I, &dst, dbdst, 0);
+
+    if (db1 <= DTYPE_INT32 && db2 <= DTYPE_INT32)
+    {   int_arithmetic_operation(opcode, opar, &t, &(dst.v_i32[REGS_DATA]), src1.v_i32[REGS_DATA], src2.v_i32[REGS_DATA]);
+        writreg(I, dbdst, &dst, DTYPE_INT32);
+    } 
+    else
+    {   if (db1 != DTYPE_FP32)
+        {   I->REGS[db1].v_f32[REGS_DATA] = (sfloat)(I->REGS[db1].v_i32[REGS_DATA]);
+            I->REGS[db1].v_i32[REGS_TYPE] = DTYPE_FP32;
+        }
+        if (db2 != DTYPE_FP32)
+        {   I->REGS[db2].v_f32[REGS_DATA] = (sfloat)(I->REGS[db1].v_i32[REGS_DATA]);
+            I->REGS[db2].v_i32[REGS_TYPE] = DTYPE_FP32;
+        }
+        float_arithmetic_operation(opcode, opar, &t, &(dst.v_f32[REGS_DATA]), src1.v_f32[REGS_DATA], src2.v_f32[REGS_DATA]);
+        writreg(I, dbdst, &dst, DTYPE_FP32);
     }
 
     I->test_flag = t;

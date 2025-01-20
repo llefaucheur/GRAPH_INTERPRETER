@@ -474,8 +474,8 @@ enum stream_processor_sub_arch_fpu
     #define STREAM_UPDATE_RELOCATABLE 6u /* update the nanoAppRT pointers to relocatable memory segments */
 
     #define STREAM_SET_BUFFER       7u   /* platform_IO(STREAM_SET_BUFFER, *data, size)  */
-    #define STREAM_READ_DATA        8u   /* COMMAND_SSRV callsys read access to arc data */
-    #define STREAM_WRITE_DATA       9u   /* COMMAND_SSRV callsys write access to arc data */
+    #define STREAM_READ_DATA        8u   /* COMMAND_SSRV syscall read access to arc data */
+    #define STREAM_WRITE_DATA       9u   /* COMMAND_SSRV syscall write access to arc data */
 
     #define NOWAIT_OPTION_SSRV      0u   /* OPTION_SSRV  stall or not the COMMAND */
     #define   WAIT_OPTION_SSRV      1u
@@ -527,47 +527,64 @@ enum stream_processor_sub_arch_fpu
 #define NOOPTION_SSRV 0u
 #define NOTAG_SSRV 0u
 
-/* arm_stream_services COMMAND */
+/* -------------------------------------------------------
+    arm_stream_services                 CottfFFg 
+            
+            Command                     C
+            Option                       o
+            TAG                           tt
+            sub Function                    f
+            Function                         FF
+            Service Group                      g
+   -------------------------------------------------------
+*/
 #define  COMMAND_SSRV_MSB U(31)       
-#define  COMMAND_SSRV_LSB U(28) /* 4   set/init/run w/wo wait completion, in case of coprocessor usage */
+#define  COMMAND_SSRV_LSB U(28) /* 4   C   set/init/run w/wo wait completion, in case of coprocessor usage */
 #define   OPTION_SSRV_MSB U(27)       
-#define   OPTION_SSRV_LSB U(24) /* 4   compute accuracy, in-place processing, frame size .. */
+#define   OPTION_SSRV_LSB U(24) /* 4   o   compute accuracy, in-place processing, frame size .. */
 #define      TAG_SSRV_MSB U(23)       
-#define      TAG_SSRV_LSB U(16) /* 8   parameter of the function  */
+#define      TAG_SSRV_LSB U(16) /* 8   tt  parameter of the function  */
 #define FUNCTION_SSRV_MSB U(15)       
 #define SUBFUNCT_SSRV_MSB U(15)       
-#define SUBFUNCT_SSRV_LSB U(12) /* 4   16 sub functions or parameters on MSB */
-#define FUNCTION_SSRV_LSB U( 4) /* 12  functions/group x 16 subfunct, total = 4K */
+#define SUBFUNCT_SSRV_LSB U(12) /* 4   f   16 sub functions or parameters on MSB */
+#define FUNCTION_SSRV_LSB U( 4) /* 12  fFF functions/group x 16 subfunct, total = 4K */
 #define    GROUP_SSRV_MSB U( 3)       
-#define    GROUP_SSRV_LSB U( 0) /* 4   16 service groups */
+#define    GROUP_SSRV_LSB U( 0) /* 4   g   16 service groups */
 
 
-#define PACK_SERVICE(CTRL,OPTION,TAG,FUNC,GROUP) \
-     ((CTRL)  <<COMMAND_SSRV_LSB)  | \
-   ( ((OPTION)<<OPTION_SSRV_LSB)   | \
-   ( ((TAG)   <<TAG_SSRV_LSB)      | \
-   ( ((FUNC)  <<FUNCTION_SSRV_LSB) | \
-     ((GROUP) <<GROUP_SSRV_LSB)     )))
+#define PACK_SERVICE(COMMAND,OPTION,TAG,FUNC,GROUP) \
+     ((COMMAND)<<COMMAND_SSRV_LSB)  | \
+   ( ((OPTION) <<OPTION_SSRV_LSB)   | \
+   ( ((TAG)    <<TAG_SSRV_LSB)      | \
+   ( ((FUNC)   <<FUNCTION_SSRV_LSB) | \
+     ((GROUP)  <<GROUP_SSRV_LSB)     )))
 
-/* mask for node_mask_library, is there a need for a registered return address (Y/N)  (TBD @@@) */
-#define SERV_GROUP_INTERNAL     1u  /* 1   N internal */
-#define SERV_GROUP_SCRIPT       2u  /* 2   N script  */
-#define SERV_GROUP_CONVERSION   3u  /* 4   N */
-#define SERV_GROUP_STDLIB       4u  /* 8   Y */
-#define SERV_GROUP_MATH         5u  /* 16  N */
-#define SERV_GROUP_DSP_ML       6u  /* 32  N */
-#define SERV_GROUP_DEEPL        7u  /* 64  N */
-#define SERV_GROUP_MM_AUDIO     8u  /* 128 Y */
-#define SERV_GROUP_MM_IMAGE     9u  /* 256 Y */
-
-
+/* mask for node_mask_library, is there a need for a registered return address (Y/N)  */
+#define SERV_GROUP_INTERNAL     1u  /* 1   N internal : Semaphores, DMA, Clocks */
+#define SERV_GROUP_SCRIPT       2u  /* 2   N script : Node parameters  */
+#define SERV_GROUP_CONVERSION   3u  /* 4   N Compute : raw conversions */
+#define SERV_GROUP_STDLIB       4u  /* 8   Y Compute : malloc, string */
+#define SERV_GROUP_MATH         5u  /* 16  N math.h */
+#define SERV_GROUP_DSP_ML       6u  /* 32  N cmsis-dsp */
+#define SERV_GROUP_DEEPL        7u  /* 64  N cmsis-nn */
+#define SERV_GROUP_MM_AUDIO     8u  /* 128 Y speech/audio processing */
+#define SERV_GROUP_MM_IMAGE     9u  /* 256 Y image processing */
 
 
+
+/* --------------------------------------------------------------------------- */
 /* GROUP_SSRV = 2/SERV_SCRIPT ------------------------------------------------ */
-//for scripts:
+/* --------------------------------------------------------------------------- */
 
-    /* CALLSYS_NODE (CMD=set/read_param + TAG, Node offset, Pointer, Nbytes) */
-    #define CALLSYS_FUNCTION_SSRV_NODE      1u       
+/*     List of                      FUNCTION_SSRV  (12bits) */
+#define SERV_SCRIPT_RESET               0x001
+#define SERV_SCRIPT_NODE                0x002
+#define SERV_SCRIPT_SCRIPT              0x003  /* node control from scripts */
+                                       
+#define SERV_SCRIPT_FORMAT_UPDATE       0x004  /* change stream format from NODE media decoder, script applying change of 
+                                                use-case (IO_format, vocoder frame-size..): sampling, nb of channel, 2D frame size */
+    /* SYSCALL_NODE (CMD=set/read_param + TAG, Node offset, Pointer, Nbytes) */
+    #define SYSCALL_FUNCTION_SSRV_NODE      1u       
 
 /*      #define STREAM_RESET                1
         #define STREAM_SET_PARAMETER        2
@@ -580,11 +597,38 @@ enum stream_processor_sub_arch_fpu
         #define STREAM_WRITE_DATA           9
 
 
+//#define SERV_SCRIPT_FORMAT_UPDATE_FS 3u /* NODE information for a change of stream format, sampling, nb of channel */
+//#define SERV_SCRIPT_FORMAT_UPDATE_NCHAN 4u     /* raw data sample, mapping of channels, (web radio use-case) */
+//#define SERV_SCRIPT_FORMAT_UPDATE_RAW 5u
+
+#define SERV_SCRIPT_SECURE_ADDRESS      0x106   /* this call is made from the secured address */
+#define SERV_SCRIPT_AUDIO_ERROR         0x107   /* PLC applied, Bad frame (no header, no synchro, bad data format), bad parameter */
+#define SERV_SCRIPT_DEBUG_TRACE         0x108   /* 1b, 1B, 16char */
+#define SERV_SCRIPT_DEBUG_TRACE_STAMP   0x109   
+#define SERV_SCRIPT_AVAILABLE           0x10A   
+#define SERV_SCRIPT_SETARCDESC          0x10B   /* buffers holding MP3 songs.. rewind from script, 
+                                                   switch a NN model to another, change a parameter-set using arcs */
+
+
+//SERV_SCRIPT_DEBUG_TRACE, SERV_SCRIPT_DEBUG_TRACE_1B, SERV_SCRIPT_DEBUG_TRACE_DIGIT, 
+// 
+//SERV_SCRIPT_DEBUG_TRACE_STAMPS, SERV_SCRIPT_DEBUG_TRACE_STRING,
+// 
+//STREAM_SAVE_HOT_PARAMETER, 
+
+//STREAM_LOW_POWER,     /* interface to low-power platform settings, "wake-me in 24h with deep-sleep in-between" */
+//                          " I have nothing to do most probably for the next 100ms, do what is necessary "
+
+//STREAM_PROC_ARCH,     /* returns the processor architecture details, used before executing specific assembly codes */
+
+
+/*
+
         
-        script language : CALLSYS ARC  r-CMD r-ARC r-ADDR r-N
+        script language : SYSCALL ARC  r-CMD r-ARC r-ADDR r-N
                                   FUNC   SET arcID addr   n 
 
-        CALLSYS 1 (NODE = FUNCTION_SSRV)
+        SYSCALL 1 (NODE = FUNCTION_SSRV)
             r-node      node address
             r-cmd       reset id + set_param
             r-addr      data address
@@ -593,7 +637,7 @@ enum stream_processor_sub_arch_fpu
         script interpreter :
             (*al_func)(
                 PACK_SERVICE(STREAM_READ_DATA, NOWAIT_OPTION_SSRV, PARAM_TAG, 
-                    CALLSYS_FUNCTION_SSRV_NODE, SERV_GROUP_SCRIPT), 
+                    SYSCALL_FUNCTION_SSRV_NODE, SERV_GROUP_SCRIPT), 
                 offset to the node from graph_computer_header.h (ex: #define arm_stream_filter_0  0x15)
                 address of the data move,
                 unused
@@ -601,16 +645,16 @@ enum stream_processor_sub_arch_fpu
              );
     */
 
-    /* CALLSYS_ARC (CMD read/set_param_descriptor, read/write_data, arc ID, Pointer, Nbytes) 
+    /* SYSCALL_ARC (CMD read/set_param_descriptor, read/write_data, arc ID, Pointer, Nbytes) 
         descriptor = filling/empty state, locked flag, R/W index, buffer size
             debug information, time-stamp of the last access
             format update ? FS, frame-size ?
         read_data option : without updating the read pointer
 
-        script language : CALLSYS ARC r-CMD r-ARC r-ADDR r-N
+        script language : SYSCALL ARC r-CMD r-ARC r-ADDR r-N
         (*al_func)(
             PACK_SERVICE(STREAM_READ_DATA, NOWAIT_OPTION_SSRV, PARAM_TAG, 
-                CALLSYS_FUNCTION_SSRV_ARC, SERV_GROUP_SCRIPT), 
+                SYSCALL_FUNCTION_SSRV_ARC, SERV_GROUP_SCRIPT), 
             arcID
             address of the data to be read,
             unused
@@ -618,25 +662,25 @@ enum stream_processor_sub_arch_fpu
             );
 
     */
-    #define CALLSYS_FUNCTION_SSRV_ARC       2u
+    #define SYSCALL_FUNCTION_SSRV_ARC       2u
 
-    /* CALLSYS_CALLBACK (CMD , r1, r2, r3, r4) 
+    /* SYSCALL_CALLBACK (CMD , r1, r2, r3, r4) 
             depends on the application. Address the case of Arduino libraries
             example specific : IP address, password to share, Ping IP to blink the LED, read RSSI, read IP@
     */
-    #define CALLSYS_FUNCTION_SSRV_CALLBACK  3u
+    #define SYSCALL_FUNCTION_SSRV_CALLBACK  3u
 
-    /* CALLSYS_IO       CMD(=set/read_param) FWIOIDX_IOFMT0 to select another A/D or GPIO (when the graph is in RAM)
+    /* SYSCALL_IO       CMD(=set/read_param) FWIOIDX_IOFMT0 to select another A/D or GPIO (when the graph is in RAM)
                         CMD(=read/write_data) domain-specific settings
                         CMD(=stop/reset/run) stop and initiate data transfer
     */
-    #define CALLSYS_FUNCTION_SSRV_IO        4u
+    #define SYSCALL_FUNCTION_SSRV_IO        4u
 
-    /* CALLSYS_DEBUG    receive remote commands, send string of debug data
+    /* SYSCALL_DEBUG    receive remote commands, send string of debug data
     */
-    #define CALLSYS_FUNCTION_SSRV_DEBUG     5u
+    #define SYSCALL_FUNCTION_SSRV_DEBUG     5u
 
-    /* CALLSYS_COMPUTE  call compute library
+    /* SYSCALL_COMPUTE  call compute library
     *                   Compute Median/absMax from data in a circular buffer of the Heap + mean/STD
 
         Math library: Commonly used single-precision floating-point functions:
@@ -644,18 +688,18 @@ enum stream_processor_sub_arch_fpu
             Exponential/power functions: expf, log2f, powf, sqrtf
             Trigonometric/hyperbolic functions: sinf, cosf, tanf, asinf, acosf, atan2f, tanhf 
     */
-    #define CALLSYS_FUNCTION_SSRV_COMPUTE   6u
+    #define SYSCALL_FUNCTION_SSRV_COMPUTE   6u
                                           
-    /* CALLSYS_TIME_IDLE    Timer setting, read the time in different formats (16/32/64/delta)
+    /* SYSCALL_TIME_IDLE    Timer setting, read the time in different formats (16/32/64/delta)
                         default idle mode commands
                         compute time elapsed from today, from a reference, from reset, UTC/local time
     */
-    #define CALLSYS_FUNCTION_SSRV_TIME_IDLE 7u
+    #define SYSCALL_FUNCTION_SSRV_TIME_IDLE 7u
 
-    /* CALLSYS_LOWLEVEL     TBD : low-level I2C/peripheral/memory access
+    /* SYSCALL_LOWLEVEL     TBD : low-level I2C/peripheral/memory access
     *                   Call a relocatable native-binary section in the Param area
     */
-    #define CALLSYS_FUNCTION_SSRV_LOWLEVEL  8u
+    #define SYSCALL_FUNCTION_SSRV_LOWLEVEL  8u
 
     // for scripts/Nodes: fast data moves
     #define SERV_SCRIPT_DMA_SET             9u      /* set src/dst/length */
@@ -663,12 +707,15 @@ enum stream_processor_sub_arch_fpu
     #define SERV_SCRIPT_DMA_STOP           11u
     #define SERV_SCRIPT_DMA_CHECK          12u
 
-
-/* GROUP_SSRV = 3/SERV_CONVERSION ------------------------------------------------ */
+/* --------------------------------------------------------------------------- */
+/* GROUP_SSRV = 3/SERV_CONVERSION -------------------------------------------- */
+/* --------------------------------------------------------------------------- */
     #define SERV_CONVERSION_INT16_FP32 1
 
 
+/* --------------------------------------------------------------------------- */
 /* GROUP_SSRV = 4/SERV_STDLIB ------------------------------------------------ */
+/* --------------------------------------------------------------------------- */
 
     /* stdlib.h */
     /* string.h */
@@ -689,7 +736,9 @@ enum stream_processor_sub_arch_fpu
     #define STREAM_MALLOC   14u
 
 
-/* GROUP_SSRV = 5/SERV_MATH ------------------------------------------------ */
+/* --------------------------------------------------------------------------- */
+/* GROUP_SSRV = 5/SERV_MATH -------------------------------------------------- */
+/* --------------------------------------------------------------------------- */
 
     /* minimum service : tables of 64 data RAND, SRAND */
     #define STREAM_RAND     1 /* (STREAM_RAND + OPTION_SSRV(seed), *ptr1, 0, 0, n) */
@@ -732,7 +781,9 @@ enum stream_processor_sub_arch_fpu
     #define SERV_SORT           3 
 
 
+/* --------------------------------------------------------------------------- */
 /* GROUP_SSRV = 6/SERV_DSP_ML ------------------------------------------------ */
+/* --------------------------------------------------------------------------- */
 
     /* minimum service : IIRQ15/FP32, DFTQ15/FP32 */
             /* FUNCTION_SSRV */
@@ -763,7 +814,9 @@ enum stream_processor_sub_arch_fpu
 
 
 
+/* --------------------------------------------------------------------------- */
 /* GROUP_SSRV = 7/SERV_DEEPL ------------------------------------------------ */
+/* --------------------------------------------------------------------------- */
 
         /* COMMAND_SSRV */
 
@@ -774,7 +827,9 @@ enum stream_processor_sub_arch_fpu
     #define STREAM_CNN                  /* convolutional NN : 3x3 5x5 fixed-weights */
 
 
+/* --------------------------------------------------------------------------- */
 /* GROUP_SSRV = 8/SERV_MM_AUDIO ------------------------------------------------ */
+/* --------------------------------------------------------------------------- */
 
         /* COMMAND_SSRV */
 
@@ -782,7 +837,9 @@ enum stream_processor_sub_arch_fpu
 
         /* FUNCTION_SSRV */
 
+/* --------------------------------------------------------------------------- */
 /* GROUP_SSRV = 9/SERV_MM_IMAGE ------------------------------------------------ */
+/* --------------------------------------------------------------------------- */
 
         /* COMMAND_SSRV */
 
@@ -935,7 +992,7 @@ enum stream_processor_sub_arch_fpu
 #define STREAM_FP16      20u /* Seeeeemm.mmmmmmmm  half-precision float */
 #define STREAM_BF16      21u /* Seeeeeeee.mmmmmmm  bfloat truncated FP32 = BFP16 = S E8 M7 */
 #define STREAM_Q23       22u /* Sxxxxxxx.xxxxxxxx.xxxxxxxx  24bits */                    /* 3 bytes per data */ 
-#define STREAM_Q23_32    23u /* SSSSSSSS.Sxxxxxxx.xxxxxxxx.xxxxxxxx  */                  /* 4 bytes per data */
+#define STREAM_S8_24     23u /* SSSSSSSS.xxxxxxxx.xxxxxxxx.xxxxxxxx  */                  /* 4 bytes per data, s8_24 */
 #define STREAM_S32       24u /* one long word  */
 #define STREAM_U32       25u /* xxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx UTF-32, .. */
 #define STREAM_Q31       26u /* Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx  */

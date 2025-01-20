@@ -124,39 +124,61 @@ uint8_t itoab(char *s, int32_t n, int base)
  */
 static void arm_stream_services_internal(uint32_t command, void *ptr1, void *ptr2, void* ptr3, uint32_t n)
 {
-    switch (command)
-    {   case SERV_INTERNAL_NODE_REGISTER: /* called during STREAM_NODE_DECLARATION to register the NODE callback */
-        {   
-            #ifndef _MSC_VER 
-            //rtn_addr = __builtin_return_address(0); // check the lr matches with the node 
-            #endif
+    switch (RD(command, FUNCTION_SSRV))
+    {   
+        case SERV_INTERNAL_PLATFORM_CLEAR_BACKUP_MEM:
+        {   /* clear backup memory uint8_t BACKUPMEM1[SIZE_MBANK_BACKUPMEM1];  */
+            extern uint8_t BACKUPMEM1[];
+            memset(BACKUPMEM1, 0, SIZE_MBANK_BACKUPMEM1);
             break;
         }
 
-        /* ----------------------------------------------------------------------------------
-            arm_stream_services(PACK_SERVICE(instance index, NOTAG_SSRV,  SERV_INTERNAL_DEBUG_TRACE), *string_address, 0, nb bytes);
 
-            1: trace type bits 0,1,2(3) = OPTION_SSRV
-                bit0: bit-data on bit3, 
-                bit1: byte-data = TAG_SSRV 
-                bit2:string of characters at the address of parameter
+        //  multiprocessing mutual exclusion services 
+        //  (*al_func)(PACK_SERVICE(0,0,0,SERV_INTERNAL_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP,SERV_GROUP_INTERNAL), 
+        //    S->pt8b_collision_arc, &check, &whoAmI, 0);
+        //   
+        case SERV_INTERNAL_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP:
+        {
+            volatile uint8_t *pt8 = ptr1;
+            volatile uint8_t *returned_flag = ptr2;
+            volatile uint8_t *whoAmI = ptr3;
 
-            2: address of the string of characters
+            /* attempt to reserve the node */
+            *pt8 = *whoAmI;    
 
-         */
-        case SERV_INTERNAL_DEBUG_TRACE:
-        {   break;
+            /* check collision with all the running processes using the equivalent of lock() and unlock() 
+               Oyama Lock, "Towards more scalable mutual exclusion for multicore architectures" by Jean-Pierre Lozi */
+            INSTRUCTION_SYNC_BARRIER;
+            DATA_MEMORY_BARRIER;
+
+            *returned_flag = (*pt8 == *whoAmI);
+            break;
         }
 
-        /* toggle a flag to insert/remove the time-stamps on each data pushed in the debug trace */
-        case SERV_INTERNAL_DEBUG_TRACE_STAMPS:
-        {   break;
+        case SERV_INTERNAL_MUTUAL_EXCLUSION_WR_BYTE_MP:
+        {   volatile uint8_t *pt8 = ptr1;
+            volatile uint8_t *data = ptr2;
+            
+            *(volatile uint8_t *)(pt8) = (*data); 
+            DATA_MEMORY_BARRIER; 
+            break;
         }
 
-        /* stream format of an OUTPUT arc is changed on-the-fly : 
-            update bit-fields of nchan, FS, units, interleaving, audio mapping, RAW format */
-        case SERV_INTERNAL_FORMAT_UPDATE:
-        {   /* checks the index of the NODE arc and update the format for the format converter or the next consumer */ 
+        case SERV_INTERNAL_MUTUAL_EXCLUSION_RD_BYTE_MP:
+        {   volatile uint8_t *pt8 = ptr1;
+            volatile uint8_t *data = ptr2;
+         
+            DATA_MEMORY_BARRIER; 
+            (*data) = *(volatile uint8_t *)(pt8);
+            break;
+        }
+
+        case SERV_INTERNAL_MUTUAL_EXCLUSION_CLEAR_BIT_MP:
+        {   volatile uint8_t *pt8b = ptr1;
+         
+            ((*pt8b) = U(*pt8b) & U(~(U(1) << U(n)))); 
+            DATA_MEMORY_BARRIER;
             break;
         }
 
@@ -185,7 +207,7 @@ static void arm_stream_services_internal(uint32_t command, void *ptr1, void *ptr
   @par          
   @remark
  */
-static void arm_stream_services_flow (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
+static void arm_stream_services_script (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
     // SECTIONS OF ARC APIs
     /*
@@ -194,6 +216,47 @@ static void arm_stream_services_flow (uint32_t command, uint8_t* ptr1, uint8_t* 
     * Read/write to arcs, return the pointer to read/write for scripts
     * Data moves w/wo DMA
     */
+    switch (RD(command, FUNCTION_SSRV))
+    {   case SERV_SCRIPT_NODE:          /* called during STREAM_NODE_DECLARATION to register the NODE callback */
+        {   
+            #ifndef _MSC_VER 
+            //rtn_addr = __builtin_return_address(0); // check the lr matches with the node 
+            #endif
+            break;
+        }
+
+        case SERV_SCRIPT_SCRIPT:
+        {
+            break; //"""""""""""""""""""""
+        }
+        /* ----------------------------------------------------------------------------------
+            arm_stream_services(PACK_SERVICE(instance index, NOTAG_SSRV,  SERV_SCRIPT_DEBUG_TRACE), *string_address, 0, nb bytes);
+
+            1: trace type bits 0,1,2(3) = OPTION_SSRV
+                bit0: bit-data on bit3, 
+                bit1: byte-data = TAG_SSRV 
+                bit2:string of characters at the address of parameter
+
+            2: address of the string of characters
+
+         */
+        case SERV_SCRIPT_DEBUG_TRACE:
+        {   break;
+        }
+
+        /* toggle a flag to insert/remove the time-stamps on each data pushed in the debug trace */
+        case SERV_SCRIPT_DEBUG_TRACE_STAMP:
+        {   break;
+        }
+
+        /* stream format of an OUTPUT arc is changed on-the-fly : 
+            update bit-fields of nchan, FS, units, interleaving, audio mapping, RAW format */
+        case SERV_SCRIPT_FORMAT_UPDATE:
+        {   /* checks the index of the NODE arc and update the format for the format converter or the next consumer */ 
+            break;
+        }
+
+    }
 }
 
 /**
@@ -387,7 +450,7 @@ void arm_stream_command_interpreter (uint32_t command, uint8_t* ptr1, uint8_t* p
 
                 Compute services can be called from any place in the code
                 Sensitive services (data moves, key exchanges, spinlock access, ..) must be called from 
-                    the same placed registered at reset time with SERV_INTERNAL_SECURE_ADDRESS
+                    the same placed registered at reset time with SERV_SCRIPT_SECURE_ADDRESS
 
   @remark
  */
@@ -401,36 +464,36 @@ void arm_stream_services (
 {   
     //arm_stream_instance_t *pinst;
 
-    /* max 16 groups of commands */
+    /* max 16 groups of commands   PACK_SERVICE(COMMAND,OPTION,TAG,FUNC,GROUP) */
 	switch (RD(command, GROUP_SSRV))
     {
     //enum stream_service_group
     case SERV_GROUP_INTERNAL:
-        
-        //if ((RD(command, FUNCTION_SSRV)) == FUNCTION_SSRV)
-        //{   // arm_stream_services(*ID, SERV_INTERNAL_RESET, stream_instance, 0, 0); 
-        //    //#define   OPTION_SSRV_MSB U(31)       
-        //    //#define   OPTION_SSRV_LSB U(14) /* 18   compute accuracy, in-place processing, frame size .. */
-        //    //#define FUNCTION_SSRV_MSB U( 9)       
-        //    //#define FUNCTION_SSRV_LSB U( 4) /* 6    64 functions/group  */
-        //    //#define    GROUP_SSRV_MSB U( 3)       
-        //    //#define    GROUP_SSRV_LSB U( 0) /* 4    16 groups */
-        //    //stream_instance = *(arm_stream_instance_t*)ptr1;
-        //} 
-        //else
-        {   /* arm_stream_services(*ID, PACK_COMMAND(TAG,PRESET,NARC,INST,SERV_INTERNAL_XXXXX), pta, ptb); */
-            arm_stream_services_internal(RD(command, FUNCTION_SSRV), ptr1, ptr2, ptr3, n);
-        }
+        /* ----------------------------------------------------------
+              Command                     C           COMMAND_SSRV
+              Option                       o           OPTION_SSRV
+              TAG                           tt            TAG_SSRV
+              sub Function                    f      SUBFUNCT_SSRV
+              Function                         FF    FUNCTION_SSRV
+              Service Group                      g      GROUP_SSRV
+           ----------------------------------------------------------
+        */
+        /* arm_stream_services(*ID, PACK_COMMAND(TAG,PRESET,NARC,INST,SERV_SCRIPT_XXXXX), pta, ptb); */
+        arm_stream_services_internal(command, ptr1, ptr2, ptr3, n);
         break;
+
     case SERV_GROUP_SCRIPT:
-        arm_stream_services_flow (command, ptr1, ptr2, ptr3, n);
+        arm_stream_services_script (command, ptr1, ptr2, ptr3, n);
         break;
+
     case SERV_GROUP_CONVERSION:
         arm_stream_services_conversion(command, ptr1, ptr2, ptr3, n);
         break;
+
     case SERV_GROUP_STDLIB:
         arm_stream_services_stdlib(command, ptr1, ptr2, ptr3, n);
         break;
+
     case SERV_GROUP_MATH:
         arm_stream_services_math(command, ptr1, ptr2, ptr3, n);
         break;
@@ -529,6 +592,7 @@ void arm_stream_services (
     case SERV_GROUP_MM_AUDIO:
         arm_stream_services_mm_audio(command, ptr1, ptr2, ptr3, n);
         break;
+
     case SERV_GROUP_MM_IMAGE:
         arm_stream_services_mm_image(command, ptr1, ptr2, ptr3, n);
         break;
@@ -572,69 +636,19 @@ void arm_stream_services (
 //
 //  @remark       
 // */
-//void al_service_time_functions (uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
+//void SERV_time_functions (uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
 //{   volatile uint8_t *pt8 = pt8b;
 //
 //    switch (service_command)
-//    {   case AL_SERVICE_READ_TIME64:
-//        case AL_SERVICE_READ_TIME32:
-//        case AL_SERVICE_READ_TIME16:
+//    {   case SERV_READ_TIME64:
+//        case SERV_READ_TIME32:
+//        case SERV_READ_TIME16:
 //        {   break;
 //        }
 //    }
 //}
-//
-///**
-//  @brief        multiprocessing mutual exclusion services 
-//  @param[in]    none
-//  @return       none
-//
-//  @par          Usage:
-//            al_service_mutual_exclusion (AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP, 
-//                S->pt8b_collision_arc, (*data) &check, &process_ID, 0);
-//                
-//  @remark       
-// */
-//void al_service_mutual_exclusion(uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
-//{   
-//    volatile uint8_t *pt8 = pt8b;
-//
-//    switch (service_command)
-//    {
-//        case AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP:
-//        {
-//            /* attempt to reserve the node */
-//            *pt8 = *data;    
-//
-//            /* check collision with all the running processes using the equivalent of lock() and unlock() 
-//              Oyama Lock, "Towards more scalable mutual exclusion for multicore architectures" by Jean-Pierre Lozi */
-//            //  INSTRUCTION_SYNC_BARRIER;
-//            //  DATA_MEMORY_BARRIER;
-//            *data = (*pt8 == *flag);
-//            break;
-//        }
-//
-//        case AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP:
-//        {   *(volatile uint8_t *)(pt8) = (*data); 
-//            DATA_MEMORY_BARRIER; 
-//            break;
-//        }
-//
-//        default:
-//        case AL_SERVICE_MUTUAL_EXCLUSION_RD_BYTE_MP:
-//        {   DATA_MEMORY_BARRIER; 
-//            (*data) = *(volatile uint8_t *)(pt8);
-//            break;
-//        }
-//
-//        case AL_SERVICE_MUTUAL_EXCLUSION_CLEAR_BIT_MP:
-//        {   ((*pt8b) = U(*pt8b) & U(~(U(1) << U(n)))); 
-//            DATA_MEMORY_BARRIER;
-//            break;
-//        }
-//    }
-//}
-//
+             
+
 //
 ///**
 //  @brief        Platform abstraction layer (time, spinlock, IOs)
@@ -650,20 +664,20 @@ void arm_stream_services (
 //    /* max 16 groups of commands {SERV_INTERNAL .. SERV_MM_IMAGE} */
 //	switch (RD(service_command, FUNCTION_SSRV))
 //    {
-//    case AL_SERVICE_READ_TIME:
-//        al_service_time_functions(RD(service_command, FUNCTION_SSRV), (uint8_t *)ptr1, (uint8_t *)ptr2, (uint8_t *)ptr3, n);
+//    case SERV_READ_TIME:
+//        SERV_time_functions(RD(service_command, FUNCTION_SSRV), (uint8_t *)ptr1, (uint8_t *)ptr2, (uint8_t *)ptr3, n);
 //        break;
-//    case AL_SERVICE_SLEEP_CONTROL:
+//    case SERV_SLEEP_CONTROL:
 //        break;
-//    case AL_SERVICE_READ_MEMORY:
+//    case SERV_READ_MEMORY:
 //        break;
-//    case AL_SERVICE_SERIAL_COMMUNICATION:
+//    case SERV_SERIAL_COMMUNICATION:
 //        break;
 //    //enum stream_service_group
-//    case AL_SERVICE_MUTUAL_EXCLUSION:
-//        al_service_mutual_exclusion(RD(service_command, FUNCTION_SSRV), (uint8_t *)ptr1, (uint8_t *)ptr2, (uint8_t *)ptr3, n);
+//    case SERV_MUTUAL_EXCLUSION:
+//        SERV_mutual_exclusion(RD(service_command, FUNCTION_SSRV), (uint8_t *)ptr1, (uint8_t *)ptr2, (uint8_t *)ptr3, n);
 //        break;
-//    case AL_SERVICE_CHANGE_IO_SETTING:
+//    case SERV_CHANGE_IO_SETTING:
 //        break;
 //    }
 //}

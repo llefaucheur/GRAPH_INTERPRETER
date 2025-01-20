@@ -54,7 +54,8 @@ var RED = (function() {
 		RED.storage.update();
 		var export_as_yaml = 1;
 
-		if (RED.nodes.hasIO()) {
+		if (RED.nodes.hasIO()) 
+        {
 			var nns = RED.nodes.createCompleteNodeSet();
 			// sort by horizontal position, plus slight vertical position,
 			// for well defined update order that follows signal flow
@@ -70,8 +71,8 @@ var RED = (function() {
 			// Note YML does not use TABS, always use spaces
 			var yml = "";
 			if (export_as_yaml){
-				yml += "version: " + "'1.0'" + "\n";
-				yml += "graph:" + "\n";
+				// yml += "version: " + "'1.0'" + "\n";
+				// yml += "graph:" + "\n";
 				yml += "  nodes:" + "\n";
 			}
 
@@ -86,25 +87,25 @@ var RED = (function() {
 					// or at least remove the if (!undefined) logic for fields that are universal
 					if (export_as_yaml){
 						yml += "  - node: " + name + "\n";
-						yml += "    kind: " + node["kind"] + "\n";
+						//yml += "    kind: " + node["kind"] + "\n";
 						if (node["samplingRate"] != undefined) {yml += "    samplingRate: " + String(node["samplingRate"]) + "\n"}
 						if (node["numberOfChannels"] != undefined) {yml += "    numberOfChannels: " + String(node["numberOfChannels"]) + "\n"}
 						if (node["interleaving"] != undefined) {yml += "    interleaving: " + String(node["interleaving"]) + "\n"}
 						if (node["timeStamp"] != undefined) {yml += "    timeStamp: " + String(node["timeStamp"]) + "\n"}
 						if (node._def.inputs > 0) {
-							yml += "    inputs:\n";
+							yml += "    inputs: ";
 							for (var k=0; k< node._def.inputs; k++) {
-								yml += "    - input: IPort" + String(k) + "\n";
+								yml += "IPort" + String(k) + "\n";
 								if (node["samples"] != undefined) {yml += "      samples: " + String(node["samples"]) + "\n"}
-								yml += "      type: " + String(node["input_node_dataformats"]) + "\n";
+								//yml += "      type: " + String(node["input_node_dataformats"]) + "\n";
 							}
 						}
 						if (node.outputs > 0) {
-							yml += "    outputs:\n";
+							yml += "    outputs: ";
 							for (var k=0; k< node.outputs; k++) {
-								yml += "    - output: OPort" + String(k) + "\n";
+								yml += " OPort" + String(k) + "\n";
 								if (node["samples"] != undefined) {yml += "      samples: " + String(node["samples"]) + "\n"}
-								yml += "      type: " + String(node["output_node_dataformats"]) + "\n";
+								//yml += "      type: " + String(node["output_node_dataformats"]) + "\n";
 							}
 						}
 						// TODO Confirm this approach is robust as JSON object indices may not be reliable
@@ -133,65 +134,70 @@ var RED = (function() {
 						for (var j=n.type.length; j<24; j++) yml += " ";
 						yml += name + "; ";
 						for (var j=n.id.length; j<14; j++) yml += " ";
-						yml += "//xy=" + Math.round(n.x) + "," + Math.round(n.y);
+						// yml += "//xy=" + Math.round(n.x) + "," + Math.round(n.y);
 					}
-			}
-		}
-			// generate code for all connections (aka wires or links)
-			var cordcount = 1; // TODO remove if un-used
-			yml += "  arcs:\n";
-			for (var i=0; i<nns.length; i++) {
-				var n = nns[i];
-				// TODO Add if n.args?
-				if (n.wires) {
-					for (var j=0; j<n.wires.length; j++) {
-						var wires = n.wires[j];
-						if (!wires) continue;
-						for (var k=0; k<wires.length; k++) {
-							var wire = n.wires[j][k];
-							if (wire) {
-								var parts = wire.split(":");
-								// TODO Investigate when/why parts.length is not == 2
-								// if (parts.length == 2) {
-								var src = RED.nodes.node(n.id);
-								var dst = RED.nodes.node(parts[0]);
-								var src_name = make_name(src);
-								var dst_name = make_name(dst);
-								if (parts.length > 0) {
-									// Note: Removed this line as logic was unclear
-									// if (j == 0 && parts[1] == 0 && src && src.outputs == 1 && dst && dst._def.inputs == 1) {
-									if (src && dst) {
-										if (export_as_yaml){
-											yml += "  - src:\n      node: "+ src_name + "\n      output: OPort" + String(parts[1]) + "\n";
-											yml += "    dst:\n      node: "+ dst_name + "\n      input: IPort" + String(parts[1]) + "\n";
-										} else {
-											yml += "Arc" + "    Arc" + cordcount + "(";
-											yml += src_name + ", " + j + ", " + dst_name + ", " + parts[1];
-										yml += ");\n";
-										}
-									}
-							cordcount++;
-							}
-						}
-					}
-				}
-			}
-		}
-			
-			// generate code for all control nodes (no inputs or outputs)
-			for (var i=0; i<nns.length; i++) {
-				var n = nns[i];
-				var node = RED.nodes.node(n.id);
-				if (node && node.outputs == 0 && node._def.inputs == 0) {
-					yml += n.type + " ";
-					for (var j=n.type.length; j<24; j++) yml += " ";
-					yml += make_name(n) + "; ";
-					for (var j=n.id.length; j<14; j++) yml += " ";
-					yml += "//xy=" + Math.round(n.x) + "," + Math.round(n.y) + "\n";
-				}
-			}
+                }
+            }
+        
+            // generate code for all connections (aka wires or links)
+            var cordcount = 1; // TODO remove if un-used
+            yml += "  arcs:\n";
+            for (var i=0; i<nns.length; i++) {
+                var n = nns[i];
+                // TODO Add if n.args?
+                if (n.wires) {
+                    for (var j=0; j<n.wires.length; j++) {
+                        var wires = n.wires[j];
+                        if (!wires) continue;
+                        for (var k=0; k<wires.length; k++) {
+                            var wire = n.wires[j][k];
+                            if (wire) {
+                                var parts = wire.split(":");
+                                // TODO Investigate when/why parts.length is not == 2
+                                // if (parts.length == 2) {
+                                var src = RED.nodes.node(n.id);
+                                var dst = RED.nodes.node(parts[0]);
+                                var src_name = make_name(src);
+                                var dst_name = make_name(dst);
+                                if (parts.length > 0) {
+                                    // Note: Removed this line as logic was unclear
+                                    // if (j == 0 && parts[1] == 0 && src && src.outputs == 1 && dst && dst._def.inputs == 1) {
+                                    if (src && dst) {
+                                        if (export_as_yaml){
+                                            yml += "  - src:\n      node: "+ src_name + "\n      output: OPort" + String(parts[1]) + "\n";
+                                            yml += "    dst:\n      node: "+ dst_name + "\n      input: IPort" + String(parts[1]) + "\n";
+                                        } else {
+                                            yml += "Arc" + "    Arc" + cordcount + "(";
+                                            yml += src_name + ", " + j + ", " + dst_name + ", " + parts[1];
+                                        yml += ");\n";
+                                        }
+                                    }
+                            cordcount++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+		
+            // generate code for all control nodes (no inputs or outputs)
+            for (var i=0; i<nns.length; i++) {
+                var n = nns[i];
+                var node = RED.nodes.node(n.id);
+                if (node && node.outputs == 0 && node._def.inputs == 0) 
+                {
+                    n1 = make_name(n);
+                    if (n1 == "script") { yml +=  n.type + " "; } 
+                    else { yml += "//" + n.type + " "; }
+                    
+                    for (var j=n.type.length; j<24; j++) yml += " ";
+                    yml += make_name(n) + "\n";
+                    for (var j=n.id.length; j<14; j++) yml += " ";
+                    // yml += "//xy=" + Math.round(n.x) + "," + Math.round(n.y) + "\n";
+                }
+            }
 
-			// console.log(yml);
+            // console.log(yml);
 
 			RED.view.state(RED.state.EXPORT);
 			RED.view.getForm('dialog-form', 'export-clipboard-dialog', function (d, f) {
@@ -203,10 +209,11 @@ var RED = (function() {
 					return false;
 				});
 				}).focus();
-			$( "#dialog" ).dialog("option","title","Export to CMSIS").dialog( "open" );
+			$( "#dialog" ).dialog("option","title","Export Graph").dialog( "open" );
 			});
 			//RED.view.dirty(false);
-		} else {
+		} else 
+        {
 			$( "#node-dialog-error-deploy" ).dialog({
 				title: "Error exporting data to CMSIS",
 				modal: true,
@@ -259,6 +266,25 @@ var RED = (function() {
 		}
 		return(false);
 	}
+    // function getQueryVariable(variable) {
+    //   var query = window.location.search.substring(1)
+    //   var vars = query.split("&");
+    //   for (var i=0;i<vars.length;i++) {
+    //       var pair = vars[i].split("=")
+    //       if(pair[0] == variable){
+    //           if(pair[1].indexOf('%20') != -1){
+    //               console.log(pair[1].indexOf('%20'))
+    //               var fullName = pair[1].split('%20')
+    //               console.log(fullName)
+    //               return fullName[0] + ' ' + fullName[1]
+    //           }
+    //           else {
+    //               return pair[1];
+    //           }
+    //       }
+    //   }
+    //   return(false)    
+    // }
 
 	function loadNodes() {
 			$(".palette-scroll").show();

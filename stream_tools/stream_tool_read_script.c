@@ -158,7 +158,7 @@ void stream_tool_read_assembler(char **pt_line, struct stream_platform_manifest 
 void dst_srcx_register (uint32_t *INST, char *s, uint32_t msb, uint32_t lsb, uint32_t not_sp1)             
 {  
     /*  is it a register ?  => update INST and return -----------------------------*/
-    if (0 == strncmp(s, RN, 2))     // none
+    if (0 == strncmp(s, cRegNone, 2))     // none
     {   INSERT_BITS(INST[0], msb, lsb, RegNone);
     }
 
@@ -297,7 +297,7 @@ void check_JMOV_opar (char *s0, char *s2, int *oparf)
     if ((0 != strstr(s0, "jump")))   { *oparf = OPLJ_JUMP; } 
     if ((0 != strstr(s0, "banz")))   { *oparf = OPLJ_BANZ; } 
     if ((0 != strstr(s0, "call")))   { *oparf = OPLJ_CALL; } 
-    if ((0 != strstr(s0,"callsys"))) { *oparf = OPLJ_CALLSYS; } 
+    if ((0 != strstr(s0,"syscall"))) { *oparf = OPLJ_SYSCALL; } 
     if ((0 != strstr(s0, "save")))   { *oparf = OPLJ_SAVE; } 
     if ((0 != strstr(s0, "rest")))   { *oparf = OPLJ_RESTORE; } 
     if ((0 != strstr(s0, "ret")))    { *oparf = OPLJ_RETURN; } 
@@ -711,21 +711,27 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
             //  banz       <Label>    <dst>      <src1>      
             //  call       <Label>    <dst>      <src1>      
             //  callsys    K          <dst>      <src1>     <src3>     <src4>  
-            if (OPLJ_JUMP == oparf || OPLJ_BANZ == oparf || OPLJ_CALL == oparf || OPLJ_CALLSYS == oparf)
+            if (OPLJ_JUMP == oparf || OPLJ_BANZ == oparf || OPLJ_CALL == oparf || OPLJ_SYSCALL == oparf)
             {   
-                if ('\n' == s[2][0] || '\0' == s[2][0]) { strcpy(s[2], RN); }
-                if ('\n' == s[3][0] || '\0' == s[3][0]) { strcpy(s[3], RN); }
-                if ('\n' == s[4][0] || '\0' == s[4][0]) { strcpy(s[4], RN); }
-                if ('\n' == s[5][0] || '\0' == s[5][0]) { strcpy(s[5], RN); }
-                dst_srcx_register (INST, s[2], OP_DST_INST_MSB,  OP_DST_INST_LSB , NOT_SP1);
-                dst_srcx_register (INST, s[3], OP_SRC1_INST_MSB, OP_SRC1_INST_LSB, NOT_SP1);
-                dst_srcx_register (INST, s[4], OP_SRC3_INST_MSB, OP_SRC3_INST_LSB, NOT_SP1);
-                dst_srcx_register (INST, s[5], OP_SRC4_INST_MSB, OP_SRC4_INST_LSB, NOT_SP1);
+                if ('\n' == s[2][0] || '\0' == s[2][0]) { strcpy(s[2], cRegNone); }
+                if ('\n' == s[3][0] || '\0' == s[3][0]) { strcpy(s[3], cRegNone); }
+                if ('\n' == s[4][0] || '\0' == s[4][0]) { strcpy(s[4], cRegNone); }
+                if ('\n' == s[5][0] || '\0' == s[5][0]) { strcpy(s[5], cRegNone); }
 
-                if (OPLJ_CALLSYS == oparf)
+                dst_srcx_register (INST, s[2], OP_DST_INST_MSB,  OP_DST_INST_LSB , NOT_SP1);
+
+                if (OPLJ_BANZ == oparf) /* no extra register used for BANZ */
+                {   INSERT_BITS(INST[0], OP_SRC1_INST_MSB, OP_SRC1_INST_LSB, RegNone);
+                } else
+                {   dst_srcx_register (INST, s[3], OP_SRC1_INST_MSB, OP_SRC1_INST_LSB, NOT_SP1);
+                    dst_srcx_register (INST, s[4], OP_SRC3_INST_MSB, OP_SRC3_INST_LSB, NOT_SP1);
+                    dst_srcx_register (INST, s[5], OP_SRC4_INST_MSB, OP_SRC4_INST_LSB, NOT_SP1);
+                }
+
+                if (OPLJ_SYSCALL == oparf)
                 {   int service;
                     tmp = sscanf(s[1], "%d", &service);         /* 6bits service */
-                    ST(INST[0], CALLSYS_K_INST, service);
+                    ST(INST[0], SYSCALL_K_INST, service);
                 }
                 else
                 {
@@ -742,11 +748,11 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
             // save       <register> <register> <register> <register> <register>
             // restore    <register> <register> <register> <register> <register>
             if ((OPLJ_SAVE    == oparf) || (OPLJ_RESTORE == oparf))
-            {   if ('\n' == s[1][0]) { strcpy(s[4], RN); }
-                if ('\n' == s[2][0]) { strcpy(s[2], RN); }
-                if ('\n' == s[3][0]) { strcpy(s[3], RN); }
-                if ('\n' == s[4][0]) { strcpy(s[4], RN); }
-                if ('\n' == s[5][0]) { strcpy(s[4], RN); }
+            {   if ('\n' == s[1][0]) { strcpy(s[4], cRegNone); }
+                if ('\n' == s[2][0]) { strcpy(s[2], cRegNone); }
+                if ('\n' == s[3][0]) { strcpy(s[3], cRegNone); }
+                if ('\n' == s[4][0]) { strcpy(s[4], cRegNone); }
+                if ('\n' == s[5][0]) { strcpy(s[4], cRegNone); }
                 dst_srcx_register (INST, s[1], OP_DST_INST_MSB,  OP_DST_INST_LSB , NOT_SP1);
                 dst_srcx_register (INST, s[2], OP_SRC1_INST_MSB, OP_SRC1_INST_LSB, NOT_SP1);
                 dst_srcx_register (INST, s[3], OP_SRC2_INST_MSB, OP_SRC2_INST_LSB, NOT_SP1);

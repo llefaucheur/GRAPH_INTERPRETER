@@ -37,22 +37,21 @@
 
     
 typedef union
-{   char    c;       char v_c[8];
-    int8_t  i8;    int8_t v_i8[8];
-    int16_t i16;  int16_t v_i16[4];
-    int32_t i32;  int32_t v_i32[2];
-    int64_t i64;
-    sfloat  f32;   sfloat v_f32[2]; 
+{      char v_c[8];
+     int8_t v_i8[8];
+    int16_t v_i16[4];
+    int32_t v_i32[2];
+     sfloat v_f32[2]; 
     #define REGS_DATA 0
     #define REGS_TYPE 1
     sdouble f64;
 } regdata_t;
 
 
-typedef union
-{   int32_t i32;  
-    sfloat  f32;   
-} regdata32_t;
+//typedef union
+//{   int32_t i32;  
+//    sfloat  f32;   
+//} regdata32_t;
 
 /* error codes going to I->ctrl.errors */
 #define ERROR_STACK_UNDERFLOW   (1 << 0)

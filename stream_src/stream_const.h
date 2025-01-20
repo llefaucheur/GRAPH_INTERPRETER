@@ -686,15 +686,25 @@
 
 #define SIZEOF_ARCDESC_W32 6u
 
-#define   BUF_PTR_ARCW0    U( 0)
+
+/*      FEDCBA9876543210FEDCBA9876543210
+        III_____________________________  NALLOCM1
+        ___x____________________________  unused
+        ____OOO_________________________  long offset
+        _______Sbbbbbbbbbbbbbbbbbbbbbbbb  signed based
+       |FEDCBA9|7654321|FEDCBA9|76543210
+*/
+#define   BUF_PTR_ARCW0    U( 0)  
 #define   unused__ARCW0_MSB U(31) 
 #define   unused__ARCW0_LSB U(28) /*  4 ____*/
 #define BASEIDXOFFARCW0_MSB U(27) /*    */
 #define   DATAOFF_ARCW0_MSB U(27) /*    address = offset[DATAOFF] + 4x BASEIDX[Bytes] */
-#define   DATAOFF_ARCW0_LSB U(22) /*  6 64 x 64bits offset indexes  */
-#define   BASEIDX_ARCW0_MSB U(21) /*    base address 22bits linear address range in BYTES */
-#define   BASEIDX_ARCW0_LSB U( 0) /* 22 0x3F.FFFF(W32) =  1MW/4MBytes extended with ARCEXTEND_ARCW2 */
-#define BASEIDXOFFARCW0_LSB U( 0) /*    base + offset */
+#define   DATAOFF_ARCW0_LSB U(25) /*  3  8 x 64bits offset indexes  */
+#define  BAS_SIGN_ARCW0_MSB U(24) /*    */
+#define  BAS_SIGN_ARCW0_LSB U(24) /*    */
+#define   BASEIDX_ARCW0_MSB U(24) /*    signed base address 22bits linear address range in BYTES */
+#define   BASEIDX_ARCW0_LSB U( 0) /* 25 0x1FF.FFFF(W32) =  8MW/32MBytes extended with ARCEXTEND_ARCW2 */
+#define BASEIDXOFFARCW0_LSB U( 0) /*    +/- 4MW +/- 16MBytes  */
                                 
 #define BUFSIZDBG_ARCW1    U( 1)
 #define   unused__ARCW1_MSB U(31) 
@@ -703,8 +713,8 @@
 #define BUFF_SIZE_ARCW1_LSB U( 0) /* 22 BYTE-acurate up to 4MBytes (up to 64GB with ARCEXTEND_ARCW2 */
 
 #define    RDFLOW_ARCW2    U( 2)  
-#define ARCEXTEND_ARCW2_MSB U(31) /*    Size/Read/Write are used with <<(2x{0..7}) to extend base/size/read/write arc */
-#define ARCEXTEND_ARCW2_LSB U(29) /* 3  to 0:4MB 1:16M 2:64MB 3:256M 4:1G 5:4G 6:16G 7:64G */
+#define ARCEXTEND_ARCW2_MSB U(31) /*    Size/Read/Write are used with <<{0..7} to extend base/size/read/write arc */
+#define ARCEXTEND_ARCW2_LSB U(29) /* 3  +/-16MB 32M 64M 128M 256M 512M 1G 2G */
 #define   unused__ARCW2_MSB U(28)       /*  for use-cases with NN models, video players, etc */
 #define   unused__ARCW2_LSB U(24) /* 5  ____*/
 #define   MPFLUSH_ARCW2_MSB U(23) 
@@ -755,13 +765,13 @@
     commands from the NODE to Stream
     16 family of commands:
     - 1 : internal to Stream, reset, debug trace, report errors , described here
-            CALLSYS_INTERNAL         TODO
+            SYSCALL_INTERNAL         TODO
             - Un/Lock a section of the graph
             - Jump to +/- N nodes in the list,      => read HEADER + test fields + jump
             - system regsters access: who am I ?
 
     described in stream_common_const.h:
-    - 2 : arc access for scripts : pointer, last data, debug fields, format changes
+    - 2 : arc access for SCRIPT : pointer, last data, debug fields, format changes
     - 3 : format converters (time, raw data)
     - 4 : stdlib.h subset (time, stdio)
     - 5 : math.h subset
@@ -774,26 +784,34 @@
 */
 
 
-/* 1/SERV_INTERNAL ------------------------------------------------ */
+/* ---------------------------------------------------------------- */
+/* 1/SERV_INTERNAL                                                 */
+/* ---------------------------------------------------------------- */
 
-/*  FUNCTION_SSRV GROUP : SLEEP CONTROL ---------------------- */
-#define AL_SERVICE_SLEEP_CONTROL 1u
 
-/*  FUNCTION_SSRV GROUP : READ MEMORY ------------------------ */
-#define AL_SERVICE_READ_MEMORY 2u
+    /*  FUNCTION_SSRV GROUP : HW AND SLEEP CONTROL --------------- */
+#define SERV_INTERNAL_SLEEP_CONTROL                             0x001
+#define SERV_INTERNAL_PLATFORM_CLEAR_BACKUP_MEM                 0x002   /* cold start : clear backup memory */
+#define SERV_INTERNAL_CPU_CLOCK_UPDATE   0x30 /* notification from the application of the CPU clock setting (TBD @@@) */
+
+
+
+    /*  FUNCTION_SSRV GROUP : READ MEMORY ------------------------ */
+#define SERV_INTERNAL_READ_MEMORY                               0x101
+#define SERV_INTERNAL_READ_MEMORY_FAST_MEM_ADDRESS              0x102
+
+
+    /*  FUNCTION_SSRV GROUP : SERIAL COMMUNICATION --------------- */
+#define SERV_INTERNAL_SERIAL_COMMUNICATION                      0x201
+
+
+    /*  FUNCTION_SSRV GROUP : MUTUAL EXCLUSION ------------------- */
+#define SERV_MUTUAL_EXCLUSION 4u
     /* SERVICE FUNCTIONS */
-    #define AL_SERVICE_READ_MEMORY_FAST_MEM_ADDRESS 1u
-
-/*  FUNCTION_SSRV GROUP : SERIAL COMMUNICATION --------------- */
-#define AL_SERVICE_SERIAL_COMMUNICATION 3u
-
-/*  FUNCTION_SSRV GROUP : MUTUAL EXCLUSION ------------------- */
-#define AL_SERVICE_MUTUAL_EXCLUSION 4u
-    /* SERVICE FUNCTIONS */
-    #define AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP 1u
-    #define AL_SERVICE_MUTUAL_EXCLUSION_RD_BYTE_MP 2u
-    #define AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP 3u
-    #define AL_SERVICE_MUTUAL_EXCLUSION_CLEAR_BIT_MP 4u
+    #define SERV_INTERNAL_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP 0x301
+    #define SERV_INTERNAL_MUTUAL_EXCLUSION_RD_BYTE_MP           0x302
+    #define SERV_INTERNAL_MUTUAL_EXCLUSION_WR_BYTE_MP           0x303
+    #define SERV_INTERNAL_MUTUAL_EXCLUSION_CLEAR_BIT_MP         0x304
 
     #ifdef _MSC_VER 
     #define DATA_MEMORY_BARRIER
@@ -808,75 +826,47 @@
     #endif
     #endif
 
-/*  FUNCTION_SSRV GROUP : IO SETTINGS -------------------------*/
-#define AL_SERVICE_CHANGE_IO_SETTING 5u
 
-/* used to call p_io_function_ctrl functions with STREAM_READ_PARAMETER : the arm_stream_converter checks
-*   if consumer-node (of the associated producer-node for IO TX) is compatible with the format
-*   to rescale the data stream to the good amplitude/scale 
-*   AL_SERVICE_READ_IO_SCALING receives the IO ID
-*       it reads the setting in the graph STREAM_IO_CONTROL table
-*       calls the p_io_function_ctrl with STREAM_READ_PARAMETER 
-*/
-#define AL_SERVICE_READ_IO_SCALING 0u       
+    /*  FUNCTION_SSRV GROUP : IO SETTINGS -------------------------*/
+#define SERV_INTERNAL_CHANGE_IO_SETTING                         0x401
 
-#define AL_SERVICE_CHANGE_IO_SETTING 5u
-
-/*  FUNCTION_SSRV GROUP : TIME ------------------------------- */
-#define AL_SERVICE_READ_TIME 6u
-    #define AL_SERVICE_READ_TIME64 1u
-    #define AL_SERVICE_READ_TIME32 2u
-    #define AL_SERVICE_READ_TIME16 3u
-
-#define AL_SERVICE_UNUSED3 7u
-#define MAX_NB_APP_SERVICES 8u
+    /* used to call p_io_function_ctrl functions with STREAM_READ_PARAMETER : the arm_stream_converter checks
+    *   if consumer-node (of the associated producer-node for IO TX) is compatible with the format
+    *   to rescale the data stream to the good amplitude/scale 
+    *   SERV_READ_IO_SCALING receives the IO ID
+    *       it reads the setting in the graph STREAM_IO_CONTROL table
+    *       calls the p_io_function_ctrl with STREAM_READ_PARAMETER 
+    */
+#define SERV_INTERNAL_READ_IO_SCALING 0u       
 
 
 
-//enum platform_al_services       
-#define PLATFORM_INIT_AL           0x00   /* set the graph pointer */
-#define PLATFORM_MP_GRAPH_SHARED   0x01   /* need to declare the graph area as "sharable" in S = MPU_RASR[18] */
-#define PLATFORM_MP_BOOT_WAIT      0x02   /* wait commander processor copies the graph */
-#define PLATFORM_MP_BOOT_DONE      0x03   /* to confirm the graph was copied in RAM */
-#define PLATFORM_MP_RESET_WAIT     0x04   /* wait the graph is initialized */
-#define PLATFORM_MP_RESET_DONE     0x05   /* tell the reset sequence was executed for that Stream instance */
-
-#define PLATFORM_CLEAR_BACKUP_MEM  0x0D   /* cold start : clear backup memory */
-#define PLATFORM_ERROR             0x10   /* error to report to the application */
+    /*  FUNCTION_SSRV GROUP : TIME ------------------------------- */
+#define SERV_INTERNAL_READ_TIME 6u
+    #define SERV_INTERNAL_READ_TIME64                           0x601
+    #define SERV_INTERNAL_READ_TIME32                           0x602
+    #define SERV_INTERNAL_READ_TIME16                           0x603
 
 
-#define SERV_INTERNAL_RESET 1u
-#define SERV_INTERNAL_NODE_REGISTER 2u
 
-/* change stream format from NODE media decoder, script applying change of use-case (IO_format, vocoder frame-size..): sampling, nb of channel, 2D frame size */
-#define SERV_INTERNAL_FORMAT_UPDATE 3u      
+    /*  FUNCTION_SSRV GROUP : BOOT ------------------------------- */
+#define SERV_INTERNAL_KEYEXCHANGE       0x701 /* at reset time : key exchanges */
 
-//#define SERV_INTERNAL_FORMAT_UPDATE_FS 3u       /* NODE information for a change of stream format, sampling, nb of channel */
-//#define SERV_INTERNAL_FORMAT_UPDATE_NCHAN 4u     /* raw data sample, mapping of channels, (web radio use-case) */
-//#define SERV_INTERNAL_FORMAT_UPDATE_RAW 5u
+    // see platform_init_copy_graph() 
+#define PLATFORM_INIT_AL                0x700   /* set the graph pointer */
+#define PLATFORM_MP_GRAPH_SHARED        0x701   /* need to declare the graph area as "sharable" in S = MPU_RASR[18] */
+#define PLATFORM_MP_BOOT_WAIT           0x702   /* wait commander processor copies the graph */
+#define PLATFORM_MP_BOOT_DONE           0x703   /* to confirm the graph was copied in RAM */
+#define PLATFORM_MP_RESET_WAIT          0x704   /* wait the graph is initialized */
+#define PLATFORM_MP_RESET_DONE          0x705   /* tell the reset sequence was executed for that Stream instance */
 
-#define SERV_INTERNAL_SECURE_ADDRESS 6u       /* this call is made from the secured address */
-#define SERV_INTERNAL_AUDIO_ERROR 7u          /* PLC applied, Bad frame (no header, no synchro, bad data format), bad parameter */
-#define SERV_INTERNAL_DEBUG_TRACE 8u          /* 1b, 1B, 16char */
-#define SERV_INTERNAL_DEBUG_TRACE_STAMPS 9u
-#define SERV_INTERNAL_AVAILABLE 10u
-#define SERV_INTERNAL_SETARCDESC 11u          /* buffers holding MP3 songs.. rewind from script, 
-                                                            switch a NN model to another, change a parameter-set using arcs */
-#define SERV_INTERNAL_KEYEXCHANGE 12          /* at reset time : key exchanges */
 
-#define SERV_CPU_CLOCK_UPDATE 13              /* notification from the application of the CPU clock setting (TBD @@@) */
 
-//SERV_INTERNAL_DEBUG_TRACE, SERV_INTERNAL_DEBUG_TRACE_1B, SERV_INTERNAL_DEBUG_TRACE_DIGIT, 
-// 
-//SERV_INTERNAL_DEBUG_TRACE_STAMPS, SERV_INTERNAL_DEBUG_TRACE_STRING,
-// 
-//STREAM_SAVE_HOT_PARAMETER, 
 
-//STREAM_LOW_POWER,     /* interface to low-power platform settings, "wake-me in 24h with deep-sleep in-between" */
-//                          " I have nothing to do most probably for the next 100ms, do what is necessary "
+    /*  FUNCTION_SSRV GROUP : ERRORS ------------------------------- */
+#define PLATFORM_ERROR                  0x901   /* error to report to the application */
 
- 
-//STREAM_PROC_ARCH,     /* returns the processor architecture details, used before executing specific assembly codes */
+
 
 /*================================================================================================================*/    
 
@@ -914,8 +904,8 @@
 #define FTESTGEQ(tmp, dst) 0
 #define FTESTGT(tmp, dst)  0
 
-#define F2I(src) ((uint32_t)0)
-#define I2F(src) ((sfloat)0)
+#define F2I(src) ((uint32_t)(src))
+#define I2F(src) ((sfloat)(src))
 
 /*================================================================================================================*/    
 

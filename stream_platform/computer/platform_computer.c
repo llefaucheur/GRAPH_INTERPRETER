@@ -128,10 +128,10 @@ p_stream_node node_entry_points[NB_NODE_ENTRY_POINTS] =
         1 1 9 4 number of architectures, number of processors, number of memory banks, number of offsets
  */
 
-static uint8_t MEXT[SIZE_MBANK_DMEM_EXT];
-static uint8_t BACKUPMEM1[SIZE_MBANK_BACKUPMEM1]; 
-static uint8_t TCM2[SIZE_MBANK_TCM2]; 
-static uint8_t FLASH3[SIZE_MBANK_FLASH3]; 
+uint8_t MEXT[SIZE_MBANK_DMEM_EXT];
+uint8_t BACKUPMEM1[SIZE_MBANK_BACKUPMEM1]; 
+uint8_t TCM2[SIZE_MBANK_TCM2]; 
+uint8_t FLASH3[SIZE_MBANK_FLASH3]; 
 
 const uint8_t * long_offset[MAX_NB_MEMORY_OFFSET] = 
 {   &(MEXT[0]),
@@ -269,6 +269,7 @@ extern void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void 
 uint32_t lin2pack (arm_stream_instance_t *S, uint8_t *buffer)
 {
     sintPtr_t distance;
+    uint32_t ret;
     uint8_t i;
 
     /* packed address range is [ long_offset[IDX]  +/- 8MB ]*/
@@ -284,7 +285,10 @@ uint32_t lin2pack (arm_stream_instance_t *S, uint8_t *buffer)
         }
     }
 
-    return (uint32_t)(distance | ((uint64_t)i << (uint8_t)DATAOFF_ARCW0_LSB));
+    ret = 0;
+    ST(ret, BASEIDX_ARCW0, distance);
+    ST(ret, DATAOFF_ARCW0, i);
+    return ret;
 }
 
 /**
@@ -300,17 +304,17 @@ uint32_t lin2pack (arm_stream_instance_t *S, uint8_t *buffer)
  */
 static intPtr_t pack2linaddr_int(uint8_t **long_offset, uint32_t x, uint8_t extend)
 {
-    uint8_t *dbg1;
-    intPtr_t dbg2;
-    uint8_t *dbg3;
+    uint8_t *long_base;
+    uint8_t *result8b;
     intPtr_t result;
+    int32_t signed_base;
 
-    dbg1 = long_offset[RD(x,DATAOFF_ARCW0)];             
-    dbg2 = (intPtr_t)(RD((x),BASEIDX_ARCW0));
-    dbg2 = dbg2 << (2*extend);
-    dbg3 = &(dbg1[dbg2]);
-    result = (intPtr_t)dbg3;
-
+    long_base = long_offset[RD(x,DATAOFF_ARCW0)];             
+    signed_base = x << (32-BAS_SIGN_ARCW0_MSB);
+    signed_base >>= (32-BAS_SIGN_ARCW0_MSB);
+    signed_base <<= extend;
+    result8b = &(long_base[signed_base]);
+    result = (intPtr_t)result8b;
     return result;  
 }
 
@@ -362,7 +366,7 @@ extern p_stream_node node_entry_points[];
     //    const p_stream_al_services *al_func;
 
     //    al_func = &(S->al_services);
-    //    (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV, PLATFORM_CLEAR_BACKUP_MEM, 0), 0,0,0,0);
+    //    (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV, SERV_INTERNAL_PLATFORM_CLEAR_BACKUP_MEM, 0), 0,0,0,0);
     //}
 
     platform_init_copy_graph (S, &graph_dst);
@@ -484,6 +488,7 @@ void platform_init_copy_graph(arm_stream_instance_t *S, uint32_t **graph_dst)
     graph_flash = S->graph;
 
     RAMsplit = (uint8_t)RD(((S->graph)[0]),RAMSPLIT_GR0);
+    PIOongoing = 0;
 
     switch (RAMsplit)
     {   default :
@@ -561,7 +566,7 @@ void platform_init_io(arm_stream_instance_t *S)
     /* if cold start : clear the backup area */
     if (TEST_BIT(S->scheduler_control, BOOT_SCTRL_LSB) == STREAM_COLD_BOOT)
     {   al_func = &(S->al_services);
-        (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV,PLATFORM_CLEAR_BACKUP_MEM,0), 0,0, 0,0);
+        (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV,SERV_INTERNAL_PLATFORM_CLEAR_BACKUP_MEM,SERV_GROUP_INTERNAL), 0,0, 0,0);
     }
 
     /* wait all the process have initialized the graph */
@@ -615,8 +620,8 @@ void platform_init_io(arm_stream_instance_t *S)
         if (IO_COMMAND_SET_BUFFER == RD(*pio_control, SET0COPY1_IOFMT0))
         {   
             stream_xdmbuffer_t pt_pt;
-            pt_pt.address = 0x11112222;
-            pt_pt.size = 0x33334444;
+            pt_pt.address = 0x11112222;     // debug
+            pt_pt.size = 0x33334444;        // debug
 
             io_func = &(S->platform_io[RD(*pio_control, FWIOIDX_IOFMT0)]);
             (*io_func)(STREAM_SET_BUFFER, &pt_pt);

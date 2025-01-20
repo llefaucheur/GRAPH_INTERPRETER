@@ -85,6 +85,7 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, void *data, uint32_t si
     uint32_t read;
     uint32_t write;
     uint32_t fifosize;
+    int32_t signed_base;
     uint8_t *long_base;
     uint8_t *src;
     uint8_t *dst;
@@ -96,8 +97,10 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, void *data, uint32_t si
     arc = &(arc[(int)SIZEOF_ARCDESC_W32 * (int)RD(*pio_control, IOARCID_IOFMT0)]);
 
     extend = RD(arc[2], ARCEXTEND_ARCW2);
-    long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];                   /* platfom memory offsets */
-    long_base = &(long_base[(RD(arc[0], BASEIDX_ARCW0)) << (2*extend)]);    /* BASE is in BYTES shift ARCEXTEND_ARCW2*/
+    long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];   /* platfom memory offsets */
+    signed_base = arc[0] << (32-BAS_SIGN_ARCW0_MSB);
+    signed_base >>= (32-BAS_SIGN_ARCW0_MSB);
+    long_base = &(long_base[signed_base << extend]);        /* BASE is in BYTES shifted ARCEXTEND_ARCW2*/
 
     fifosize = RD(arc[1], BUFF_SIZE_ARCW1);
     read = RD(arc[2], READ_ARCW2);

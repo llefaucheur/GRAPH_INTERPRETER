@@ -564,13 +564,13 @@ void arm_stream_services (
 //
 //  @remark       
 // */
-//void al_service_time_functions (uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
+//void SERV_time_functions (uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
 //{   volatile uint8_t *pt8 = pt8b;
 //
 //    switch (service_command)
-//    {   case AL_SERVICE_READ_TIME64:
-//        case AL_SERVICE_READ_TIME32:
-//        case AL_SERVICE_READ_TIME16:
+//    {   case SERV_READ_TIME64:
+//        case SERV_READ_TIME32:
+//        case SERV_READ_TIME16:
 //        {   break;
 //        }
 //    }
@@ -582,18 +582,18 @@ void arm_stream_services (
 //  @return       none
 //
 //  @par          Usage:
-//            al_service_mutual_exclusion (AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP, 
+//            SERV_mutual_exclusion (SERV_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP, 
 //                S->pt8b_collision_arc, (*data) &check, &process_ID, 0);
 //                
 //  @remark       
 // */
-//void al_service_mutual_exclusion(uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
+//void SERV_mutual_exclusion(uint32_t service_command, uint8_t *pt8b, uint8_t *data, uint8_t *flag, uint32_t n)
 //{   
 //    volatile uint8_t *pt8 = pt8b;
 //
 //    switch (service_command)
 //    {
-//        case AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP:
+//        case SERV_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP:
 //        {
 //            /* attempt to reserve the node */
 //            *pt8 = *data;    
@@ -606,20 +606,20 @@ void arm_stream_services (
 //            break;
 //        }
 //
-//        case AL_SERVICE_MUTUAL_EXCLUSION_WR_BYTE_MP:
+//        case SERV_MUTUAL_EXCLUSION_WR_BYTE_MP:
 //        {   *(volatile uint8_t *)(pt8) = (*data); 
 //            DATA_MEMORY_BARRIER; 
 //            break;
 //        }
 //
 //        default:
-//        case AL_SERVICE_MUTUAL_EXCLUSION_RD_BYTE_MP:
+//        case SERV_MUTUAL_EXCLUSION_RD_BYTE_MP:
 //        {   DATA_MEMORY_BARRIER; 
 //            (*data) = *(volatile uint8_t *)(pt8);
 //            break;
 //        }
 //
-//        case AL_SERVICE_MUTUAL_EXCLUSION_CLEAR_BIT_MP:
+//        case SERV_MUTUAL_EXCLUSION_CLEAR_BIT_MP:
 //        {   ((*pt8b) = U(*pt8b) & U(~(U(1) << U(n)))); 
 //            DATA_MEMORY_BARRIER;
 //            break;
@@ -642,20 +642,20 @@ void arm_stream_services (
 //    /* max 16 groups of commands {SERV_INTERNAL .. SERV_MM_IMAGE} */
 //	switch (RD(service_command, FUNCTION_SSRV))
 //    {
-//    case AL_SERVICE_READ_TIME:
-//        al_service_time_functions(RD(service_command, FUNCTION_SSRV), (uint8_t *)ptr1, (uint8_t *)ptr2, (uint8_t *)ptr3, n);
+//    case SERV_READ_TIME:
+//        SERV_time_functions(RD(service_command, FUNCTION_SSRV), (uint8_t *)ptr1, (uint8_t *)ptr2, (uint8_t *)ptr3, n);
 //        break;
-//    case AL_SERVICE_SLEEP_CONTROL:
+//    case SERV_SLEEP_CONTROL:
 //        break;
-//    case AL_SERVICE_READ_MEMORY:
+//    case SERV_READ_MEMORY:
 //        break;
-//    case AL_SERVICE_SERIAL_COMMUNICATION:
+//    case SERV_SERIAL_COMMUNICATION:
 //        break;
 //    //enum stream_service_group
-//    case AL_SERVICE_MUTUAL_EXCLUSION:
-//        al_service_mutual_exclusion(RD(service_command, FUNCTION_SSRV), (uint8_t *)ptr1, (uint8_t *)ptr2, (uint8_t *)ptr3, n);
+//    case SERV_MUTUAL_EXCLUSION:
+//        SERV_mutual_exclusion(RD(service_command, FUNCTION_SSRV), (uint8_t *)ptr1, (uint8_t *)ptr2, (uint8_t *)ptr3, n);
 //        break;
-//    case AL_SERVICE_CHANGE_IO_SETTING:
+//    case SERV_CHANGE_IO_SETTING:
 //        break;
 //    }
 //}

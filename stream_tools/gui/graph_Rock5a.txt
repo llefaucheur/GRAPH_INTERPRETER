@@ -1,0 +1,33 @@
+  nodes:
+  - node: analog_sensor1
+    outputs:  OPort0
+  - node: filter1
+    inputs: IPort0
+    outputs:  OPort0
+  - node: detector1
+    inputs: IPort0
+    outputs:  OPort0
+  - node: gpio_out_1_1
+    inputs: IPort0
+  arcs:
+  - src:
+      node: analog_sensor1
+      output: OPort0
+    dst:
+      node: filter1
+      input: IPort0
+  - src:
+      node: filter1
+      output: OPort0
+    dst:
+      node: detector1
+      input: IPort0
+  - src:
+      node: detector1
+      output: OPort0
+    dst:
+      node: gpio_out_1_1
+      input: IPort0
+//Rock5a                   Rock5a1
+       //script                   script1
+       

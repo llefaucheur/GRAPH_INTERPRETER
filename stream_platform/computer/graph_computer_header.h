@@ -1,5 +1,5 @@
 //--------------------------------------
-//  DATE Thu Dec 12 13:04:23 2024
+//  DATE Mon Jan 20 19:55:10 2025
 //  AUTOMATICALLY GENERATED CODES
 //  DO NOT MODIFY !
 //--------------------------------------
@@ -31,17 +31,17 @@
 //       nregs+r12 7 x2   stack 6 x2  heap 0h 
 #define arc_buf_3  0x0 // arc buffer address
 #define arc_4      0x70 // arc descriptor position in the graph
-                        // _4_buff OFF 0 BASE 0x01E4 PT 0x01E4 MAXW 0x0000 SIZE_bytes 0010 
+                        // _4_buff OFF 0 BASE 0x01E4 PT 0x01E4 MAXW 0x0000 SIZE_bytes 0020 
 #define arc_buf_4  0x1E4 // arc buffer address
 
 
-                        //  OFF 0 BASE 0x01F4 PT 0x01F4 MAXW 0x0000 SIZE_bytes 0018 
-#define arm_stream_filter 0x1F4 // node static memory address
-                        //  OFF 0 BASE 0x020C PT 0x020C MAXW 0x0000 SIZE_bytes 0038 
-#define sigp_stream_detector 0x20C // node static memory address
-                        //  OFF 0 BASE 0x0244 PT 0x0244 MAXW 0x0000 SIZE_bytes 0020 
-#define sigp_stream_detector 0x244 // node static memory address
-                        //  OFF 0 BASE 0x0264 PT 0x0264 MAXW 0x0000 SIZE_bytes 0020 
-#define arm_stream_script 0x264 // node static memory address
+                        //  OFF 0 BASE 0x0204 PT 0x0204 MAXW 0x0000 SIZE_bytes 0018 
+#define arm_stream_filter 0x204 // node static memory address
+                        //  OFF 0 BASE 0x021C PT 0x021C MAXW 0x0000 SIZE_bytes 0038 
+#define sigp_stream_detector 0x21C // node static memory address
+                        //  OFF 0 BASE 0x0254 PT 0x0254 MAXW 0x0000 SIZE_bytes 0020 
+#define sigp_stream_detector 0x254 // node static memory address
+                        //  OFF 0 BASE 0x0274 PT 0x0274 MAXW 0x0000 SIZE_bytes 0020 
+#define arm_stream_script 0x274 // node static memory address
                         //  OFF 2 BASE 0x0000 PT 0x0000 MAXW 0x0000 SIZE_bytes 0050 
-#define arm_stream_filter node scratch memory address offset 2 index 0 0x800000 // node scratch memory address offset 2 index 0
+#define arm_stream_filter node scratch memory address offset 2 index 0 0x4000000 // node scratch memory address offset 2 index 0

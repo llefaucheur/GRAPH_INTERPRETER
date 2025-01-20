@@ -14,7 +14,7 @@ graph_location          1           ; script and linked-list stays in flash
 format_index            0
 format_frame_length     2           ; minimum = frame of one int16
 format_index            1
-format_frame_length     16          ; size_data_in_1
+format_frame_length     32          ; size_data_in_1
 ;----------------------------------------------------------------------
 stream_io               0           ;
 stream_io_hwid          1           ; io_platform_data_in_1.txt
@@ -47,7 +47,7 @@ node arm_stream_script     0
                                                              
     node_script_code       
         r5 =  0xFF              ; r5 =  0xFF   
-;       CALLSYS NODE r-CMD r-Param r-ADDR r-N
+;       SYSCALL NODE r-CMD r-Param r-ADDR r-N
 ;               FUNC   SET arcID addr   n 
         r3 | 1 10 | = r5        ; r3 |1 10| = r5
         r4 = r3 | 3 5 |         ; r4 = r3 |3 5|
@@ -56,18 +56,30 @@ node arm_stream_script     0
         r0 = 0x412              ; r0 = TAG(4) + RESET(1) + STREAM_SET_PARAMETER(2)
         set r3 param BBB        ; set r3 param BBB 
         sp0 = 1                 ; push 1 Byte (threshold size in BBB)
-;       callsys 1 (1 = node = FUNCTION_SSRV)
-;           r-node      node address of sigp_stream_detector
+;       syscall 1 (1 = node = FUNCTION_SSRV)
+;         Command        C           COMMAND_SSRV   STREAM_SET_PARAMETER    2
+;         Option          o           OPTION_SSRV   0
+;         TAG              tt            TAG_SSRV   THR = 4
+;         sub Function       f      SUBFUNCT_SSRV   0
+;         Function            FF    FUNCTION_SSRV
+;         Service Group         g      GROUP_SSRV   SERV_GROUP_INTERNAL     1
 ;           r-cmd       tag(0=none, 4=THR(doc)) + reset id + set_param
+;           r-node      node address of sigp_stream_detector
 ;           r-addr      data address
 ;           r-n         nbbytes
-        callsys 1 r2 r0 r3 sp0  ; callsys NODE(1) r2(cmd=set_param) r0(set) r3(data) sp0(1 bytes)
+
+;       R1: command (set/read parameter)
+;       R2: address of the node
+;       R3: address of data
+;       R4: number of bytes
+
+        syscall 1 r0 r2 r3 sp0  ; syscall NODE(1) r2(cmd=set_param) r0(set) r3(data) sp0(1 bytes)
       label AAA                
         r1 = add r1 1           ; r1 = add r1 1      Label AAA 
         r2 = xor r2 r3          ; r2 = xor r2 r3      
         test_gt r1 1            ; test_gt r1 1        
         if_no jump AAA          ; if_no jump AAA      
-        callsys 15 r2 r3 r4     ; callsys 15 r2 r3 r4 
+        syscall 15 r2 r3 r4     ; syscall 15 r2 r3 r4 
         set r0 param CCC        ; set r0 CCC          
         set r3 heap EEE         ; set r3 EEE          
         set r0 type uint8       ; set r0 type uint8   
@@ -100,7 +112,7 @@ script  0                   ; script name
     script_code       
         r1 = add r2 3       ; r1 = add r2 3
         r2 = -9000          ; r2 = -9000
-        callsys 11          ; callsys 11
+        syscall 11          ; syscall 11
         return              ; return
     end                     ; end script 0
 ;----------------------------------------------------------------------
