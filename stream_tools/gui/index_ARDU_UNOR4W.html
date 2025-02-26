@@ -373,32 +373,32 @@ TODO Add support for multiple IO for more nodes. Currently only those required f
     
     
 	{"type":"data_in_0",
-     "data":{"defaults":{"name":{"value":"new"} },
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
              "shortName":"data_in_0","inputs":0,"outputs":1,
              "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
 	{"type":"data_in_1",
-     "data":{"defaults":{"name":{"value":"new"} },
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
              "shortName":"data_in_1","inputs":0,"outputs":1,
              "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
              
 	{"type":"analog_sensor",
-     "data":{"defaults":{"name":{"value":"new"} },
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
              "shortName":"analog_sensor","inputs":0,"outputs":1,
              "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
              
 	{"type":"motion_in_0",
-     "data":{"defaults":{"name":{"value":"new"} },
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
              "shortName":"motion_in_0","inputs":0,"outputs":1,
              "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
              
 	{"type":"audio_in_0",
-     "data":{"defaults":{"name":{"value":"new"} },
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
              "shortName":"audio_in_0","inputs":0,"outputs":1,
              "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
              
 	{"type":"2d_in_0",
-     "data":{"defaults":{"name":{"value":"new"} },
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
              "shortName":"2d_in_0","inputs":0,"outputs":1,
              "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
@@ -407,7 +407,7 @@ TODO Add support for multiple IO for more nodes. Currently only those required f
    {"type":"line_out_0",
      "data":{"defaults":{"name":{"value":"new"}, 
                          "input_node_dataformats": {"value": ["float32_t"], "required" : "true"}, 
-                         "kind":{"value": "data_out", "required" : "true"}, 
+                         "kind":{"value": "IO", "required" : "true"}, 
                          "numArgs": {"value": 1, "required": "true"}, 
                          "variable": {"value": "dsp_context", "required": "true" }, 
                          "samples": {"value": "256", "required": "true" }},
@@ -415,17 +415,17 @@ TODO Add support for multiple IO for more nodes. Currently only those required f
              "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
 	{"type":"gpio_out_0",
-     "data":{"defaults":{"name":{"value":"new"} },
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
              "shortName":"gpio_out_0","inputs":1,"outputs":0,
              "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
  
 	{"type":"gpio_out_1",
-     "data":{"defaults":{"name":{"value":"new"} },
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
              "shortName":"gpio_out_1","inputs":1,"outputs":0,
              "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
 	{"type":"data_out_0",
-     "data":{"defaults":{"name":{"value":"new"} },
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
              "shortName":"data_out_0","inputs":1,"outputs":0,
              "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
  

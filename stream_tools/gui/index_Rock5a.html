@@ -362,224 +362,224 @@ Data fields configured by drop-downs must match exactly with fields in individua
 TODO Add support for multiple IO for more nodes. Currently only those required for DSP-App demo are fully functional but support for nodes with multiple IO may require more work to maintain exportability. This file should be treated as a work in progress.
 
 <!-- TODO If you remove dataformat here remember to remove from individual labels below -->
-<script  type="text/x-red" data-container-name="NodeDefinitions">
-	{"nodes":[
-    
-
-          
-	{"type":"Rock5a",
-     "data":{"shortName":"Rock5a","inputs":0,"outputs":0,"category":"Platforms","color":"#E6E0F8","icon":"arrow-in.png"}},                 
-     
-    
-   
-	{"type":"data_in_0",
-     "data":{"defaults":{"name":{"value":"new"} },
-             "shortName":"data_in_0","inputs":0,"outputs":1,
-             "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
-
-	{"type":"data_in_1",
-     "data":{"defaults":{"name":{"value":"new"} },
-             "shortName":"data_in_1","inputs":0,"outputs":1,
-             "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
-             
-	{"type":"analog_sensor",
-     "data":{"defaults":{"name":{"value":"new"} },
-             "shortName":"analog_sensor","inputs":0,"outputs":1,
-             "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
-             
-	{"type":"motion_in_0",
-     "data":{"defaults":{"name":{"value":"new"} },
-             "shortName":"motion_in_0","inputs":0,"outputs":1,
-             "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
-             
-	{"type":"audio_in_0",
-     "data":{"defaults":{"name":{"value":"new"} },
-             "shortName":"audio_in_0","inputs":0,"outputs":1,
-             "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
-             
-	{"type":"2d_in_0",
-     "data":{"defaults":{"name":{"value":"new"} },
-             "shortName":"2d_in_0","inputs":0,"outputs":1,
-             "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
+<script type="text/x-red" data-container-name="NodeDefinitions">
+     {"nodes":[
 
 
 
-   {"type":"line_out_0",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "input_node_dataformats": {"value": ["float32_t"], "required" : "true"}, 
-                         "kind":{"value": "data_out", "required" : "true"}, 
-                         "numArgs": {"value": 1, "required": "true"}, 
-                         "variable": {"value": "dsp_context", "required": "true" }, 
-                         "samples": {"value": "256", "required": "true" }},
-             "shortName":"line_out_0","inputs":1,"outputs":0,
-             "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
+     {"type":"Rock5a",
+      "data":{"shortName":"Rock5a","inputs":0,"outputs":0,"category":"Platforms","color":"#E6E0F8","icon":"arrow-in.png"}},
 
-	{"type":"gpio_out_0",
-     "data":{"defaults":{"name":{"value":"new"} },
-             "shortName":"gpio_out_0","inputs":1,"outputs":0,
-             "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
- 
-	{"type":"gpio_out_1",
-     "data":{"defaults":{"name":{"value":"new"} },
-             "shortName":"gpio_out_1","inputs":1,"outputs":0,
-             "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
-	{"type":"data_out_0",
-     "data":{"defaults":{"name":{"value":"new"} },
-             "shortName":"data_out_0","inputs":1,"outputs":0,
-             "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
- 
 
-             
-             
+     {"type":"data_in_0",
+      "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
+              "shortName":"data_in_0","inputs":0,"outputs":1,
+              "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
-	{"type":"script",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "script", "required" : "true"}},
-             "shortName":"script","inputs":0,"outputs":0,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
+     {"type":"data_in_1",
+      "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
+              "shortName":"data_in_1","inputs":0,"outputs":1,
+              "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
-	{"type":"format_converter",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "format_converter", "required" : "true"}},
-             "shortName":"format_converter","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
+     {"type":"analog_sensor",
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
+              "shortName":"analog_sensor","inputs":0,"outputs":1,
+              "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
-	{"type":"router",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "router", "required" : "true"}},
-             "shortName":"router","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
+     {"type":"motion_in_0",
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
+              "shortName":"motion_in_0","inputs":0,"outputs":1,
+              "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
-	{"type":"amplifier",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "amplifier", "required" : "true"}},
-             "shortName":"amplifier","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
+     {"type":"audio_in_0",
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
+              "shortName":"audio_in_0","inputs":0,"outputs":1,
+              "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
-	{"type":"mixer",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "mixer", "required" : "true"}},
-             "shortName":"mixer","inputs":4,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
+     {"type":"2d_in_0",
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
+              "shortName":"2d_in_0","inputs":0,"outputs":1,
+              "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
-	{"type":"filter",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "filter", "required" : "true"}},
-             "shortName":"filter","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
 
-	{"type":"rescaler",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "rescaler", "required" : "true"}},
-             "shortName":"rescaler","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
 
-	{"type":"modulator",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "modulator", "required" : "true"}},
-             "shortName":"modulator","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
+    {"type":"line_out_0",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "input_node_dataformats": {"value": ["float32_t"], "required" : "true"},
+                          "kind":{"value": "IO", "required" : "true"},
+                          "numArgs": {"value": 1, "required": "true"},
+                          "variable": {"value": "dsp_context", "required": "true" },
+                          "samples": {"value": "256", "required": "true" }},
+              "shortName":"line_out_0","inputs":1,"outputs":0,
+              "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
-	{"type":"demodulator",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "demodulator", "required" : "true"}},
-             "shortName":"demodulator","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
+     {"type":"gpio_out_0",
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
+              "shortName":"gpio_out_0","inputs":1,"outputs":0,
+              "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
-	{"type":"qos",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "qos", "required" : "true"}},
-             "shortName":"qos","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
+     {"type":"gpio_out_1",
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
+              "shortName":"gpio_out_1","inputs":1,"outputs":0,
+              "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
-	{"type":"split",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "split", "required" : "true"}},
-             "shortName":"split","inputs":1,"outputs":4,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-             
-	{"type":"analysis",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "analysis", "required" : "true"}},
-             "shortName":"analysis","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"filter2D",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "filter2D", "required" : "true"}},
-             "shortName":"filter2D","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
+     {"type":"data_out_0",
+     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
+              "shortName":"data_out_0","inputs":1,"outputs":0,
+              "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
 
 
 
 
 
+     {"type":"script",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "script", "required" : "true"}},
+              "shortName":"script","inputs":0,"outputs":0,
+              "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"format_converter",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "format_converter", "required" : "true"}},
+              "shortName":"format_converter","inputs":1,"outputs":1,
+              "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"router",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "router", "required" : "true"}},
+              "shortName":"router","inputs":1,"outputs":1,
+              "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"amplifier",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "amplifier", "required" : "true"}},
+              "shortName":"amplifier","inputs":1,"outputs":1,
+              "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"mixer",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "mixer", "required" : "true"}},
+              "shortName":"mixer","inputs":4,"outputs":1,
+              "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"filter",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "filter", "required" : "true"}},
+              "shortName":"filter","inputs":1,"outputs":1,
+              "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"rescaler",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "rescaler", "required" : "true"}},
+              "shortName":"rescaler","inputs":1,"outputs":1,
+              "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"modulator",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "modulator", "required" : "true"}},
+              "shortName":"modulator","inputs":1,"outputs":1,
+              "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"demodulator",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "demodulator", "required" : "true"}},
+              "shortName":"demodulator","inputs":1,"outputs":1,
+              "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"qos",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "qos", "required" : "true"}},
+              "shortName":"qos","inputs":1,"outputs":1,
+              "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"split",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "split", "required" : "true"}},
+              "shortName":"split","inputs":1,"outputs":4,
+              "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"analysis",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "analysis", "required" : "true"}},
+              "shortName":"analysis","inputs":1,"outputs":1,
+              "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"filter2D",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "filter2D", "required" : "true"}},
+              "shortName":"filter2D","inputs":1,"outputs":1,
+              "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},
 
 
-	{"type":"compressor",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "compressor", "required" : "true"}},
-             "shortName":"compressor","inputs":1,"outputs":1,
-             "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"decompressor",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "decompressor", "required" : "true"}},
-             "shortName":"decompressor","inputs":1,"outputs":1,
-             "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"converter",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "converter", "required" : "true"}},
-             "shortName":"converter","inputs":1,"outputs":1,
-             "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"resampler",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "resampler", "required" : "true"}},
-             "shortName":"resampler","inputs":1,"outputs":1,
-             "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"detector",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "detector", "required" : "true"}},
-             "shortName":"detector","inputs":1,"outputs":1,
-             "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"detector2D",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "detector2D", "required" : "true"}},
-             "shortName":"detector2D","inputs":1,"outputs":1,
-             "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},	
 
 
 
 
-	{"type":"JpgEncoder",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "JpgEncoder", "required" : "true"}},
-             "shortName":"JpgEncoder","inputs":1,"outputs":1,
-             "category":"bitbanksw","color":"#E6E0F8","icon":"arrow-in.png"}},	
 
-	{"type":"JpgDecoder",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "JpgDecoder", "required" : "true"}},
-             "shortName":"JpgDecoder","inputs":1,"outputs":1,
-             "category":"bitbanksw","color":"#E6E0F8","icon":"arrow-in.png"}},
+     {"type":"compressor",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "compressor", "required" : "true"}},
+              "shortName":"compressor","inputs":1,"outputs":1,
+              "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},
 
-    
-    
-	{"type":"OpusDecoder",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "OpusDecoder", "required" : "true"}},
-             "shortName":"OpusDecoder","inputs":1,"outputs":1,
-             "category":"Company4","color":"#E6E0F8","icon":"arrow-in.png"}}
+     {"type":"decompressor",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "decompressor", "required" : "true"}},
+              "shortName":"decompressor","inputs":1,"outputs":1,
+              "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"converter",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "converter", "required" : "true"}},
+              "shortName":"converter","inputs":1,"outputs":1,
+              "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"resampler",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "resampler", "required" : "true"}},
+              "shortName":"resampler","inputs":1,"outputs":1,
+              "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"detector",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "detector", "required" : "true"}},
+              "shortName":"detector","inputs":1,"outputs":1,
+              "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"detector2D",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "detector2D", "required" : "true"}},
+              "shortName":"detector2D","inputs":1,"outputs":1,
+              "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},
 
 
 
-    
-	]}
+
+     {"type":"JpgEncoder",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "JpgEncoder", "required" : "true"}},
+              "shortName":"JpgEncoder","inputs":1,"outputs":1,
+              "category":"bitbanksw","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+     {"type":"JpgDecoder",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "JpgDecoder", "required" : "true"}},
+              "shortName":"JpgDecoder","inputs":1,"outputs":1,
+              "category":"bitbanksw","color":"#E6E0F8","icon":"arrow-in.png"}},
+
+
+
+     {"type":"OpusDecoder",
+      "data":{"defaults":{"name":{"value":"new"},
+                          "kind":{"value": "OpusDecoder", "required" : "true"}},
+              "shortName":"OpusDecoder","inputs":1,"outputs":1,
+              "category":"Company4","color":"#E6E0F8","icon":"arrow-in.png"}}
+
+
+
+
+     ]}
 </script>
 
 
@@ -649,20 +649,27 @@ Information/text to be displayed should be added inside <p> and </p>
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
+
         <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
+            <label for="node-input-name"><i class="fa fa-tag"></i> Manifest</label>
+            <input type="text" id="node-input-name" placeholder="Manifest">
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-samples"><i class="fa fa-tag"></i> Frame Size </label>
             <select id="node-input-samples">
             <option>128</option>
             <option>256</option>
         </select>
         </div>
+
         <div class="form-row">
         <label for="node-input-output_node_dataformats"><i class="fa fa-tag"></i> Output Format </label>
         <select id="node-input-output_node_dataformats">
         <option>int16_t</option>
         <option>float32_t</option>
         </select>
-        </div>	
+        </div>
     </script>       
 
     <script type="text/x-red" data-help-name="data_in_0">
@@ -706,31 +713,38 @@ Information/text to be displayed should be added inside <p> and </p>
 
 <!----------------------------------- analog_sensor ------------------------------------------->
 
-    <script type="text/x-red" data-template-name="analog_sensor">
+    <script type="text/x-red" data-template-name="data_in_0">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
+
         <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
+            <label for="node-input-name"><i class="fa fa-tag"></i> Manifest</label>
+            <input type="text" id="node-input-name" placeholder="Manifest">
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-samples"><i class="fa fa-tag"></i> Frame Size </label>
             <select id="node-input-samples">
             <option>128</option>
             <option>256</option>
         </select>
         </div>
+
         <div class="form-row">
         <label for="node-input-output_node_dataformats"><i class="fa fa-tag"></i> Output Format </label>
         <select id="node-input-output_node_dataformats">
         <option>int16_t</option>
         <option>float32_t</option>
         </select>
-        </div>	
+        </div>
     </script>       
 
-    <script type="text/x-red" data-help-name="analog_sensor">
+    <script type="text/x-red" data-help-name="data_in_0">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>A/D converter and general purpose sensor input 
+        <p>General purpose graph input 0 (from I/O or application)
             </p>
         </div>
     </script>
@@ -1081,56 +1095,81 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 <!----------------------------------- amplifier ------------------------------------------->
-    <script type="text/x-red" data-template-name="router">
-        <div class="form-row">
-            <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-            <input type="text" id="node-input-name" placeholder="Name">
-        </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+    <script type="text/x-red" data-template-name="amplifier">
+            <div class="form-row">
+                <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+                <input type="text" id="node-input-name" placeholder="Name">
+            </div>
+            <div class="form-row">
+                <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
+                <select id="node-input-samples">
+                <option>192</option>
+                <option>384</option>
+            </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
+                <select id="node-input-samplingRate">
+                <option>16000</option>
+                <option>44100</option>
+            </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
+                <select id="node-input-numberOfChannels">
+                <option>1</option>
+                <option>2</option>
+            </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
+                <select id="node-input-interleaving">
+                <option>Frame</option>
+                <option>Sample</option>
+            </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
+                <select id="node-input-timeStamp">
+                <option>none</option>
+                <option>absoluteTime</option>
+                <option>deltaTime</option>
+                <option>frameCounter</option>
+            </select>
+            </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="amplifier">
+
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>amplifier.
+        <p>Amplify or attenuate a signal, or switch it on/off.
             </p>
+        <!----- <p align=center><img src="img/ampschematics.png"></p> ---->
         </div>
+        <h3>Data Connections</h3>
+        <table class=doc align=center cellpadding=3>
+            <tr class=top><th>Port</th><th>Purpose</th></tr>
+            <tr class=odd><td align=center>In 0</td><td>Input signal</td></tr>
+            <tr class=odd><td align=center>Out 0</td><td>Amplified/Attn. Output</td></tr>
+        </table>
+        <p
+        <p class=desc>Adjust the amplification or attenuation.
+            "level" may be any floating point number from 0 to 32767.0.
+            1.0 passes the signal through directly.  Level of 0 shuts the channel
+            off completely.  Between 0 to 1.0 attenuates the signal, and above
+            1.0 amplifies it.  Negative numbers may also be used, to invert the
+            signal.
+        </p>
+        <!--<h3>Examples</h3>
+        <p class=exam>File &gt; Examples &gt; Audio &gt; SamplePlayer
+        </p>-->
+        <h3>Notes</h3>
+        <p>Gain of 0 and 1.0 are handled efficiently as special cases.  Zero
+            discards data without processing.  1.0 passes data directly, with
+            minimal overhead</p>
+        <p>Signal clipping can occur when any channel has gain greater than 1.0</p>
     </script>
 
 <!----------------------------------- mixer ------------------------------------------->
@@ -1245,47 +1284,56 @@ Information/text to be displayed should be added inside <p> and </p>
 
 <!----------------------------------- detector ------------------------------------------->
     <script type="text/x-red" data-template-name="detector">
-        <div class="form-row">
-            <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-            <input type="text" id="node-input-name" placeholder="Name">
-        </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+            <div class="form-row">
+                <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+                <input type="text" id="node-input-name" placeholder="Name">
+            </div>
+            <div class="form-row">
+                <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
+                <select id="node-input-samples">
+                <option>192</option>
+                <option>384</option>
+            </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
+                <select id="node-input-samplingRate">
+                <option>16000</option>
+                <option>44100</option>
+            </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
+                <select id="node-input-numberOfChannels">
+                <option>1</option>
+                <option>2</option>
+            </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
+                <select id="node-input-interleaving">
+                <option>Frame</option>
+                <option>Sample</option>
+            </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
+                <select id="node-input-timeStamp">
+                <option>none</option>
+                <option>absoluteTime</option>
+                <option>deltaTime</option>
+                <option>frameCounter</option>
+            </select>
+            <div class="form-row">
+                <label for="node-input-preset"><i class="fa fa-tag"></i> Preset </label>
+                <select id="node-input-preset">
+                <option>Voice Detection 16kHz</option>
+                <option>Voice Detection 48kHz</option>
+                <option>Fall Detection 100Hz</option>
+                <option>Anomaly Detection 1Hz</option>
+            </select>
+            </div>
+            </div>
     </script>
 
     <script type="text/x-red" data-help-name="detector">

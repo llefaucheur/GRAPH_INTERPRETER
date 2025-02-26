@@ -71,7 +71,7 @@ var RED = (function() {
 			// Note YML does not use TABS, always use spaces
 			var yml = "";
 			if (export_as_yaml){
-				// yml += "version: " + "'1.0'" + "\n";
+				yml += "version: " + "'1.0'" + "\n";
 				// yml += "graph:" + "\n";
 				yml += "  nodes:" + "\n";
 			}
@@ -87,25 +87,25 @@ var RED = (function() {
 					// or at least remove the if (!undefined) logic for fields that are universal
 					if (export_as_yaml){
 						yml += "  - node: " + name + "\n";
-						//yml += "    kind: " + node["kind"] + "\n";
+						yml += "    kind: " + node["kind"] + "\n";
 						if (node["samplingRate"] != undefined) {yml += "    samplingRate: " + String(node["samplingRate"]) + "\n"}
 						if (node["numberOfChannels"] != undefined) {yml += "    numberOfChannels: " + String(node["numberOfChannels"]) + "\n"}
 						if (node["interleaving"] != undefined) {yml += "    interleaving: " + String(node["interleaving"]) + "\n"}
 						if (node["timeStamp"] != undefined) {yml += "    timeStamp: " + String(node["timeStamp"]) + "\n"}
 						if (node._def.inputs > 0) {
-							yml += "    inputs: ";
+							yml += "    inputs:\n";
 							for (var k=0; k< node._def.inputs; k++) {
-								yml += "IPort" + String(k) + "\n";
+								yml += "    - input: IPort" + String(k) + "\n";
 								if (node["samples"] != undefined) {yml += "      samples: " + String(node["samples"]) + "\n"}
-								//yml += "      type: " + String(node["input_node_dataformats"]) + "\n";
+								yml += "      type: " + String(node["input_node_dataformats"]) + "\n";
 							}
 						}
 						if (node.outputs > 0) {
-							yml += "    outputs: ";
+							yml += "    outputs:\n";
 							for (var k=0; k< node.outputs; k++) {
-								yml += " OPort" + String(k) + "\n";
+								yml += "    - output: OPort" + String(k) + "\n";
 								if (node["samples"] != undefined) {yml += "      samples: " + String(node["samples"]) + "\n"}
-								//yml += "      type: " + String(node["output_node_dataformats"]) + "\n";
+								yml += "      type: " + String(node["output_node_dataformats"]) + "\n";
 							}
 						}
 						// TODO Confirm this approach is robust as JSON object indices may not be reliable

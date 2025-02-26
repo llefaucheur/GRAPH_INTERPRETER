@@ -17,9 +17,6 @@
     <Filter Include="GraphSteps\headers">
       <UniqueIdentifier>{fd8f4b13-061f-4063-b0b6-c5fb52b7e0b0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Doc">
-      <UniqueIdentifier>{038cf925-e2be-4c01-9538-af808853244c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="PlatformsManifests">
       <UniqueIdentifier>{9491cea8-90e4-4330-aec4-91cba5186c85}</UniqueIdentifier>
     </Filter>
@@ -305,25 +302,5 @@
     <ClCompile Include="..\stream_tool_read_script.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\stream_doc\Graph.md">
-      <Filter>Doc</Filter>
-    </None>
-    <None Include="..\..\stream_doc\IoManifest.md">
-      <Filter>Doc</Filter>
-    </None>
-    <None Include="..\..\stream_doc\NodeManifest.md">
-      <Filter>Doc</Filter>
-    </None>
-    <None Include="..\..\stream_doc\NodesDescription.md">
-      <Filter>Doc</Filter>
-    </None>
-    <None Include="..\..\stream_doc\PlatformManifest.md">
-      <Filter>Doc</Filter>
-    </None>
-    <None Include="..\..\stream_doc\Tables.md">
-      <Filter>Doc</Filter>
-    </None>
   </ItemGroup>
 </Project>
