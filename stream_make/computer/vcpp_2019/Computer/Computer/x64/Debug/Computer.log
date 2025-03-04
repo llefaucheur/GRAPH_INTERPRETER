@@ -9,10 +9,10 @@
   arm_stream_format_converter.c
   arm_stream_format_converter_process.c
   arm_stream_mixer.c
-C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes\arm\filter\arm_stream_filter.c(257,37): warning C4312: 'type cast': conversion from 'intPtr_t' to 'int16_t *' of greater size
   arm_stream_mixer_process.c
-C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes\arm\filter\arm_stream_filter.c(259,38): warning C4312: 'type cast': conversion from 'intPtr_t' to 'int16_t *' of greater size
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes\arm\filter\arm_stream_filter.c(257,37): warning C4312: 'type cast': conversion from 'intPtr_t' to 'int16_t *' of greater size
   arm_stream_modulator.c
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes\arm\filter\arm_stream_filter.c(259,38): warning C4312: 'type cast': conversion from 'intPtr_t' to 'int16_t *' of greater size
   arm_stream_modulator_process.c
   arm_stream_qos.c
   arm_stream_qos_process.c

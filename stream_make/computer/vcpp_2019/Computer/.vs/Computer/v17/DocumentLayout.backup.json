@@ -1,12 +1,52 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_make\\computer\\vcpp_2019\\Computer\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{3B534753-DC1F-480D-8EE0-3428887F1749}|Computer.vcxproj|C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_src\\stream_scheduler.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B534753-DC1F-480D-8EE0-3428887F1749}|Computer.vcxproj|C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_platform\\computer\\platform_computer.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "stream_scheduler.c",
+              "DocumentMoniker": "C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_src\\stream_scheduler.c",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\stream_src\\stream_scheduler.c",
+              "ToolTip": "C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_src\\stream_scheduler.c",
+              "RelativeToolTip": "..\\..\\..\\..\\stream_src\\stream_scheduler.c",
+              "ViewState": "AgIAABMEAAAAAAAAAAAAAC4EAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
+              "WhenOpened": "2025-02-27T17:58:30.344Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "platform_computer.c",
+              "DocumentMoniker": "C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_platform\\computer\\platform_computer.c",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\stream_platform\\computer\\platform_computer.c",
+              "ToolTip": "C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_platform\\computer\\platform_computer.c",
+              "RelativeToolTip": "..\\..\\..\\..\\stream_platform\\computer\\platform_computer.c",
+              "ViewState": "AgIAAFIAAAAAAAAAAAAYwGEAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
+              "WhenOpened": "2025-02-27T17:40:41.374Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }
