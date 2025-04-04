@@ -349,7 +349,7 @@ RED.nodes = (function() {
 	}
 
 	/**
-	 * Parses the input string which contains copied code from CMSIS, scans the
+	 * Parses the input string which contains copied code, scans the
 	 * nodes and connections and forms them into a JSON representation which will be
 	 * returned as string.
 	 *

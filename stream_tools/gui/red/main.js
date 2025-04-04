@@ -50,6 +50,9 @@ var RED = (function() {
 		return name
 	}
 
+    function isEmpty(str) {
+        return (!str || str.length === 0);
+    }
 	function save(force) {
 		RED.storage.update();
 		var export_as_yaml = 1;
@@ -86,28 +89,40 @@ var RED = (function() {
 					// TODO When graph is finalised create an array of field types to iterate through
 					// or at least remove the if (!undefined) logic for fields that are universal
 					if (export_as_yaml){
-						yml += "  - node: " + name + "\n";
-						yml += "    kind: " + node["kind"] + "\n";
-						if (node["samplingRate"] != undefined) {yml += "    samplingRate: " + String(node["samplingRate"]) + "\n"}
-						if (node["numberOfChannels"] != undefined) {yml += "    numberOfChannels: " + String(node["numberOfChannels"]) + "\n"}
-						if (node["interleaving"] != undefined) {yml += "    interleaving: " + String(node["interleaving"]) + "\n"}
-						if (node["timeStamp"] != undefined) {yml += "    timeStamp: " + String(node["timeStamp"]) + "\n"}
-						if (node._def.inputs > 0) {
-							yml += "    inputs:\n";
-							for (var k=0; k< node._def.inputs; k++) {
-								yml += "    - input: IPort" + String(k) + "\n";
-								if (node["samples"] != undefined) {yml += "      samples: " + String(node["samples"]) + "\n"}
-								yml += "      type: " + String(node["input_node_dataformats"]) + "\n";
-							}
-						}
-						if (node.outputs > 0) {
-							yml += "    outputs:\n";
-							for (var k=0; k< node.outputs; k++) {
-								yml += "    - output: OPort" + String(k) + "\n";
-								if (node["samples"] != undefined) {yml += "      samples: " + String(node["samples"]) + "\n"}
-								yml += "      type: " + String(node["output_node_dataformats"]) + "\n";
-							}
-						}
+						//yml += "  - node: " + name + "\n";
+						//yml += "    kind: " + node["kind"] + "\n";
+						//if (node["samplingRate"] != undefined)  {yml += "    samplingRate: " + String(node["samplingRate"]) + "\n"}
+						//if (node["NbChan"] != undefined)        {yml += "    NbChan: " + String(node["NbChan"]) + "\n"}
+						//if (node["interleaving"] != undefined)  {yml += "    interleaving: " + String(node["interleaving"]) + "\n"}
+                        //if (node["timeStamp"] != undefined)     {yml += "    timeStamp: " + String(node["timeStamp"]) + "\n" }
+
+                        if (node["kind"] == "IO") {
+                            yml += "  - IO:   " + name + "\n";
+                            if (! isEmpty(node["FRAMEL"])) { yml += "    FRAMEL: " + String(node["FRAMEL"]) + "\n" } // frame length in samples
+                            //if (node["FRAMEL"] != undefined) { yml += "    FRAMEL: " + String(node["FRAMEL"]) + "\n" } // frame length in samples
+                            if (! isEmpty(node["NBCHAN"])) { yml += "    NBCHAN: " + String(node["NBCHAN"]) + "\n" } // number of channel options 
+                        } 
+                        if (node["kind"] == "node") {
+                            yml += "  - node: " + name + "\n";
+                            if (! isEmpty(node["PRESET"])) { yml += "    PRESET: " + String(node["PRESET"]) + "\n" }
+                            if (! isEmpty(node["SCRIPT"])) { yml += "    SCRIPT: " + String(node["SCRIPT"]) + "\n" }
+                        }
+						//if (node._def.inputs > 0) {
+						//	yml += "    inputs:\n";
+						//	for (var k=0; k< node._def.inputs; k++) {
+						//		yml += "    - input: IPort" + String(k) + "\n";
+						//		if (node["samples"] != undefined) {yml += "      samples: " + String(node["samples"]) + "\n"}
+						//		//yml += "      type: " + String(node["input_node_dataformats"]) + "\n";
+						//	}
+						//}
+						//if (node.outputs > 0) {
+						//	yml += "    outputs:\n";
+						//	for (var k=0; k< node.outputs; k++) {
+						//		yml += "    - output: OPort" + String(k) + "\n";
+						//		if (node["samples"] != undefined) {yml += "      samples: " + String(node["samples"]) + "\n"}
+						//		//yml += "      type: " + String(node["output_node_dataformats"]) + "\n";
+						//	}
+						//}
 						// TODO Confirm this approach is robust as JSON object indices may not be reliable
 						// Abandoned more elegant way of finding index using  var arg_starting_index = node.findIndex("numArgs");
 						// Find index of numArgs+1 to access the individual arguments by index [numArgs+offset] rather than name
@@ -163,9 +178,18 @@ var RED = (function() {
                                     // Note: Removed this line as logic was unclear
                                     // if (j == 0 && parts[1] == 0 && src && src.outputs == 1 && dst && dst._def.inputs == 1) {
                                     if (src && dst) {
-                                        if (export_as_yaml){
-                                            yml += "  - src:\n      node: "+ src_name + "\n      output: OPort" + String(parts[1]) + "\n";
-                                            yml += "    dst:\n      node: "+ dst_name + "\n      input: IPort" + String(parts[1]) + "\n";
+                                        if (export_as_yaml) {
+                                            if (src["kind"] == "IO") {
+                                                yml += "  - OPort" + String(j) + " IO:   " + src_name + "\n";
+                                            } else {
+                                                yml += "  - OPort" + String(j) + " node: " + src_name + "\n";
+                                            }
+
+                                            if (dst["kind"] == "IO") {
+                                                yml += "    IPort" + String(parts[1]) + " IO:   " + dst_name + "\n";
+                                            } else {                                 
+                                                yml += "    IPort" + String(parts[1]) + " node: " + dst_name + "\n";
+                                            } 
                                         } else {
                                             yml += "Arc" + "    Arc" + cordcount + "(";
                                             yml += src_name + ", " + j + ", " + dst_name + ", " + parts[1];

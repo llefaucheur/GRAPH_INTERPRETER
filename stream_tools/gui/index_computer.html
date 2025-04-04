@@ -50,570 +50,676 @@ span.mainfunction {color: #993300; font-weight: bolder}
 </style>
 </head>
 <body spellcheck="false">
-<div class="navbar navbar-inverse navbar-fixed-top">
-	<div class="navbar-inner">
-		<div class="container-fluid">
-			<span class="brand">Graph Interpreter Project </a></span>
-			<div class="btn-group pull-right">
-				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#"><i class="icon-align-justify"></i> <span class="caret"></span></a>
-				<ul class="dropdown-menu">
-					<li><a id="btn-sidebar" tabindex="-1" href="#"><i class="icon-ok pull-right"></i><i class="icon-list-alt"></i> Sidebar</a></li>
-					<li class="divider"></li>
-					<!-- <li><a id="btn-node-status" tabindex="-1" href="#"><i class="icon-ok pull-right"></i><i class="icon-info-sign"></i> Node Status</a></li>
-					<li class="divider"></li>
--->
-					<!--
-<li class="dropdown-submenu pull-left"><a tabindex="-1" href="#"><i class="icon-edit"></i> Import from...</a>
-						<ul class="dropdown-menu">
-							<li><a id="btn-import" tabindex="-1" href="#"><i class="icon-edit"></i> Clipboard...</a></li>
-							<li id="flow-menu-parent" class="dropdown-submenu pull-left">
-								<a tabindex="-1" href="#"><i class="icon-book"></i> Library</a>
-								<ul class="dropdown-menu"></ul>
-							</li>
-						</ul>
-					</li>
-					<li id="li-menu-export" class="dropdown-submenu disabled pull-left"><a tabindex="-1" href="#"><i class="icon-share"></i> Export to...</a>
-						<ul class="dropdown-menu">
-							<li id="li-menu-export-clipboard" class="disabled"><a id="btn-export-clipboard" tabindex="-1" href="#"><i class="icon-share"></i> Clipboard...</a></li>
-							<li id="li-menu-export-library" class="disabled"><a id="btn-export-library" tabindex="-1" href="#"><i class="icon-book"></i> Library...</a></li>
-						</ul>
-					</li>
-					<li class="divider"></li>
--->
-					<!--
- <li><a id="btn-config-nodes" tabindex="-1" href="#"><i class="icon-th-list"></i> Configuration nodes...</a></li>
-					<li class="divider"></li>
--->
-					<!--
-<li class="dropdown-submenu pull-left"><a tabindex="-1" href="#"><i class="icon-th-large"></i> Workspaces</a>
-						<ul id="workspace-menu-list" class="dropdown-menu">
-							<li><a id="btn-workspace-add" tabindex="-1" href="#"><i class="icon-plus"></i> Add</a></li>
-							<li><a id="btn-workspace-edit" tabindex="-1" href="#"><i class="icon-edit"></i> Rename</a></li>
-							<li><a id="btn-workspace-delete" tabindex="-1" href="#"><i class="icon-minus"></i> Delete</a></li>
-							<li class="divider"></li>
-						</ul>
-					</li>
-					<li class="divider"></li>-->
-					<li><a id="btn-keyboard-shortcuts" tabindex="-1" href="#"><i class="icon-question-sign"></i> Keyboard Shortcuts</a></li>
-					<li><a id="btn-help" tabindex="-1" href="http://node-red.github.io/docs" target="_blank"><i class="icon-question-sign"></i> Help...</a></li>
-				</ul>
-			</div>
-			<div class="btn-group pull-left">
-				<a id="btn-deploy" class="btn action-deploy disabled" href="#"><i id="btn-icn-deploy" class="icon-upload"></i>Export</a>
-				<a id="btn-import" class="btn action-import disabled" href="#"><i id="btn-icn-download" class="icon-download"></i>Import</a>
-			</div>
-		</div>
-	</div>
-</div>
-<div id="main-container" class="sidebar-closed">
-	<div id="palette">
-		<img src="img/spin.svg" class="palette-spinner"/>
-		<div id="palette-container" class="palette-scroll">
-		</div>
-		<div id="palette-search">
-			<i class="icon-search"></i><input id="palette-search-input" type="text" placeholder="filter"><a href="#" id="palette-search-clear"><i class="icon-remove"></i></a></input>
-		</div>
-	</div><!-- /palette -->
-
-	<div id="workspace">
-		<ul id="workspace-tabs"></ul>
-		<!--<div id="workspace-add-tab"><a id="btn-workspace-add-tab" href="#"><i class="icon-plus"></i></a></div>-->
-		<div id="chart"></div>
-		<div id="workspace-toolbar">
-			<div class="btn-group">
-				<a class="btn btn-small" href="#"><i class="icon-zoom-out"></i></a>
-				<a class="btn btn-small" href="#"><i class="icon-th"></i></a>
-				<a class="btn btn-small" href="#"><i class="icon-zoom-in"></i></a>
-			</div>
-		</div>
-	</div>
-
-	<div id="chart-zoom-controls">
-		<div class="btn-group">
-			<a class="btn btn-mini" id="btn-zoom-out" href="#"><i class="icon-zoom-out"></i></a>
-			<a class="btn btn-mini" id="btn-zoom-zero" href="#"><i class="icon-th"></i></a>
-			<a class="btn btn-mini" id="btn-zoom-in" href="#"><i class="icon-zoom-in"></i></a>
-		</div>
-	</div>
-
-	<div id="sidebar">
-		<ul id="sidebar-tabs"></ul>
-		<div id="sidebar-content"></div>
-	</div>
-
-	<div id="sidebar-separator"></div>
-
-</div>
-
-<div id="notifications"></div>
-<div id="dropTarget"><div>Drop the flow here</div></div>
-
-<div id="dialog" class="hide"><form id="dialog-form" class="form-horizontal"></form></div>
-<div id="node-config-dialog" class="hide"><form id="dialog-config-form" class="form-horizontal"></form><div class="form-tips" id="node-config-dialog-user-count"></div></div>
-
-<div id="node-dialog-confirm-deploy" class="hide">
-	<form class="form-horizontal">
-		<div id="node-dialog-confirm-deploy-config" style="text-align: center; padding-top: 30px;">
-			Some of the nodes are not properly configured. Are you sure you want to deploy?
-		</div>
-		<div id="node-dialog-confirm-deploy-unknown" style="text-align: center; padding-top: 10px;">
-			The workspace contains some unknown node types:
-			<ul style="width: 300px; margin: auto; text-align: left;" id="node-dialog-confirm-deploy-unknown-list"></ul>
-			Are you sure you want to deploy?
-		</div>
-	</form>
-</div>
-
-<div id="node-dialog-error-deploy" class="hide">
-	<form class="form-horizontal">
-		<div id="node-dialog-error-deploy-noio" style="text-align: center; padding-top: 10px;">
-			<p>The workspace contains no input/output nodes!</p>
-			<p>You need an input or an output to export the data!</p>
-			<p>Without such a input/output function the exported
-			code will not run properly!</p>
-		</div>
-	</form>
-</div>
-
-<div id="node-help" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="node-help-label" aria-hidden="true">
-  <div class="modal-header">
-	<h5 id="node-help-label">Keyboard Shortcuts <span style="float: right;"><a href="http://node-red.github.io/docs" target="_blank">Open help in new window &raquo;</a></span></h5>
-  </div>
-  <div class="modal-body">
-	<table>
-		<tr>
-		  <td><span class="help-key">?</span></td><td>Help</td>
-		  <td><span class="help-key">Ctrl</span> <span class="help-key">a</span></td><td>Select all nodes</td>
-		</tr>
-		<tr>
-		  <td><span class="help-key">Ctrl</span> <span class="help-key">Space</span></td><td>Toggle sidebar</td>
-		  <td><span class="help-key">Shift</span> <span class="help-key">Click</span></td><td>Select all connected nodes</td>
-		</tr>
-		<tr>
-		  <td><span class="help-key">Ctrl</span> <span class="help-key">z</span></td><td>Undo</td>
-		  <td><span class="help-key">Ctrl</span> <span class="help-key">Click</span></td><td>Add/remove node from selection</td>
-		</tr>
-		<tr>
-		  <td></td><td></td>
-		  <td><span class="help-key">Delete</span></td><td>Delete selected nodes or link</td>
-		</tr>
-		<tr>
-		  <td><span class="help-key">Ctrl</span> <span class="help-key">x</span></td><td>Cut selected nodes</td>
-		  <td></td><td></td>
-		</tr>
-		<tr>
-		  <td><span class="help-key">Ctrl</span> <span class="help-key">c</span></td><td>Copy selected nodes</td>
-		  <td><span class="help-key">Ctrl</span> <span class="help-key">v</span></td><td>Paste nodes</td>
-		</tr>
-		<tr>
-		  <td><span class="help-key">Ctrl</span> <span class="help-key">i</span></td><td>Import nodes</td>
-		  <td><span class="help-key">Ctrl</span> <span class="help-key">e</span></td><td>Export selected nodes</td>
-		</tr>
-		<tr>
-		  <td colspan="2"></td>
-		</tr>
-		<tr>
-		  <td><span class="help-key">Ctrl</span> <span class="help-key">+</span></td><td>Zoom in</td>
-		  <td><span class="help-key">Ctrl</span> <span class="help-key">-</span></td><td>Zoom out</td>
-		</tr>
-	</table>
-  </div>
-  <div class="modal-footer">
-	<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-  </div>
-</div>
-
-<div id="node-dialog-library-save-confirm" class="hide">
-	<form class="form-horizontal">
-		<div style="text-align: center; padding-top: 30px;">
-		 A <span id="node-dialog-library-save-type"></span> called <span id="node-dialog-library-save-name"></span> already exists. Overwrite?
-		</div>
-	</form>
-</div>
-
-<div id="node-dialog-library-save" class="hide">
-	<form class="form-horizontal">
-		<div class="form-row">
-			<label for="node-dialog-library-save-folder"><i class="icon-folder-open"></i> Folder</label>
-			<input type="text" id="node-dialog-library-save-folder" placeholder="Folder">
-		</div>
-		<div class="form-row">
-			<label for="node-dialog-library-save-filename"><i class="icon-file"></i> Filename</label>
-			<input type="text" id="node-dialog-library-save-filename" placeholder="Filename">
-		</div>
-	</form>
-</div>
-
-<div id="node-dialog-library-lookup" class="hide">
-	<form class="form-horizontal">
-		<div class="form-row">
-			<ul id="node-dialog-library-breadcrumbs" class="breadcrumb">
-				<li class="active"><a href="#">Library</a></li>
-			</ul>
-		</div>
-		<div class="form-row">
-			<div style="vertical-align: top; display: inline-block; height: 100%; width: 30%; padding-right: 20px;">
-				<div id="node-select-library" style="border: 1px solid #999; width: 100%; height: 100%; overflow:scroll;"><ul></ul></div>
-			</div>
-			<div style="vertical-align: top; display: inline-block;width: 65%; height: 100%;">
-				<div style="height: 100%; width: 95%;" class="node-text-editor" id="node-select-library-text" ></div>
-			</div>
-		</div>
-	</form>
-</div>
-<div id="node-dialog-rename-workspace" class="hide">
-	<form class="form-horizontal">
-		<div class="form-row">
-			<label for="node-input-workspace-name" ><i class="icon-tag"></i> Name:</label>
-			<input type="text" id="node-input-workspace-name">
-		</div>
-	</form>
-</div>
-<div id="node-dialog-delete-workspace" class="hide">
-	<form class="form-horizontal">
-		<div style="text-align: center; padding-top: 30px;">
-		 Are you sure you want to delete '<span id="node-dialog-delete-workspace-name"></span>'?
-		</div>
-	</form>
-</div>
-
-<script type="text/x-red" data-template-name="export-clipboard-dialog">
-	<div class="form-row">
-		<label for="node-input-export" style="display: block; width:100%;"><i class="icon-share"></i> Source Code:</label>
-		<textarea readonly style="font-family: monospace; font-size: 12px; background:rgb(226, 229, 255); padding-left: 0.5em;" class="input-block-level" id="node-input-export" rows="12"></textarea>
-	</div>
-	<div class="form-tips">
-		Select the text above and copy to the clipboard with Ctrl-A Ctrl-C.
-	</div>
-</script>
-<script type="text/x-red" data-template-name="export-library-dialog">
-	<div class="form-row">
-		<label for="node-input-filename" ><i class="icon-tag"></i> Filename:</label>
-		<input type="text" id="node-input-filename" placeholder="Filename">
-	</div>
-</script>
-<script type="text/x-red" data-template-name="import-dialog">
-	<div class="form-row">
-		<label for="node-input-import"><i class="icon-share"></i>Nodes:</label>
-		<textarea style="font-family: monospace; font-size: 12px; background:rgb(226, 229, 255); padding-left: 0.5em;" class="input-block-level" id="node-input-import" rows="5" placeholder="Paste nodes here, or lookup in the library. When importing existing graph, the whole flow will be replaced."></textarea>
-
-	</div>
-	<div class="form-tips">
-		<label for="node-input-cmsis" style="font-size: 13px; padding: 2px 0px 0px 4px;">
-			<input style="margin-bottom: 4px; margin-right: 4px;" type="checkbox" id="node-input-cmsis" checked="checked" class="input-block-level" />
-				&nbsp;Import copied code from CMSIS
-		</label>
-	</div>
-</script>
-
-<script src="jquery/js/jquery-1.9.1.js"></script>
-<script src="bootstrap/js/bootstrap.min.js"></script>
-<script src="jquery/js/jquery-ui-1.10.3.custom.min.js"></script>
-<script src="jquery/js/jquery.ui.touch-punch.min.js"></script>
-<script src="orion/built-editor.min.js"></script>
-<script src="red/d3/d3.v3.min.js"></script>
-<script src="red/main.js"></script>
-<script src="red/ui/state.js"></script>
-<script src="red/nodes.js"></script>
-<script src="red/storage.js"></script>
-<script src="red/history.js"></script>
-<script src="red/ui/keyboard.js"></script>
-<script src="red/ui/tabs.js"></script>
-<script src="red/ui/view.js"></script>
-<script src="red/ui/sidebar.js"></script>
-<script src="red/ui/palette.js"></script>
-<script src="red/ui/tab-info.js"></script>
-<script src="red/ui/tab-config.js"></script>
-<script src="red/ui/editor.js"></script>
-<script src="red/ui/library.js"></script>
-<script src="red/ui/notifications.js"></script>
-<script src="red/ui/touch/radialMenu.js"></script>
-
-<!--
- TODO: generate some or all of this automatically from the C++ source
--->
-
-<!--
- TODO: add a field for maximum instance count
--->
-<!--
- TODO: add a field for exclusive to other objects (not allowed if they're used)
--->
-<!--
- TODO: add "parameters" fields, to replace the form html stuff
--->
-
-<!-- TODO Investigate why having this field unpopulated causes a breakdown in the graph engine:
-Without this section being defined connections can no longer be drawn, nodes cannot be deleted and
-multiple nodes of same type cannot be created-->
-<script  type="text/x-red" data-container-name="InputOutputCompatibilityMetadata">
-	{"requirements":[
-
-		{"type":"AudioAmplifier",      "resource":"placeholder",  "shareable":true,  "setting":"placeholder"}
-	]}
-</script>
-
-<!-- #Critical Section#
-This is where new nodes are defined. Pay careful attention to syntax and where the "defaults" section for each node begins and ends. For fields that are non-optional for a node they need to be inside the 'defaults section brackets {}' 
-Note that dataformats are specified here as strings which are later changed to actual datatypes during YML->Graph generation.
-
-Data fields configured by drop-downs must match exactly with fields in individual node descriptions below
--->
-TODO Add support for multiple IO for more nodes. Currently only those required for DSP-App demo are fully functional but support for nodes with multiple IO may require more work to maintain exportability. This file should be treated as a work in progress.
-
-<!-- TODO If you remove dataformat here remember to remove from individual labels below -->
-<script  type="text/x-red" data-container-name="NodeDefinitions">
-	{"nodes":[
-    
-
-	{"type":"Computer",
-     "data":{"shortName":"Computer","inputs":0,"outputs":0,"category":"Platforms","color":"#E6E0F8","icon":"arrow-in.png"}},    
-             
-	
-        
-    
-    
-	{"type":"data_in_0",
-     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
-             "shortName":"data_in_0","inputs":0,"outputs":1,
-             "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
-
-	{"type":"data_in_1",
-     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
-             "shortName":"data_in_1","inputs":0,"outputs":1,
-             "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
-             
-	{"type":"analog_sensor",
-     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
-             "shortName":"analog_sensor","inputs":0,"outputs":1,
-             "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
-             
-	{"type":"motion_in_0",
-     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
-             "shortName":"motion_in_0","inputs":0,"outputs":1,
-             "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
-             
-	{"type":"audio_in_0",
-     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
-             "shortName":"audio_in_0","inputs":0,"outputs":1,
-             "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
-             
-	{"type":"2d_in_0",
-     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
-             "shortName":"2d_in_0","inputs":0,"outputs":1,
-             "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}},
-
-
-
-   {"type":"line_out_0",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "input_node_dataformats": {"value": ["float32_t"], "required" : "true"}, 
-                         "kind":{"value": "IO", "required" : "true"}, 
-                         "numArgs": {"value": 1, "required": "true"}, 
-                         "variable": {"value": "dsp_context", "required": "true" }, 
-                         "samples": {"value": "256", "required": "true" }},
-             "shortName":"line_out_0","inputs":1,"outputs":0,
-             "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
-
-	{"type":"gpio_out_0",
-     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
-             "shortName":"gpio_out_0","inputs":1,"outputs":0,
-             "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
- 
-	{"type":"gpio_out_1",
-     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
-             "shortName":"gpio_out_1","inputs":1,"outputs":0,
-             "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
-
-	{"type":"data_out_0",
-     "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"}},
-             "shortName":"data_out_0","inputs":1,"outputs":0,
-             "category":"output-function","color":"#E6E0F8","icon":"arrow-in.png"}},
- 
-
-             
-             
-
-	{"type":"script",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "script", "required" : "true"}},
-             "shortName":"script","inputs":0,"outputs":0,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"format_converter",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "format_converter", "required" : "true"}},
-             "shortName":"format_converter","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"router",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "router", "required" : "true"}},
-             "shortName":"router","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"amplifier",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "amplifier", "required" : "true"}},
-             "shortName":"amplifier","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"mixer",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "mixer", "required" : "true"}},
-             "shortName":"mixer","inputs":4,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"filter",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "filter", "required" : "true"}},
-             "shortName":"filter","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"rescaler",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "rescaler", "required" : "true"}},
-             "shortName":"rescaler","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"modulator",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "modulator", "required" : "true"}},
-             "shortName":"modulator","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"demodulator",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "demodulator", "required" : "true"}},
-             "shortName":"demodulator","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"qos",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "qos", "required" : "true"}},
-             "shortName":"qos","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"split",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "split", "required" : "true"}},
-             "shortName":"split","inputs":1,"outputs":4,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-             
-	{"type":"analysis",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "analysis", "required" : "true"}},
-             "shortName":"analysis","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"filter2D",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "filter2D", "required" : "true"}},
-             "shortName":"filter2D","inputs":1,"outputs":1,
-             "category":"arm","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-
-
-
-
-
-
-	{"type":"compressor",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "compressor", "required" : "true"}},
-             "shortName":"compressor","inputs":1,"outputs":1,
-             "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"decompressor",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "decompressor", "required" : "true"}},
-             "shortName":"decompressor","inputs":1,"outputs":1,
-             "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"converter",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "converter", "required" : "true"}},
-             "shortName":"converter","inputs":1,"outputs":1,
-             "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"resampler",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "resampler", "required" : "true"}},
-             "shortName":"resampler","inputs":1,"outputs":1,
-             "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"detector",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "detector", "required" : "true"}},
-             "shortName":"detector","inputs":1,"outputs":1,
-             "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"detector2D",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "detector2D", "required" : "true"}},
-             "shortName":"detector2D","inputs":1,"outputs":1,
-             "category":"sigprocfr","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-
-
-
-	{"type":"JpgEncoder",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "JpgEncoder", "required" : "true"}},
-             "shortName":"JpgEncoder","inputs":1,"outputs":1,
-             "category":"bitbanksw","color":"#E6E0F8","icon":"arrow-in.png"}},	
-
-	{"type":"JpgDecoder",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "JpgDecoder", "required" : "true"}},
-             "shortName":"JpgDecoder","inputs":1,"outputs":1,
-             "category":"bitbanksw","color":"#E6E0F8","icon":"arrow-in.png"}},
-
-    
-    
-	{"type":"OpusDecoder",
-     "data":{"defaults":{"name":{"value":"new"}, 
-                         "kind":{"value": "OpusDecoder", "required" : "true"}},
-             "shortName":"OpusDecoder","inputs":1,"outputs":1,
-             "category":"Company4","color":"#E6E0F8","icon":"arrow-in.png"}}
-   
-    
-	]}
-</script>
-
-
-<!-- #Critical Section
-
-	{"type":"_SignalGen","data":{"defaults":{"name":{"value":"new"}, "dataformat": {"value": "int16_t", "required": "true" }, "kind":{"value": "Source", "required" : "true"},"numArgs": {"value": 0, "required": "true" }},"shortName":"signal_gen","inputs":0,"outputs":1, "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}}
-
-
-
-Use 'adc' node as a case-study:
-data-template-name must match 'type' field from node-definitions for node to connect the two.
-
-You can overwrite default parameters in the GUI via 'form-rows', to connect the GUI input to the actual data field you must use the prefix
-node-input-"ENTER_EXACT_DATAFIELD_NAME_USED_IN_NodeDefinitions"
-The adc has a text entry field for changing the name of the node and a drop-down to select from preset sample numbers 128/256
-
-Each form row must be inside matching <div class="form-row"> and </div> pairs. 
-Drop-downs must be inside <select and </select> pairs with a separate <option>PARAMETER_PRESET_VALUE_HERE</option>
-for each new preset option.
-
-data-help-name section is for adding instructions/description of the node.
-Information/text to be displayed should be added inside <p> and </p>
--->
-
-<!----------------------------------- Platform Computer ------------------------------------------->
-            
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container-fluid">
+                <span class="brand">Graph Interpreter Project </a></span>
+                <div class="btn-group pull-right">
+                    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#"><i class="icon-align-justify"></i> <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a id="btn-sidebar" tabindex="-1" href="#"><i class="icon-ok pull-right"></i><i class="icon-list-alt"></i> Sidebar</a></li>
+                        <li class="divider"></li>
+                        <!-- <li><a id="btn-node-status" tabindex="-1" href="#"><i class="icon-ok pull-right"></i><i class="icon-info-sign"></i> Node Status</a></li>
+                                            <li class="divider"></li>
+                        -->
+                        <!--
+                        <li class="dropdown-submenu pull-left"><a tabindex="-1" href="#"><i class="icon-edit"></i> Import from...</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a id="btn-import" tabindex="-1" href="#"><i class="icon-edit"></i> Clipboard...</a></li>
+                                                    <li id="flow-menu-parent" class="dropdown-submenu pull-left">
+                                                        <a tabindex="-1" href="#"><i class="icon-book"></i> Library</a>
+                                                        <ul class="dropdown-menu"></ul>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                            <li id="li-menu-export" class="dropdown-submenu disabled pull-left"><a tabindex="-1" href="#"><i class="icon-share"></i> Export to...</a>
+                                                <ul class="dropdown-menu">
+                                                    <li id="li-menu-export-clipboard" class="disabled"><a id="btn-export-clipboard" tabindex="-1" href="#"><i class="icon-share"></i> Clipboard...</a></li>
+                                                    <li id="li-menu-export-library" class="disabled"><a id="btn-export-library" tabindex="-1" href="#"><i class="icon-book"></i> Library...</a></li>
+                                                </ul>
+                                            </li>
+                                            <li class="divider"></li>
+                        -->
+                        <!--
+                         <li><a id="btn-config-nodes" tabindex="-1" href="#"><i class="icon-th-list"></i> Configuration nodes...</a></li>
+                                            <li class="divider"></li>
+                        -->
+                        <!--
+                        <li class="dropdown-submenu pull-left"><a tabindex="-1" href="#"><i class="icon-th-large"></i> Workspaces</a>
+                                                <ul id="workspace-menu-list" class="dropdown-menu">
+                                                    <li><a id="btn-workspace-add" tabindex="-1" href="#"><i class="icon-plus"></i> Add</a></li>
+                                                    <li><a id="btn-workspace-edit" tabindex="-1" href="#"><i class="icon-edit"></i> Rename</a></li>
+                                                    <li><a id="btn-workspace-delete" tabindex="-1" href="#"><i class="icon-minus"></i> Delete</a></li>
+                                                    <li class="divider"></li>
+                                                </ul>
+                                            </li>
+                                            <li class="divider"></li>-->
+                        <li><a id="btn-keyboard-shortcuts" tabindex="-1" href="#"><i class="icon-question-sign"></i> Keyboard Shortcuts</a></li>
+                        <li><a id="btn-help" tabindex="-1" href="http://node-red.github.io/docs" target="_blank"><i class="icon-question-sign"></i> Help...</a></li>
+                    </ul>
+                </div>
+                <div class="btn-group pull-left">
+                    <a id="btn-deploy" class="btn action-deploy disabled" href="#"><i id="btn-icn-deploy" class="icon-upload"></i>Export Graph</a>
+                    <!-- <a id="btn-import" class="btn action-import disabled" href="#"><i id="btn-icn-download" class="icon-download"></i>Import</a> -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="main-container" class="sidebar-closed">
+        <div id="palette">
+            <img src="img/spin.svg" class="palette-spinner" />
+            <div id="palette-container" class="palette-scroll">
+            </div>
+            <div id="palette-search">
+                <i class="icon-search"></i><input id="palette-search-input" type="text" placeholder="filter"><a href="#" id="palette-search-clear"><i class="icon-remove"></i></a></input>
+            </div>
+        </div><!-- /palette -->
+
+        <div id="workspace">
+            <ul id="workspace-tabs"></ul>
+            <!--<div id="workspace-add-tab"><a id="btn-workspace-add-tab" href="#"><i class="icon-plus"></i></a></div>-->
+            <div id="chart"></div>
+            <div id="workspace-toolbar">
+                <div class="btn-group">
+                    <a class="btn btn-small" href="#"><i class="icon-zoom-out"></i></a>
+                    <a class="btn btn-small" href="#"><i class="icon-th"></i></a>
+                    <a class="btn btn-small" href="#"><i class="icon-zoom-in"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div id="chart-zoom-controls">
+            <div class="btn-group">
+                <a class="btn btn-mini" id="btn-zoom-out" href="#"><i class="icon-zoom-out"></i></a>
+                <a class="btn btn-mini" id="btn-zoom-zero" href="#"><i class="icon-th"></i></a>
+                <a class="btn btn-mini" id="btn-zoom-in" href="#"><i class="icon-zoom-in"></i></a>
+            </div>
+        </div>
+
+        <div id="sidebar">
+            <ul id="sidebar-tabs"></ul>
+            <div id="sidebar-content"></div>
+        </div>
+
+        <div id="sidebar-separator"></div>
+
+    </div>
+
+    <div id="notifications"></div>
+    <div id="dropTarget"><div>Drop the flow here</div></div>
+
+    <div id="dialog" class="hide"><form id="dialog-form" class="form-horizontal"></form></div>
+    <div id="node-config-dialog" class="hide"><form id="dialog-config-form" class="form-horizontal"></form><div class="form-tips" id="node-config-dialog-user-count"></div></div>
+
+    <div id="node-dialog-confirm-deploy" class="hide">
+        <form class="form-horizontal">
+            <div id="node-dialog-confirm-deploy-config" style="text-align: center; padding-top: 30px;">
+                Some of the nodes are not properly configured. Are you sure you want to deploy?
+            </div>
+            <div id="node-dialog-confirm-deploy-unknown" style="text-align: center; padding-top: 10px;">
+                The workspace contains some unknown node types:
+                <ul style="width: 300px; margin: auto; text-align: left;" id="node-dialog-confirm-deploy-unknown-list"></ul>
+                Are you sure you want to deploy?
+            </div>
+        </form>
+    </div>
+
+    <div id="node-dialog-error-deploy" class="hide">
+        <form class="form-horizontal">
+            <div id="node-dialog-error-deploy-noio" style="text-align: center; padding-top: 10px;">
+                <p>The workspace contains no input/output nodes!</p>
+                <p>You need an input or an output to export the data!</p>
+                <p>
+                    Without such a input/output function the exported
+                    code will not run properly!
+                </p>
+            </div>
+        </form>
+    </div>
+
+    <div id="node-help" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="node-help-label" aria-hidden="true">
+        <div class="modal-header">
+            <h5 id="node-help-label">Keyboard Shortcuts <span style="float: right;"><a href="http://node-red.github.io/docs" target="_blank">Open help in new window &raquo;</a></span></h5>
+        </div>
+        <div class="modal-body">
+            <table>
+                <tr>
+                    <td><span class="help-key">?</span></td>
+                    <td>Help</td>
+                    <td><span class="help-key">Ctrl</span> <span class="help-key">a</span></td>
+                    <td>Select all nodes</td>
+                </tr>
+                <tr>
+                    <td><span class="help-key">Ctrl</span> <span class="help-key">Space</span></td>
+                    <td>Toggle sidebar</td>
+                    <td><span class="help-key">Shift</span> <span class="help-key">Click</span></td>
+                    <td>Select all connected nodes</td>
+                </tr>
+                <tr>
+                    <td><span class="help-key">Ctrl</span> <span class="help-key">z</span></td>
+                    <td>Undo</td>
+                    <td><span class="help-key">Ctrl</span> <span class="help-key">Click</span></td>
+                    <td>Add/remove node from selection</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td><span class="help-key">Delete</span></td>
+                    <td>Delete selected nodes or link</td>
+                </tr>
+                <tr>
+                    <td><span class="help-key">Ctrl</span> <span class="help-key">x</span></td>
+                    <td>Cut selected nodes</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td><span class="help-key">Ctrl</span> <span class="help-key">c</span></td>
+                    <td>Copy selected nodes</td>
+                    <td><span class="help-key">Ctrl</span> <span class="help-key">v</span></td>
+                    <td>Paste nodes</td>
+                </tr>
+                <tr>
+                    <td><span class="help-key">Ctrl</span> <span class="help-key">i</span></td>
+                    <td>Import nodes</td>
+                    <td><span class="help-key">Ctrl</span> <span class="help-key">e</span></td>
+                    <td>Export selected nodes</td>
+                </tr>
+                <tr>
+                    <td colspan="2"></td>
+                </tr>
+                <tr>
+                    <td><span class="help-key">Ctrl</span> <span class="help-key">+</span></td>
+                    <td>Zoom in</td>
+                    <td><span class="help-key">Ctrl</span> <span class="help-key">-</span></td>
+                    <td>Zoom out</td>
+                </tr>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        </div>
+    </div>
+
+    <div id="node-dialog-library-save-confirm" class="hide">
+        <form class="form-horizontal">
+            <div style="text-align: center; padding-top: 30px;">
+                A <span id="node-dialog-library-save-type"></span> called <span id="node-dialog-library-save-name"></span> already exists. Overwrite?
+            </div>
+        </form>
+    </div>
+
+    <div id="node-dialog-library-save" class="hide">
+        <form class="form-horizontal">
+            <div class="form-row">
+                <label for="node-dialog-library-save-folder"><i class="icon-folder-open"></i> Folder</label>
+                <input type="text" id="node-dialog-library-save-folder" placeholder="Folder">
+            </div>
+            <div class="form-row">
+                <label for="node-dialog-library-save-filename"><i class="icon-file"></i> Filename</label>
+                <input type="text" id="node-dialog-library-save-filename" placeholder="Filename">
+            </div>
+        </form>
+    </div>
+
+    <div id="node-dialog-library-lookup" class="hide">
+        <form class="form-horizontal">
+            <div class="form-row">
+                <ul id="node-dialog-library-breadcrumbs" class="breadcrumb">
+                    <li class="active"><a href="#">Library</a></li>
+                </ul>
+            </div>
+            <div class="form-row">
+                <div style="vertical-align: top; display: inline-block; height: 100%; width: 30%; padding-right: 20px;">
+                    <div id="node-select-library" style="border: 1px solid #999; width: 100%; height: 100%; overflow:scroll;"><ul></ul></div>
+                </div>
+                <div style="vertical-align: top; display: inline-block;width: 65%; height: 100%;">
+                    <div style="height: 100%; width: 95%;" class="node-text-editor" id="node-select-library-text"></div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div id="node-dialog-rename-workspace" class="hide">
+        <form class="form-horizontal">
+            <div class="form-row">
+                <label for="node-input-workspace-name"><i class="icon-tag"></i> Name:</label>
+                <input type="text" id="node-input-workspace-name">
+            </div>
+        </form>
+    </div>
+    <div id="node-dialog-delete-workspace" class="hide">
+        <form class="form-horizontal">
+            <div style="text-align: center; padding-top: 30px;">
+                Are you sure you want to delete '<span id="node-dialog-delete-workspace-name"></span>'?
+            </div>
+        </form>
+    </div>
+
+    <script type="text/x-red" data-template-name="export-clipboard-dialog">
+        <div class="form-row">
+            <label for="node-input-export" style="display: block; width:100%;"><i class="icon-share"></i> Source Code:</label>
+            <textarea readonly style="font-family: monospace; font-size: 12px; background:rgb(226, 229, 255); padding-left: 0.5em;" class="input-block-level" id="node-input-export" rows="12"></textarea>
+        </div>
+        <div class="form-tips">
+            Select the text above and copy to the clipboard with Ctrl-A Ctrl-C.
+        </div>
+    </script>
+    <script type="text/x-red" data-template-name="export-library-dialog">
+        <div class="form-row">
+            <label for="node-input-filename" ><i class="icon-tag"></i> Filename:</label>
+            <input type="text" id="node-input-filename" placeholder="Filename">
+        </div>
+    </script>
+    <script type="text/x-red" data-template-name="import-dialog">
+        <div class="form-row">
+            <label for="node-input-import"><i class="icon-share"></i>Nodes:</label>
+            <textarea style="font-family: monospace; font-size: 12px; background:rgb(226, 229, 255); padding-left: 0.5em;" class="input-block-level" id="node-input-import" rows="5" placeholder="Paste nodes here, or lookup in the library. When importing existing graph, the whole flow will be replaced."></textarea>
+
+        </div>
+        <div class="form-tips">
+            <label for="node-input-cmsis" style="font-size: 13px; padding: 2px 0px 0px 4px;">
+                <input style="margin-bottom: 4px; margin-right: 4px;" type="checkbox" id="node-input-cmsis" checked="checked" class="input-block-level" />
+                    &nbsp;Import code 
+            </label>
+        </div>
+    </script>
+
+    <script src="jquery/js/jquery-1.9.1.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="jquery/js/jquery-ui-1.10.3.custom.min.js"></script>
+    <script src="jquery/js/jquery.ui.touch-punch.min.js"></script>
+    <script src="orion/built-editor.min.js"></script>
+    <script src="red/d3/d3.v3.min.js"></script>
+    <script src="red/main.js"></script>
+    <script src="red/ui/state.js"></script>
+    <script src="red/nodes.js"></script>
+    <script src="red/storage.js"></script>
+    <script src="red/history.js"></script>
+    <script src="red/ui/keyboard.js"></script>
+    <script src="red/ui/tabs.js"></script>
+    <script src="red/ui/view.js"></script>
+    <script src="red/ui/sidebar.js"></script>
+    <script src="red/ui/palette.js"></script>
+    <script src="red/ui/tab-info.js"></script>
+    <script src="red/ui/tab-config.js"></script>
+    <script src="red/ui/editor.js"></script>
+    <script src="red/ui/library.js"></script>
+    <script src="red/ui/notifications.js"></script>
+    <script src="red/ui/touch/radialMenu.js"></script>
+
+    <!--
+     TODO: generate some or all of this automatically from the C++ source
+    -->
+    <!--
+     TODO: add a field for maximum instance count
+    -->
+    <!--
+     TODO: add a field for exclusive to other objects (not allowed if they're used)
+    -->
+    <!--
+     TODO: add "parameters" fields, to replace the form html stuff
+    -->
+    <!-- TODO Investigate why having this field unpopulated causes a breakdown in the graph engine:
+    Without this section being defined connections can no longer be drawn, nodes cannot be deleted and
+    multiple nodes of same type cannot be created-->
+    <script type="text/x-red" data-container-name="InputOutputCompatibilityMetadata">
+        {"requirements":[
+
+            {"type":"AudioAmplifier",      "resource":"placeholder",  "shareable":true,  "setting":"placeholder"}
+        ]}
+    </script>
+
+    <!-- #Critical Section#
+    This is where new nodes are defined. Pay careful attention to syntax and where the "defaults" section for each node begins and ends. For fields that are non-optional for a node they need to be inside the 'defaults section brackets {}'
+    Note that dataformats are specified here as strings which are later changed to actual datatypes during YML->Graph generation.
+
+    Data fields configured by drop-downs must match exactly with fields in individual node descriptions below
+    -->
+    TODO Add support for multiple IO for more nodes. Currently only those required for DSP-App demo are fully functional but support for nodes with multiple IO may require more work to maintain exportability. This file should be treated as a work in progress.
+
+    <!-- TODO If you remove dataformat here remember to remove from individual labels below -->
+    <script type="text/x-red" data-container-name="NodeDefinitions">
+         {"nodes":[
+
+
+         {"type":"Computer", "data":{"shortName":"Computer","inputs":0,"outputs":0,
+          "category":"Platforms","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+
+
+
+         {"type":"data_in_0",
+          "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"},
+                  "FRAMEL":{"value":"", "required": "true" },
+                  "NBCHAN":{"value":"", "required": "true" }
+                  },
+                  "shortName":"data_in_0","inputs":0,"outputs":1,
+                  "category":"input-function","color":"#e9ffcf","icon":"arrow-in.png"}},
+
+         {"type":"data_in_1",
+          "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"},
+                  "FRAMEL":{"value":"", "required": "true" },
+                  "NBCHAN":{"value":"", "required": "true" }
+                  },
+                  "shortName":"data_in_1","inputs":0,"outputs":1,
+                  "category":"input-function","color":"#e9ffcf","icon":"arrow-in.png"}},
+
+         {"type":"analog_sensor",
+          "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"},
+                  "FRAMEL":{"value":"", "required": "true" },
+                  "NBCHAN":{"value":"", "required": "true" }
+                  },
+                  "shortName":"analog_sensor","inputs":0,"outputs":1,
+                  "category":"input-function","color":"#e9ffcf","icon":"arrow-in.png"}},
+
+         {"type":"motion_in_0",
+          "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"},
+                  "FRAMEL":{"value":"", "required": "true" },
+                  "NBCHAN":{"value":"", "required": "true" }
+                  },
+                  "shortName":"motion_in_0","inputs":0,"outputs":1,
+                  "category":"input-function","color":"#e9ffcf","icon":"arrow-in.png"}},
+
+         {"type":"audio_in_0",
+          "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"},
+                  "FRAMEL":{"value":"", "required": "true" },
+                  "NBCHAN":{"value":"", "required": "true" }
+                  },
+                  "shortName":"audio_in_0","inputs":0,"outputs":1,
+                  "category":"input-function","color":"#e9ffcf","icon":"arrow-in.png"}},
+
+         {"type":"2d_in_0",
+          "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"},
+                  "FRAMEL":{"value":"", "required": "true" }
+                  },
+                  "shortName":"2d_in_0","inputs":0,"outputs":1,
+                  "category":"input-function","color":"#e9ffcf","icon":"arrow-in.png"}},
+
+
+
+        {"type":"line_out_0",
+          "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"},
+                  "FRAMEL":{"value":"", "required": "true" },
+                  "NBCHAN":{"value":"", "required": "true" }
+                  },
+                  "shortName":"line_out_0","inputs":1,"outputs":0,
+                  "category":"output-function","color":"#feffb7","icon":"arrow-in.png"}},
+
+         {"type":"gpio_out_0",
+          "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"},
+                  "FRAMEL":{"value":"", "required": "true" },
+                  "NBCHAN":{"value":"", "required": "true" }
+                  },
+                  "shortName":"gpio_out_0","inputs":1,"outputs":0,
+                  "category":"output-function","color":"#feffb7","icon":"arrow-in.png"}},
+
+         {"type":"gpio_out_1",
+          "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"},
+                  "FRAMEL":{"value":"", "required": "true" },
+                  "NBCHAN":{"value":"", "required": "true" }
+                  },
+                  "shortName":"gpio_out_1","inputs":1,"outputs":0,
+                  "category":"output-function","color":"#feffb7","icon":"arrow-in.png"}},
+
+         {"type":"data_out_0",
+          "data":{"defaults":{"name":{"value":"new"},"kind":{"value": "IO", "required" : "true"},
+                  "FRAMEL":{"value":"", "required": "true" },
+                  "NBCHAN":{"value":"", "required": "true" }
+                  },
+                  "shortName":"data_out_0","inputs":1,"outputs":0,
+                  "category":"output-function","color":"#feffb7","icon":"arrow-in.png"}},
+
+
+
+
+         {"type":"script4i4o",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" }
+                              },
+                  "shortName":"script4i4o","inputs":4,"outputs":4,
+                  "category":"arm","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"format_conv",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"format_conv","inputs":1,"outputs":1,
+                  "category":"arm","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"router4i4o",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"router4i4o","inputs":4,"outputs":4,
+                  "category":"arm","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+
+         {"type":"amplifier",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"amplifier","inputs":1,"outputs":1,
+                  "category":"arm","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"mixer4i1o",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"mixer4i1o","inputs":4,"outputs":1,
+                  "category":"arm","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"filter",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"filter","inputs":1,"outputs":1,
+                  "category":"arm","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+          {"type":"rescaler",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "category":"arm","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"modulator",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "category":"arm","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+
+         {"type":"demodulator",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "category":"arm","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"qos",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "category":"arm","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"split1i4o",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"split1i4o","inputs":1,"outputs":4,
+                  "category":"arm","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"analysis",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"analysis","inputs":1,"outputs":1,
+                  "category":"arm","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"filter2D",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"filter2D","inputs":1,"outputs":1,
+                  "category":"arm","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+
+         {"type":"compressor",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"compressor","inputs":1,"outputs":1,
+                  "category":"sigprocfr","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"decompressor",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"decompressor","inputs":1,"outputs":1,
+                  "category":"sigprocfr","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"converter",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"converter","inputs":1,"outputs":1,
+                  "category":"sigprocfr","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"resampler",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"resampler","inputs":1,"outputs":1,
+                  "category":"sigprocfr","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+
+
+         {"type":"detector",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"detector","inputs":1,"outputs":1,
+                  "category":"sigprocfr","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"detector2D",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"detector2D","inputs":1,"outputs":1,
+                  "category":"sigprocfr","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"JpgEncoder",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"JpgEncoder","inputs":1,"outputs":1,
+                  "category":"bitbanksw","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+         {"type":"JpgDecoder",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"JpgDecoder","inputs":1,"outputs":1,
+                  "category":"bitbanksw","color":"#f3f6f4","icon":"arrow-in.png"}},
+
+
+
+         {"type":"OpusDecoder",
+          "data":{"defaults":{"name":{"value":"new"},
+                              "kind":{"value": "node", "required" : "true"},
+                              "PRESET":{"value":"", "required": "true" },
+                              "SCRIPT":{"value":"", "required": "true" }
+                              },
+                  "shortName":"OpusDecoder","inputs":1,"outputs":1,
+                  "category":"Company4","color":"#f3f6f4","icon":"arrow-in.png"}}
+
+         ]}
+    </script>
+
+    <!-- #Critical Section
+
+        {"type":"_SignalGen","data":{"defaults":{"name":{"value":"new"}, "dataformat": {"value": "int16_t", "required": "true" }, "kind":{"value": "Source", "required" : "true"},"numArgs": {"value": 0, "required": "true" }},"shortName":"signal_gen","inputs":0,"outputs":1, "category":"input-function","color":"#E6E0F8","icon":"arrow-in.png"}}
+
+    Use 'adc' node as a case-study:
+    data-template-name must match 'type' field from node-definitions for node to connect the two.
+
+    You can overwrite default parameters in the GUI via 'form-rows', to connect the GUI input to the actual data field you must use the prefix
+    node-input-"ENTER_EXACT_DATAFIELD_NAME_USED_IN_NodeDefinitions"
+    The adc has a text entry field for changing the name of the node and a drop-down to select from preset sample numbers 128/256
+
+    Each form row must be inside matching <div class="form-row"> and </div> pairs.
+    Drop-downs must be inside <select and </select> pairs with a separate <option>PARAMETER_PRESET_VALUE_HERE</option>
+    for each new preset option.
+
+    data-help-name section is for adding instructions/description of the node.
+    Information/text to be displayed should be added inside <p> and </p>
+    -->
+    <!----------------------------------- Platform Computer ------------------------------------------->
+
     <script type="text/x-red" data-help-name="Computer">
         <h3>Overview</h3>
         <div class=tooltipinfo>
         <p>Windows (32bits or 64bits) / Mac / Linux computers. </p>
         <p align=center><img src="img/computer.png"></p>
-        </div>  
+        </div>
+
+        <h3>Computer graph connexions </h3>
+        <table class=doc align=center cellpadding=8>
+            <tr class=top>   <th>Port</th>   <th>Purpose</th></tr>
+            <tr class=odd><td align=center>In 0</td>    <td>Input signal #1</td></tr>
+            <tr class=odd><td align=center>In 1</td>    <td>Input signal #2</td></tr>
+            <tr class=odd><td align=center>Out 0</td>   <td>Sum of all inputs</td></tr>
+        </table>
+        <h3>List</h3>
+        <ul>
+        <li>Teensy 3.2
+        <li>Teensy 3.5
+        </ul>
+        <h3>Examples</h3>
+        <p class=exam>File &gt; Examples &gt; Audio &gt; SamplePlayer
+        </p>
         <h3>Notes</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, 
-        sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        <p><a href="https://forum.pjrc.com/threads/42401-Instructions-or-tutorials-for-using-wav2sketch?p=135069&viewfull=1#post135069">Step by step instructions for wav2sketch</a>
+        running in Terminal on Macintosh.</p>
     </script>
 
     <script type="text/x-red" data-template-name="Computer">
@@ -622,107 +728,116 @@ Information/text to be displayed should be added inside <p> and </p>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
     </script>
-    
-
-    
 
 
 
 
-<!----------------------------------- data_in_0 ------------------------------------------->
+    <!----------------------------------- data_in_0 ------------------------------------------->
 
     <script type="text/x-red" data-template-name="data_in_0">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
+
         <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>128</option>
+            <label for="node-input-NBCHAN"><i class="fa fa-tag"></i> nb channel</label>
+            <select id="node-input-NBCHAN">
+            <option>1</option>
+        </select>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-FRAMEL"><i class="fa fa-tag"></i> frame len </label>
+            <select id="node-input-FRAMEL">
+            <option>1</option>
+            <option>2</option>
+            <option>16</option>
             <option>256</option>
         </select>
         </div>
-        <div class="form-row">
-        <label for="node-input-output_node_dataformats"><i class="fa fa-tag"></i> Output Format </label>
-        <select id="node-input-output_node_dataformats">
-        <option>int16_t</option>
-        <option>float32_t</option>
-        </select>
-        </div>	
-    </script>       
+
+    </script>
+
+
 
     <script type="text/x-red" data-help-name="data_in_0">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>General purpose graph input 0 (from I/O or application)
-            </p>
+        <p>General purpose graph input 0 (from I/O or application) </p>
+        <p>Data exchanged with a buffer declared in the  graph memory space (SET) </p>
         </div>
     </script>
 
-<!----------------------------------- data_in_1 ------------------------------------------->
+    <!----------------------------------- data_in_1 ------------------------------------------->
 
     <script type="text/x-red" data-template-name="data_in_1">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
+
         <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>128</option>
+            <label for="node-input-NBCHAN"><i class="fa fa-tag"></i> nb channel</label>
+            <select id="node-input-NBCHAN">
+            <option>1</option>
+        </select>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-FRAMEL"><i class="fa fa-tag"></i> frame len </label>
+            <select id="node-input-FRAMEL">
+            <option>1</option>
+            <option>2</option>
+            <option>16</option>
             <option>256</option>
         </select>
         </div>
-        <div class="form-row">
-        <label for="node-input-output_node_dataformats"><i class="fa fa-tag"></i> Output Format </label>
-        <select id="node-input-output_node_dataformats">
-        <option>int16_t</option>
-        <option>float32_t</option>
-        </select>
-        </div>	
-    </script>       
+
+    </script>
 
     <script type="text/x-red" data-help-name="data_in_1">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>General purpose graph input 1 (from I/O or application)
-            </p>
+        <p>General purpose graph input 0 (from I/O or application) </p>
+        <p>Data exchanged with a buffer declared in the  graph memory space (SET) </p>
         </div>
     </script>
 
-<!----------------------------------- analog_sensor ------------------------------------------->
+    <!----------------------------------- analog_sensor ------------------------------------------->
 
     <script type="text/x-red" data-template-name="analog_sensor">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
+
+         <div class="form-row">
+            <label for="node-input-NBCHAN"><i class="fa fa-tag"></i> nb channel</label>
+            <select id="node-input-NBCHAN">
+            <option>1</option>
+        </select>
+        </div>
+
         <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>128</option>
+            <label for="node-input-FRAMEL"><i class="fa fa-tag"></i> frame len </label>
+            <select id="node-input-FRAMEL">
+            <option>1</option>
+            <option>2</option>
+            <option>16</option>
             <option>256</option>
         </select>
         </div>
-        <div class="form-row">
-        <label for="node-input-output_node_dataformats"><i class="fa fa-tag"></i> Output Format </label>
-        <select id="node-input-output_node_dataformats">
-        <option>int16_t</option>
-        <option>float32_t</option>
-        </select>
-        </div>	
-    </script>       
+    </script>
 
     <script type="text/x-red" data-help-name="analog_sensor">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>A/D converter and general purpose sensor input 
-            </p>
+        <p>A/D converter and general purpose sensor input </p>
         </div>
     </script>
 
-<!----------------------------------- motion_in_0 ------------------------------------------->
+    <!----------------------------------- motion_in_0 ------------------------------------------->
 
     <script type="text/x-red" data-template-name="motion_in_0">
         <div class="form-row">
@@ -730,51 +845,65 @@ Information/text to be displayed should be added inside <p> and </p>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
         <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>128</option>
+            <label for="node-input-NBCHAN"><i class="fa fa-tag"></i> nb channel</label>
+            <select id="node-input-NBCHAN">
+            <option>1</option>
+        </select>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-FRAMEL"><i class="fa fa-tag"></i> frame len </label>
+            <select id="node-input-FRAMEL">
+            <option>1</option>
+            <option>2</option>
+            <option>16</option>
             <option>256</option>
         </select>
         </div>
-        <div class="form-row">
-        <label for="node-input-output_node_dataformats"><i class="fa fa-tag"></i> Output Format </label>
-        <select id="node-input-output_node_dataformats">
-        <option>int16_t</option>
-        <option>float32_t</option>
-        </select>
-        </div>	
-    </script>       
+    </script>
 
     <script type="text/x-red" data-help-name="motion_in_0">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>Accelerometer and Gyroscope input 
+        <p>Accelerometer and Gyroscope input
             </p>
         </div>
-    </script>    
-    
-<!----------------------------------- audio_in_0 ------------------------------------------->
+    </script>
+
+    <!----------------------------------- audio_in_0 ------------------------------------------->
 
     <script type="text/x-red" data-template-name="audio_in_0">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
+
         <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>128</option>
+            <label for="node-input-NBCHAN"><i class="fa fa-tag"></i> nb channel</label>
+            <select id="node-input-NBCHAN">
+            <option>1</option>
+        </select>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-FRAMEL"><i class="fa fa-tag"></i> frame len </label>
+            <select id="node-input-FRAMEL">
+            <option>1</option>
+            <option>2</option>
+            <option>16</option>
             <option>256</option>
         </select>
         </div>
+
         <div class="form-row">
-        <label for="node-input-output_node_dataformats"><i class="fa fa-tag"></i> Output Format </label>
-        <select id="node-input-output_node_dataformats">
-        <option>int16_t</option>
-        <option>float32_t</option>
+            <label for="node-input-RAWFMT"><i class="fa fa-tag"></i> Format </label>
+            <select id="node-input-RAWFMT">
+            <option>float32_t</option>
+            <option>int32_t</option>
+            <option>int16_t</option>
         </select>
-        </div>	
-    </script>       
+        </div>
+    </script>
 
     <script type="text/x-red" data-help-name="audio_in_0">
         <h3>Summary</h3>
@@ -784,227 +913,227 @@ Information/text to be displayed should be added inside <p> and </p>
         </div>
     </script>
 
-<!----------------------------------- 2d_in_0 ------------------------------------------->
+    <!----------------------------------- 2d_in_0 ------------------------------------------->
 
     <script type="text/x-red" data-template-name="2d_in_0">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
+
         <div class="form-row">
-        <label for="node-input-output_node_dataformats"><i class="fa fa-tag"></i> Output Format </label>
-        <select id="node-input-output_node_dataformats">
+            <label for="node-input-FRAMEL"><i class="fa fa-tag"></i> frame len </label>
+            <select id="node-input-FRAMEL">
+            <option>QQVGA</option>
             <option>QVGA</option>
             <option>VGA</option>
+            <option>XGA</option>
         </select>
-        </div>	
-    </script>       
+        </div>
+
+
+    </script>
 
     <script type="text/x-red" data-help-name="2d_in_0">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>General purpose images graph input (from I/O or application)
-            </p>
+        <p>General purpose images graph input (from I/O or application) </p>
         </div>
-    </script>    
-    
-<!----------------------------------- line_out_0 ------------------------------------------->
+    </script>
+
+    <!----------------------------------- line_out_0 ------------------------------------------->
     <script type="text/x-red" data-template-name="line_out_0">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
         <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>128</option>
+            <label for="node-input-NBCHAN"><i class="fa fa-tag"></i> nb channel</label>
+            <select id="node-input-NBCHAN">
+            <option>1</option>
+        </select>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-FRAMEL"><i class="fa fa-tag"></i> frame len </label>
+            <select id="node-input-FRAMEL">
+            <option>1</option>
+            <option>2</option>
+            <option>16</option>
             <option>256</option>
         </select>
         </div>
-        </div>
+
         <div class="form-row">
-            <label for="node-input-input_node_dataformats"><i class="fa fa-tag"></i> Input Format </label>
-            <select id="node-input-input_node_dataformats">
-            <option>int16_t</option>
+            <label for="node-input-RAWFMT"><i class="fa fa-tag"></i> Format </label>
+            <select id="node-input-RAWFMT">
             <option>float32_t</option>
+            <option>int32_t</option>
+            <option>int16_t</option>
         </select>
         </div>
-        </div>
     </script>
+
 
     <script type="text/x-red" data-help-name="line_out_0">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>line_out_0.
-            </p>
+        <p>General purpose audio output  </p>
         </div>
     </script>
-<!----------------------------------- gpio_out_0 ------------------------------------------->
+
+    <!----------------------------------- gpio_out_0 ------------------------------------------->
     <script type="text/x-red" data-template-name="gpio_out_0">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
         <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>128</option>
+            <label for="node-input-NBCHAN"><i class="fa fa-tag"></i> nb channel</label>
+            <select id="node-input-NBCHAN">
+            <option>1</option>
+        </select>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-FRAMEL"><i class="fa fa-tag"></i> frame len </label>
+            <select id="node-input-FRAMEL">
+            <option>1</option>
+            <option>2</option>
+            <option>16</option>
             <option>256</option>
         </select>
         </div>
-        </div>
+
         <div class="form-row">
-            <label for="node-input-input_node_dataformats"><i class="fa fa-tag"></i> Input Format </label>
-            <select id="node-input-input_node_dataformats">
-            <option>int16_t</option>
+            <label for="node-input-RAWFMT"><i class="fa fa-tag"></i> Format </label>
+            <select id="node-input-RAWFMT">
             <option>float32_t</option>
+            <option>int32_t</option>
+            <option>int16_t</option>
         </select>
-        </div>
         </div>
     </script>
 
     <script type="text/x-red" data-help-name="gpio_out_0">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>gpio_out_0.
-            </p>
+        <p>General purpose output to gpio/application </p>
         </div>
     </script>
-<!----------------------------------- gpio_out_1 ------------------------------------------->
+    <!----------------------------------- gpio_out_1 ------------------------------------------->
     <script type="text/x-red" data-template-name="gpio_out_1">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
         <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>128</option>
+            <label for="node-input-NBCHAN"><i class="fa fa-tag"></i> nb channel</label>
+            <select id="node-input-NBCHAN">
+            <option>1</option>
+        </select>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-FRAMEL"><i class="fa fa-tag"></i> frame len </label>
+            <select id="node-input-FRAMEL">
+            <option>1</option>
+            <option>2</option>
+            <option>16</option>
             <option>256</option>
         </select>
         </div>
-        </div>
+
         <div class="form-row">
-            <label for="node-input-input_node_dataformats"><i class="fa fa-tag"></i> Input Format </label>
-            <select id="node-input-input_node_dataformats">
-            <option>int16_t</option>
+            <label for="node-input-RAWFMT"><i class="fa fa-tag"></i> Format </label>
+            <select id="node-input-RAWFMT">
             <option>float32_t</option>
+            <option>int32_t</option>
+            <option>int16_t</option>
         </select>
-        </div>
         </div>
     </script>
 
     <script type="text/x-red" data-help-name="gpio_out_1">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>gpio_out_1.
-            </p>
+        <p>General purpose output to gpio/application </p>
         </div>
     </script>
-<!----------------------------------- data_out_0 ------------------------------------------->
+    <!----------------------------------- data_out_0 ------------------------------------------->
     <script type="text/x-red" data-template-name="data_out_0">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
         <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>128</option>
+            <label for="node-input-NBCHAN"><i class="fa fa-tag"></i> nb channel</label>
+            <select id="node-input-NBCHAN">
+            <option>1</option>
+        </select>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-FRAMEL"><i class="fa fa-tag"></i> frame len </label>
+            <select id="node-input-FRAMEL">
+            <option>1</option>
+            <option>2</option>
+            <option>16</option>
             <option>256</option>
         </select>
         </div>
-        </div>
+
         <div class="form-row">
-            <label for="node-input-input_node_dataformats"><i class="fa fa-tag"></i> Input Format </label>
-            <select id="node-input-input_node_dataformats">
-            <option>int16_t</option>
+            <label for="node-input-RAWFMT"><i class="fa fa-tag"></i> Format </label>
+            <select id="node-input-RAWFMT">
             <option>float32_t</option>
+            <option>int32_t</option>
+            <option>int16_t</option>
         </select>
-        </div>
         </div>
     </script>
 
     <script type="text/x-red" data-help-name="data_out_0">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>data_out_0.
-            </p>
+        <p>General purpose output to gpio/application </p>
         </div>
     </script>
 
 
-
-
-
-<!----------------------------------- script ------------------------------------------->
-    <script type="text/x-red" data-template-name="script">
+    <!----------------------------------- script ------------------------------------------->
+    <script type="text/x-red" data-template-name="script4i4o">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        
-        <div class="form-row">
-            <label for="node-input-name"><i class="fa fa-tag"></i> Code</label>
-            <input type="text" id="node-input-name" placeholder="Code">
-        </div>
 
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
     </script>
 
-    <script type="text/x-red" data-help-name="script">
+    <script type="text/x-red" data-help-name="script4i4o">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>script
-            </p>
+        <p>Interpreted code with maximum 4 input and 4 output </p>
         </div>
     </script>
 
-<!----------------------------------- format_converter ------------------------------------------->
-    <script type="text/x-red" data-template-name="format_converter">
+    <!----------------------------------- format_conv ------------------------------------------->
+    <script type="text/x-red" data-template-name="format_conv">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
-    <script type="text/x-red" data-help-name="format_converter">
+    <script type="text/x-red" data-help-name="format_conv">
         <h3>Summary</h3>
         <div class=tooltipinfo>
         <p>arm stream format converter
@@ -1012,104 +1141,40 @@ Information/text to be displayed should be added inside <p> and </p>
         </div>
     </script>
 
-
-<!----------------------------------- router ------------------------------------------->
-    <script type="text/x-red" data-template-name="router">
+    <!----------------------------------- router4i4o ------------------------------------------->
+    <script type="text/x-red" data-template-name="router4i4o">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
-    <script type="text/x-red" data-help-name="router">
+    <script type="text/x-red" data-help-name="router4i4o">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>router.
+        <p>router4i4o.
             </p>
         </div>
     </script>
 
-
-<!----------------------------------- amplifier ------------------------------------------->
-    <script type="text/x-red" data-template-name="router">
+    <!----------------------------------- amplifier ------------------------------------------->
+    <script type="text/x-red" data-template-name="amplifier">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="amplifier">
@@ -1120,104 +1185,41 @@ Information/text to be displayed should be added inside <p> and </p>
         </div>
     </script>
 
-<!----------------------------------- mixer ------------------------------------------->
-    <script type="text/x-red" data-template-name="mixer">
+    <!----------------------------------- mixer4i1o ------------------------------------------->
+    <script type="text/x-red" data-template-name="mixer4i1o">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
-    </script>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
 
-    <script type="text/x-red" data-help-name="mixer">
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
+    </script>
+    <script type="text/x-red" data-help-name="mixer4i1o">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>mixer.
+        <p>mixer4i1o.
             </p>
         </div>
     </script>
 
 
 
-<!----------------------------------- filter ------------------------------------------->
+    <!----------------------------------- filter ------------------------------------------->
     <script type="text/x-red" data-template-name="filter">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="filter">
@@ -1230,159 +1232,41 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 
-<!----------------------------------- detector ------------------------------------------->
-    <script type="text/x-red" data-template-name="detector">
-        <div class="form-row">
-            <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-            <input type="text" id="node-input-name" placeholder="Name">
-        </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
-    </script>
-
-    <script type="text/x-red" data-help-name="detector">
-        <h3>Summary</h3>
-        <div class=tooltipinfo>
-        <p>detector.
-            </p>
-        </div>
-    </script>
-
-
-
-<!----------------------------------- rescaler ------------------------------------------->
+    <!----------------------------------- rescaler ------------------------------------------->
     <script type="text/x-red" data-template-name="rescaler">
-        <div class="form-row">
-            <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-            <input type="text" id="node-input-name" placeholder="Name">
-        </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
-    </script>
+            <div class="form-row">
+                <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+                <input type="text" id="node-input-name" placeholder="Name">
+            </div>
+            <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+                 <input type="text" id="node-input-PRESET">  </div>
 
-    <script type="text/x-red" data-help-name="rescaler">
-        <h3>Summary</h3>
-        <div class=tooltipinfo>
-        <p>rescaler.
-            </p>
-        </div>
+            <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+                 <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
+
+        <script type="text/x-red" data-help-name="rescaler">
+            <h3>Summary</h3>
+            <div class=tooltipinfo>
+            <p>rescaler.
+                </p>
+            </div>
     </script>
 
 
 
-<!----------------------------------- modulator ------------------------------------------->
+    <!----------------------------------- modulator ------------------------------------------->
     <script type="text/x-red" data-template-name="modulator">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="modulator">
@@ -1395,49 +1279,18 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 
-<!----------------------------------- demodulator ------------------------------------------->
+    <!----------------------------------- demodulator ------------------------------------------->
     <script type="text/x-red" data-template-name="demodulator">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="demodulator">
@@ -1450,49 +1303,18 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 
-<!----------------------------------- qos ------------------------------------------->
+    <!----------------------------------- qos ------------------------------------------->
     <script type="text/x-red" data-template-name="qos">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="qos">
@@ -1503,55 +1325,24 @@ Information/text to be displayed should be added inside <p> and </p>
         </div>
     </script>
 
-<!----------------------------------- split ------------------------------------------->
-    <script type="text/x-red" data-template-name="split">
+    <!----------------------------------- split ------------------------------------------->
+    <script type="text/x-red" data-template-name="split1i4o">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
-    <script type="text/x-red" data-help-name="split">
+    <script type="text/x-red" data-help-name="split1i4o">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>split.
+        <p>split1i4o.
             </p>
         </div>
     </script>
@@ -1559,49 +1350,18 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 
-<!----------------------------------- analysis ------------------------------------------->
+    <!----------------------------------- analysis ------------------------------------------->
     <script type="text/x-red" data-template-name="analysis">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="analysis">
@@ -1614,49 +1374,18 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 
-<!----------------------------------- filter2D ------------------------------------------->
+    <!----------------------------------- filter2D ------------------------------------------->
     <script type="text/x-red" data-template-name="filter2D">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="filter2D">
@@ -1669,49 +1398,18 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 
-<!----------------------------------- compressor ------------------------------------------->
+    <!----------------------------------- compressor ------------------------------------------->
     <script type="text/x-red" data-template-name="compressor">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="compressor">
@@ -1724,49 +1422,18 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 
-<!----------------------------------- decompressor ------------------------------------------->
+    <!----------------------------------- decompressor ------------------------------------------->
     <script type="text/x-red" data-template-name="decompressor">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="decompressor">
@@ -1779,49 +1446,18 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 
-<!----------------------------------- converter ------------------------------------------->
+    <!----------------------------------- converter ------------------------------------------->
     <script type="text/x-red" data-template-name="converter">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="converter">
@@ -1834,49 +1470,18 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 
-<!----------------------------------- resampler ------------------------------------------->
+    <!----------------------------------- resampler ------------------------------------------->
     <script type="text/x-red" data-template-name="resampler">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="resampler">
@@ -1889,104 +1494,53 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 
-<!----------------------------------- detector ------------------------------------------->
+    <!----------------------------------- detector --------setting window and right window------------------------>
     <script type="text/x-red" data-template-name="detector">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
+
     </script>
 
     <script type="text/x-red" data-help-name="detector">
         <h3>Summary</h3>
         <div class=tooltipinfo>
-        <p>detector.
-            </p>
+        <p>Signal detector PRESET. </p>
+        <p>Input MONO of a stream of Q31/float32 data, with or without time-stamp, at any input sampling-rate.</p>
+        <p>Detection flag (0 or 1.0/0x7FFF.FFFF) push on the output port at the rate of the input stream.</p>
+        <ul>
+        <li>PRESET=0 : (default) voice activity detector , 3dB above floor noise, sampling-rate in range 6kHz .. 16kHz
+        <li>PRESET=1 : audio activity detector , 6dB above floor noise, sampling-rate in range 6kHz .. 192kHz
+        <li>PRESET=2 : signal detection without the high-pass filter
+        </ul>
+        </p>
+
+        <p align=center><img src="img/node_detector1.png"><br><small> Block diagram of the detector </small></p>
+
         </div>
     </script>
 
 
 
-<!----------------------------------- detector2D ------------------------------------------->
+    <!----------------------------------- detector2D ------------------------------------------->
     <script type="text/x-red" data-template-name="detector2D">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="detector2D">
@@ -1999,49 +1553,18 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 
-<!----------------------------------- JpgEncoder ------------------------------------------->
+    <!----------------------------------- JpgEncoder ------------------------------------------->
     <script type="text/x-red" data-template-name="JpgEncoder">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="JpgEncoder">
@@ -2054,49 +1577,18 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 
-<!----------------------------------- JpgDecoder ------------------------------------------->
+    <!----------------------------------- JpgDecoder ------------------------------------------->
     <script type="text/x-red" data-template-name="JpgDecoder">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="JpgDecoder">
@@ -2109,49 +1601,18 @@ Information/text to be displayed should be added inside <p> and </p>
 
 
 
-<!----------------------------------- OpusDecoder ------------------------------------------->
+    <!----------------------------------- OpusDecoder ------------------------------------------->
     <script type="text/x-red" data-template-name="OpusDecoder">
         <div class="form-row">
             <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
             <input type="text" id="node-input-name" placeholder="Name">
         </div>
-        <div class="form-row">
-            <label for="node-input-samples"><i class="fa fa-tag"></i> Samples </label>
-            <select id="node-input-samples">
-            <option>192</option>
-            <option>384</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-samplingRate"><i class="fa fa-tag"></i> fs </label>
-            <select id="node-input-samplingRate">
-            <option>16000</option>
-            <option>44100</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-numberOfChannels"><i class="fa fa-tag"></i> Channels </label>
-            <select id="node-input-numberOfChannels">
-            <option>1</option>
-            <option>2</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-interleaving"><i class="fa fa-tag"></i> Interleaving </label>
-            <select id="node-input-interleaving">
-            <option>Frame</option>
-            <option>Sample</option>
-        </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-timeStamp"><i class="fa fa-tag"></i> Timestamp </label>
-            <select id="node-input-timeStamp">
-            <option>none</option>
-            <option>absoluteTime</option>
-            <option>deltaTime</option>
-            <option>frameCounter</option>
-        </select>
-        </div>
+        <div class="form-row"> <label for="node-input-PRESET"><i class="fa fa-tag"></i> PRESET</label>
+             <input type="text" id="node-input-PRESET">  </div>
+
+        <div class="form-row"> <label for="node-input-SCRIPT"><i class="fa fa-tag"></i> SCRIPT</label>
+             <input type="text" id="node-input-SCRIPT" placeholder="">  </div>
+
     </script>
 
     <script type="text/x-red" data-help-name="OpusDecoder">
@@ -2232,4 +1693,3 @@ Information/text to be displayed should be added inside <p> and </p>
 			<input type="text" id="node-input-name" autocomplete="off" dir="">
 		</div>
 	</form> -->-->
-	

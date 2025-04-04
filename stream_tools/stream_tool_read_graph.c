@@ -414,6 +414,14 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(mem_fill_pattern))
         {   fields_extract(&pt_line, "CIH", ctmp, &(graph->debug_pattern_size), &(graph->debug_pattern));
         }
+        if (COMPARE(memory_mapping))
+        {   //;              original_id  new_id    start   length 
+            //memory_mapping      2        100      1024    32700 
+            fields_extract(&pt_line, "CIIII", ctmp, &i, &i, &i, &i);    // TODO
+        }
+        if (COMPARE(subgraph))
+        {   fields_extract(&pt_line, "C", ctmp);    // TODO
+        }
         /* ----------------------------------------------- STREAM IO --------------------------------------------------------*/
         if (COMPARE(stream_io_new))         // stream_io "soft ID" 
         {   fields_extract(&pt_line, "CI", ctmp, &(graph->arc[graph->nb_arcs].idx_arc_in_graph));   
@@ -587,6 +595,9 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             graph->all_scripts[graph->idx_script].arc_script = graph->nb_arcs;
             graph->nb_arcs++;
             graph->nb_scripts++;
+        }
+        if (COMPARE(script_name))               // script_name TEST1    ; for references in the GUI
+        {   fields_extract(&pt_line, "CC", ctmp, ctmp); 
         }
         if (COMPARE(script_register))           // script_register  6       numer of registers
         {   fields_extract(&pt_line, "CI", ctmp, &i); 

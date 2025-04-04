@@ -212,6 +212,8 @@
 #define stream_io_setting_callback      "stream_io_setting_callback"
 
 #define mem_fill_pattern                "mem_fill_pattern"
+#define memory_mapping                  "memory_mapping"
+#define subgraph                        "subgraph"
 
 /*----------------------------------------------------------------------- GRAPH FORMAT ------------- */
 #define format_index                    "format_index"
@@ -248,6 +250,7 @@
 
 /*----------------------------------------------------------------------- GRAPH SCRIPTS ------------- */
 #define common_script                   "script "
+#define script_name                     "script_name"
 #define script_register                 "script_register"
 #define script_stack                    "script_stack"
 #define script_parameter                "script_parameter"

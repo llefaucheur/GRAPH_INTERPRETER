@@ -506,7 +506,7 @@
 
 #define    unused_LW2S_MSB U(31) /*      */
 #define    unused_LW2S_LSB U(25) /*  7   */
-#define CLEARSWAP_LW2S_MSB U(24) /*      used on the instance : "at least on memory bank is swapped or cleared */
+#define CLEARSWAP_LW2S_MSB U(24) /*      used on the instance : "at least one memory bank is swapped or cleared */
 #define CLEARSWAP_LW2S_LSB U(24) /*  1   */
 #define     CLEAR_LW2S_MSB U(23) /*      clear the memory before calling the node */
 #define     CLEAR_LW2S_LSB U(23) /*  1   */

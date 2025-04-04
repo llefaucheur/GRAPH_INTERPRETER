@@ -465,15 +465,15 @@ Example of an option list of values (1, 1.2, 1.4, 1.6, 1.8, .. , 4.2), the index
 
 When not mentioned in the manifest the following assumptions are :
 
-| io manifest command    | default value | comments                          |
-| ---------------------- | ------------- | --------------------------------- |
-| io_commander0_servant1 | 1             | servant                           |
-| io_set0copy1           | 0             | in-place processing               |
-| io_direction_rx0tx1    | 0             | data flow to the graph            |
-| io_raw_format          | int16         | short is the default data format  |
-| io_interleaving        | 0             | raw data interleaving             |
-| io_nb_channels         | 1             | mono                              |
-| io_frame_length        | 1             | one sample (mono or multichannel) |
+| io manifest command    | default value | comments                               |
+| ---------------------- | ------------- | -------------------------------------- |
+| io_commander0_servant1 | 1             | servant                                |
+| io_set0copy1           | 0             | buffer address is set by the scheduler |
+| io_direction_rx0tx1    | 0             | data flow to the graph                 |
+| io_raw_format          | float32       | float is the default data format       |
+| io_interleaving        | 0             | raw data interleaving                  |
+| io_nb_channels         | 1             | mono                                   |
+| io_frame_length        | 1             | one sample (mono or multichannel)      |
 
 ## Common information of all digital stream
 
@@ -626,7 +626,7 @@ io_sampling_period  4 {1 1 60 120 }  ; sampling period, enumeration in seconds (
 
 ### io_sampling_rate_accuracy "p"
 
-Percentage of accuracy (or inaccuracy) of the given sampling rate.
+Percentage of random inaccuracy of the given sampling rate. 
 
 ```
 io_sampling_rate_accuracy  0.01   ; in percentage, or 100ppm
@@ -878,7 +878,7 @@ The nodes returns after updating the second field of the structures :
  - The amount of data consumed, for RX arcs
  - The amount of data produced in the TX arcs
 
-## Default values of a node manifest @@@@@
+## Default values of a node manifest 
 
 When not mentioned in the manifest the following assumptions are :
 
@@ -887,7 +887,7 @@ When not mentioned in the manifest the following assumptions are :
 | io_commander0_servant1 | 1             | servant                           |
 | io_set0copy1           | 0             | in-place processing               |
 | io_direction_rx0tx1    | 0             | data flow to the graph            |
-| io_raw_format          | int16         | short is the default data format  |
+| io_raw_format          | float32       | float is the default data format  |
 | io_interleaving        | 0             | raw data interleaving             |
 | io_nb_channels         | 1             | mono                              |
 | io_frame_length        | 1             | one sample (mono or multichannel) |
@@ -1050,11 +1050,11 @@ Example :
 
 ### node_mem_alloc  "A"
 
-The parameter gives the "A" value of fixed memory allocation in Bytes.
+The parameter gives the "A" value of additional memory allocation in Bytes.
 Example :
 
 ```
-node_mem_alloc          32          ; size = 32Bytes data memory, default Static, default Fast memory block
+node_mem_alloc  32    ; add 32 bytes to the current node_mem
 ```
 
 ### node_mem_nbchan "B" "i" 
@@ -1995,7 +1995,7 @@ Example
 
 ### stream_io_setting "W1 W2 W3"
 
-"IO settings" is a specific bit-field structure, specific to the IO domain, placed at the beginning of the binary graph, and used during the initialization sequence of the graph.
+"IO settings" is a bit-field structure, specific to the IO domain, placed at the beginning of the binary graph, and used during the initialization sequence of the graph.
 Up to three control words in hexadecimal can be used.
 
 See also [IO Controls Bit-fields per domain](#IO-Controls-Bit-fields-per-domain)
@@ -2024,13 +2024,13 @@ Split the memory mapping to ease memory overlays between nodes and arcs by defin
 Format : ID, new ID to use in the node/arc declarations, byte offset within the original ID, length of the new memory offset.
 
 ```
-;               original_id  new_id    start   length 
-; memory_mapping      2        100      1024    32700 
+;              original_id  new_id    start   length 
+memory_mapping      2        100      1024    32700 
 ```
 
 ### Memory fill
 
-Filling pattern placed after the arc descriptors 
+Filling of a word32 pattern after the arc descriptors 
 
 
 ```
@@ -2079,29 +2079,9 @@ Example :
     node_preset              1      ; parameter preset used at boot time 
 ```
 
-### node_malloc_add "n" "i"
+### node_malloc_add "A s"
 
-A node memory allocation is described in its manifest. 
-A node can ask for up to 6 memory banks with tunable fields : 
-
-- type (static, working, static with periodic backup)
-- speed (normal, fast, critical fast)
-- relocatable (the location can change after the node was notified)
-- program / data 
-- size in bytes
-
-The size can be a simple number of bytes or a computed number coupled to a function of stream format parameters (number of channels, sampling rate, frame size) and a flexible parameter defined in the graph, here.
-The total memory allocation size in bytes = 
-
-```
-     A                             fixed memory allocation in Bytes (default 0)
-   + B x nb_channels of arc(i)     number of channels in arc index i (default 0)
-   + C x sampling_rate of arc(j)   sampling rate of arc index j (default 0)
-   + D x frame_size of arc(k)      frame size used for the arc index k (default 0)
-   + parameter from the graph      optional field "node_malloc_add"
-```
-
-For example an extra scratch area allocation can added as a function of the number of pixels in the images to process (default 0).
+Adds and extra number of bytes "A" to the "node_mem" segment index "s".
 Example : 
 
 ```
@@ -2320,6 +2300,7 @@ Syscall 1 r1 r4 r5        system call (below)
 
 ```
 script 1  			      ; script (instance) index           
+    script_name    TEST1  ; for reference in the GUI
     script_stack      12  ; size of the stack in word64      
     script_registers   4  ; only r0..r3 will be used to save memory
     script_mem_shared  1  ; default is private memory (0) or shared (1)  
@@ -3270,10 +3251,11 @@ end
 
 ## arm_stream_modulator (TBD)
 
-
  Operation : sine, noise, square, saw tooth with amplitude or frequency modulation
  use-case : ring modulator, sweep generation with a cascade of a ramp generator and
     a frequency modulator
+
+see https://www.pjrc.com/teensy/gui/index.html?info=AudioSynthWaveform 
 
 Parameters types and Tags:
  u8 #1 wave type : 1=sine 2=square 3=white noise 4=pink noise 
@@ -3491,4 +3473,6 @@ From "bitbank"
 From "EML"
 
 Use-case : images decompression, pattern generation.
+
+
 

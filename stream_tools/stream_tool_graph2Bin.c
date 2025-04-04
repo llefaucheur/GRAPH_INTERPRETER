@@ -959,6 +959,8 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         for (i = 0; i < NOFF; i++)
         {   percent[i] = (255 * used[i]) / maxSizes[i];
         }
+        
+        /* there are 8 data offsets DATAOFF_ARCW0 */
         ST(FMT0, BYTE_0, percent[0]);
         ST(FMT0, BYTE_1, percent[1]);
         ST(FMT0, BYTE_2, percent[2]);

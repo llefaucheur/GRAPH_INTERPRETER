@@ -1,0 +1,51 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_make\\computer\\vcpp_2019\\Computer\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{3B534753-DC1F-480D-8EE0-3428887F1749}|Computer.vcxproj|C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_platform\\computer\\graph_computer.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B534753-DC1F-480D-8EE0-3428887F1749}|Computer.vcxproj|C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_platform\\computer\\graph_filter.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "graph_computer.txt",
+              "DocumentMoniker": "C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_platform\\computer\\graph_computer.txt",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\stream_platform\\computer\\graph_computer.txt",
+              "ToolTip": "C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_platform\\computer\\graph_computer.txt",
+              "RelativeToolTip": "..\\..\\..\\..\\stream_platform\\computer\\graph_computer.txt",
+              "ViewState": "AgIAAB4AAAAAAAAAAAAAAC4AAAA9AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2025-03-18T17:33:52.933Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "graph_filter.txt",
+              "DocumentMoniker": "C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_platform\\computer\\graph_filter.txt",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\stream_platform\\computer\\graph_filter.txt",
+              "ToolTip": "C:\\Work\\GITHUB_LLF\\GRAPH_INTERPRETER\\stream_platform\\computer\\graph_filter.txt",
+              "RelativeToolTip": "..\\..\\..\\..\\stream_platform\\computer\\graph_filter.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2025-03-18T14:52:44.019Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

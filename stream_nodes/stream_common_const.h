@@ -23,7 +23,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- */
+ */\
 
 
 #ifdef __cplusplus
@@ -52,23 +52,23 @@
     each stream domain instance is controled by 3 functions and presets
     domain have common bitfields for settings (see example platform_audio_out_bit_fields[]).
 */
-#define IO_DOMAIN_GENERAL             0u /* (a)synchronous sensor + rescaling, electrical, chemical, color, .. remote data, compressed streams, JSON, SensorThings*/
-#define IO_DOMAIN_AUDIO_IN            1u /* microphone, line-in, I2S, PDM RX */
-#define IO_DOMAIN_AUDIO_OUT           2u /* line-out, earphone / speaker, PDM TX, I2S, */
-#define IO_DOMAIN_GPIO_IN             3u /* generic digital IO , control of relay, */
-#define IO_DOMAIN_GPIO_OUT            4u /* generic digital IO , control of relay, */
-#define IO_DOMAIN_MOTION              5u /* accelerometer, combined or not with pressure and gyroscope */
-#define IO_DOMAIN_2D_IN               6u /* camera sensor */
-#define IO_DOMAIN_2D_OUT              7u /* display, led matrix, */
-#define IO_DOMAIN_ANALOG_IN           8u /* analog sensor with aging/sensitivity/THR control, example : light, pressure, proximity, humidity, color, voltage */
-#define IO_DOMAIN_ANALOG_OUT          9u /* D/A, position piezzo, PWM converter  */
-#define IO_DOMAIN_RTC                10u /* ticks sent from a programmable timer */
-#define IO_DOMAIN_USER_INTERFACE_IN  11u /* button, slider, rotary button */
-#define IO_DOMAIN_USER_INTERFACE_OUT 12u /* LED, digits, display, */
-#define IO_DOMAIN_PLATFORM_3         13u /*  */                             
-#define IO_DOMAIN_PLATFORM_2         14u /* platform-specific #2, decoded with callbacks */                             
-#define IO_DOMAIN_PLATFORM_1         15u /* platform-specific #1, decoded with callbacks */                             
-#define IO_DOMAIN_MAX_NB_DOMAINS     16u
+#define IO_DOMAIN_GENERAL                  0u /* (a)synchronous sensor + rescaling, electrical, chemical, color, .. remote data, compressed streams, JSON, SensorThings*/
+#define IO_DOMAIN_AUDIO_IN                 1u /* microphone, line-in, I2S, PDM RX */
+#define IO_DOMAIN_AUDIO_OUT                2u /* line-out, earphone / speaker, PDM TX, I2S, */
+#define IO_DOMAIN_GPIO_IN                  3u /* generic digital IO , control of relay, */
+#define IO_DOMAIN_GPIO_OUT                 4u /* generic digital IO , control of relay, */
+#define IO_DOMAIN_MOTION                   5u /* accelerometer, combined or not with pressure and gyroscope */
+#define IO_DOMAIN_2D_IN                    6u /* camera sensor */
+#define IO_DOMAIN_2D_OUT                   7u /* display, led matrix, */
+#define IO_DOMAIN_ANALOG_IN                8u /* analog sensor with aging/sensitivity/THR control, example : light, pressure, proximity, humidity, color, voltage */
+#define IO_DOMAIN_ANALOG_OUT               9u /* D/A, position piezzo, PWM converter  */
+#define IO_DOMAIN_RTC                     10u /* ticks sent from a programmable timer */
+#define IO_DOMAIN_USER_INTERFACE_IN       11u /* button, slider, rotary button */
+#define IO_DOMAIN_USER_INTERFACE_OUT      12u /* LED, digits, display, */
+#define IO_DOMAIN_PLATFORM_3              13u /*  */                             
+#define IO_DOMAIN_PLATFORM_2              14u /* platform-specific #2, decoded with callbacks */                             
+#define IO_DOMAIN_PLATFORM_1              15u /* platform-specific #1, decoded with callbacks */                             
+#define IO_DOMAIN_MAX_NB_DOMAINS          16u
 
 
 /* ==========================================================================================
@@ -80,53 +80,62 @@
 */
 
 /* IO_DOMAIN_GENERAL           : subtypes and tuning  SUBTYPE_FMT1  */
-    #define STREAM_SUBT_GENERAL          0u
-    #define STREAM_SUBT_GENERAL_COMP195X 1u /* compressed byte stream following RFC1950 / RFC1951 ("deflate") */
-    #define STREAM_SUBT_GENERAL_DPCM     2u /* compressed byte stream */
-    #define STREAM_SUBT_GENERAL_JSON     3u /* JSON */
-    #define STREAM_SUBT_GENERAL_XFORMAT  4u /* SensorThings MultiDatastream extension */
+    #define STREAM_SUBT_GENERAL            0u
+    #define STREAM_SUBT_GENERAL_COMP195X   1u /* compressed byte stream following RFC1950 / RFC1951 ("deflate") */
+    #define STREAM_SUBT_GENERAL_DPCM       2u /* compressed byte stream */
+    #define STREAM_SUBT_GENERAL_JSON       3u /* JSON */
+    #define STREAM_SUBT_GENERAL_XFORMAT    4u /* SensorThings MultiDatastream extension */
 
 /* IO_DOMAIN_AUDIO_IN          : subtypes and tuning  SUBTYPE_FMT1 */
-    #define STREAM_SUBT_AUDIO_IN        0u  /* no subtype_units : integer/ADC format  */
-    #define STREAM_SUBT_AUDIO_MPG       0u  /* compressed byte stream */
+    #define STREAM_SUBT_AUDIO_IN           0u  /* no subtype_units : integer/ADC format  */
 
 /* IO_DOMAIN_AUDIO_OUT         : subtypes and tuning  SUBTYPE_FMT1 */
-    #define STREAM_SUBT_AUDIO_OUT       0u  /* no subtype_units : integer/DAC format  */
+    #define STREAM_SUBT_AUDIO_OUT          0u  /* no subtype_units : integer/DAC format  */
+
+    #define STREAM_SUBT_AUDIO_MPG         32u  /* compressed byte stream */
 
 /* IO_DOMAIN_GPIO_IN           : subtypes and tuning  SUBTYPE_FMT1 */
-/* IO_DOMAIN_GPIO_OUT          : subtypes and tuning  SUBTYPE_FMT1 */
+   #define STREAM_SUBT_GPIO_IN             0u  /* no subtype_units  */
 
-   #define STREAM_SUBT_GPIO_IN     0u  /* no subtype_units  */
-   #define STREAM_SUBT_GPIO_OUT    0u  /* no subtype_units  */
+/* IO_DOMAIN_GPIO_OUT          : subtypes and tuning  SUBTYPE_FMT1 */
+   #define STREAM_SUBT_GPIO_OUT            0u  /* no subtype_units  */
 
 /* IO_DOMAIN_MOTION_IN         : subtypes and tuning  SUBTYPE_FMT1 */
-   #define STREAM_SUBT_MOTION_A     1u
-   #define STREAM_SUBT_MOTION_G     2u
-   #define STREAM_SUBT_MOTION_B     3u
-   #define STREAM_SUBT_MOTION_AG    4u
-   #define STREAM_SUBT_MOTION_AB    5u
-   #define STREAM_SUBT_MOTION_GB    6u
-   #define STREAM_SUBT_MOTION_AGB   7u
+   #define STREAM_SUBT_MOTION_A            1u
+   #define STREAM_SUBT_MOTION_G            2u
+   #define STREAM_SUBT_MOTION_B            3u
+   #define STREAM_SUBT_MOTION_AG           4u
+   #define STREAM_SUBT_MOTION_AB           5u
+   #define STREAM_SUBT_MOTION_GB           6u
+   #define STREAM_SUBT_MOTION_AGB          7u
 
 /* IO_DOMAIN_2D_IN             : subtypes and tuning  SUBTYPE_FMT1 */
 /*                      raw data is uint8 or uint16 but the subtype tells how to extract the pixel data */
 /* IO_DOMAIN_2D_OUT            : subtypes and tuning  SUBTYPE_FMT1 */
-   #define STREAM_SUBT_2D_YUV420P   1u /* Luminance, Blue projection, Red projection, 6 bytes per 4 pixels, reordered */
-   #define STREAM_SUBT_2D_YUV422P   2u /* 8 bytes per 4 pixels, or 16bpp, Y0 Cb Y1 Cr (1 Cr & Cb sample per 2x1 Y samples) */
-   #define STREAM_SUBT_2D_YUV444P   3u /* 12 bytes per 4 pixels, or 24bpp, (1 Cr & Cb sample per 1x1 Y samples) */
-   #define STREAM_SUBT_2D_CYM24     4u /* cyan yellow magenta */
-   #define STREAM_SUBT_2D_CYMK32    5u /* cyan yellow magenta black */
-   #define STREAM_SUBT_2D_RGB8      6u /* RGB  3:3:2,  8bpp, (msb)2B 3G 3R(lsb) */
-   #define STREAM_SUBT_2D_RGB16     7u /* RGB  5:6:5, 16bpp, (msb)5R 6G 5B(lsb) */
-   #define STREAM_SUBT_2D_RGBA16    8u /* RGBA 4:4:4:4 32bpp (msb)4R */
-   #define STREAM_SUBT_2D_RGB24     9u /* BBGGRR 24bpp (msb)8B */
-   #define STREAM_SUBT_2D_RGBA32   10u /* BBGGRRAA 32bpp (msb)8B */
-   #define STREAM_SUBT_2D_RGBA8888 11u /* AABBRRGG OpenGL/PNG format R=lsb A=MSB ("ABGR32" little endian) */
-   #define STREAM_SUBT_2D_BW1B     12u /* Y, 1bpp, 0 is black, 1 is white */
-   #define STREAM_SUBT_2D_GREY2B   13u /* Y, 2bpp, 0 is black, 3 is white, ordered from lsb to msb  */
-   #define STREAM_SUBT_2D_GREY4B   14u /* Y, 4bpp, 0 is black, 15 is white, ordered from lsb to msb */
-   #define STREAM_SUBT_2D_GREY8B   15u /* Grey 8b, 0 is black, 255 is white */
-
+   #define STREAM_SUBT_2D_YUV420P          1u /* Luminance, Blue projection, Red projection, 6 bytes per 4 pixels, reordered */
+   #define STREAM_SUBT_2D_YUV422P          2u /* 8 bytes per 4 pixels, or 16bpp, Y0 Cb Y1 Cr (1 Cr & Cb sample per 2x1 Y samples) */
+   #define STREAM_SUBT_2D_YUV444P          3u /* 12 bytes per 4 pixels, or 24bpp, (1 Cr & Cb sample per 1x1 Y samples) */
+   #define STREAM_SUBT_2D_CYM24            4u /* cyan yellow magenta */
+   #define STREAM_SUBT_2D_CYMK32           5u /* cyan yellow magenta black */
+   #define STREAM_SUBT_2D_RGB8             6u /* RGB  3:3:2,  8bpp, (msb)2B 3G 3R(lsb) */
+   #define STREAM_SUBT_2D_RGB16            7u /* RGB  5:6:5, 16bpp, (msb)5R 6G 5B(lsb) */
+   #define STREAM_SUBT_2D_RGBA16           8u /* RGBA 4:4:4:4 32bpp (msb)4R */
+   #define STREAM_SUBT_2D_RGB24            9u /* BBGGRR 24bpp (msb)8B */
+   #define STREAM_SUBT_2D_RGBA32          10u /* BBGGRRAA 32bpp (msb)8B */
+   #define STREAM_SUBT_2D_RGBA8888        11u /* AABBRRGG OpenGL/PNG format R=lsb A=MSB ("ABGR32" little endian) */
+   #define STREAM_SUBT_2D_BW1B            12u /* Y, 1bpp, 0 is black, 1 is white */
+   #define STREAM_SUBT_2D_GREY2B          13u /* Y, 2bpp, 0 is black, 3 is white, ordered from lsb to msb  */
+   #define STREAM_SUBT_2D_GREY4B          14u /* Y, 4bpp, 0 is black, 15 is white, ordered from lsb to msb */
+   #define STREAM_SUBT_2D_GREY8B          15u /* Grey 8b, 0 is black, 255 is white */
+                                          
+   #define STREAM_SUBT_2D_JPEG            64u /* legacy JPEG */
+   #define STREAM_SUBT_2D_JP2             65u /* jpeg 2000  */
+   #define STREAM_SUBT_2D_JXL             66u /* jpeg XL  */
+   #define STREAM_SUBT_2D_GIF             67u /* Graphics Interchange Format */
+   #define STREAM_SUBT_2D_PNG             68u /* Portable Network Graphics */
+   #define STREAM_SUBT_2D_SVG             69u /* Scalable Vector Graphics */
+   #define STREAM_SUBT_2D_TIFF            70u /* Tag Image File Format */
+                                   
 
 /* IO_DOMAIN_ANALOG_IN     : subtypes and tuning  SUBTYPE_FMT1 */
 /* IO_DOMAIN_ANALOG_OUT : subtypes and tuning  SUBTYPE_FMT1 */
@@ -477,6 +486,8 @@ enum stream_processor_sub_arch_fpu
     #define STREAM_READ_DATA        8u   /* COMMAND_SSRV syscall read access to arc data */
     #define STREAM_WRITE_DATA       9u   /* COMMAND_SSRV syscall write access to arc data */
 
+    #define STREAM_LIBRARY          10u  /* other functions of the node (IIR parameters compute, ..) */
+
     #define NOWAIT_OPTION_SSRV      0u   /* OPTION_SSRV  stall or not the COMMAND */
     #define   WAIT_OPTION_SSRV      1u
 
@@ -785,6 +796,11 @@ enum stream_processor_sub_arch_fpu
 /* GROUP_SSRV = 6/SERV_DSP_ML ------------------------------------------------ */
 /* --------------------------------------------------------------------------- */
 
+    /* list from ETAS "Embedded AI Coder" :
+    * Batchnorm, Convolutions, Depthwise Convolutions, LSTM, Fully Connected, Elementwise Add, Sub, Mul, 
+    Softmax, Relu, Leaky Relu, Logistic, Padding, StridedSlice, Tanh, MaxPooling, AveragePooling and 
+    TransposeConv. It supports the data types int8 and float32.
+    */
     /* minimum service : IIRQ15/FP32, DFTQ15/FP32 */
             /* FUNCTION_SSRV */
     #define SERV_CHECK_COPROCESSOR  1u   /* check for services() */
