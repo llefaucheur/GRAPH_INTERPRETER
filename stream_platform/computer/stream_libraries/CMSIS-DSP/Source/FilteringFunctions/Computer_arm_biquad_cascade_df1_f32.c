@@ -26,7 +26,8 @@
  * limitations under the License.
  */
 
-#include "dsp/filtering_functions.h"
+#include "dsp/Computer_filtering_functions.h"
+
 
 /**
   @ingroup groupFilters
@@ -504,7 +505,7 @@ void arm_biquad_cascade_df1_f32(
 
 #else
 void arm_biquad_cascade_df1_f32(
-  const arm_biquad_casd_df1_inst_f32 * S,
+  const Computer_arm_biquad_casd_df1_inst_f32 * S,
   const float32_t * pSrc,
         float32_t * pDst,
         uint32_t blockSize)

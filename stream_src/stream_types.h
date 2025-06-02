@@ -42,53 +42,6 @@
 
 typedef uint32_t stream_service_command;
 
-
-/* ------------------------------------------------------------------------------------------
-    floating-point emulation
-*/
-
-#if STREAM_FLOAT_ALLOWED==1
-typedef float sfloat;
-typedef double sdouble;
-
-#else
-//union floatb {
-//    uint32_t i;
-//    struct {
-//        unsigned m : 23;   /* Mantissa */
-//        unsigned e : 8;    /* Exponent */
-//        unsigned s : 1;    /* Sign bit */
-//    } b;
-//};
-
-struct {
-    unsigned m : 23;        /* Mantissa */
-    unsigned e : 8;         /* Exponent */
-    unsigned s : 1;         /* Sign bit */
-} sfloat_struct;
-
-//union doubleb {
-//    uint64_t i;
-//    struct {
-//        unsigned ml: 32;   /* Mantissa low */
-//        unsigned mh: 20;   /* Mantissa high */
-//        unsigned e : 11;   /* Exponent */
-//        unsigned s : 1;    /* Sign bit */
-//    } b;
-//};
-
-struct {
-    unsigned ml: 32;        /* Mantissa low */
-    unsigned mh: 20;        /* Mantissa high */
-    unsigned e : 11;        /* Exponent */
-    unsigned s : 1;         /* Sign bit */
-} sdouble_struct;
-
-typedef uint32_t sfloat;
-typedef uint64_t sdouble;
-#endif
-
-
 /* ------------------------------------------------------------------------------------------
    APIs : nodes, services, IO controls  
   
@@ -113,7 +66,7 @@ typedef struct
 {  
     uint8_t **long_offset;              // pointer to "long_offset[MAX_NB_MEMORY_OFFSET]"
     uint32_t *graph;                    // base address of the binary graph
-    uint8_t *ongoing;                   // pointer to the RAM area to the IOs : on-going transfer flag
+    uint8_t *ongoing;                   // pointer to the RAM area : on-going transfer flag of IOs
 
     uint32_t *all_formats;   
     uint32_t *all_arcs;
@@ -142,7 +95,6 @@ typedef struct
     uint8_t main_script;                // debug script common to all nodes
     uint8_t nb_stream_instances;        // stream instances pointers (in words) = &(all_arcs[ -nb_stream_instances]) 
     uint8_t error_log;                  // bit-field of logged errors 
-    uint8_t padding[3]; 
 
 } arm_stream_instance_t;
 

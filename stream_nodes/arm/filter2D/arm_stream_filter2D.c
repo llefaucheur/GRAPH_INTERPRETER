@@ -136,12 +136,12 @@ void arm_stream_filter2D (int32_t command, stream_handle_t instance, stream_xdmb
         case STREAM_RESET: 
         {   
             uint8_t *pt8b, i, n;
-            intPtr_t *memreq;
+            intptr_t *memreq;
             arm_filter2D_instance *pinstance;
             uint8_t preset = RD(command, PRESET_CMD);
             uint16_t *pt16dst;
 
-            memreq = (intPtr_t *)instance;
+            memreq = (intptr_t *)instance;
             pinstance = (arm_filter2D_instance *) (*memreq++);
 
             /* here reset */
@@ -210,7 +210,7 @@ void arm_stream_filter2D (int32_t command, stream_handle_t instance, stream_xdmb
         case STREAM_RUN:   
         {
             arm_filter2D_instance *pinstance = (arm_filter2D_instance *) instance;
-            intPtr_t nb_data, stream_xdmbuffer_size;
+            intptr_t nb_data, stream_xdmbuffer_size;
             stream_xdmbuffer_t *pt_pt;
             int16_t *inBuf, *outBuf;
 

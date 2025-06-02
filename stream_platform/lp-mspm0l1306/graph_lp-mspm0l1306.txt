@@ -35,7 +35,7 @@ node sigp_stream_detector 0
 ;----------------------------------------------------------------------
 ; arc_input   { io / set0copy1 / fmtProd } + { node / inst / arc / fmtCons }
 ; arc_output  { io / set0copy1 / fmtCons } + { node / inst / arc / fmtProd }
-; arc         { inst / arc / fmtProd }     + { inst / arc / fmtCons }
+; arc      { node / inst / arc / fmtProd } + { node / inst / arc / fmtCons }
 ;
 arc_input   0 0 1 arm_stream_filter     0 0 1  ; io0 set0copy1 fmt1     ; INPUT => IIR, format 1 (array of samples)
 arc_output  1 0 0 sigp_stream_detector  0 1 0  ; io1 set0copy1 fmt0     ; DETECT => OUTPUT (one int16 for the detector output)

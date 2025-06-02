@@ -268,7 +268,6 @@
 #define arc_flow_error                  "arc_flow_error"
 #define arc_debug_cmd                   "arc_debug_cmd"
 #define arc_debug_reg                   "arc_debug_reg"
-#define arc_debug_page                  "arc_debug_page"
 #define arc_flush                       "arc_flush"
 #define arc_extend_address              "arc_extend_address"
 #define arc_map_hwblock                 "arc_map_hwblock"

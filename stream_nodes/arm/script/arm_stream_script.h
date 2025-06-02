@@ -32,8 +32,9 @@
 #ifndef carm_stream_script_H
 #define carm_stream_script_H
 
-#include "stream_const.h"      
-#include "stream_types.h"  
+#include "../../../stream_src/stream_const.h"      
+#include "../../../stream_src/stream_types.h"  
+#include "../../stream_common_types.h"  
 
     
 typedef union
@@ -41,16 +42,16 @@ typedef union
      int8_t v_i8[8];
     int16_t v_i16[4];
     int32_t v_i32[2];
-     sfloat v_f32[2]; 
+     float_t v_f32[2]; 
     #define REGS_DATA 0
     #define REGS_TYPE 1
-    sdouble f64;
+    double_t f64;
 } regdata_t;
 
 
 //typedef union
 //{   int32_t i32;  
-//    sfloat  f32;   
+//    float_t  f32;   
 //} regdata32_t;
 
 /* error codes going to I->ctrl.errors */

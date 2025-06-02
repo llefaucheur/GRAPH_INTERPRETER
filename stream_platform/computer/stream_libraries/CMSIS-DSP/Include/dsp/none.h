@@ -37,7 +37,7 @@ of intrinsics.
 #ifndef _NONE_H_
 #define _NONE_H_
 
-#include "../arm_math_types.h"
+#include "arm_math_types.h"
 
 #ifdef   __cplusplus
 extern "C"
@@ -72,7 +72,7 @@ compiler file in Core or Core_A would not make sense.
         count += 1U;
         mask = mask >> 1U;
       }
-      return count;
+      return (uint8_t)count;
     }
 
   __STATIC_FORCEINLINE int32_t __SSAT(int32_t val, uint32_t sat)

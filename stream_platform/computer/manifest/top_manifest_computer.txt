@@ -8,12 +8,12 @@
 ; list of paths for the included files
 
     6                                               three file paths
-    ../../stream_platform/                           "" path index 0 is local
-    ../../stream_platform/computer/manifest/         "" path index 1 : platform IO manifests
-    ../../stream_nodes/arm/                          "" path index 2 : arm nodes
-    ../../stream_nodes/signal-processingFR/          "" path index 3 : signal-processingFR nodes
-    ../../stream_nodes/bitbank/                      "" path index 4 : bitbank nodes
-    ../../stream_nodes/elm-lang/                     "" path index 5 : elm-lang nodes
+    ../../../stream_platform/                       "" path index 0 is local
+    ../../../stream_platform/computer/manifest/     "" path index 1 : platform IO manifests
+    ../../../stream_nodes/arm/                      "" path index 2 : arm nodes
+    ../../../stream_nodes/signal-processingFR/      "" path index 3 : signal-processingFR nodes
+    ../../../stream_nodes/bitbank/                  "" path index 4 : bitbank nodes
+    ../../../stream_nodes/elm-lang/                 "" path index 5 : elm-lang nodes
 
 ; ------------------------------------------------------------------------------------------------------------
 ; PLATFORM DIGITAL, MIXED-SIGNAL AND IO MANIFESTS - max 32 IOs => iomask
@@ -49,27 +49,20 @@
 
 ;  p_stream_node node_entry_point_table[NB_NODE_ENTRY_POINTS] =
     
-    2                ../node_manifest_none.txt             /*  0 ID0 is reserved for by-passes */
-    2            script/node_manifest_script.txt           /*  1 arm_stream_script-number-1    */
-    2  format_converter/node_manifest_format_converter.txt /*  2 arm_stream_format_converter   */
-    2            router/node_manifest_router.txt           /*  3 arm_stream_router             */
-    3         converter/node_manifest_converter.txt        /*  4 sigp_stream_converter         */
-    2         amplifier/node_manifest_amplifier.txt        /*  5 arm_stream_amplifier          */
-    2             mixer/node_manifest_mixer.txt            /*  6 arm_stream_mixer              */
-    2            filter/node_manifest_filter.txt           /*  7 arm_stream_filter             */
-    3          detector/node_manifest_detector.txt         /*  8 sigp_stream_detector          */
-    2          rescaler/node_manifest_rescaler.txt         /*  9 arm_stream_rescaler           */
-    3        compressor/node_manifest_compressor.txt       /* 10 sigp_stream_compressor        */
-    3      decompressor/node_manifest_decompressor.txt     /* 11 sigp_stream_decompressor      */
-    2         modulator/node_manifest_modulator.txt        /* 12 arm_stream_modulator          */
-    2       demodulator/node_manifest_demodulator.txt      /* 13 arm_stream_demodulator        */
-    3         resampler/node_manifest_resampler.txt        /* 14 sigp_stream_resampler         */
-    2               qos/node_manifest_qos.txt              /* 15 arm_stream_qos                */
-    2             split/node_manifest_split.txt            /* 16 arm_stream_split              */
-    3        detector2D/node_manifest_detector2D.txt       /* 17 sigp_stream_detector2D        */
-    2          filter2D/node_manifest_filter2D.txt         /* 18 arm_stream_filter2D           */
-    2          analysis/node_manifest_analysis.txt         /* 19 arm_stream_analysis           */
-    4           JPEGENC/node_manifest_bitbank_JPEGENC.txt  /* 20 JPG encoder                   */
-    5           TJpgDec/node_manifest_TjpgDec.txt          /* 21 JPG decoder                   */
+    2                ../node_manifest_none.txt             /*  0 arm_stream_null_task        */  
+    2            script/node_manifest_script.txt           /*  1 arm_stream_script           */ 
+    2            router/node_manifest_router.txt           /*  2 arm_stream_router           */ 
+    2         amplifier/node_manifest_amplifier.txt        /*  3 arm_stream_amplifier        */ 
+    2            filter/node_manifest_filter.txt           /*  4 arm_stream_filter           */ 
+    2         modulator/node_manifest_modulator.txt        /*  5 arm_stream_modulator        */ 
+    2       demodulator/node_manifest_demodulator.txt      /*  6 arm_stream_demodulator      */ 
+    2          filter2D/node_manifest_filter2D.txt         /*  7 arm_stream_filter2D         */ 
+    3          detector/node_manifest_detector.txt         /*  8 sigp_stream_detector        */ 
+    3        detector2D/node_manifest_detector2D.txt       /*  9 sigp_stream_detector2D      */ 
+    3         resampler/node_manifest_resampler.txt        /* 10 sigp_stream_resampler       */ 
+    3        compressor/node_manifest_compressor.txt       /* 11 sigp_stream_compressor      */ 
+    3      decompressor/node_manifest_decompressor.txt     /* 12 sigp_stream_decompressor    */ 
+    4           JPEGENC/node_manifest_bitbank_JPEGENC.txt  /* 13 bitbank_JPEGENC             */ 
+    5           TJpgDec/node_manifest_TjpgDec.txt          /* 14 TjpgDec                     */ 
 
 ; ------------------------------------------------------------------------------------------------------------

@@ -115,7 +115,7 @@ int stream_bitsize_of_raw(uint8_t raw)
   parse the membank
 
  */
-int vid_malloc (uint32_t VID, intPtr_t size, uint32_t alignment, 
+int vid_malloc (uint32_t VID, uintptr_t size, uint32_t alignment, 
                 uint32_t *pack27b, int working,       
                 char *comments, 
                 struct stream_platform_manifest *platform,       
@@ -156,11 +156,11 @@ int vid_malloc (uint32_t VID, intPtr_t size, uint32_t alignment,
     //@@@@@ 
     //alignmask =  ~((1u << (7&alignment)) -1u);
     alignmask =  ~((1u << (2)) -1u);
-    size = (intPtr_t)((uint32_t)(size + 3u) & alignmask);
+    size = (intptr_t)((uint32_t)(size + 3u) & alignmask);
      
     *pack27b = 0;
     ST(*pack27b, DATAOFF_ARCW0, offsetID);
-    ST(*pack27b, BASEIDX_ARCW0, offset);   /* offset is in BYTES !! */
+    ST(*pack27b, BUFFBASE_ARCW0, offset);   /* offset is in BYTES !! @@ missing sign and extension*/
 
     if (working == MEM_TYPE_WORKING)
     {   if (size > platform->membank[ibank].max_working_booking)

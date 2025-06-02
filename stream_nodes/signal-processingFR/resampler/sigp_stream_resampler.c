@@ -94,7 +94,7 @@ void sigp_stream_resampler (unsigned int command, void *instance, void *data, un
         */
         case STREAM_RESET: 
         {   stream_al_services *stream_entry = (stream_al_services *)data;
-            intPtr_t *memresults = (intPtr_t *)instance;
+            intptr_t *memresults = (intptr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
             sigp_stream_resampler_instance *pinstance = (sigp_stream_resampler_instance *) *memresults;
@@ -126,7 +126,7 @@ void sigp_stream_resampler (unsigned int command, void *instance, void *data, un
         case STREAM_RUN:   
         {
             sigp_stream_resampler_instance *pinstance = (sigp_stream_resampler_instance *) instance;
-            //intPtr_t nb_data, stream_xdmbuffer_size, bufferout_free;
+            //intptr_t nb_data, stream_xdmbuffer_size, bufferout_free;
             //stream_xdmbuffer_t *pt_pt;
 
             //pt_pt = data;

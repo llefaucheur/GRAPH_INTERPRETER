@@ -199,7 +199,7 @@ struct node_memory_bank
             + E x maxParameterSize 
     */
 
-    intPtr_t size0;             /* A */
+    intptr_t size0;             /* A */
     uint32_t sizeFromGraph;     /* E */
     uint32_t sizeNchan;
     float sizeFS;
@@ -216,7 +216,7 @@ struct node_memory_bank
 
     uint32_t mem_VID;           /* optimization during graphTXT node declaration */
 
-    intPtr_t graph_memreq_size; /* computed after graph reading */
+    intptr_t graph_memreq_size; /* computed after graph reading */
     uint32_t graph_base;     /* memory base address in 27 bits pack format (offsetID + offset) */
 };
 typedef struct node_memory_bank node_memory_bank_t;
@@ -230,14 +230,14 @@ struct processor_memory_bank
     uint32_t private_ram;       /* is it a private (processor ID) or shareable memory bank (= 0) */
     uint32_t hwio;              /* is it reserved for IO and DMA data moves */
     uint32_t data0prog1;        /* data / program memory */
-    intPtr_t size;              /* which size is guaranteed for graph operations */
-    intPtr_t base64;            /* which offset is it from the offset64b long integer */
+    uintptr_t size;             /* which size is guaranteed for graph operations */
+    uintptr_t base64;           /* which offset is it from the offset64b long integer */
 
 
-    intPtr_t ptalloc_static;    /* starting from 0 to size, working area follows */
-    intPtr_t max_working;       /* during init: max size of memreq-working */
-    intPtr_t max_working_alignement; /* during init: worst-case of memory alignement */
-    intPtr_t max_working_booking;
+    intptr_t ptalloc_static;    /* starting from 0 to size, working area follows */
+    uintptr_t max_working;      /* during init: max size of memreq-working */
+    uintptr_t max_working_alignement; /* during init: worst-case of memory alignement */
+    uintptr_t max_working_booking;
 
     char comments[NBCHAR_LINE]; /* comments used when printing the memory map listing */
 };
@@ -288,6 +288,7 @@ struct arcStruct
     uint32_t settings[STREAM_IOFMT_SIZE_W32-1];   // pack format of digital + MSIC options (SETTINGS_IOFMT2), the format depends on the IO domain 
     uint32_t idx_arc_in_graph;          // "stream_io new" index field 
     uint32_t domain;                    // domain of operation
+    uint32_t HQoS;                      // treat this stream of data with highest priority whatever the other arc content
     struct formatStruct format;         // stream_format 
     uint32_t fw_io_idx;                 // ID of the interface given in "files_manifests_computer" associated function (platform dependent) 
     uint32_t format_idx;                // stream format index
@@ -300,10 +301,10 @@ struct arcStruct
     uint32_t sram0_hwdmaram1;           // buffer in standard RAM=0, in HW IO RAM=1 
     uint32_t processorBitFieldAffinity; // indexes of the processor in charge of this stream 
     uint32_t clockDomain;               // indication for the need of ASRC insertion 
-    uint32_t flow_error;                // #1 do something depending on domain when a flow error occurs, default #0 (no interpolation)
+    uint32_t flow_error_wr;             // #1 do something depending on domain when a flow error occurs when writing to the arc buffer
+    uint32_t flow_error_rd;             // #1 do something depending on domain when a flow error occurs when reading from the arc buffer
     uint32_t debug_cmd;                 // debug action "ARC_INCREMENT_REG", default = #0 (no debug)
     uint32_t debug_reg;                 // index of the 64bits result, default = #0
-    uint32_t debug_page;                // debug registers base address + 64bits x 16 registers = 32 word32 / page, default = #0
     uint32_t flush;                     // control of register "MPFLUSH_ARCW1" : forced flush of data in MProcessing and shared tasks
     uint32_t extend_addr;               // address range extension-mode of the arc descriptor "EXTEND_ARCW2" for large NN models, default = #0 (no extension)
     uint32_t map_hwblock;               // mapping VID index from "procmap_manifest_xxxx.txt" to map the buffer, default = #0 (VID0)
@@ -420,7 +421,7 @@ struct stream_node_manifest
     /* memory */
     uint32_t nbMemorySegment;
     node_memory_bank_t memreq[MAX_NB_MEM_REQ_PER_NODE]; /* memory allocations request */
-    intPtr_t sum_of_working_simplemap;   /* cumulate the multiple working segment memory requirements */
+    intptr_t sum_of_working_simplemap;   /* cumulate the multiple working segment memory requirements */
     processor_memory_bank_t usedmem[MAX_PROC_MEMBANK];
 
     /* parameters */
@@ -452,8 +453,8 @@ struct processing_architecture
 {   
     uint32_t processorID;
     uint32_t IamTheMainProcessor;
-    intPtr_t architecture;
-    intPtr_t libraries_b;   /* bit-field of embedded libraries in the flash of the device */
+    intptr_t architecture;
+    intptr_t libraries_b;   /* bit-field of embedded libraries in the flash of the device */
 
     uint32_t nb_threads;    /* RTOS threads (0..3) have decreasing priority (see PRIORITY_LW0) */
     uint32_t nb_long_offset;
@@ -474,9 +475,9 @@ struct stream_platform_manifest
     uint32_t nbOffset;                  /* Nb Base addresses :  MAX_NB_MEMORY_OFFSET
                                             static uint32_t MEXT[SIZE_MBANK_DMEM_EXT];
                                             static uint32_t TCM1[SIZE_MBANK_DMEMFAST]; 
-                                            const intPtr_t long_offset[MAX_NB_MEMORY_OFFSET] = 
-                                            {   (const intPtr_t) &(MEXT[0]),
-                                                (const intPtr_t) &(TCM1[0]),
+                                            const intptr_t long_offset[MAX_NB_MEMORY_OFFSET] = 
+                                            {   (const intptr_t) &(MEXT[0]),
+                                                (const intptr_t) &(TCM1[0]),
             */
     uint32_t nbMemoryBank_detailed;
     processor_memory_bank_t membank[MAX_PROC_MEMBANK];
@@ -524,7 +525,6 @@ struct stream_graph_linkedlist
     /* ------- ARCS ------- */
     struct arcStruct arc[MAX_NB_NODES];             /* rx0tx1, domain, digital format and FS accuracy => merge data */
     uint16_t nb_arcs, nb_io_arcs, current_io_arc;   /*  consolidated formats per arc, inter-nodes and at boundaries */
-    uint32_t nb_debug_pages;                        /* arcs self-debug : number of 16x64b debug pages, in the buffer of arc0 */ 
     uint32_t nb_debug_registers;                    /* arcs self-debug : number of 16x64b debug registers, in the buffer of arc0 */ 
     
     /* ------- NODES ------- */

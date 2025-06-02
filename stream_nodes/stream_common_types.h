@@ -36,24 +36,74 @@
 #include "platform.h"
 #include "stream_common_const.h"
 
+
+/* ------------------------------------------------------------------------------------------
+    floating-point emulation
+*/
+
+#if STREAM_FLOAT_ALLOWED==1
+typedef float float_t;
+typedef double double_t;
+
+#else
+//union floatb {
+//    uint32_t i;
+//    struct {
+//        unsigned m : 23;   /* Mantissa */
+//        unsigned e : 8;    /* Exponent */
+//        unsigned s : 1;    /* Sign bit */
+//    } b;
+//};
+
+struct {
+    unsigned m : 23;        /* Mantissa */
+    unsigned e : 8;         /* Exponent */
+    unsigned s : 1;         /* Sign bit */
+} float_t_struct;
+
+//union doubleb {
+//    uint64_t i;
+//    struct {
+//        unsigned ml: 32;   /* Mantissa low */
+//        unsigned mh: 20;   /* Mantissa high */
+//        unsigned e : 11;   /* Exponent */
+//        unsigned s : 1;    /* Sign bit */
+//    } b;
+//};
+
+struct {
+    unsigned ml: 32;        /* Mantissa low */
+    unsigned mh: 20;        /* Mantissa high */
+    unsigned e : 11;        /* Exponent */
+    unsigned s : 1;         /* Sign bit */
+} double_struct;
+
+typedef uint32_t float_t;
+typedef uint64_t double_t;
+#endif
+
+
 /* ------------------------------------------------------------------------------------------
     opaque access to the static area of the node 
 */
 typedef void *stream_handle_t;  
 
-/* 
-    if 64 bits architectures are reading the graph:
-    #define intPtr_t uint64_t
-    #define MAX_ADD_OFFSET 0x7FFFFFFFFFFFFFFFL
-*/
-#ifdef PLATFORM_ARCH_64BIT
-typedef uint64_t  intPtr_t;
-typedef  int64_t sintPtr_t;
-
-#else   // default configuration is PLATFORM_ARCH_32BIT
-typedef uint32_t  intPtr_t;
-typedef  int32_t sintPtr_t;
-#endif
+///* 
+//    if 64 bits architectures are reading the graph:
+//    #define intptr_t uint64_t
+//    #define MAX_ADD_OFFSET 0x7FFFFFFFFFFFFFFFL
+//*/
+//#ifdef PLATFORM_ARCH_64BIT
+//#define NBBITS_PER_INT 64
+//typedef uint64_t  intptr_t;
+//typedef  int64_t sintptr_t;
+//#endif
+//
+//#ifdef PLATFORM_ARCH_32BIT
+//#define NBBITS_PER_INT 32
+//typedef uint32_t  intptr_t;
+//typedef  int32_t sintptr_t;
+//#endif
 
 /* ------------------------------------------------------------------------------------------
     stream buffers
@@ -61,8 +111,8 @@ typedef  int32_t sintPtr_t;
 
 struct stream_xdmbuffer
 {   
-    intPtr_t address; 
-    intPtr_t size;
+    intptr_t address; 
+    intptr_t size;
 };
 
 typedef struct stream_xdmbuffer stream_xdmbuffer_t;

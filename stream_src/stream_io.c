@@ -74,7 +74,7 @@
   @remark
  */
 
-void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, void *data, uint32_t size)
+void arm_stream_io_ack (uint8_t graph_io_idx, void *data, uint32_t size)
 {
     extern arm_stream_instance_t * platform_io_callback_parameter;
     arm_stream_instance_t *S = platform_io_callback_parameter;
@@ -96,11 +96,13 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, void *data, uint32_t si
     arc = S->all_arcs;
     arc = &(arc[(int)SIZEOF_ARCDESC_W32 * (int)RD(*pio_control, IOARCID_IOFMT0)]);
 
-    extend = RD(arc[2], ARCEXTEND_ARCW2);
-    long_base = S->long_offset[RD(arc[0],DATAOFF_ARCW0)];   /* platfom memory offsets */
-    signed_base = arc[0] << (32-BAS_SIGN_ARCW0_MSB);
-    signed_base >>= (32-BAS_SIGN_ARCW0_MSB);
-    long_base = &(long_base[signed_base << extend]);        /* BASE is in BYTES shifted ARCEXTEND_ARCW2*/
+    long_base = S->long_offset[RD(arc[0],ADDR_OFFSET_FMT0)];   /* platfom memory offsets */
+    signed_base = RD(arc[2], SIGNED_SIZE_FMT0);
+    signed_base = signed_base << (32-SIGNED_SIZE_FMT0_MSB);
+    signed_base = signed_base >> (32-SIGNED_SIZE_FMT0_MSB);
+    extend = RD(arc[2], EXTENSION_FMT0);
+    signed_base <<= (extend << 1);
+    long_base = (uint8_t *) &(long_base[signed_base]);
 
     fifosize = RD(arc[1], BUFF_SIZE_ARCW1);
     read = RD(arc[2], READ_ARCW2);
@@ -133,18 +135,7 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, void *data, uint32_t si
             dst = &(long_base[write]);
             MEMCPY (dst, src, size)
             write = write + size;
-            ST(arc[3], WRITE_ARCW3, write);     /* update the write index */
 
-            /* reset the data transfert flag is a frame is fully received */
-            {   uint32_t consumer_frame_size, i;
-#define MULU32(a,b) ((uint32_t)a * (uint32_t)b)
-                i = MULU32(RD(arc[4],CONSUMFMT_ARCW4),  STREAM_FORMAT_SIZE_W32);
-                consumer_frame_size = RD(S->all_formats[i], FRAMESIZE_FMT0);
-
-                if (write - read >= consumer_frame_size)
-                {   CLEAR_BIT(*ongoing, ONGOING_IO_LSB);
-                }
-            }
 
             /* does the write index is already far, ask for data realignment by the consumer node */
             {   uint32_t producer_frame_size, i;
@@ -152,19 +143,46 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, void *data, uint32_t si
                 producer_frame_size = RD(S->all_formats[i], FRAMESIZE_FMT0);
 
                 if (write > fifosize - producer_frame_size)
-                {   SET_BIT(arc[3], ALIGNBLCK_ARCW3_LSB);
+                {   SET_BIT(arc[2], ALIGNBLCK_ARCW2_LSB);
                 }
             }
         } 
         else /* IO_COMMAND_SET_BUFFER */
-        {
+        {   
             /* arc_set_base_address_to_arc */
-            ST(arc[0], BASEIDXOFFARCW0, lin2pack(S, data));
+            dst = data;
+            ST(arc[0], BASEIDXOFFARCW0, platform_lin2pack((intptr_t)data));
             ST(arc[1], BUFF_SIZE_ARCW1, size);  /* FIFO size aligned with the buffer size */
             ST(arc[2], READ_ARCW2, 0);
-            ST(arc[3], WRITE_ARCW3, size);      /* automatic rewind after read */
-            CLEAR_BIT(*ongoing, ONGOING_IO_LSB);
+            write = size;
         }
+
+        /* reset the data transfert flag is a frame is fully received */
+        {   uint32_t i, time_stamp_prod, time_stamp_cons, consumer_frame_size;
+
+            i = STREAM_FORMAT_SIZE_W32 * RD(arc[4],CONSUMFMT_ARCW4);
+            time_stamp_prod = RD(S->all_formats[i +1], TIMSTAMP_FMT1);
+            consumer_frame_size = RD(S->all_formats[i], FRAMESIZE_FMT0);
+
+            /* check the need for time-stamp insertion */
+            i = RD(arc[4],CONSUMFMT_ARCW4) * STREAM_FORMAT_SIZE_W32;
+            time_stamp_cons = RD(S->all_formats[i +1], TIMSTAMP_FMT1);
+
+            if (time_stamp_prod == NO_TIMESTAMP && time_stamp_cons != NO_TIMESTAMP)
+            {
+                src = dst;
+                dst = src + 4;
+                MEMCPY (dst, src, size)
+                write = write + 4;
+                *src = 0;       // TIME-STAMP
+            }
+
+            if (write - read >= consumer_frame_size)
+            {   CLEAR_BIT(*ongoing, ONGOING_IO_LSB);
+            }
+        }
+
+        ST(arc[3], WRITE_ARCW3, write);     /* finaly update the write index */
     }
     else 
     {   /* 
@@ -191,15 +209,15 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, void *data, uint32_t si
             ST(arc[2], READ_ARCW2, read);   /* update the read index */
 
             /* check need for alignement */
-            if (TEST_BIT (arc[3], ALIGNBLCK_ARCW3_LSB))
+            if (TEST_BIT (arc[2], ALIGNBLCK_ARCW2_LSB))
             {   src = &(long_base[read]);
                 dst =  long_base;
                 MEMCPY (dst, src, (uint32_t)(write-read))
 
-                /* update the indexes Read=0, Write=dataLength */
+                /* update the indexes Read=0, Write=dataLength, then clear the flag */
                 ST(arc[2], READ_ARCW2, 0);
                 ST(arc[3], WRITE_ARCW3, write-read);
-                CLEAR_BIT(arc[3], ALIGNBLCK_ARCW3_LSB);
+                CLEAR_BIT(arc[2], ALIGNBLCK_ARCW2_LSB);
             }
 
             /* reset the data transfert flag if no frame is ready for transmit */
@@ -214,11 +232,16 @@ void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, void *data, uint32_t si
         else /* IO_COMMAND_SET_BUFFER for the next frame to send */
         {
             /*arc_set_base_address_to_arc */
-            ST(arc[0], BASEIDXOFFARCW0, lin2pack(S, data));
+            ST(arc[0], BASEIDXOFFARCW0, platform_lin2pack((intptr_t)data));
             ST(arc[2], READ_ARCW2, 0);
             ST(arc[3], WRITE_ARCW3, 0);
             CLEAR_BIT(*ongoing, ONGOING_IO_LSB);
         }
+    }
+
+    /* flush the cache and the memory barriers for buffers used with multiprocessing */
+    if (0 != TEST_BIT(arc[2], MPFLUSH_ARCW2_LSB))
+    {   DATA_MEMORY_BARRIER
     }
 }
 

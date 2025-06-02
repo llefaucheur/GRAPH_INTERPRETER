@@ -54,9 +54,9 @@
 #include "stream_const.h"      
 #include "stream_types.h"
 
-extern void arm_graph_interpreter_io_ack (uint8_t graph_io_idx, void *data, uint32_t size);
+extern void arm_stream_io_ack (uint8_t graph_io_idx, void *data, uint32_t size);
 
-extern uint8_t platform_io_al_idx_to_graph[];
+extern uint8_t platform_io_al_idx_to_stream[];
 
 /*
  * NULL TASK
@@ -130,7 +130,7 @@ void data_in_1 (uint32_t command, stream_xdmbuffer_t *data)
     switch (command)
     {
     case STREAM_RESET:
-        if (NULL == (ptf_data_in_1 = fopen("..\\..\\stream_test\\test3.wav", "rb")))
+        if (NULL == (ptf_data_in_1 = fopen("stream_test\\test3.wav", "rb")))
         {   exit (-1); 
         }
         else 
@@ -139,7 +139,7 @@ void data_in_1 (uint32_t command, stream_xdmbuffer_t *data)
             {   fread(&c,1,1,ptf_data_in_1); // skip WAV header
             }
         }
-        // io_setting.address = (intPtr_t)(&(S->graph[GRAPH_HEADER_NBWORDS + graph_io_idx]));
+        // io_setting.address = (intptr_t)(&(S->graph[GRAPH_HEADER_NBWORDS + graph_io_idx]));
         // io_setting.size    = 4*(STREAM_IOFMT_SIZE_W32-1);        
         stream_format_io_setting = *(uint32_t *)(data->address);
         break;
@@ -148,7 +148,7 @@ void data_in_1 (uint32_t command, stream_xdmbuffer_t *data)
     case STREAM_SET_BUFFER:
         {   stream_xdmbuffer_t *pt_pt;
             pt_pt = (stream_xdmbuffer_t *)data;
-            pt_pt->address = (intPtr_t)buffer_data_in_1;
+            pt_pt->address = (intptr_t)buffer_data_in_1;
             pt_pt->size = size_data_in_1;
         }
         break;
@@ -156,11 +156,11 @@ void data_in_1 (uint32_t command, stream_xdmbuffer_t *data)
         count = size_data_in_1/2;
         tmp = fread(buffer_data_in_1, 2, count, ptf_data_in_1);
         if (tmp != count)
-        {   arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_DATA_IN_1], buffer_data_in_1, 0);
+        {   arm_stream_io_ack (platform_io_al_idx_to_stream[IO_PLATFORM_DATA_IN_1], buffer_data_in_1, 0);
             fclose (ptf_data_in_1);
         }
         else
-        {   arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_DATA_IN_1], buffer_data_in_1, size_data_in_1);
+        {   arm_stream_io_ack (platform_io_al_idx_to_stream[IO_PLATFORM_DATA_IN_1], buffer_data_in_1, size_data_in_1);
         }
         break;
     case STREAM_STOP:
@@ -181,8 +181,8 @@ void analog_sensor_0 (uint32_t command, stream_xdmbuffer_t *data)
     switch (command)
     {
     case STREAM_RESET:
-        //if (NULL == (ptf_in_stream_in_0_data = fopen("..\\..\\stream_test\\sine_noise_offset.wav", "rb"))) 
-        if (NULL == (ptf_analog_sensor_0 = fopen("..\\..\\stream_test\\chirp_M6dB.wav", "rb")))
+        //if (NULL == (ptf_in_stream_in_0_data = fopen("stream_test\\sine_noise_offset.wav", "rb"))) 
+        if (NULL == (ptf_analog_sensor_0 = fopen("stream_test\\chirp_M6dB.wav", "rb")))
         {   exit (-1); 
         }
         else 
@@ -202,11 +202,11 @@ void analog_sensor_0 (uint32_t command, stream_xdmbuffer_t *data)
         tmp = fread(data, 1, FORMAT_PRODUCER_FRAME_SIZE, ptf_analog_sensor_0);
 
         if (FORMAT_PRODUCER_FRAME_SIZE != tmp)
-        {   arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], data, 0);
+        {   arm_stream_io_ack (platform_io_al_idx_to_stream[IO_PLATFORM_ANALOG_SENSOR_0], data, 0);
             fclose (ptf_analog_sensor_0);
         }
         else
-        {   arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data, FORMAT_PRODUCER_FRAME_SIZE);
+        {   arm_stream_io_ack (platform_io_al_idx_to_stream[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data, FORMAT_PRODUCER_FRAME_SIZE);
         }
         break;
     case STREAM_STOP:
@@ -314,7 +314,7 @@ void gpio_out_0 (uint32_t command, stream_xdmbuffer_t *data)
         //stream_format_io_setting = *(uint32_t *)(data->address);          
         break;    
     case STREAM_SET_PARAMETER:
-        #define FILE_GPIO_OUT_0 "..\\..\\stream_test\\gpio_out_0.raw"
+        #define FILE_GPIO_OUT_0 "stream_test\\gpio_out_0.raw"
             if (NULL == (ptf_gpio_out_0 = fopen(FILE_GPIO_OUT_0, "wb")))
             {   exit (-1);
             }
@@ -322,13 +322,13 @@ void gpio_out_0 (uint32_t command, stream_xdmbuffer_t *data)
     case STREAM_SET_BUFFER:
         {   stream_xdmbuffer_t *pt_pt;
             pt_pt = (stream_xdmbuffer_t *)data;
-            pt_pt->address = (intPtr_t)buffer_gpio_out_0;
+            pt_pt->address = (intptr_t)buffer_gpio_out_0;
             pt_pt->size = size_gpio_out_0;
         }
         break;
     case STREAM_RUN:
          /* "io_platform_stream_in_0," frame_size option in samples + FORMAT-0 in the example graph */ 
-         arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_GPIO_OUT_0], (uint8_t *)data, size_gpio_out_0);
+         arm_stream_io_ack (platform_io_al_idx_to_stream[IO_PLATFORM_GPIO_OUT_0], (uint8_t *)data, size_gpio_out_0);
          fwrite(data, 1, size_gpio_out_0, ptf_gpio_out_0);
          fflush(ptf_gpio_out_0);
         break;
@@ -369,7 +369,7 @@ void data_out_0 (uint32_t command, stream_xdmbuffer_t *data)
     switch (command)
     {
     case STREAM_RESET:
-        #define FILE_DATA_OUT_0 "..\\..\\stream_test\\data_out_0.raw"
+        #define FILE_DATA_OUT_0 "stream_test\\data_out_0.raw"
             if (NULL == (ptf_data_out_0 = fopen(FILE_DATA_OUT_0, "wb")))
             {   exit (-1);
             }
@@ -380,12 +380,12 @@ void data_out_0 (uint32_t command, stream_xdmbuffer_t *data)
     case STREAM_SET_BUFFER:
         {   stream_xdmbuffer_t *pt_pt;
             pt_pt = (stream_xdmbuffer_t *)data;
-            pt_pt->address = (intPtr_t)buffer_data_out_0;
+            pt_pt->address = (intptr_t)buffer_data_out_0;
             pt_pt->size = size_data_out_0;
         }
         break;
     case STREAM_RUN:
-            arm_graph_interpreter_io_ack(platform_io_al_idx_to_graph[IO_PLATFORM_DATA_OUT_0], buffer_data_out_0, size_data_out_0);
+            arm_stream_io_ack(platform_io_al_idx_to_stream[IO_PLATFORM_DATA_OUT_0], buffer_data_out_0, size_data_out_0);
             //fwrite(buffer_data_out_0, 1, size_data_out_0, ptf_data_out_0);
             //fflush(ptf_data_out_0);
         break;

@@ -70,11 +70,11 @@ extern void stream_tool_read_parameters(char **pt_line,
         struct stream_graph_linkedlist *graph, 
         uint32_t *ParameterSizeW32,
         uint32_t *PackedParameters);
-extern int  vid_malloc(uint32_t VID, intPtr_t size, uint32_t alignment, uint32_t *pack27b, int working, char *comment, struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph);
+extern int  vid_malloc(uint32_t VID, uintptr_t size, uint32_t alignment, uint32_t *pack27b, int working, char *comment, struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph);
 extern void search_platform_node(char *cstring, struct stream_node_manifest **platform_node, uint32_t *platform_NODE_idx,
             struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph);
 extern void search_graph_node(char *cstring, struct stream_node_manifest **graph_node, uint32_t *graph_NODE_idx, struct stream_graph_linkedlist *graph);
-extern void compute_memreq(struct node_memory_bank *m, struct formatStruct *all_format);
+extern void compute_memreq(struct node_memory_bank *m, struct formatStruct *all_format, struct stream_node_manifest *node);
 extern void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *platform,
                             struct stream_graph_linkedlist *graph, struct stream_script *script);
 extern void stream_tool_read_assembler(char **pt_line, struct stream_platform_manifest *platform,

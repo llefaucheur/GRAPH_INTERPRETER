@@ -48,7 +48,7 @@
      Registers 
         Instance static = 12 registers (R0..r11) stack (R13=SP, R14-SP+1) 
 
-    W32 script offset table[6b = 64 SCRIPT_LW0] to the byte codes 
+    W32 script offset table[7 = 127 SCRIPT_LW0] to the byte codes 
         [SCRIPTSSZW32_GR1] = 
         |    nb_script x { word offset, byteCode Format, shared RAM, ARC } 
         |

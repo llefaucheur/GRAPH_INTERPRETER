@@ -27,11 +27,11 @@
 #ifndef _SUPPORT_FUNCTIONS_H_
 #define _SUPPORT_FUNCTIONS_H_
 
-#include "../arm_math_types.h"
-#include "../arm_math_memory.h"
+#include "arm_math_types.h"
+#include "arm_math_memory.h"
 
-#include "../dsp/none.h"
-#include "../dsp/utils.h"
+#include "dsp/none.h"
+#include "dsp/utils.h"
 
 #ifdef   __cplusplus
 extern "C"

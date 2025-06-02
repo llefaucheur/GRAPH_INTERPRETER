@@ -48,7 +48,7 @@
 /* ----------------------------------------------------------------------------------------------------------------
     STREAM_IO_DOMAIN (s)    => stream_format + stream_io_control
 
-    enum stream_io_domain : list of stream "domains" categories, max 15 (DOMAIN_FMT1)
+    enum stream_io_domain : list of stream "domains" categories, max 15 (DOMAIN_FMT1_LSB/ IO_DOMAIN_IOFMT0_LSB) @@@@@
     each stream domain instance is controled by 3 functions and presets
     domain have common bitfields for settings (see example platform_audio_out_bit_fields[]).
 */
@@ -301,7 +301,6 @@ enum stream_processor_sub_arch_fpu
 
 #define STREAM_FORMAT_SIZE_W32 4u     /*  digital, common part of the format  */
 /*
-*   STREAM_DATA_START_data_format (size multiple of 3 x uint32_t)
 *   _FMT0 word 0 : common to all domains : frame size
 *   _FMT1 word 1 : common to all domains : time-stamp, nchan, raw format, interleaving, domain, size extension
 *   _FMT2 word 2 : specific to domains : hashing, sampling rate
@@ -313,10 +312,17 @@ enum stream_processor_sub_arch_fpu
 #define S8(x) ((int8_t)(x)) 
 
 //enum time_stamp_format_type {
-#define NO_TS 0u
-#define ABS_TS 1u                    /* long time reference stream_time64 */
-#define REL_TS 2u                    /* time difference from previous frame packet in stream_time_seconds format */
-#define COUNTER_TS 3u                /* 32bits counter of data frames */
+////+enum frame_format_synchro {
+#define SYNCHRONOUS 0u              /* tells the output buffer size is NOT changing */
+#define ASYNCHRONOUS 1u             /* tells the output frame length is variable, input value "Size" tells the maximum value  
+//                                       data format : optional time-stamp (stream_time_stamp_format_type)
+//                                                    domain [2bits] and sub-domain [6bits rfc8428]
+//                                                    payload : [nb samples] [samples]  */
+#define NO_TIMESTAMP    0u
+#define FRAME_COUNTER   1u          /* 32bits counter of data frames */
+#define TIMESTAMP_ABS   2u          /* float64 absolute frame distance in [s] from Jan 1st 2025 */
+#define TIMESTAMP_REL   3u          /* float32 relative frame distance in [s] */
+
 
 //enum hashing_type {
 #define NO_HASHING 0u                /* cipher protocol under definition */
@@ -327,60 +333,83 @@ enum stream_processor_sub_arch_fpu
                                     /* the pointer associated to the stream points to data (L/R/L/R/..)     */
 #define FMT_DEINTERLEAVED_1PTR 1u   /* single pointer to the first channel, next channel base address is    */
                                     /*  computed by adding the frame size or buffer size/nchan, also for ring buffers  */
-////+enum frame_format_synchro {
-#define SYNCHRONOUS 0u              /* tells the output buffer size is NOT changing */
-#define ASYNCHRONOUS 1u             /* tells the output frame length is variable, input value "Size" tells the maximum value  
-//                                       data format : optional time-stamp (stream_time_stamp_format_type)
-//                                                    domain [2bits] and sub-domain [6bits rfc8428]
-//                                                    payload : [nb samples] [samples]  */
+
 ////enum direction_rxtx {
 #define IODIRECTION_RX 0u          /* RX from the Graph pont of view */
 #define IODIRECTION_TX 1u
 
 
+/*          SIZE_EXT_FMT0 / COLLISION_ARC / NODE memory bank
+
+    -8 bits-|--------24 bits -------
+  
+    1_987654321_987654321_987654321_
+    III_____________________________  NALLOCM1 node memory banks
+    cccccccc________________________  collision byte in the WRITE word32
+    ____OOOO________________________  long offset of the buffer base address
+    ________EXT_____________________  extension 3bits shifter
+    ___________sbbbbbbbbbbbbbbbbbbbb  signed length in 20 bits BYTES x (1 << (EXT x 2))
+    ___________s44443333222211110000  5 hex signed digits
+   
+   max = 0x000FFFFF << (2x7) = +/- 1M x 16k = +/- 16G
+*/
+
+#define SIZE_EXT_OFF_FMT_MSB 27u /* 28    28 = offsets(4) + EXT(3) + sign(1) + size(20) */
+#define ADDR_OFFSET_FMT0_MSB 27u
+#define ADDR_OFFSET_FMT0_LSB 24u
+#define    SIZE_EXT_FMT0_MSB 23u /* 24    24 = EXT(3) + sign(1) + size(20) */
+#define   EXTENSION_FMT0_MSB 23u /*    */
+#define   EXTENSION_FMT0_LSB 21u /*  3 */
+#define SIGNED_SIZE_FMT0_MSB 20u /*       21 bits for sign(1) + size(20) */
+#define   SIZE_SIGN_FMT0_MSB 20u /*    */
+#define   SIZE_SIGN_FMT0_LSB 20u /*  1 */
+#define        SIZE_FMT0_MSB 19u /*    */
+#define        SIZE_FMT0_LSB  0u /* 20 */
+#define SIGNED_SIZE_FMT0_LSB  0u /*    */
+#define    SIZE_EXT_FMT0_LSB  0u /*    */
+#define SIZE_EXT_OFF_FMT_LSB  0u /*    */
+
 /*  WORD 0 - frame size --------------- */
 #define FRAMESZ_FMT0   0u          
-    /* frame size in bytes for one deinterleaved channel Byte-acurate up to 4MBytes       */
-    /* raw interleaved buffer size is framesize x nb channel, max = 4MB x nchan           */
+    /* frame size in bytes for one deinterleaved channel Byte-acurate up to 4MBytes         */
+    /* raw interleaved buffer size is framesize x nb channel, max = 4MB x nchan             */
     /* in node manifests it gives the minimum input size (grain) before activating the node */
-    /* A "frame" is the combination of several channels sampled at the same time          */
-    /* A value =0 means the size is any or defined by the IO AL.                          */
-    /* For sensors delivering burst of data not isochronous, it gives the maximum         */
-    /* framesize; same comment for the sampling rate.                                     */
-    /* The frameSize is including the time-stamp field                                    */
-    #define unused____FMT0_MSB 31u /* 10 reserved */
-    #define unused____FMT0_LSB 22u 
-    #define FRAMESIZE_FMT0_MSB 21u /* 22 frame size, bit-field of the same size as READ_ARCW2 */
-    #define FRAMESIZE_FMT0_LSB  0u 
+    /* A "frame" is the combination of several channels sampled at the same time            */
+    /* A value =0 means the size is any or defined by the IO AL.                            */
+    /* For sensors delivering burst of data not isochronous, it gives the maximum           */
+    /* framesize; same comment for the sampling rate.                                       */
+    /* The frameSize is including the time-stamp field                                      */
+    #define unused____FMT0_MSB  31u /*  8 reserved */
+    #define unused____FMT0_LSB  24u 
+    #define FRAMESIZE_FMT0_MSB  SIZE_EXT_FMT0_MSB
+    #define FRAMESIZE_FMT0_LSB  SIZE_EXT_FMT0_LSB
 
 /*- WORD 1 - domain, sub-types , size extension, time-stamp, raw format, interleaving, nchan  -------------*/
 #define NCHANDOMAIN_FMT1   1
     #define unused____FMT1_MSB  31u /*     */  
-    #define unused____FMT1_LSB  30u /* 2 reserved */
-    #define   SUBTYPE_FMT1_MSB  29u /*     */  
-    #define   SUBTYPE_FMT1_LSB  23u /* 7  sub-type for pixels and analog formats (STREAM_SUBT_ANA_)  */
-    #define FSZEXTEND_FMT1_MSB  22u /*    Frame Size are used with to extend by <<(2x{0..7}) */
-    #define FSZEXTEND_FMT1_LSB  20u /* 3  to  256MB, 4GB, 64GB , for use-cases with NN models, video players, etc */
-    #define    DOMAIN_FMT1_MSB  19u 
-    #define    DOMAIN_FMT1_LSB  16u /* 4  STREAM_IO_DOMAIN */
-    #define       RAW_FMT1_MSB  15u
-    #define       RAW_FMT1_LSB  10u /* 6  arithmetics stream_raw_data 6bits (0..63)  */
-    #define  TSTPSIZE_FMT1_MSB   9u 
-    #define  TSTPSIZE_FMT1_LSB   8u /* 2  16/32/64/64TXT time-stamp time format */
-    #define  TIMSTAMP_FMT1_MSB   7u 
-    #define  TIMSTAMP_FMT1_LSB   6u /* 2  time_stamp_format_type for time-stamped streams for each interleaved frame */
+    #define unused____FMT1_LSB  28u /* 4 reserved */
+    #define   SUBTYPE_FMT1_MSB  27u /*     */  
+    #define   SUBTYPE_FMT1_LSB  21u /* 7  sub-type for pixels and analog formats (STREAM_SUBT_ANA_)  */
+    #define    DOMAIN_FMT1_MSB  20u 
+    #define    DOMAIN_FMT1_LSB  17u /* 4  STREAM_IO_DOMAIN = DOMAIN_FMT1 */
+    #define       RAW_FMT1_MSB  16u
+    #define       RAW_FMT1_LSB  11u /* 6  arithmetics stream_raw_data 6bits (0..63)  */
+    #define  TSTPSIZE_FMT1_MSB  10u 
+    #define  TSTPSIZE_FMT1_LSB   9u /* 2  16/32/64/64TXT time-stamp time format */
+    #define  TIMSTAMP_FMT1_MSB   8u 
+    #define  TIMSTAMP_FMT1_LSB   6u /* 3  time_stamp_format_type for time-stamped streams for each interleaved frame */
     #define INTERLEAV_FMT1_MSB   5u       
     #define INTERLEAV_FMT1_LSB   5u /* 1  interleaving : frame_format_type */
     #define   NCHANM1_FMT1_MSB   4u 
     #define   NCHANM1_FMT1_LSB   0u /* 5  nb channels-1 [1..32] */
 
-/*  WORD2 - sampling rate */
+/*  WORD2 - sampling rate for IO_DOMAIN_AUDIO_IN and IO_DOMAIN_AUDIO_OUT */
 #define SAMPLINGRATE_FMT2   2
     /*--------------- WORD 2 -------------*/
-    #define      FS1D_FMT2_MSB  31u /* 24 truncated IEEE-754 to 24 bits, 0 means "asynchronous" or "any" */
-    #define      FS1D_FMT2_LSB   8u /*    FP24_S_E8_M15 in [Hz]   */
-    #define  LEVEL_1D_FMT2_MSB   7u
-    #define  LEVEL_1D_FMT2_LSB   0u /* 8  Maximum level from SUBTYPE_FMT1-unit */
+    #define      FS1D_FMT2_MSB  31u /* 32 IEEE-754, 0 means "asynchronous" or "any" */
+    #define      FS1D_FMT2_LSB   0u /*    [Hz]   */
+    //#define  LEVEL_1D_FMT2_MSB   7u
+    //#define  LEVEL_1D_FMT2_LSB   0u /* 8  Maximum level from SUBTYPE_FMT1-unit */
 
 
 /*  WORD 3 for IO_DOMAIN_AUDIO_IN and IO_DOMAIN_AUDIO_OUT */
@@ -431,7 +460,18 @@ enum stream_processor_sub_arch_fpu
     #define I2D_SMALLDIM_FMT3_MSB U(11) /* 12 smallest pixel dimension, the largest comes with a division with */
     #define I2D_SMALLDIM_FMT3_LSB U( 0) /*    largest dimension = (frame_size - time_stamp_size)/smallest_dimension 
                                               or  largest dimension = ratio x smallest_dimension  */
-
+//
+//
+//    /*  WORD 4 IO domain specific */
+//#define DOMAINSPECIFIC_FMT4   4
+//    #define unused____FMT4_MSB U(31) 
+//    #define unused____FMT4_LSB U( 0) 
+//
+//
+//    /*  WORD 5 IO domain specific */
+//#define DOMAINSPECIFIC_FMT5   5
+//    #define unused____FMT5_MSB U(31) 
+//    #define unused____FMT5_LSB U( 0) 
 
 /*====================================================================================================================*/                          
 /*
@@ -443,7 +483,7 @@ enum stream_processor_sub_arch_fpu
 
     /*  FROM APP TO SCHEDULER :     arm_graph_interpreter (STREAM_RESET, &stream_instance, 0, 0); 
         FROM SCHEDULER to NODE :     devxx_fyyyy (STREAM_RESET, &node_instance, &memreq, &status); 
-            Command + nb arcs, preset 0..15m TAG 0..255
+            Command + nb arcs, preset 0..15, TAG 0..255
         -  (STREAM_RESET, ptr1, ptr2, ptr3); 
             ptr1 = instance pointer, memory banks
             ptr2 = stream_al_services function address, followed by all the arc format
@@ -463,10 +503,13 @@ enum stream_processor_sub_arch_fpu
                  tx arc . size = amount of data produced
         -  (STREAM_STOP, ptr1, ptr2, ptr3); 
     */
-    #define STREAM_RESET            1u   /* arm_graph_interpreter(STREAM_RESET, *instance, * memory_results) */
-    #define STREAM_SET_PARAMETER    2u   /* APP sets NODE parameters node instances are protected by multithread effects when 
-                                          changing parmeters on the fly, used to exchange the unlock key */
+    #define STREAM_RESET            1u  /* arm_graph_interpreter(STREAM_RESET, *instance, * memory_results) */
+        #define STREAM_COLD_BOOT    0u  /* if (STREAM_COLD_BOOT == RD(command, COMMDEXT_CMD)) */
+        #define STREAM_WARM_BOOT    1u  /* Reset + restore memory banks from retention */
 
+    #define STREAM_SET_PARAMETER    2u  /* APP sets NODE parameters node instances are protected by multithread effects when 
+                                          changing parmeters on the fly, used to exchange the unlock key */
+            
     //#define STREAM_SET_IO_CONFIG STREAM_SET_PARAMETER 
     /*  @@@ TODO
             reconfigure the IO : p_io_function_ctrl(STREAM_SET_IO_CONFIG + (FIFO_ID<<NODE_TAG_CMD), 0, new_configuration_index) 
@@ -928,7 +971,7 @@ enum stream_processor_sub_arch_fpu
  *  ______________________mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm ms 
  *
  *
- *  Local time in BINARY bit-fields : years/../millisecond, WWW=day of the week 
+ *  Local time in BINARY bit-fields : years/millisecond, WWW=day of the week 
  *  (0=Sunday, 1=Monday..)
  *      COVESA allowed formats : ['YYYY_MM_DD', 'DD_MM_YYYY', 'MM_DD_YYYY', 'YY_MM_DD', 'DD_MM_YY', 'MM_DD_YY']
  *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
@@ -1000,8 +1043,8 @@ enum stream_processor_sub_arch_fpu
 #define STREAM_U8        12u /* xxxxxxxx  ASCII char, numbers.. */
 #define STREAM_Q7        13u /* Sxxxxxxx  arithmetic saturation */
 #define STREAM_CHAR      14u /* xxxxxxxx  */
-#define STREAM_FP8_E4M3  15u /* Seeeemmm  NV tiny-float [0.02 .. 448] */                 
-#define STREAM_FP8_E5M2  16u /* Seeeeemm  IEEE-754 [0.0001 .. 57344] */
+#define STREAM_FP8_E4M3  15u /* Seeeemmm  NV tiny-float  +/-[0, 0.015 .. 240]  */ 
+#define STREAM_FP8_E5M2  16u /* Seeeeemm  IEEE-754       +/-[0, 0.015 .. 15.5] */
 #define STREAM_S16       17u /* Sxxxxxxx.xxxxxxxx  */                                    /* 2 bytes per data */
 #define STREAM_U16       18u /* xxxxxxxx.xxxxxxxx  Numbers, UTF-16 characters */
 #define STREAM_Q15       19u /* Sxxxxxxx.xxxxxxxx  arithmetic saturation */
@@ -1019,35 +1062,35 @@ enum stream_processor_sub_arch_fpu
 #define STREAM_U64       31u /* unsigned  64 bits */
 #define STREAM_Q63       32u /* Sxxxxxxx.xxxxxx ....... xxxxx.xxxxxxxx  */
 #define STREAM_CQ31      33u /* Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx Sxxxx..*/
-#define STREAM_FP64      34u /* Seeeeeee.eeemmmmm.mmmmmmm ... double  */
+#define STREAM_FP64      34u /* Seeeeeee.eeemmmmm.mmmmmmm ... double = S E11 M52 */
 #define STREAM_CFP32     35u /* Seeeeeee.mmmmmmmm.mmmmmmmm.mmmmmmmm Seee.. (I Q)  */
 #define STREAM_FP128     36u /* Seeeeeee.eeeeeeee.mmmmmmm ... quadruple precision */     /* 16 bytes per data */
 #define STREAM_CFP64     37u /* fp64 fp64 (I Q)  */
 #define STREAM_FP256     38u /* Seeeeeee.eeeeeeee.eeeeemm ... octuple precision  */      /* 32 bytes per data */
-#define STREAM_TIME16    39u /* ssssssssssssqqqq q14.2  maximum range 4 hours 30mn, 0.25s steps */
-#define STREAM_TIME16D   40u /* qqqqqqqqqqqqqqqq q1.15 [s] 2 seconds, for time differences, step=30us */
-#define STREAM_TIME32    41u /* ssssssssssssssssssssssssssssssqq q30.2 seconds, maximum 34 years , 0.25s steps */ 
-#define STREAM_TIME32D   42u /* sssssssssssssssssqqqqqqqqqqqqqqq q17.15 seconds, maximum 36hours, steps 30us */   
-#define STREAM_TIME64    43u /* ____10ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqq u32.26 [s] 140 Y, steps 4ns */   
-#define STREAM_TIME64MS  44u /* ____011000000000000000mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm u42 [ms] 140 years, 4b MSB=DTYPE */   
-#define STREAM_TIME64ISO 45u /* ____0YY..YY..YY..YY..MM..MM..DD..DD..SS..SS.....offs..MM..MM..MM ISO8601 signed offset 2024-05-04T21:12:02+07:00  */   
-#define STREAM_WGS84     46u /* <--LATITUDE 32B--><--LONGITUDE 32B-->  lat="52.518611" 0x4252130f   lon="13.376111" 0x4156048d - dual IEEE754 */   
-#define STREAM_HEXBINARY 47u /* UTF-8 lower case hexadecimal byte stream */
-#define STREAM_BASE64    48u /* RFC-2045 base64 for xsd:base64Binary XML data */
-#define STREAM_STRING8   49u /* UTF-8 string of char terminated by 0 */
-#define STREAM_STRING16  50u /* UTF-16 string of char terminated by 0 */
+
+#define STREAM_WGS84     39u /* <--LATITUDE 32B--><--LONGITUDE 32B-->  lat="52.518611" 0x4252130f   lon="13.376111" 0x4156048d - dual IEEE754 */   
+#define STREAM_HEXBINARY 40u /* UTF-8 lower case hexadecimal byte stream */
+#define STREAM_BASE64    41u /* RFC-2045 base64 for xsd:base64Binary XML data */
+#define STREAM_STRING8   42u /* UTF-8 string of char terminated by 0 */
+#define STREAM_STRING16  43u /* UTF-16 string of char terminated by 0 */
 
 #define LAST_RAW_TYPE    64u /* coded on 6bits RAW_FMT0_LSB */
                              /*   |123456789|123456789|123456789|123456789|123456789|123456789|123 */
 
 
+// STREAM_TIME16    39 /* ssssssssssssqqqq q14.2   1 hour + 8mn +/- 0.0625 */
+// STREAM_TIME16D   40 /* qqqqqqqqqqqqqqqq q15 [s] time difference +/- 15us */
+// STREAM_TIME32    41 /* ssssssssssssssssssssssssssssqqqq q28.4  [s] (8.5 years +/- 0.0625s) */ 
+// STREAM_TIME32D   42 /* ssssssssssssssssqqqqqqqqqqqqqqqq q17.15 [s] (36h, +/- 30us) time difference */   
+// STREAM_TIME64    43 /* 0000ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqq q32.28 [s] 140 Y +Q28 [s] */   
+// STREAM_TIME64MS  44 /* 0010000000000000000000mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm u42 [ms] 140 years */   
+// STREAM_TIME64ISO 45 /* 010..YY..YY..YY..YY..MM..MM..DD..DD..SS..SS.....offs..MM..MM..MM ISO8601 signed offset 2024-05-04T21:12:02+07:00  */   
 
 /* ========================== MINIFLOAT 8bits ======================================*/
 
 // Time constants for algorithm
 // MiniFloat 76543210
 //           MMMEEEEE x= MMM(0..7) << EEEEE(0..31) = [0..15e9] +/-1
-// just for information: OFP8_E4M3 SEEEEMMM x= (sign).(1 + M/8).(2<<(E-7)) =[+/- 240] +/- 0.015625 (2^-6)
 #define MINIF(m,exp) ((uint8_t)((m)<<5 | (exp)))
 #define MINIFLOAT2Q31(x) ((((x) & 0xE0)>>5) << ((x) & 0x1F))
 #define MULTIPLIER_MSB 7u     
@@ -1055,7 +1098,7 @@ enum stream_processor_sub_arch_fpu
 #define EXPONENT_MSB 4u     
 #define EXPONENT_LSB 0u
 
-
+// just for information: OFP8_E4M3 SEEEEMMM x= (sign).(1 + M/8).(2<<(E-7)) =[+/- 240] +/- 0.015625 (2^-6)
 // https://en.wikipedia.org/wiki/Minifloat
 // … 000	… 001	… 010	… 011	… 100	… 101	… 110	… 111
 // 0 0000 …	0	0.001953125	0.00390625	0.005859375	0.0078125	0.009765625	0.01171875	0.013671875

@@ -38,9 +38,9 @@
 #include <stdint.h>
 #include "stream_common_const.h"
 #include "stream_common_types.h"
-#include "stream_const.h" 
+#include "stream_const.h"      
 #include "stream_types.h"
-#include "stream_extern.h"
+//#include "stream_extern.h"
 #include "stream_libraries/CMSIS-DSP/Include/dsp/Computer_filtering_functions.h"
 
 
@@ -87,7 +87,7 @@ uint8_t itoab(char *s, int32_t n, int base)
 {
     uint8_t sign, nc, i, j, c;
 
-     if ((sign = n) < 0)  /* save the sign */
+     if ((sign = (uint8_t)n) < 0)  /* save the sign */
      {    n = -n;
      }
     
@@ -298,7 +298,7 @@ static void arm_stream_services_conversion (uint32_t command, uint8_t* ptr1, uin
  */
 void arm_stream_services_stdlib (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
-#if SERV_STDLIB
+#ifdef SERV_STDLIB
 	switch (RD(command, FUNCTION_SSRV))
     {
     case STREAM_FREE:
@@ -345,7 +345,7 @@ void arm_stream_services_math (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, u
     Exponential/power functions: expf, log2f, powf, sqrtf
     Trigonometric/hyperbolic functions: sinf, cosf, tanf, asinf, acosf, atan2f, tanhf
     */
-#if SERV_EXTMATH
+#ifdef SERV_EXTMATH
     //STREAM_SIN_FP32,  STREAM_COS_FP32, STREAM_ASIN_FP32, STREAM_ACOS_FP32, 
     //STREAM_TAN_FP32,  STREAM_ATAN_FP32, STREAM_ATAN2_FP32, 
     //STREAM_LOG10_FP32,STREAM_LOG2_FP32, STREAM_POW_FP32, STREAM_SQRT_FP32, 
@@ -367,7 +367,7 @@ void arm_stream_services_math (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, u
  */
 void arm_stream_services_mm_audio (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
-#if SERV_EXTAUDIO
+#ifdef SERV_EXTAUDIO
 
 #endif
 }
@@ -387,7 +387,7 @@ void arm_stream_services_mm_audio (uint32_t command, uint8_t* ptr1, uint8_t* ptr
  */
 void arm_stream_services_mm_image (uint32_t command, uint8_t* ptr1, uint8_t* ptr2, uint8_t* ptr3, uint32_t n) 
 {
-#if SERV_EXTIMAGE
+#ifdef SERV_EXTIMAGE
 
 #endif
 }
@@ -528,7 +528,7 @@ void arm_stream_services (
                         n & 0xFF,                                               //         uint8_t numStages,
                         (const q15_t *) ptr2,                                   //   const q15_t * pCoeffs,
                         (q15_t *) ptr3,                                         //         q15_t * pState,
-                        n >> 8);                                                //         int8_t postShift)
+                        (uint8_t)(n >> 8));                                     //         int8_t postShift)
 
                 } else //(RD(command,  COMMAND_SSRV) == SERV_RUN)
                 {
@@ -659,7 +659,7 @@ void arm_stream_services (
 //                
 //  @remark       
 // */
-//void al_services (uint32_t service_command, intPtr_t ptr1, intPtr_t ptr2, intPtr_t ptr3, uint32_t n)
+//void al_services (uint32_t service_command, intptr_t ptr1, intptr_t ptr2, intptr_t ptr3, uint32_t n)
 //{   
 //    /* max 16 groups of commands {SERV_INTERNAL .. SERV_MM_IMAGE} */
 //	switch (RD(service_command, FUNCTION_SSRV))

@@ -1,0 +1,63 @@
+//--------------------------------------
+//  DATE Thu May 29 14:15:56 2025
+//  AUTOMATICALLY GENERATED CODES
+//  DO NOT MODIFY !
+//--------------------------------------
+0x0000002F, // ------- Graph size = Flash=26[W]+RAM21[W]  +Buffers=64[B] 16[W] 
+0x10000000, // 000 000 [0] Graph is split in Flash + RAM 
+0x00000041, // 004 001 [1] Number of IOs 2, Formats 1, Scripts 0 
+0x0000000B, // 008 002 [2] LinkedList size = 11, ongoing IO bytes, Arc debug table size 0 
+0x00000002, // 00C 003 [3] Nb arcs 2  SchedCtrl 0 ScriptCtrl 0   
+0x00000001, // 010 004 [4] Processors allowed 
+0x00010000, // 014 005 [5] memory consumed 0,1,2,3 
+0x00000000, // 018 006 [6] memory consumed 4,5,6,7 ...  
+0x00005000, // 01C 007 IO(graph0) 1 arc 0 set0copy1=0 rx0tx1=0 servant1 1 domain 0 
+0x00000000, // 020 008 IO(settings 0, fmtProd 0 (L=32) fmtCons 0 (L=32) 
+0x00000000, // 024 009  
+0x00000000, // 028 00A  
+0x00025801, // 02C 00B IO(graph1) 9 arc 1 set0copy1=0 rx0tx1=1 servant1 1 domain 0 
+0x00000000, // 030 00C IO(settings 0, fmtProd 0 (L=32) fmtCons 0 (L=32) 
+0x00000000, // 034 00D  
+0x00000000, // 038 00E  
+0x00004002, // 03C 00F -----  arm_stream_router(0) idx:2 nRX 1 nTX 1 lockArc 1 
+0x08010000, // 040 010 ARC 0 Rx0Tx1 0 L=32  -- ARC 1 Rx0Tx1 1 L=32 KEY0     
+0x20000054, // 044 011 Nb Memreq 2  ClearSwap 0 -Static memory bank  Swap 0  
+0x00000018, // 048 012  bank 0 stat0work1ret2 = 0 size d24(h18)  
+0x20000000, // 04C 013 Static memory bank Swap 0  
+0x00000078, // 050 014  bank 1 stat0work1ret2 = 0 size d120(h78)  
+0x01000004, // 054 015 ParamLen 3+1 Preset 1 Tag0ALL 0 
+0x00000002, // 058 016 (0) 
+0x00010000, // 05C 017 (1) 
+0x00000001, // 060 018 (2) 
+0x000003FF, // 064 019 ^^^^^^^^^ LINKED-LIST END ^^^^^^^^^ vvvvvvvvvvv RAM vvvvvvvvvvv 
+0xFFFFFEFE, // 068 01A 000 000 ->ongoing iomask bytes 
+0x00000020, // 06C 01B 004 001 Format  0 frameSize 32  
+0x00008800, // 070 01C 008 002           nchan 1 raw 17 
+0x00000000, // 074 01D 00C 003           domain-dependent 
+0x00000000, // 078 01E 010 004           domain-dependent 
+0x00000054, // 07C 01F 014 005 ARC0 -IO- Base 54h (0h words) fmtProd_0 frameL 32.0 
+0x00000020, // 080 020 018 006 IO buffer with base address redirection, no memory allocation, the Size is from the producer 
+0x04000000, // 084 021 01C 007       IO 1 ===> arm_stream_router 
+0x00000000, // 088 022 020 008       fmtCons 0 fmtProd 0 dbgreg 0 dbgcmd 0 HQoS 
+0x00000000, // 08C 023 024 009  
+0x00000000, // 090 024 028 00A       log producer/consumer flow errors 
+0x00000000, // 094 025 02C 00B       log .. 
+0x00000000, // 098 026 030 00C       log .. 
+0x00000054, // 09C 027 034 00D ARC1 -IO- Base 54h (0h words) fmtProd_0 frameL 32.0 
+0x00000020, // 0A0 028 038 00E IO buffer with base address redirection, no memory allocation, the Size is from the producer 
+0x00000000, // 0A4 029 03C 00F       arm_stream_router ===> IO 9 
+0x00000000, // 0A8 02A 040 010       fmtCons 0 fmtProd 0 dbgreg 0 dbgcmd 0   
+0x00000000, // 0AC 02B 044 011  
+0x00000000, // 0B0 02C 048 012       log producer/consumer flow errors 
+0x00000000, // 0B4 02D 04C 013       log .. 
+0x00000000, // 0B8 02E 050 014       log .. 
+// bank      size          consumed      static   +  working
+//  0     95526 ( 17526)   108 (  6C)   108 (  6C)     0 (   0)
+//  1     65526 (  FFF6)     0 (   0)     0 (   0)     0 (   0)
+//  2     30000 (  7530)     0 (   0)     0 (   0)     0 (   0)
+//  3     15000 (  3A98)     0 (   0)     0 (   0)     0 (   0)
+//  4    256000 ( 3E800)     0 (   0)     0 (   0)     0 (   0)
+//  5      8192 (  2000)   120 (  78)   120 (  78)     0 (   0)
+//  6      8192 (  2000)     0 (   0)     0 (   0)     0 (   0)
+//  7    200000 ( 30D40)     0 (   0)     0 (   0)     0 (   0)
+//  8     16384 (  4000)     0 (   0)     0 (   0)     0 (   0)

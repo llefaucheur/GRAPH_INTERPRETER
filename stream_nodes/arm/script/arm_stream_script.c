@@ -32,6 +32,7 @@
  */
 
 #include "platform.h"
+
 #ifdef CODE_ARM_STREAM_SCRIPT
 
 #ifdef __cplusplus
@@ -45,29 +46,16 @@
 #include "arm_stream_script_instructions.h"
 #include "arm_stream_script.h"
 
-//static intPtr_t pack2linaddr_int(uint8_t **long_offset, uint32_t x, uint8_t extend)
-//{
-//    const uint8_t *dbg1;
-//    intPtr_t dbg2;
-//    const uint8_t *dbg3;
-//
-//    dbg1 = long_offset[RD(x,DATAOFF_ARCW0)]; 
-//    dbg2 = ((intPtr_t)RD((x),BASEIDX_ARCW0)) << (2*extend);
-//    dbg3 = &(dbg1[dbg2]);
-//    return (intPtr_t)dbg3;  
-//}
-//
-//static void * pack2linaddr_ptr(uint8_t **long_offset, uint32_t data, uint8_t extend)
-//{
-//    return (void *) (pack2linaddr_int(long_offset, data, extend));
-//}
-
-
 /*
     command  = reset/set-param/stop/run
     instance = pointer to the descriptor base address of the arc)
-    data     = XDM[0] data to byte codes XDM[1] Stream instance 
+    data     = XDM[0] data to byte codes 
+               XDM[1] Stream instance 
     status 
+
+    arm_stream_script is directly called with STREAM_RUN from debug_arc_computation_1D
+        and use a dedicated RAM area with an arc
+        or the debug registers DEBUG_REG_ARCW4 for arc controls
 */
 void arm_stream_script (uint32_t command, void *instance, void *data, uint32_t *status)
 {
@@ -97,7 +85,7 @@ void arm_stream_script (uint32_t command, void *instance, void *data, uint32_t *
             pinstance = *((arm_script_instance_t **) instance);           /* main instance */
 
             /* "data" is the Stream interpreter instance, for access to the services */
-            pinstance->services = (stream_al_services *)(intPtr_t)data;
+            pinstance->services = (stream_al_services *)data;
             break;
         }
 
@@ -115,9 +103,9 @@ void arm_stream_script (uint32_t command, void *instance, void *data, uint32_t *
         }
 
         /* byte-code execution,                 
-        xdm_data[0].address = (intPtr_t)S;
-        xdm_data[1].address = (intPtr_t)arc;
-        xdm_data[2].address = (intPtr_t)buffer;
+        xdm_data[0].address = (intptr_t)S;
+        xdm_data[1].address = (intptr_t)arc;
+        xdm_data[2].address = (intptr_t)buffer;
         */
         case STREAM_RUN:   
         {   

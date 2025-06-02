@@ -527,8 +527,8 @@ void platform_init_copy_graph(arm_stream_instance_t *S, uint32_t **graph_dst)
     /* copy the graph data to uint8_t platform_io_al_idx_to_graph[LAST_IO_FUNCTION_PLATFORM]; 
         to ease the translation from graph index to graph_io_idx used in arm_graph_interpreter_io_ack() 
     */
-    {   uint32_t graph_io_idx, tmpi, tmpn;
-        uint32_t *pio_control;
+    {   uint32_t graph_io_idx, tmpn;
+        uint32_t tmpi, *pio_control;
 
         tmpn = RD((S->graph)[1], NB_IOS_GR1);
         for (graph_io_idx = 0; graph_io_idx < tmpn; graph_io_idx++)

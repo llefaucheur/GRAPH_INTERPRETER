@@ -27,7 +27,7 @@
 #ifdef __cplusplus
  extern "C" {
 #endif
-#include "platform.h"
+#include "../../../stream_platform/platform.h"
 
 #ifdef CODE_SIGP_STREAM_COMPRESSOR
 
@@ -35,8 +35,8 @@
 #define CSIGP_STREAM_COMPRESSOR_H
 
 
-#include "stream_const.h"      
-#include "stream_types.h"  
+//#include "stream_const.h"      
+//#include "stream_types.h"  
 #include "sigp_stream_compressor_imadpcm.h"
 
 #define ENCODER_IMADPCM          1  

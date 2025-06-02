@@ -5,7 +5,9 @@
 node_developer_name   ARM                    ; developer name
 node_name             arm_stream_filter      ; node name
 
-node_mask_library     64           ; dependency with DSP services
+node_mask_library     64            ; dependency with DSP services
+
+node_nb_arcs          4 4           ; maximum 4 input arcs + 4 output arcs
 
 ;----------------------------------------------------------------------------------------
 ;   MEMORY ALLOCATIONS

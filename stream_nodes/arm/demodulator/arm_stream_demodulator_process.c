@@ -43,7 +43,7 @@
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void arm_stream_demodulator_process (arm_stream_demodulator_instance *instance, void *input, void *output, intPtr_t *nsamp)
+void arm_stream_demodulator_process (arm_stream_demodulator_instance *instance, void *input, void *output, intptr_t *nsamp)
 {
 
 

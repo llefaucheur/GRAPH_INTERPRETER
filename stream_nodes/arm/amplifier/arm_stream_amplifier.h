@@ -40,8 +40,8 @@
 #define CARM_STREAM_AMPLIFIER_H
 
 #include <stdint.h>
-#include "stream_common_const.h"      
-#include "stream_common_types.h"  
+#include "../stream_nodes/stream_common_const.h"      
+#include "../stream_nodes/stream_common_types.h"  
 
 #define TAG_CMD_RAMP 1
 #define TAG_CMD_DESIRED_GAIN 2

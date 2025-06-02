@@ -148,33 +148,75 @@ void stream_tool_read_parameters(
 
 
 /* ========================================================================
+    @@@ TODO read options from graph data 
+*/
+float read_default_option (struct options *option, uint32_t graph_data)
+{
+    return 1.0;
+}
+
+/* ========================================================================
     compute node  graph_memreq_size 
 */
-void compute_memreq(struct node_memory_bank *m, struct formatStruct *all_format)
+void compute_memreq(struct node_memory_bank *m, struct formatStruct *all_format, struct stream_node_manifest *node)
 {
-    uint32_t nchan;
-    intPtr_t size;
+    uint32_t nchaninput, nbchanoutput, nchan, sizeofRawBits,  B, C, BCbytes, iarc;
+    intptr_t size;
     float FS, frame_length;
 
     /* struct graph stream_node_manifest all_nodes : compute the memreq from arc data 
         update graph->all_nodes . memreq . graph_memreq_size
         memory allocation size in bytes = 
-        A                               : memory allocation in Bytes (default 0)
-        + B x nb_channels of arc(i)     : addition memory as a number of channels in arc index i (default 0)
-        + C x sampling_rate of arc(j)   ; .. as proportional to the sampling rate of arc index j (default 0)
-        + D x frame_size of arc(k)      ; .. as proportional to the frame size used for the arc index k (default 0)
-        + E x parameter from the graph  ; optional field "malloc_E" during the node declaration in the graph, for
-                                        ;   example the number of pixels in raw for a scratch area (default 0)
+        A                                   : memory allocation in Bytes (default 0)
+        + size of raw samples of arc(i) x 
+        { B x nb_channels of arc(i)         : addition memory as a number of channels in arc index i (default 0)
+        + C x sampling_rate of arc(j)       ; .. as proportional to the sampling rate of arc index j (default 0)
+        }
+        + D x frame_size of arc(k)          ; .. as proportional to the frame size used for the arc index k (default 0)
+        + E x parameter from the graph      ; optional field "malloc_E" during the node declaration in the graph, for
+                                            ;   example the number of pixels in raw for a scratch area (default 0)
     */
 
     size = m->size0;                    // A
+
+    // default is Bytes sizes , Raw = all_format[m->iarcChannelI].raw_data;
+    sizeofRawBits = stream_bitsize_of_raw(STREAM_S8);
     
-    nchan = all_format[m->iarcChannelI].nchan;          // nchan-1 only when building thr binary graph 
-    size += (uint32_t) ( 0.5f + (float)(m->sizeNchan) * (float)nchan);                          // + B x nb_channels_arc(i)
+    for (iarc = nchaninput = 0; iarc < node->nbInputArc; iarc++)
+    {   struct options *nb_channels_option;
+
+#define GRAPH_DATA_TBC 0 // @@@ TBC read graph info to select the opion     
+        nb_channels_option = &((node->arc[iarc]).nb_channels_option);
+        nchaninput += (uint32_t)read_default_option (nb_channels_option, GRAPH_DATA_TBC);
+    }
+    for (iarc = nbchanoutput = 0; iarc < node->nbOutputArc; iarc++)
+    {   struct options *nb_channels_option;
+
+#define GRAPH_DATA_TBC 0 // @@@ TBC read graph info to select the opion     
+        nb_channels_option = &((node->arc[iarc]).nb_channels_option);
+        nbchanoutput += (uint32_t)read_default_option (nb_channels_option, GRAPH_DATA_TBC);
+    }
+
+#define NBCHAN_INPUT_ARC 1
+#define NBCHAN_OUTPUT_ARC 2
+#define NBCHAN_ALL_ARC 3
+    switch(m->iarcChannelI)
+    {   case NBCHAN_INPUT_ARC:  nchan = nchaninput; break;
+        case NBCHAN_OUTPUT_ARC: nchan = nbchanoutput; break;
+        default: 
+        case NBCHAN_ALL_ARC:    nchan = nchaninput + nbchanoutput; break;
+    }
+
+    B = (uint32_t) ( 0.5f + (float)(m->sizeNchan) * (float)nchan);                          // + B x nb_channels_arc(i)
     
     FS = all_format[m->iarcSamplingJ].samplingRate;
-    size += (uint32_t) (0.5f + (float)(m->sizeFS * FS));        // + C x samplingHz_arc(j)
+    C = (uint32_t) (0.5f + (float)(m->sizeFS * FS));        // + C x samplingHz_arc(j)
     
+    BCbytes = sizeofRawBits * (B + C);                      // in bits = 
+    BCbytes = (7 + BCbytes) / 8;                            // in Bytes
+
+    size += BCbytes;                                        // size of raw samples of arc(i) x (B + C)
+
     frame_length = all_format[m->iarcFrameK].frame_length;
     size += (uint32_t) (0.5f + (float)(m->sizeFrame * frame_length));  // + D x frame_size_arc(k)
     
@@ -652,9 +694,9 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(arc_input))              //arc_input    idx_stream_io set0copy1 fmtProd     node_name instance arc_index Format
         {   uint32_t instCons, inPort, fmtCons, fmtProd, arcIO, SwcConsGraphIdx, set0copy1;
             struct stream_node_manifest *graph_node_Cons;
-            char Consumer[NBCHAR_LINE];
+            char Consumer[NBCHAR_LINE], HQOS[NBCHAR_LINE];
 
-            fields_extract(&pt_line, "CIIICIII", ctmp, &idx_stream_io, &set0copy1, &fmtProd, Consumer, &instCons, &inPort, &fmtCons); 
+            fields_extract(&pt_line, "CIIICIIIC", ctmp, &idx_stream_io, &set0copy1, &fmtProd, Consumer, &instCons, &inPort, &fmtCons, HQOS); 
             findArcIOWithThisID(graph, idx_stream_io, &arcIO);      /* arcIO receives the stream from idx_stream_IO */
             //graph->arc[arcIO] = graph->arc[arcIO];                  /* copy the already filled arc IO details to this new arc */
 
@@ -663,6 +705,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             graph->arc[arcIO].fmtCons = fmtCons;        
             graph->arc[arcIO].SwcProdGraphIdx = SwcConsGraphIdx;
             graph->arc[arcIO].set0copy1 = set0copy1;
+            graph->arc[arcIO].HQoS = HQOS[0] == 'h' || HQOS[0] == 'H';       // HQoS
             graph_node_Cons->arc[inPort].fmtProd = fmtProd;   // @@@ check frame_length_option.. is compatible with this format            
             graph_node_Cons->arc[inPort].fmtCons = fmtCons;               
             graph_node_Cons->arc[inPort].arcID = arcIO;               
@@ -671,9 +714,9 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(arc_output))             //arc_output   idx_stream_io set0copy1 fmtCons     node_name    instance arc_index Format
         {   uint32_t instProd, outPort, fmtCons, fmtProd, arcIO, SwcProdGraphIdx, set0copy1;
             struct stream_node_manifest *graph_node_Prod;
-            char Producer[NBCHAR_LINE];
+            char Producer[NBCHAR_LINE], HQOS[NBCHAR_LINE];
 
-            fields_extract(&pt_line, "CIIICIII", ctmp, &idx_stream_io, &set0copy1, &fmtCons, Producer, &instProd, &outPort, &fmtProd);
+            fields_extract(&pt_line, "CIIICIIIC", ctmp, &idx_stream_io, &set0copy1, &fmtCons, Producer, &instProd, &outPort, &fmtProd, HQOS);
             findArcIOWithThisID(graph, idx_stream_io, &arcIO);      /* arcIO send the stream to idx_stream_IO */
             //graph->arc[arcIO] = graph->arc[arcIO];                  /* copy the already filled arc IO details to this new arc */
 
@@ -682,42 +725,49 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             graph->arc[arcIO].fmtCons = fmtCons;           
             graph->arc[arcIO].SwcProdGraphIdx = SwcProdGraphIdx;
             graph->arc[arcIO].set0copy1 = set0copy1;
+            graph->arc[arcIO].HQoS = HQOS[0] == 'h' || HQOS[0] == 'H';       // HQoS
             graph_node_Prod->arc[outPort].fmtProd = fmtProd;               
             graph_node_Prod->arc[outPort].fmtCons = fmtCons;  // @@@ check frame_length_option.. is compatible with this format                
             graph_node_Prod->arc[outPort].arcID = arcIO;               
             graph_node_Prod->arc[outPort].rx0tx1 = 1;
+            graph_node_Prod->arc[outPort].HQoS = HQOS[0] == 'h' || HQOS[0] == 'H';       // HQoS
         }
         if (COMPARE(arc_new))  //arc   node1 instance arc_index arc_format_src     node2 instance arc_index arc_format_dst
         {   uint32_t instProd, instCons, outPort, inPort, fmtProd, fmtCons, SwcProdGraphIdx, SwcConsGraphIdx;
             struct stream_node_manifest *graph_node_Prod, *graph_node_Cons;
-            char Producer[NBCHAR_LINE], Consumer[NBCHAR_LINE];
+            char Producer[NBCHAR_LINE], Consumer[NBCHAR_LINE], HQOS[NBCHAR_LINE];
 
-            fields_extract(&pt_line, "CCIIICIII", ctmp, Producer, &instProd, &outPort, &fmtProd, Consumer, &instCons, &inPort, &fmtCons);
+            fields_extract(&pt_line, "CCIIICIIIC", ctmp, Producer, &instProd, &outPort, &fmtProd, Consumer, &instCons, &inPort, &fmtCons, HQOS);
             search_graph_node(Producer, &graph_node_Prod, &SwcProdGraphIdx, graph);
             graph_node_Prod->arc[outPort].fmtProd = fmtProd;
             graph_node_Prod->arc[outPort].SwcProdGraphIdx = SwcProdGraphIdx;
             graph_node_Prod->arc[outPort].arcID = graph->nb_arcs;  
             graph_node_Prod->arc[outPort].rx0tx1 = 1;
+            graph_node_Prod->arc[outPort].HQoS = HQOS[0] == 'h' || HQOS[0] == 'H';       // HQoS
 
             search_graph_node(Consumer, &graph_node_Cons, &SwcConsGraphIdx, graph);
             graph_node_Cons->arc[inPort].fmtCons = fmtCons;
             graph_node_Cons->arc[inPort].SwcConsGraphIdx = SwcConsGraphIdx;
             graph_node_Cons->arc[inPort].arcID = graph->nb_arcs;    
             graph_node_Cons->arc[inPort].rx0tx1 = 0;
+            graph_node_Prod->arc[inPort].HQoS = HQOS[0] == 'h' || HQOS[0] == 'H';       // HQoS
 
             graph->arc[graph->nb_arcs].SwcProdGraphIdx = SwcProdGraphIdx;
             graph->arc[graph->nb_arcs].SwcConsGraphIdx = SwcConsGraphIdx;
             graph->arc[graph->nb_arcs].fmtProd = fmtProd;
             graph->arc[graph->nb_arcs].fmtCons = fmtCons;
+            graph->arc[graph->nb_arcs].HQoS = HQOS[0] == 'h' || HQOS[0] == 'H';       // HQoS
+
             graph->nb_arcs ++;
         } 
         if (COMPARE(arc_map_hwblock))    //arc_map_hwblock     0    
         {   fields_extract(&pt_line, "CI", ctmp, &i); 
             graph->arc[graph->nb_arcs -1].memVID = i;
         }
-        if (COMPARE(arc_flow_error))
-        {   fields_extract(&pt_line, "CI", ctmp, &i); 
-            graph->arc[graph->nb_arcs -1].memVID = i;
+        if (COMPARE(arc_flow_error))     //arc_flow_error  1 1 ; read write 
+        {   fields_extract(&pt_line, "CII", ctmp, &i, &j); 
+            graph->arc[graph->nb_arcs -1].flow_error_rd = i;
+            graph->arc[graph->nb_arcs -1].flow_error_wr = j;
         }
         if (COMPARE(arc_debug_cmd))
         {   fields_extract(&pt_line, "CI", ctmp, &i); 
@@ -726,10 +776,6 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(arc_debug_reg))
         {   fields_extract(&pt_line, "CI", ctmp, &i); 
             graph->arc[graph->nb_arcs -1].memVID = i;
-        }
-        if (COMPARE(arc_debug_page))
-        {   fields_extract(&pt_line, "CI", ctmp, &i); 
-            graph->arc[graph->nb_arcs -1].memVID = i; 
         }
         if (COMPARE(arc_flush))
         {   fields_extract(&pt_line, "CI", ctmp, &i); 
@@ -742,6 +788,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(arc_map_hwblock))
         {   fields_extract(&pt_line, "CI", ctmp, &i); 
             graph->arc[graph->nb_arcs -1].memVID = i;
+
         }
         if (COMPARE(arc_jitter_ctrl))   // factor to apply to the minimum size between the producer and the consumer, default = 1.0 (no jitter)
         {   fields_extract(&pt_line, "CF", ctmp, &(graph->arc[graph->nb_arcs -1].sizeFactor)); 

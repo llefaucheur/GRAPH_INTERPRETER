@@ -108,7 +108,7 @@ void sigp_stream_detector2D (unsigned int command, void *instance, void *data, u
         */
         case STREAM_RESET: 
         {   stream_al_services *stream_entry = (stream_al_services *)data;
-            intPtr_t *memresults = (intPtr_t *)instance;
+            intptr_t *memresults = (intptr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
             uint8_t *pt8bdst, i, n;
 
@@ -160,7 +160,7 @@ void sigp_stream_detector2D (unsigned int command, void *instance, void *data, u
         case STREAM_RUN:   
         {
             sigp_detector2D_instance *pinstance = (sigp_detector2D_instance *) instance;
-            intPtr_t nb_data, stream_xdmbuffer_size, bufferout_free;
+            intptr_t nb_data, stream_xdmbuffer_size, bufferout_free;
             stream_xdmbuffer_t *pt_pt;
             #define SAMP_IN int16_t 
             #define SAMP_OUT int16_t

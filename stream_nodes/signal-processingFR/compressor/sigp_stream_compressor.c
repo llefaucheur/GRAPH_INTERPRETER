@@ -98,7 +98,7 @@ void sigp_stream_compressor (unsigned int command, void *instance, void *data, u
         */
         case STREAM_RESET: 
         {   stream_al_services *stream_entry = (stream_al_services *)data;
-            intPtr_t *memreq = (intPtr_t *)instance;
+            intptr_t *memreq = (intptr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
 
             sigp_stream_compressor_instance *pinstance = (sigp_stream_compressor_instance *) (memreq[0]);
@@ -110,7 +110,7 @@ void sigp_stream_compressor (unsigned int command, void *instance, void *data, u
             pinstance->output_format[3] = (memreq[9]);
 
             /* save the address of the "services" */
-            pinstance->stream_service_entry = (stream_al_services *)(intPtr_t)data;
+            pinstance->stream_service_entry = (stream_al_services *)(intptr_t)data;
             break;
         }    
 
@@ -125,7 +125,7 @@ void sigp_stream_compressor (unsigned int command, void *instance, void *data, u
         case STREAM_RUN:   
         {
             sigp_stream_compressor_instance *pinstance = (sigp_stream_compressor_instance *)instance;
-            intPtr_t nb_samp, stream_xdmbuffer_size, nb_bytes, bufferout_free;
+            intptr_t nb_samp, stream_xdmbuffer_size, nb_bytes, bufferout_free;
             stream_xdmbuffer_t *pt_pt;
             #define SAMP_IN int16_t 
             #define SAMP_OUT uint8_t

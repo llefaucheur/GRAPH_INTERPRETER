@@ -51,7 +51,7 @@
 #undef CODE_ARM_STREAM_ANALYSIS      /* arm_stream_analysis, */
 #undef CODE_BITBANK_JPEGENC          /* bitbank_JPEGENC */
 #undef CODE_TJPGDEC                  /* TjpgDec */
-#undef CODE_ARM_STREAM_FMTCONV       /* arm_stream_format_converter */    
+#undef CODE_ARM_STREAM_CONVERTER       /* arm_stream_format_converter */    
 /*---------------------------------------------------------------------------------------------------------------------*/
 
 

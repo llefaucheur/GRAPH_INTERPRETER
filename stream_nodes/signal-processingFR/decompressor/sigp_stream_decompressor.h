@@ -33,8 +33,8 @@
 #define csigp_STREAM_DECOMPRESSOR_H
 
 
-#include "stream_const.h"      
-#include "stream_types.h"  
+//#include "stream_const.h"      
+//#include "stream_types.h"  
 #include "sigp_stream_decompressor_imadpcm.h"
 
 #define DECODER_IMADPCM          1  

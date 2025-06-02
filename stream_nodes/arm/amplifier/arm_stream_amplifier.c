@@ -30,7 +30,11 @@
  * limitations under the License.
  * 
  */
+
+
 #include "platform.h"
+
+
 #ifdef CODE_ARM_STREAM_AMPLIFIER
 
 
@@ -94,7 +98,7 @@ void arm_stream_amplifier (uint32_t command, void *instance, void *data, uint32_
         case STREAM_RESET: 
         {
             //stream_al_services *stream_entry = (stream_al_services *)data;
-            intPtr_t *memresults = (intPtr_t *)instance;
+            intptr_t *memresults = (intptr_t *)instance;
             //uint16_t preset = RD(command, PRESET_CMD);
 
             /* here reset */
@@ -162,8 +166,8 @@ void arm_stream_amplifier (uint32_t command, void *instance, void *data, uint32_
         case STREAM_RUN:   
         {
             arm_amplitude_instance *pinstance = (arm_amplitude_instance *) instance;
-            intPtr_t nb_data;
-            intPtr_t stream_xdmbuffer_size;
+            intptr_t nb_data;
+            intptr_t stream_xdmbuffer_size;
             stream_xdmbuffer_t *pt_pt;
             #define SAMP_IN uint8_t 
             #define SAMP_OUT int16_t

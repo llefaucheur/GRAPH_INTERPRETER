@@ -45,7 +45,7 @@
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void sigp_stream_compressor_process (sigp_stream_compressor_instance *instance, void *input, void *output, intPtr_t *nsamp)
+void sigp_stream_compressor_process (sigp_stream_compressor_instance *instance, void *input, void *output, intptr_t *nsamp)
 {
 
 

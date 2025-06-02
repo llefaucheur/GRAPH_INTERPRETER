@@ -44,7 +44,7 @@
 #include "arm_stream_script.h"
 #include "arm_stream_script_instructions.h"
 
-static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, sfloat *dst, sfloat src1, sfloat src2);
+static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, float_t *dst, float_t src1, float_t src2);
 static void int_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, int32_t *dst, int32_t src1, int32_t src2);
 static void test_arithmetic_operation(arm_script_instance_t *I);
 static void readreg(arm_script_instance_t *I, regdata_t *data, int32_t srcID, uint8_t K);
@@ -56,9 +56,9 @@ static void jmov_operation(arm_script_instance_t *I);
 *   arithmetics operations and test on floating point data
 */
 
-static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, sfloat *dst, sfloat src1, sfloat src2)
+static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, float_t *dst, float_t src1, float_t src2)
 {
-    sfloat tmp; 
+    float_t tmp; 
 
     tmp = 0.0f;
 
@@ -90,8 +90,8 @@ static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t,
                 while ((F2I(src1) & mask) == 0U) 
                 { count += 1U; mask = mask >> 1U; }
 
-                tmp = (sfloat)((F2I(src1)) << count); 
-                src2 = (sfloat)count;
+                tmp = (float_t)((F2I(src1)) << count); 
+                src2 = (float_t)count;
             }
             break;
     }
@@ -612,11 +612,11 @@ static void test_arithmetic_operation(arm_script_instance_t *I)
     } 
     else
     {   if (db1 != DTYPE_FP32)
-        {   I->REGS[db1].v_f32[REGS_DATA] = (sfloat)(I->REGS[db1].v_i32[REGS_DATA]);
+        {   I->REGS[db1].v_f32[REGS_DATA] = (float_t)(I->REGS[db1].v_i32[REGS_DATA]);
             I->REGS[db1].v_i32[REGS_TYPE] = DTYPE_FP32;
         }
         if (db2 != DTYPE_FP32)
-        {   I->REGS[db2].v_f32[REGS_DATA] = (sfloat)(I->REGS[db1].v_i32[REGS_DATA]);
+        {   I->REGS[db2].v_f32[REGS_DATA] = (float_t)(I->REGS[db1].v_i32[REGS_DATA]);
             I->REGS[db2].v_i32[REGS_TYPE] = DTYPE_FP32;
         }
         float_arithmetic_operation(opcode, opar, &t, &(dst.v_f32[REGS_DATA]), src1.v_f32[REGS_DATA], src2.v_f32[REGS_DATA]);

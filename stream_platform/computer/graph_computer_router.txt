@@ -1,0 +1,34 @@
+;--------------------------------------------------------------------------
+;   Stream-based processing using a graph interpreter :                    
+; 
+;   +----------+     +-----------+      +--------+
+;   | ADC      +-----> converter +------> GPIO   | 
+;   +----------+     +-----------+      +--------+
+;                
+;----------------------------------------------------------------------
+graph_location          1                           ; script and linked-list stays in flash 
+;----------------------------------------------------------------------
+format_index            0
+format_frame_length     32                          ; same as IOs
+;----------------------------------------------------------------------
+stream_io               0                           ;
+stream_io_hwid          1                           ; io_platform_data_in_1.txt
+stream_io               1                           ;
+stream_io_hwid          9                           ; io_platform_data_out_0.txt
+;----------------------------------------------------------------------
+node arm_stream_router  0 
+    node_preset         1                           ; Q15 filter
+    node_map_hwblock    1  5                        ; TCM = VID5
+    node_parameters     0                           ; TAG = "all parameters"
+        1  u8;  2                                   ; nb lines
+        4  u8;  0 0  0 0                            ; SRC[arc, chan]  DST[arc, chan]
+        4  u8;  0 1  0 1                            ; SRC[arc, chan]  DST[arc, chan]
+    end
+;----------------------------------------------------------------------
+; arc_input   { io / set0copy1 / fmtProd } + { node / inst / arc / fmtCons }
+; arc_output  { io / set0copy1 / fmtCons } + { node / inst / arc / fmtProd }
+;
+arc_input   0 0 0 arm_stream_router  0 0 0  HQOS    ; INPUT => router with HQoS
+arc_output  1 0 0 arm_stream_router  0 1 0          ; router => OUTPUT 
+
+end

@@ -34,7 +34,6 @@
    
 
 #include <stdint.h>
-#include "platform.h"                   // compilation options to save code size 
 #include "stream_common_const.h"        // 
 #include "stream_common_types.h"        // types for the interface to the scheduler
 

@@ -25,6 +25,7 @@
 * 
  */
 #include "platform.h"
+
 #ifdef PLATFORM_COMPUTER
 
 #ifdef __cplusplus
@@ -42,7 +43,6 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "platform.h"
 #include "stream_common_const.h"
 #include "stream_common_types.h"
 #include "stream_const.h"      
@@ -68,56 +68,41 @@ extern const uint8_t platform_audio_out_bit_fields[];
 */
 
 
-extern p_stream_node arm_stream_null_task;       /*  0  */
+extern p_stream_node arm_stream_null_task;       /*  0 */
 extern p_stream_node arm_stream_script;          /*  1  #define arm_stream_script_index 1 */
-extern p_stream_node arm_stream_format_converter;/*  2*/
-extern p_stream_node arm_stream_router;          /*  3*/
-extern p_stream_node sigp_stream_converter;      /*  4*/
-extern p_stream_node arm_stream_amplifier;       /*  5*/
-extern p_stream_node arm_stream_mixer;           /*  6*/
-extern p_stream_node arm_stream_filter;          /*  7*/
-extern p_stream_node sigp_stream_detector;       /*  8*/
-extern p_stream_node arm_stream_rescaler;        /*  9*/
-extern p_stream_node sigp_stream_compressor;     /* 10*/
-extern p_stream_node sigp_stream_decompressor;   /* 11*/
-extern p_stream_node arm_stream_modulator;       /* 12*/
-extern p_stream_node arm_stream_demodulator;     /* 13*/
-extern p_stream_node sigp_stream_resampler;      /* 14*/
-extern p_stream_node arm_stream_qos;             /* 15*/
-extern p_stream_node arm_stream_split;           /* 16*/
-extern p_stream_node sigp_stream_detector2D;     /* 17*/
-extern p_stream_node arm_stream_filter2D;        /* 18*/
-extern p_stream_node arm_stream_analysis;        /* 19*/
-extern p_stream_node bitbank_JPEGENC;            /* 20*/
-extern p_stream_node TjpgDec;                    /* 21*/
+extern p_stream_node arm_stream_router;          /*  2 */
+extern p_stream_node arm_stream_amplifier;       /*  3 */
+extern p_stream_node arm_stream_filter;          /*  4 */
+extern p_stream_node arm_stream_modulator;       /*  5 */
+extern p_stream_node arm_stream_demodulator;     /*  6 */
+extern p_stream_node arm_stream_filter2D;        /*  7 */
+extern p_stream_node sigp_stream_detector;       /*  8 */
+extern p_stream_node sigp_stream_detector2D;     /*  9 */
+extern p_stream_node sigp_stream_resampler;      /* 10 */
+extern p_stream_node sigp_stream_compressor;     /* 11 */
+extern p_stream_node sigp_stream_decompressor;   /* 12 */
+extern p_stream_node bitbank_JPEGENC;            /* 13 */
+extern p_stream_node TjpgDec;                    /* 14 */
 
 #define TBD 0
 
-p_stream_node node_entry_points[NB_NODE_ENTRY_POINTS] =
+const p_stream_node node_entry_points[NB_NODE_ENTRY_POINTS] =
 {
-    /*  0*/ (void *)&arm_stream_null_task,       /* node disabled */
-    /*  1*/ (void *)&arm_stream_script,         /* byte-code interpreter, index "arm_stream_script_INDEX" */
-    /*  2*/ (void *)&arm_stream_format_converter,/* arm_stream_format_converter */  
-    /*  3*/ (void *)&arm_stream_router,         /* copy input arcs and subchannel and output arcs and subchannels   */     
-    /*  4*/ (void *)&sigp_stream_converter,     /* raw data format converter */
-    /*  5*/ (void *)&arm_stream_amplifier,      /* amplifier mute and un-mute with ramp and delay control */
-    /*  6*/ (void *)&arm_stream_mixer,          /* multichannel mixer with mute/unmute and ramp control */
-    /*  7*/ (void *)&arm_stream_filter,         /* cascade of DF1 filters */
-    /*  8*/ (void *)&sigp_stream_detector,      /* estimates peaks/floor of the mono input and triggers a flag on high SNR */
-    /*  9*/ (void *)&arm_stream_rescaler,       /* raw data values remapping using "interp1" */
-    /* 10*/ (void *)&sigp_stream_compressor,    /* raw data compression with adaptive prediction */
-    /* 11*/ (void *)&sigp_stream_decompressor,  /* raw data decompression */
-    /* 12*/ (void *)&arm_stream_modulator,      /* signal generator with modulation */
-    /* 13*/ (void *)&arm_stream_demodulator,    /* signal demodulator, frequency estimator */
-    /* 14*/ (void *)&sigp_stream_resampler,     /* asynchronous sample-rate converter */
-    /* 15*/ (void *)&arm_stream_qos,            /* raw data interpolator with synchronization to one HQoS stream */
-    /* 16*/ (void *)&arm_stream_split,          /* let a buffer be used by several nodes */
-    /* 17*/ (void *)&sigp_stream_detector2D,    /* activity detection, pattern detection */
-    /* 18*/ (void *)&arm_stream_filter2D,       /* Filter, rescale, rotate, exposure compensation */
-    /* 19*/ (void *)&arm_stream_analysis,       /* arm_stream_analysis, */
-    /* 20*/ (void *)&bitbank_JPEGENC,           /* bitbank_JPEGENC */
-    /* 21*/ (void *)&TjpgDec,                   /* TjpgDec */
-  
+    /*  0 */ (p_stream_node)&arm_stream_null_task,      /* node disabled */
+    /*  1 */ (p_stream_node)&arm_stream_script,         /* byte-code interpreter, index "arm_stream_script_INDEX" */
+    /*  2 */ (p_stream_node)&arm_stream_router,         /* copy input arcs and subchannel and output arcs and subchannels   */     
+    /*  3 */ (p_stream_node)&arm_stream_amplifier,      /* amplifier mute and un-mute with ramp and delay control */
+    /*  4 */ (p_stream_node)&arm_stream_filter,         /* cascade of DF1 filters */
+    /*  5 */ (p_stream_node)&arm_stream_modulator,      /* signal generator with modulation */
+    /*  6 */ (p_stream_node)&arm_stream_demodulator,    /* signal demodulator, frequency estimator */
+    /*  7 */ (p_stream_node)&arm_stream_filter2D,       /* Filter, rescale, rotate, exposure compensation */
+    /*  8 */ (p_stream_node)&sigp_stream_detector,      /* estimates peaks/floor of the mono input and triggers a flag on high SNR */
+    /*  9 */ (p_stream_node)&sigp_stream_detector2D,    /* activity detection, pattern detection */
+    /* 10 */ (p_stream_node)&sigp_stream_resampler,     /* asynchronous sample-rate converter */
+    /* 11 */ (p_stream_node)&sigp_stream_compressor,    /* raw data compression with adaptive prediction */
+    /* 12 */ (p_stream_node)&sigp_stream_decompressor,  /* raw data decompression */
+    /* 13 */ (p_stream_node)&bitbank_JPEGENC,           /* bitbank_JPEGENC */
+    /* 14 */ (p_stream_node)&TjpgDec,                   /* TjpgDec */
 };    
 
 
@@ -143,10 +128,10 @@ const uint8_t * long_offset[MAX_NB_MEMORY_OFFSET] =
 /* 
     translation of physical indexes known by the AL to index to the graph (pio_control with RX0/TX1, ARC, ..)
     usage : 
-        arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data, size);
+        arm_stream_io_ack (platform_io_al_idx_to_stream[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data, size);
 */
 
-uint8_t platform_io_al_idx_to_graph[LAST_IO_FUNCTION_PLATFORM]; 
+uint8_t platform_io_al_idx_to_stream[LAST_IO_FUNCTION_PLATFORM]; 
 
 arm_stream_instance_t * platform_io_callback_parameter;
 
@@ -179,22 +164,22 @@ extern p_io_function_ctrl data_out_0;
 */
 const p_io_function_ctrl platform_io [LAST_IO_FUNCTION_PLATFORM] =
 {
-    (void *)&data_in_0,        // 0  ../computer/platform_manifest/io_platform_data_in_0.txt      
-    (void *)&data_in_1,        // 1  ../computer/platform_manifest/io_platform_data_in_1.txt      
-    (void *)&analog_sensor_0,  // 2  ../computer/platform_manifest/io_platform_analog_sensor_0.txt
-    (void *)&motion_in_0,      // 3  ../computer/platform_manifest/io_platform_motion_in_0.txt    
-    (void *)&audio_in_0,       // 4  ../computer/platform_manifest/io_platform_audio_in_0.txt     
-    (void *)&d2_in_0,          // 5  ../computer/platform_manifest/io_platform_d2_in_0.txt        
-    (void *)&line_out_0,       // 6  ../computer/platform_manifest/io_platform_line_out_0.txt     
-    (void *)&gpio_out_0,       // 7  ../computer/platform_manifest/io_platform_gpio_out_0.txt     
-    (void *)&gpio_out_1,       // 8  ../computer/platform_manifest/io_platform_gpio_out_1.txt     
-    (void *)&data_out_0,       // 9  ../computer/platform_manifest/io_platform_data_out_0.txt     
+    (p_io_function_ctrl)&data_in_0,        // 0  computer/platform_manifest/io_platform_data_in_0.txt      
+    (p_io_function_ctrl)&data_in_1,        // 1  computer/platform_manifest/io_platform_data_in_1.txt      
+    (p_io_function_ctrl)&analog_sensor_0,  // 2  computer/platform_manifest/io_platform_analog_sensor_0.txt
+    (p_io_function_ctrl)&motion_in_0,      // 3  computer/platform_manifest/io_platform_motion_in_0.txt    
+    (p_io_function_ctrl)&audio_in_0,       // 4  computer/platform_manifest/io_platform_audio_in_0.txt     
+    (p_io_function_ctrl)&d2_in_0,          // 5  computer/platform_manifest/io_platform_d2_in_0.txt        
+    (p_io_function_ctrl)&line_out_0,       // 6  computer/platform_manifest/io_platform_line_out_0.txt     
+    (p_io_function_ctrl)&gpio_out_0,       // 7  computer/platform_manifest/io_platform_gpio_out_0.txt     
+    (p_io_function_ctrl)&gpio_out_1,       // 8  computer/platform_manifest/io_platform_gpio_out_1.txt     
+    (p_io_function_ctrl)&data_out_0,       // 9  computer/platform_manifest/io_platform_data_out_0.txt     
 };
 
 
-const uint32_t graph_input[] = 
+const uint32_t graph_computer_router[] = 
 { 
-#include "graph_computer_bin.txt"
+#include "graph_computer_router_bin.txt"
 };
 
 
@@ -251,6 +236,11 @@ extern void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void 
 //};
 
 
+uint32_t * get_graph_address(void)
+{
+    return (uint32_t *) graph_computer_router;
+}
+
 /**
   @brief         Translation of physical address to packed address in 27-bits
   @param[in]     instance   Global registers of the current instance
@@ -266,27 +256,27 @@ extern void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void 
 /*----------------------------------------------------------------------------
     convert a physical address to a portable multiprocessor address 
  *----------------------------------------------------------------------------*/
-uint32_t lin2pack (arm_stream_instance_t *S, uint8_t *buffer)
+uint32_t platform_lin2pack (uint8_t *buffer)
 {
-    sintPtr_t distance;
+    intptr_t distance;
     uint32_t ret;
     uint8_t i;
 
     /* packed address range is [ long_offset[IDX]  +/- 8MB ]*/
-#define MAX_PACK_ADDR_RANGE (((1<<(BASEIDX_ARCW0_MSB - BASEIDX_ARCW0_LSB+1))-1))
+#define MAX_PACK_ADDR_RANGE (((1<<(SIZE_FMT0_MSB - SIZE_FMT0_LSB+1))-1))
 
     /* find the base offset */
 
     for (i = 0; i < (uint8_t)MAX_NB_MEMORY_OFFSET; i++)
     {
-        distance = (sintPtr_t)buffer - (sintPtr_t)(S->long_offset[i]);
+        distance = (intptr_t)buffer - (intptr_t)(long_offset[i]);
         if (ABS(distance) < MAX_PACK_ADDR_RANGE) 
         {   break;
         }
     }
 
     ret = 0;
-    ST(ret, BASEIDX_ARCW0, distance);
+    ST(ret, SIGNED_SIZE_FMT0, distance);
     ST(ret, DATAOFF_ARCW0, i);
     return ret;
 }
@@ -302,25 +292,28 @@ uint32_t lin2pack (arm_stream_instance_t *S, uint8_t *buffer)
                 The scheduler of each Stream instance sends a physical address to the Nodes
                 and translates here the indexes to physical address using a table of offsets.
  */
-static intPtr_t pack2linaddr_int(uint8_t **long_offset, uint32_t x, uint8_t extend)
+intptr_t platform_pack2linaddr_int(uint32_t x)
 {
     uint8_t *long_base;
     uint8_t *result8b;
-    intPtr_t result;
+    uint8_t extend;
+    intptr_t result;
     int32_t signed_base;
 
-    long_base = long_offset[RD(x,DATAOFF_ARCW0)];             
-    signed_base = x << (32-BAS_SIGN_ARCW0_MSB);
-    signed_base >>= (32-BAS_SIGN_ARCW0_MSB);
-    signed_base <<= extend;
-    result8b = &(long_base[signed_base]);
-    result = (intPtr_t)result8b;
+    signed_base = RD(x, SIGNED_SIZE_FMT0);
+    signed_base = signed_base << (32-SIGNED_SIZE_FMT0_MSB);
+    signed_base = signed_base >> (32-SIGNED_SIZE_FMT0_MSB);
+    extend = RD(x, EXTENSION_FMT0);
+    signed_base <<= (extend << 1);
+
+    result8b = (uint8_t *) &(long_offset[signed_base]);
+    result = (intptr_t)result8b;
     return result;  
 }
 
-void * pack2linaddr_ptr(uint8_t **long_offset, uint32_t data, uint8_t extend)
+void * platform_pack2linaddr_ptr(uint32_t data)
 {
-    return (void *) (pack2linaddr_int(long_offset, data, extend));
+    return (void *) (platform_pack2linaddr_int(data));
 }
 
 /**
@@ -336,11 +329,15 @@ void * pack2linaddr_ptr(uint8_t **long_offset, uint32_t data, uint8_t extend)
 
 void platform_init_stream_instance(arm_stream_instance_t *S)
 {
-extern p_stream_node node_entry_points[];
-    uint32_t PIOoffsetWords, *graph_dst;
-
 #define STREAM_CURRENT_INSTANCE 0
 #define STREAM_NB_INSTANCE 1
+
+extern const p_stream_node node_entry_points[];
+
+    uint32_t PIOoffsetWords, *graph_dst;
+    uint32_t *graph_input;
+
+    graph_input = get_graph_address();
 
     S->graph = (uint32_t *) &(graph_input[1]);      /* binary graph address loaded in the graph interpreter instance */ 
     S->long_offset = (uint8_t **) long_offset;      /* there is one single graph executed per platform */ 
@@ -383,7 +380,7 @@ extern p_stream_node node_entry_points[];
     S->linked_list_ptr = S->linked_list;
 
     PIOoffsetWords += RD((S->graph)[2], LINKEDLISTSZW32_GR2);   // linked list
-    S->ongoing = (uint8_t *) &(graph_dst[PIOoffsetWords]);
+    S->ongoing = (uint8_t *) &(graph_dst[PIOoffsetWords]);      //  on_going : from graph_dst[]
 
     PIOoffsetWords += RD((S->graph)[2], ARC_DEBUG_IDX_GR2) + ((3 + RD((S->graph)[1], NB_IOS_GR1))>>2);
     S->all_formats = &(graph_dst[PIOoffsetWords]);              // 
@@ -484,7 +481,7 @@ void platform_init_copy_graph(arm_stream_instance_t *S, uint32_t **graph_dst)
      */
 
 
-    *graph_dst = (uint32_t *)GRAPH_RAM_OFFSET_PTR(L,(S->graph), 0);
+    *graph_dst = (uint32_t *)platform_pack2linaddr_ptr((intptr_t)(S->graph));
     graph_flash = S->graph;
 
     RAMsplit = (uint8_t)RD(((S->graph)[0]),RAMSPLIT_GR0);
@@ -522,18 +519,18 @@ void platform_init_copy_graph(arm_stream_instance_t *S, uint32_t **graph_dst)
     {   *graph_dst -= PIOongoing;
     }
 
-    /* copy the graph data to uint8_t platform_io_al_idx_to_graph[LAST_IO_FUNCTION_PLATFORM]; 
-        to ease the translation from graph index to graph_io_idx used in arm_graph_interpreter_io_ack() 
+    /* copy the graph data to uint8_t platform_io_al_idx_to_stream[LAST_IO_FUNCTION_PLATFORM]; 
+        to ease the translation from graph index to graph_io_idx used in arm_stream_io_ack() 
     */
-    {   uint32_t graph_io_idx, tmpi, tmpn;
-        uint32_t *pio_control;
+    {   uint8_t graph_io_idx, tmpn;
+        uint32_t tmpi, *pio_control;
 
-        tmpn = RD((S->graph)[1], NB_IOS_GR1);
+        tmpn = (uint8_t) RD((S->graph)[1], NB_IOS_GR1);
         for (graph_io_idx = 0; graph_io_idx < tmpn; graph_io_idx++)
         {   
             pio_control = &(graph_flash[GRAPH_HEADER_NBWORDS + graph_io_idx * STREAM_IOFMT_SIZE_W32]);
-            tmpi = RD(*pio_control, FWIOIDX_IOFMT0);
-            platform_io_al_idx_to_graph[tmpi] = graph_io_idx;
+            tmpi = (uint8_t) RD(*pio_control, FWIOIDX_IOFMT0);
+            platform_io_al_idx_to_stream[tmpi] = graph_io_idx;
         }
     }
 }
@@ -604,7 +601,7 @@ void platform_init_io(arm_stream_instance_t *S)
             continue; 
 
         /* default value settings */
-        io_setting.address = (intPtr_t)(&(S->graph[GRAPH_HEADER_NBWORDS + graph_io_idx]));
+        io_setting.address = (intptr_t)(&(S->graph[GRAPH_HEADER_NBWORDS + graph_io_idx]));
         io_setting.size    = 4*(STREAM_IOFMT_SIZE_W32-1);
         io_func = &(S->platform_io[RD(*pio_control, FWIOIDX_IOFMT0)]);
         if (*io_func == 0) 
@@ -629,7 +626,7 @@ void platform_init_io(arm_stream_instance_t *S)
             iarc = RD(*pio_control, IOARCID_IOFMT0);
             iarc = SIZEOF_ARCDESC_W32 * iarc;
             arc = &(all_arcs[iarc]);
-            ST(arc[0], BASEIDXOFFARCW0, lin2pack(S, (uint8_t *)(pt_pt.address)));
+            ST(arc[0], BASEIDXOFFARCW0, platform_lin2pack((uint8_t *)(pt_pt.address)));
             ST(arc[1], BUFF_SIZE_ARCW1, pt_pt.size);
             ST(arc[2], READ_ARCW2, 0);
             ST(arc[3], WRITE_ARCW3, 0);

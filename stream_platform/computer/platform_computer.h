@@ -84,8 +84,12 @@
 
 /* conditional compilation */
 #define STREAM_PLATFORM_SERVICES        /* call the platform service with its fast libraries w/wo accelerators */
+    #undef SERV_STDLIB
+    #undef SERV_EXTMATH
+    #undef SERV_EXTAUDIO
+    #undef SERV_EXTIMAGE
 
-#define CODE_ARM_STREAM_SCRIPT          /* byte-code interpreter, index "arm_stream_script_INDEX" */
+#define CODE_ARM_STREAM_SCRIPT 1         /* byte-code interpreter, index "arm_stream_script_INDEX" */
 //#define CODE_SIGP_CONVERTER             /* raw data format converter */
 //#define CODE_ARM_STREAM_ROUTER          /* copy input arcs and subchannel and output arcs and subchannels   */     
 //#define CODE_ARM_STREAM_AMPLIFIER       /* amplifier mute and un-mute with ramp and delay control */

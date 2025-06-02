@@ -32,8 +32,8 @@
 #define csigp_STREAM_DETECTOR_H
 
 
-#include "stream_const.h"      
-#include "stream_types.h"  
+//#include "stream_const.h"      
+//#include "stream_types.h"  
 
 
 /*

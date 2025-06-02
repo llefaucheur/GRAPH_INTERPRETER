@@ -95,7 +95,7 @@ void arm_stream_demodulator (uint32_t command, void *instance, void *data, uint3
         */
         case STREAM_RESET: 
         {   stream_al_services *stream_entry = (stream_al_services *)data;
-            intPtr_t *memresults = (intPtr_t *)instance;
+            intptr_t *memresults = (intptr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
             uint16_t tag = RD(command, NODE_TAG_CMD);        /* extra parameters */
 
@@ -143,7 +143,7 @@ void arm_stream_demodulator (uint32_t command, void *instance, void *data, uint3
         case STREAM_RUN:   
         {
             arm_stream_demodulator_instance *pinstance = (arm_stream_demodulator_instance *) instance;
-            intPtr_t nb_data, stream_xdmbuffer_size, bufferout_free;
+            intptr_t nb_data, stream_xdmbuffer_size, bufferout_free;
             stream_xdmbuffer_t *pt_pt;
             #define SAMP_IN uint8_t 
             #define SAMP_OUT int16_t

@@ -34,8 +34,8 @@
 #define cARM_DSP_FILTER_H
 
 
-#include "stream_const.h"      
-#include "stream_types.h"  
+//#include "../../stream_const.h"      
+//#include "../../stream_types.h"  
 
 
 #ifdef STREAM_PLATFORM_SERVICES 
@@ -53,7 +53,7 @@
       const q15_t *pCoeffs;          /**< Points to the array of coefficients.  The array is of length 5*numStages. */
             int8_t numStages;        /**< number of 2nd order stages in the filter.  Overall order is 2*numStages. */
             int8_t postShift;        /**< Additional shift, in bits, applied to each output sample. */
-    } Computer_arm_biquad_casd_df1_inst_q15;
+    } Computer_arm_biquad_casd_df1_inst_q15; 
   
  #else
     /* use CMSIS-DSP plain software  */

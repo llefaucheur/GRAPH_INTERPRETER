@@ -58,11 +58,11 @@
     [5,6] UQ8 portion of memory consumed on each long_offset[MAX_NB_MEMORY_OFFSET] 
     -------------------
     STREAM_IO_CONTROL (4 words per IO)  size = 4*[NB_IOS_GR1], "ONGOING" flag is in RAM
-        depends on the domain of the IO
+        depends on the domain of the IO (DOMAIN_FMT1)
 
   *- SCRIPTS are adressed with a table_int32[128] : offset, ARC, binary format
         ARC descriptor: size regs/stack, parameters/UC, collision Byte, max cycles 
-        The first are indexed with the NODE header 6b index (SCRIPT_LW0) 
+        The first are indexed with the NODE header 7b index (SCRIPT_LW0) 
         Script index #0 means "disabled"  Indexes 1..up to 63 are used for shared subroutines.
      
   *- LINKED-LIST of SWC
@@ -83,7 +83,7 @@
     at PIO + [NB_IOS_GR1] words : collision management (Dekker's algorithm) [COLLISION_IDX_GR2] words
 
     at PIO + [ARC_DEBUG_IDX_GR2] words : table of debug registers (2 words each) DEBUG REGISTERS from ARC content
-        analysis (DEBUG_REG_ARCW1)
+        analysis (DEBUG_REG_ARCW4)
         32 memory banks of 16bytes + 64bytes in normal 
 
   *-FORMAT used by the arcs (4 words each stream_format)  
@@ -134,12 +134,6 @@
 #define VID0    0u
 #define GRAPH_START_VID0 0u
 
-/* for pack2linaddr_ptr () */
-//#define LINADDR_UNIT_BYTE   1u
-//#define LOG2ADDR_UNIT_W32   2u
-//#define LINADDR_UNIT_W32    4u
-//#define LINADDR_UNIT_EXTD  64u
-
 #define COPY_CONF_GR0_COPY_ALL_IN_RAM   0u
 #define COPY_CONF_GR0_FROM_PIO          1u
 #define COPY_CONF_GR0_ALREADY_IN_RAM    2u
@@ -150,14 +144,14 @@
 #define   unused_______GR0_LSB U(30) // 2
 #define       RAMSPLIT_GR0_MSB U(29) //   
 #define       RAMSPLIT_GR0_LSB U(28) // 2 COPY_CONF_GR0_COPY_ALL_IN_RAM / _FROM_PIO / _ALREADY_IN_RAM
-#define    GRAPH_RAM_OFFSET_PTR(L,G,X) pack2linaddr_ptr((L),(G)[0],X)
+//#define    GRAPH_RAM_OFFSET_PTR(L,G,X) platform_pack2linaddr_ptr((L),(G)[0],X)
 
 /* -------- GRAPH[1] number of FORMAT, IOs, size of SCRIPTS ---- */
 #define GR1_INDEX   2u
 #define   SCRIPTSSZW32_GR1_MSB U(31) 
 #define   SCRIPTSSZW32_GR1_LSB U(12) /* 20 scripts size */
 #define         NB_IOS_GR1_MSB U(11) 
-#define         NB_IOS_GR1_LSB U( 5) /*  7 Nb of I/O :  up to 128 IO streams */
+#define         NB_IOS_GR1_LSB U( 5) /*  7 Nb of I/O :  up to 128 IO streams (max 8bits) */
 #define      NBFORMATS_GR1_MSB U( 4) 
 #define      NBFORMATS_GR1_LSB U( 0) /*  5 formats */
 /*
@@ -224,8 +218,6 @@
 #define STREAM_SCHD_SCRIPT_END              16u /* script is called before return */
 #define STREAM_SCHD_SCRIPT_UNUSED           32u /* 6bits are reserved in SCRIPT_SCTRL */
 //};
-#define STREAM_COLD_BOOT 0u
-#define STREAM_WARM_BOOT 1u         /* Reset + restore memory banks from retention */
 
 /* number of NODE calls in sequence */
 #define MAX_NODE_REPEAT 4u
@@ -299,9 +291,9 @@
             #define IO_PLATFORM_DATA_OUT_0       9   X
         The binary grap will have stream_io_control with 2 indexes "SENSOR_0" and "_DATA_OUT_0"
 
-        The table arm_graph_interpreter_io_ack[10] makes the translation 
-            platform_io_al_idx_to_graph [FWIOIDX] = graph_io_idx index in the graph for pio_control[]
-        arm_graph_interpreter_io_ack (platform_io_al_idx_to_graph[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data, size);
+        The table arm_stream_io_ack[10] makes the translation 
+            arm_stream_io_ack [FWIOIDX] = graph_io_idx index in the graph for pio_control[]
+        arm_stream_io_ack (arm_stream_io_ack[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data, size);
 */
 #define STREAM_IOFMT_SIZE_W32 4u   /* four word for IO controls : one for the scheduler, three for IO settings */
 
@@ -318,12 +310,8 @@
 
 #define IOFMT0 0u                  /* first word used by the scheduler */
 
-#define     UNUSED_IOFMT0_MSB 31u  
-#define     UNUSED_IOFMT0_LSB 25u  /* 7 */
-#define    FWIOIDX_IOFMT0_MSB 24u  
-#define    FWIOIDX_IOFMT0_LSB 18u  /* 7 */
-#define  IO_DOMAIN_IOFMT0_MSB 17u  /*    the domain should match with the arc prod/cons format */
-#define  IO_DOMAIN_IOFMT0_LSB 14u  /* 4  16 Domains, to select the format of the tuning  */
+#define    FWIOIDX_IOFMT0_MSB 31u  
+#define    FWIOIDX_IOFMT0_LSB 14u  /* 18 index to byte array: arm_stream_io_ack[] */
 #define  SET0COPY1_IOFMT0_MSB 13u  
 #define  SET0COPY1_IOFMT0_LSB 13u  /* 1  command_id IO_COMMAND_SET_BUFFER / IO_COMMAND_DATA_COPY */
 #define   SERVANT1_IOFMT0_MSB 12u  
@@ -431,7 +419,7 @@
 #define   NBARCW_LW0_MSB U(16) 
 #define   NBARCW_LW0_LSB U(13) /* 4  total nb arcs, streaming and metadata/control {0 .. MAX_NB_STREAM_PER_NODE} */
 #define unused___LW0_MSB U(12) 
-#define unused___LW0_LSB U(10) /* 3 0=nothing, node index of node_entry_points[] */
+#define unused___LW0_LSB U(10) /* 3  */
 #define NODE_IDX_LW0_MSB U( 9) 
 #define NODE_IDX_LW0_LSB U( 0) /* 10 0=nothing, node index of node_entry_points[] */
 
@@ -462,8 +450,8 @@
 #define un__0_LW1_LSB 15u /*  1   */
 #define   KEY_LW1_MSB 14u 
 #define   KEY_LW1_LSB 14u /*  1  two 64b KEYs are inserted after the memory pointers (word 2+2n)  */
-#define DBGB0_LW1_MSB 13u 
-#define DBGB0_LW1_LSB 12u /*  2  debug register bank for ARC0 : debug-arc index of the debug data */
+#define DBGB0_LW1_MSB 13u /*     debug register bank for ARC0 : debug-arc index of the debug data */
+#define DBGB0_LW1_LSB 12u /*  2    the banks are extending arc's debug traces for subgraphs */
 #define  ARC0_LW1_MSB 11u
 #define ARC0D_LW1_LSB 11u /*  1  ARC0 direction */
 #define ARC0D_LW1_MSB 11u
@@ -479,16 +467,12 @@
 #define SIZE_LW2 1u             /*      one for the size of the segment */ 
 
             /* word 2 first word = base address of the memory segment + control on the first segment */
-#define  NALLOCM1_LW2_MSB U(31) /*      number of memory segments (pointer + size) to give at RESET [0..MAX_NB_MEM_REQ_PER_NODE-1] */  
-#define  NALLOCM1_LW2_LSB U(29) /*  3   2 words each  */
-#define    unused_LW2_MSB U(28) /*     */
-#define    unused_LW2_LSB U(28) /*  1  */
-#define BASEIDXOFFLW2_MSB U(27) 
-#define   DATAOFF_LW2_MSB DATAOFF_ARCW0_MSB
-#define   DATAOFF_LW2_LSB DATAOFF_ARCW0_LSB
-#define   BASEIDX_LW2_MSB BASEIDX_ARCW0_MSB
-#define   BASEIDX_LW2_LSB BASEIDX_ARCW0_LSB
-#define BASEIDXOFFLW2_LSB U( 0) /* 28  */
+#define   NALLOCM1_LW2_MSB U(31) /*      number of memory segments (pointer + size) to give at RESET [0..MAX_NB_MEM_REQ_PER_NODE-1] */  
+#define   NALLOCM1_LW2_LSB U(29) /*  3   2 words each  */
+#define     unused_LW2_MSB U(28) /*     */
+#define     unused_LW2_LSB U(28) /*  1  */
+#define MEMSEGMENT_LW2_MSB SIZE_EXT_OFF_FMT_MSB /* 28 = offsets(4) + EXT(3) + sign(1) + size(20) */
+#define MEMSEGMENT_LW2_LSB SIZE_EXT_OFF_FMT_LSB
 
 //#define     RELOC_LW2_MSB *      relocatable memory segment to update with STREAM_UPDATE_RELOCATABLE */
 //#define     RELOC_LW2_LSB *  1   @@@ TODO */
@@ -630,50 +614,81 @@
                               from the end of the previous channel boundary of the graph
 */
 
-// enum debug_arc_computation_1D { COMPUTCMD_ARCW2 /* 5bits */
+// enum debug_arc_computation_1D { COMPUTCMD_ARCW4 /* 5bits */
 
-#define COMPUTCMD_ARCW2_NO_ACTION                0u      
-#define COMPUTCMD_ARCW2_INCREMENT_REG            1u  /* increment DEBUG_REG_ARCW1 with the number of RAW samples */      
-#define COMPUTCMD_ARCW2_SET_ZERO_ADDR            2u  /* set a 0 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to clear */      
-#define COMPUTCMD_ARCW2_SET_ONE_ADDR             3u  /* set a 1 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to set */       
-#define COMPUTCMD_ARCW2_INCREMENT_REG_ADDR       4u  /* increment *DEBUG_REG_ARCW1 */ 
-#define COMPUTCMD_ARCW2__5                       5u 
-#define COMPUTCMD_ARCW2_APP_CALLBACK1            6u  /* call-back in the application side, data rate estimate in DEBUG_REG_ARCW1 */      
-#define COMPUTCMD_ARCW2_APP_CALLBACK2            7u  /* second call-back : wake-up processor from DEBUG_REG_ARCW1=[ProcID, command]  */      
-#define COMPUTCMD_ARCW2__8                       8u 
-#define COMPUTCMD_ARCW2_TIME_STAMP_LAST_ACCESS   9u 
-#define COMPUTCMD_ARCW2_PEAK_DATA               10u  /* peak/mean/min with forgeting factor 1/256 in DEBUG_REG_ARCW1 */          
-#define COMPUTCMD_ARCW2_MEAN_DATA               11u 
-#define COMPUTCMD_ARCW2_MIN_DATA                12u 
-#define COMPUTCMD_ARCW2_ABSMEAN_DATA            13u 
-//#define COMPUTCMD_ARCW2_DATA_TO_OTHER_ARC     14u  /* when data is changing the new data is push to another arc DEBUG_REG_ARCW1=[ArcID] */
-#define COMPUTCMD_ARCW2_LOOPBACK                15u  /* automatic rewind read/write */           
-#define COMPUTCMD_ARCW2_LAST                31u
+#define COMPUTCMD_ARCW4_NO_ACTION                0u      
+#define COMPUTCMD_ARCW4_INCREMENT_REG            1u  /* increment DEBUG_REG_ARCW4 with the number of RAW samples */      
+#define COMPUTCMD_ARCW4_SET_ZERO_ADDR            2u  /* set a 0 in to *DEBUG_REG_ARCW4, 5 MSB gives the bit to clear */      
+#define COMPUTCMD_ARCW4_SET_ONE_ADDR             3u  /* set a 1 in to *DEBUG_REG_ARCW4, 5 MSB gives the bit to set */       
+#define COMPUTCMD_ARCW4_INCREMENT_REG_ADDR       4u  /* increment *DEBUG_REG_ARCW4 */ 
+#define COMPUTCMD_ARCW4__5                       5u 
+#define COMPUTCMD_ARCW4_APP_CALLBACK1            6u  /* call-back in the application side, data rate estimate in DEBUG_REG_ARCW4 */      
+#define COMPUTCMD_ARCW4_APP_CALLBACK2            7u  /* second call-back : wake-up processor from DEBUG_REG_ARCW4=[ProcID, command]  */      
+#define COMPUTCMD_ARCW4_TIME_STAMP_READ          8u  /* log a time-stamp of the last read access to FIFO */
+#define COMPUTCMD_ARCW4_TIME_STAMP_WRITE         9u  /* log a time-stamp of the last write access to FIFO */
+#define COMPUTCMD_ARCW4_PEAK_DATA               10u  /* peak/mean/min with forgeting factor 1/256 in DEBUG_REG_ARCW4 */          
+#define COMPUTCMD_ARCW4_MEAN_DATA               11u 
+#define COMPUTCMD_ARCW4_MIN_DATA                12u 
+#define COMPUTCMD_ARCW4_ABSMEAN_DATA            13u 
+//#define COMPUTCMD_ARCW4_DATA_TO_OTHER_ARC     14u  /* when data is changing the new data is push to another arc DEBUG_REG_ARCW4=[ArcID] */
+#define COMPUTCMD_ARCW4_LOOPBACK                15u  /* automatic rewind read/write */           
+
+/* 
+    scripts associated to arcs : 
+*/
+#define COMPUTCMD_ARCW4_SCRIPT_INDEX_OFFSET     20u  /* index of the scripts = (CMD - xx_OFFSET) */           
+#define COMPUTCMD_ARCW4_LAST ((1<<(COMPUTCMD_ARCW4_MSB-COMPUTCMD_ARCW4_LSB+1))-1) /* 7bits CMD bit-field */
 
 #define ARC_DBG_REGISTER_SIZE_W32 2u                 /* debug registers on 64 bits */
 
 
-/* increment DEBUG_REG_ARCW1 with the number of RAW samples */
-/* set a 0 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to clear */
-/* set a 1 in to *DEBUG_REG_ARCW1, 5 MSB gives the bit to set */
-/* increment *DEBUG_REG_ARCW1 */
+/* increment DEBUG_REG_ARCW4 with the number of RAW samples */
+/* set a 0 in to *DEBUG_REG_ARCW4, 5 MSB gives the bit to clear */
+/* set a 1 in to *DEBUG_REG_ARCW4, 5 MSB gives the bit to set */
+/* increment *DEBUG_REG_ARCW4 */
 
-/* call-back in the application side, data rate estimate in DEBUG_REG_ARCW1 */
-/* second call-back : wake-up processor from DEBUG_REG_ARCW1=[ProcID, command]  */
+/* call-back in the application side, data rate estimate in DEBUG_REG_ARCW4 */
+/* second call-back : wake-up processor from DEBUG_REG_ARCW4=[ProcID, command]  */
 
+/* peak/mean/min with forgeting factor 1/256 in DEBUG_REG_ARCW4 */
 
-/* peak/mean/min with forgeting factor 1/256 in DEBUG_REG_ARCW1 */
-
-
-
-  /* when data is changing the new data is push to another arc DEBUG_REG_ARCW1=[ArcID] */
+/* when data is changing the new data is push to another arc DEBUG_REG_ARCW4=[ArcID] */
 /* automatic rewind read/write */
-
 
 /* debug registers on 64 bits */
 
+/* Arcs used for synchronized streams : for example I/V capture must be synchronized     */
+/*  the arc CMD is used to instert a time-stamp before before raw data is pushed in the FIFO    */
+/*  the stream consumer check the time-stamps and rejects the data outside of a predefined time-window */
 
-/*==========================================  ARCS  ===================================================*/
+/*
+*   Flow error management with FLOW_RD_ARCW2 / FLOW_WR_ARCW2 = let an arc stay with 25% .. 75% of data
+*       process done on "router" node when using HQOS arc and IO master interfaces
+* 
+*  The arc is initialized with 50% of null data
+*  The processing is frame-based, there are minimum 3 frames in the buffer
+
+*   When a IO-master writes in an arc with FLOW_WR_ARCW2=1 and the arc is full at +75%, the new data 
+*       is extrapolated and the arc stays at 75% full 
+*      Buff  xxxxxxxx|xxxx|xxxx|xxxx|bbbb|aaaa|  buffer full after NewData was push by the IO-master
+*              R_ptr                      W_ptr
+*            The previous frame (bbb) is filled (bbb x win_rampDown) + (newData_aaa x win_rampUp)
+*            W_ptr steps back 
+*            xxxxxxxx|xxxx|xxxx|xxxx|bbaa|----|  buffer full
+*              R_ptr                      W_ptr
+* 
+*   When a IO-master read from an arc with FLOW_RD_ARCW2=1 and the arc is empty at -25%, the new data 
+*       is extrapolated and the arc stays at 25% empty
+* 
+*      Buff  |bbbb| is read by the IO-master
+*            |bbbb|aaaa|----|  buffer hold only ONE frame |aaaa| after the previous read
+*                  R_ptr W_ptr
+*            The previous frame (bbb) is filled (aaa x win_rampDown) + (bbb x win_rampUp)
+*               and R_ptr steps back
+*            |aabb|aaaa|----|  bbbb
+*             R_ptr      W_ptr
+*/
+
 #define arc_read_address                1u
 #define arc_write_address               2u
 #define arc_data_amount                 3u
@@ -684,74 +699,95 @@
 #define data_swapped_with_arc           8u
 #define arc_data_realignment_to_base    9u
 
-#define SIZEOF_ARCDESC_W32 6u
+#define SIZEOF_ARCDESC_W32 8u
 
 
-/*      FEDCBA9876543210FEDCBA9876543210
-        III_____________________________  NALLOCM1
-        ___x____________________________  unused
-        ____OOO_________________________  long offset
-        _______Sbbbbbbbbbbbbbbbbbbbbbbbb  signed based
-       |FEDCBA9|7654321|FEDCBA9|76543210
+/*          SIZE_EXT_FMT0 / COLLISION_ARC / NODE memory bank
+
+    -8 bits-|--------24 bits -------
+  
+    1_987654321_987654321_987654321_
+    III_____________________________  NALLOCM1 node memory banks
+    cccccccc________________________  collision byte in the WRITE word32
+    ____OOOO________________________  long offset of the buffer base address
+    ________EXT_____________________  extension 3bits shifter
+    ___________sbbbbbbbbbbbbbbbbbbbb  signed length in 20 bits BYTES x (1 << (EXT x 2))
+    ___________s44443333222211110000  5 hex signed digits
+   
+   max = 0x000FFFFF << (2x7) = +/- 1M x 16k = +/- 16G
 */
-#define   BUF_PTR_ARCW0    U( 0)  
-#define   unused__ARCW0_MSB U(31) 
-#define   unused__ARCW0_LSB U(28) /*  4 ____*/
-#define BASEIDXOFFARCW0_MSB U(27) /*    */
-#define   DATAOFF_ARCW0_MSB U(27) /*    address = offset[DATAOFF] + 4x BASEIDX[Bytes] */
-#define   DATAOFF_ARCW0_LSB U(25) /*  3  8 x 64bits offset indexes  */
-#define  BAS_SIGN_ARCW0_MSB U(24) /*    */
-#define  BAS_SIGN_ARCW0_LSB U(24) /*    */
-#define   BASEIDX_ARCW0_MSB U(24) /*    signed base address 22bits linear address range in BYTES */
-#define   BASEIDX_ARCW0_LSB U( 0) /* 25 0x1FF.FFFF(W32) =  8MW/32MBytes extended with ARCEXTEND_ARCW2 */
-#define BASEIDXOFFARCW0_LSB U( 0) /*    +/- 4MW +/- 16MBytes  */
-                                
-#define BUFSIZDBG_ARCW1    U( 1)
+
+#define         BUF_PTR_ARCW0    U( 0)  
+#define   unused__ARCW0_MSB U(31) /*  4   */
+#define   unused__ARCW0_LSB U(28) /*      */    
+#define BASEIDXOFFARCW0_MSB U(27) /*      */
+#define   DATAOFF_ARCW0_MSB U(27) /*  4   address = offset[DATAOFF] + 4x BASEIDX[Bytes] */
+#define   DATAOFF_ARCW0_LSB U(24) /*      16 long offsets  */
+#define  BUFFBASE_ARCW0_MSB SIZE_EXT_FMT0_MSB  /* 24 bits   */
+#define  BUFFBASE_ARCW0_LSB SIZE_EXT_FMT0_LSB
+#define BASEIDXOFFARCW0_LSB U( 0) /*                        */
+                 
+                 
+#define       BUFSIZDBG_ARCW1    U( 1)
 #define   unused__ARCW1_MSB U(31) 
-#define   unused__ARCW1_LSB U(21) /* 10 ____*/
-#define BUFF_SIZE_ARCW1_MSB U(21) /*    */
-#define BUFF_SIZE_ARCW1_LSB U( 0) /* 22 BYTE-acurate up to 4MBytes (up to 64GB with ARCEXTEND_ARCW2 */
+#define   unused__ARCW1_LSB U(24) /* 8 ____*/
+#define BUFF_SIZE_ARCW1_MSB SIZE_EXT_FMT0_MSB /*     */
+#define BUFF_SIZE_ARCW1_LSB SIZE_EXT_FMT0_LSB /* 24  */
 
-#define    RDFLOW_ARCW2    U( 2)  
-#define ARCEXTEND_ARCW2_MSB U(31) /*    Size/Read/Write are used with <<{0..7} to extend base/size/read/write arc */
-#define ARCEXTEND_ARCW2_LSB U(29) /* 3  +/-16MB 32M 64M 128M 256M 512M 1G 2G */
-#define   unused__ARCW2_MSB U(28)       /*  for use-cases with NN models, video players, etc */
-#define   unused__ARCW2_LSB U(24) /* 5  ____*/
-#define   MPFLUSH_ARCW2_MSB U(23) 
-#define   MPFLUSH_ARCW2_LSB U(23) /* 1  flush data used after processing */
-#define FLOWERROR_ARCW2_MSB U(22)
-#define FLOWERROR_ARCW2_LSB U(22) /* 1  under/overflow 0=nothing or best effort from IO_DOMAIN_IOFMT0 */
-#define      READ_ARCW2_MSB U(21) /*    data read index  Byte-acurate up to 4MBytes starting from base address */
-#define      READ_ARCW2_LSB U( 0) /* 22 this is incremented by "frame_size" FRAMESIZE_FMT0  */
 
-#define COLLISION_ARC_OFFSET_BYTE U(3) 
+#define          RDFLOW_ARCW2    U( 2)  
+#define   unused__ARCW2_MSB U(31)       
+#define   unused__ARCW2_LSB U(29) /*  3  ____*/
+#define   FLOW_WR_ARCW2_MSB U(28)   
+#define   FLOW_WR_ARCW2_LSB U(28) /*  1  overflow control on writes 0=nothing  1= best effort from domain */
+#define   FLOW_RD_ARCW2_MSB U(27)   
+#define   FLOW_RD_ARCW2_LSB U(27) /*  1  underflow control on reads 0=nothing  1= best effort from domain */
+#define  HIGH_QOS_ARCW2_MSB U(26) /*     arc with high QoS */
+#define  HIGH_QOS_ARCW2_LSB U(26) /*  1  data in the arc is processed whatever the content of the other arcs */
+#define ALIGNBLCK_ARCW2_MSB U(25) /*     producer blocked sets "I need data realignement from the consumer because the buffer is full" */
+#define ALIGNBLCK_ARCW2_LSB U(25) /*  1   a full buffer can have the Write index = BUFF_SIZE, there is no space lost */
+#define   MPFLUSH_ARCW2_MSB U(24) /*     Multiprocessing buffer usage : conditional call of DATA_MEMORY_BARRIER */
+#define   MPFLUSH_ARCW2_LSB U(24) /*  1  flush data used after processing or update of the descriptor */
+#define      READ_ARCW2_MSB SIZE_EXT_FMT0_MSB /*     */
+#define      READ_ARCW2_LSB SIZE_EXT_FMT0_LSB /* 24  */
+
+
+#define       COLLISION_ARC_BYTE U(3) 
 #define  WRIOCOLL_ARCW3    U( 3) 
 #define COLLISION_ARCW3_MSB U(31) /*  8 MSB byte used to lock the SWC, loaded with arch+proc+instance ID */ 
 #define COLLISION_ARCW3_LSB U(24) /*       to check node-access collision from an other processor */
-#define    unused_ARCW3_MSB U(23) 
-#define    unused_ARCW3_LSB U(23) /*  1 ____*/
-#define ALIGNBLCK_ARCW3_MSB U(22) /*    producer blocked */
-#define ALIGNBLCK_ARCW3_LSB U(22) /*  1 producer sets "need for data realignement"  */
-#define     WRITE_ARCW3_MSB U(21) /*    write pointer is incremented by FRAMESIZE_FMT0 */
-#define     WRITE_ARCW3_LSB U( 0) /* 22 write read index  Byte-acurate up to 4MBytes starting from base address */
+#define     WRITE_ARCW3_MSB FRAMESIZE_FMT0_MSB /*    write pointer is incremented by FRAMESIZE_FMT0 */
+#define     WRITE_ARCW3_LSB FRAMESIZE_FMT0_LSB /* 22 write read index  Byte-acurate up to 4MBytes starting from base address */
+
 
 #define         DBGFMT_ARCW4    U( 4) 
-#define  TRACECMD_ARCW4_MSB U(31) 
-#define  TRACECMD_ARCW4_LSB U(31) /*  1 default tracing data estimation = data-rate (see MARGO observability reports) */ 
+#define  TRACECMD_ARCW4_MSB U(31) /*  1 default tracing data estimation = data-rate (see Margo observability reports) */ 
+#define  TRACECMD_ARCW4_LSB U(31) /*      Margo (Latin word for ‘edge’) open standard for industrial automation */
 #define COMPUTCMD_ARCW4_MSB U(31)       
-#define COMPUTCMD_ARCW4_LSB U(27) /*  7 gives the debug task to proceed  (enum debug_arc_computation_1D) */
+#define COMPUTCMD_ARCW4_LSB U(27) /*  7 gives the debug task to proceed / script to run (enum debug_arc_computation_1D) */
 #define DEBUG_REG_ARCW4_MSB U(23) /*    debug registers have 64bits and are stored in the first arc descriptors  */
-#define DEBUG_REG_ARCW4_LSB U(16) /*  8 2x32bits debug result index [0..256][page: DBGB0_LW1] = data + STREAM_TIMESTMP */
+#define DEBUG_REG_ARCW4_LSB U(16) /*  8 2x32bits debug result index [0..256][page: DBGB0_LW1] = data + STREAM_TIMESTMP for ex. */
 #define CONSUMFMT_ARCW4_MSB U(15) /*    */
-#define CONSUMFMT_ARCW4_LSB U( 8) /*  8 bits CONSUMER format  */ 
-#define PRODUCFMT_ARCW4_MSB U( 7) /*  8 bits PRODUCER format  (intPtr_t) +[i x STREAM_FORMAT_SIZE_W32]  */ 
+#define CONSUMFMT_ARCW4_LSB U( 8) /*  7 bits CONSUMER format  */ 
+#define PRODUCFMT_ARCW4_MSB U( 7) /*  7 bits PRODUCER format  (intptr_t) +[i x STREAM_FORMAT_SIZE_W32]  */ 
 #define PRODUCFMT_ARCW4_LSB U( 0) /*    Graph generator gives IN/OUT arc's frame size to be the LCM of NODE "grains" */
 
-#define         LOGFMT_ARCW5    U( 5) 
-#define  LOGTRACE_ARCW5_MSB U(31) 
-#define  LOGTRACE_ARCW5_LSB U( 0) /* 32 default debug/trace location is in the descriptor (TRACECMD / DEBUG_REG) */ 
 
-/* arcs with indexes higher than IDX_ARCS_desc, see enum_arc_index */
+#define         LOGFMT_ARCW5    U( 5) 
+#define   LOGCONS_ARCW5_MSB U(31) 
+#define   LOGCONS_ARCW5_LSB U(24) /*  8 consumer logs of flow errors  */ 
+#define   LOGPROD_ARCW5_MSB U(23) 
+#define   LOGPROD_ARCW5_LSB U(16) /*  8 producer logs of flow errors */ 
+#define  LOGTRACE_ARCW5_MSB U(15) 
+#define  LOGTRACE_ARCW5_LSB U( 0) /* 16  */ 
+
+#define         LOGFMT_ARCW6    U( 6) 
+#define LOGTMESTP_ARCW6_MSB U(31) 
+#define LOGTMESTP_ARCW6_LSB U( 0) 
+
+#define         LOGFMT_ARCW7    U( 7) 
+#define LOGTMESTP_ARCW7_MSB U(31) 
+#define LOGTMESTP_ARCW7_LSB U( 0) 
 
 //#define PLATFORM_IO 0                   /* 3 bits offets code for arcs external to the graph */
 
@@ -905,7 +941,7 @@
 #define FTESTGT(tmp, dst)  0
 
 #define F2I(src) ((uint32_t)(src))
-#define I2F(src) ((sfloat)(src))
+#define I2F(src) ((float_t)(src))
 
 /*================================================================================================================*/    
 

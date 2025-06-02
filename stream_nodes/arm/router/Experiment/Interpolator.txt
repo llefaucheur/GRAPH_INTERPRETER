@@ -1,0 +1,338 @@
+float cubicInterp(float xm1, float x0, float x1, float x2, float mu) {
+    float a0, a1, a2, a3;
+
+    a0 = x0;
+    a1 = 0.5f * (x1 - xm1);
+    a2 = xm1 - 2.5f * x0 + 2.0f * x1 - 0.5f * x2;
+    a3 = 0.5f * (x2 - xm1) + 1.5f * (x0 - x1);
+
+    return ((a3 * mu + a2) * mu + a1) * mu + a0;
+}
+
+
+
+#define BUFFER_SIZE 1024
+float inputBuffer[BUFFER_SIZE];
+int inputWriteIndex = 0;  // updated each time you receive input
+float fracPosition = 1.0; // initial fractional position (e.g., start after first sample)
+
+float ratio = 44100.0f / 48000.0f; // ~0.91875
+
+// Called for each new output sample (48kHz):
+float getNextOutputSample() {
+    int idx;
+    float mu, y;
+
+    // Integer part of position:
+    idx = (int)fracPosition;
+
+    // fractional part:
+    mu = fracPosition - idx;
+
+    // Circular buffer indexing:
+    int i0 = (inputWriteIndex + idx - 1 + BUFFER_SIZE) % BUFFER_SIZE;
+    int i1 = (inputWriteIndex + idx + BUFFER_SIZE) % BUFFER_SIZE;
+    int i2 = (inputWriteIndex + idx + 1 + BUFFER_SIZE) % BUFFER_SIZE;
+    int i3 = (inputWriteIndex + idx + 2 + BUFFER_SIZE) % BUFFER_SIZE;
+
+    // Perform interpolation:
+    y = cubicInterp(inputBuffer[i0], inputBuffer[i1], inputBuffer[i2], inputBuffer[i3], mu);
+
+    // Update fractional position:
+    fracPosition += ratio;
+
+    // Adjust fracPosition to avoid overflow:
+    if(fracPosition >= BUFFER_SIZE - 3) {
+        fracPosition -= (BUFFER_SIZE - 4);
+        inputWriteIndex = (inputWriteIndex + (BUFFER_SIZE - 4)) % BUFFER_SIZE;
+    }
+
+    return y;
+}
+
+To implement an asynchronous sample-rate converter (ASRC) where the input stream is not isochronous with respect to the output stream (i.e., input samples arrive at random intervals, each time-stamped, while the output must be generated at a fixed, stable interval), 
+
+Problem Restatement 
+Input samples:
+
+Arrive asynchronously, each with an accurate time-stamp.
+Average interval: 1 second , jitter +10 seconds (1 to 11 s randomly varying).
+
+Output samples:
+
+Produced at precise, stable intervals: exactly 100ms apart.
+
+Your ASRC must use timestamp-based interpolation to provide smooth, jitter-free, stable outputs despite irregular inputs.
+
+import numpy as np
+from scipy.interpolate import BarycentricInterpolator
+import matplotlib.pyplot as plt
+
+class PolynomialASRC:
+    def __init__(self, output_interval=0.1, poly_degree=3):
+        self.output_interval = output_interval
+        self.poly_degree = poly_degree
+        self.buffer = []  # to store (timestamp, value) pairs
+        self.next_output_time = None
+
+    def add_sample(self, timestamp, value):
+        self.buffer.append((timestamp, value))
+        # Keep buffer sorted by timestamp
+        self.buffer.sort(key=lambda x: x[0])
+
+        # Initialize next output timestamp
+        if self.next_output_time is None:
+            self.next_output_time = timestamp
+
+    def interpolate_at(self, t):
+        if len(self.buffer) < self.poly_degree + 1:
+            # Not enough points to interpolate yet
+            return None
+
+        # Select closest samples to time 't'
+        timestamps = np.array([s[0] for s in self.buffer])
+        values = np.array([s[1] for s in self.buffer])
+
+        # Find closest indices to interpolation time 't'
+        idx = np.argsort(np.abs(timestamps - t))[:self.poly_degree + 1]
+        selected_timestamps = timestamps[idx]
+        selected_values = values[idx]
+
+        # Polynomial interpolation
+        interpolator = BarycentricInterpolator(selected_timestamps, selected_values)
+        interpolated_value = interpolator(t)
+
+        return interpolated_value
+
+    def generate_outputs(self, current_time):
+        outputs = []
+
+        while self.next_output_time <= current_time:
+            interpolated_value = self.interpolate_at(self.next_output_time)
+            if interpolated_value is not None:
+                outputs.append((self.next_output_time, interpolated_value))
+            else:
+                # Not enough data to interpolate; skip this timestamp
+                pass
+
+            self.next_output_time += self.output_interval
+
+        return outputs
+
+# --- Example Simulation ---
+if __name__ == "__main__":
+    np.random.seed(42)
+
+    # Simulated irregular input stream
+    current_time = 0
+    input_samples = []
+    for i in range(20):
+        jitter = np.random.uniform(1, 11)
+        current_time += jitter
+        value = np.sin(current_time)  # Example function
+        input_samples.append((current_time, value))
+
+    # Initialize interpolator
+    interpolator = PolynomialASRC(output_interval=0.1, poly_degree=3)
+
+    # Run simulation
+    output_times = []
+    output_values = []
+
+    # Assume simulation runs slightly past the last sample
+    simulation_end_time = input_samples[-1][0] + 1
+
+    sample_idx = 0
+    sim_time = input_samples[0][0]
+
+    while sim_time <= simulation_end_time:
+        # Feed available input samples
+        while sample_idx < len(input_samples) and input_samples[sample_idx][0] <= sim_time:
+            interpolator.add_sample(*input_samples[sample_idx])
+            sample_idx += 1
+
+        # Generate outputs at regular intervals
+        outputs = interpolator.generate_outputs(sim_time)
+        for ot, ov in outputs:
+            output_times.append(ot)
+            output_values.append(ov)
+
+        # Advance simulation time
+        sim_time += 0.05  # step forward in small increments for checking input availability
+
+    # Plot results
+    plt.figure(figsize=(10, 5))
+    input_timestamps, input_values = zip(*input_samples)
+    plt.plot(input_timestamps, input_values, 'o', label='Irregular Input Samples')
+    plt.plot(output_times, output_values, '-', label='Interpolated Stable Outputs')
+    plt.xlabel("Time (s)")
+    plt.ylabel("Value")
+    plt.title("Polynomial Interpolation (degree=3)")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+
+===============================================================================================================================
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#define MAX_POLY_DEGREE 3
+#define BUFFER_SIZE 10  // Must be greater than MAX_POLY_DEGREE+1
+
+typedef struct {
+    double timestamp;
+    double value;
+} Sample;
+
+typedef struct {
+    Sample samples[BUFFER_SIZE];
+    int count;
+} Buffer;
+
+// Add a new sample to the buffer (ring buffer logic)
+void add_sample(Buffer *buf, double timestamp, double value) {
+    if (buf->count < BUFFER_SIZE) {
+        buf->samples[buf->count++] = (Sample){timestamp, value};
+    } else {
+        // Shift samples left to make space
+        for (int i = 1; i < BUFFER_SIZE; i++)
+            buf->samples[i - 1] = buf->samples[i];
+        buf->samples[BUFFER_SIZE - 1] = (Sample){timestamp, value};
+    }
+}
+
+// Perform Lagrange interpolation
+double lagrange_interpolate(Buffer *buf, double t, int degree) {
+    if (buf->count < degree + 1)
+        return NAN;  // Not enough data
+
+    // Find the 'degree+1' closest samples to 't'
+    Sample closest[degree + 1];
+
+    // Simple sorting by proximity to t
+    Sample temp[BUFFER_SIZE];
+    for (int i = 0; i < buf->count; i++)
+        temp[i] = buf->samples[i];
+
+    for (int i = 0; i < buf->count - 1; i++) {
+        for (int j = i + 1; j < buf->count; j++) {
+            if (fabs(temp[j].timestamp - t) < fabs(temp[i].timestamp - t)) {
+                Sample swap = temp[i];
+                temp[i] = temp[j];
+                temp[j] = swap;
+            }
+        }
+    }
+
+    for (int i = 0; i <= degree; i++)
+        closest[i] = temp[i];
+
+    // Compute Lagrange polynomial
+    double result = 0.0;
+    for (int i = 0; i <= degree; i++) {
+        double term = closest[i].value;
+        for (int j = 0; j <= degree; j++) {
+            if (i != j) {
+                term *= (t - closest[j].timestamp) / (closest[i].timestamp - closest[j].timestamp);
+            }
+        }
+        result += term;
+    }
+    return result;
+}
+
+// Example usage
+int main() {
+    Buffer buffer = {.count = 0};
+
+    // Simulate input samples (irregular intervals)
+    double input_time = 0.0;
+    double simulation_end = 30.0;
+    double next_input_time = 0.0;
+
+    // Output configuration
+    double output_interval = 0.1;  // 100ms
+    double next_output_time = 0.0;
+
+    srand(42);  // For reproducibility
+
+    while (input_time <= simulation_end) {
+        // Simulate jittery input every ~1-11s
+        if (input_time >= next_input_time) {
+            double jitter = 1.0 + (rand() % 1000) / 100.0;  // 1 to 11 seconds jitter
+            double value = sin(next_input_time);  // Example function
+            add_sample(&buffer, next_input_time, value);
+            next_input_time += jitter;
+        }
+
+        // Output at fixed intervals
+        while (next_output_time <= input_time) {
+            double interpolated = lagrange_interpolate(&buffer, next_output_time, MAX_POLY_DEGREE);
+            if (!isnan(interpolated)) {
+                printf("Output @ %.2f s: %.4f\n", next_output_time, interpolated);
+            } else {
+                printf("Output @ %.2f s: insufficient data\n", next_output_time);
+            }
+            next_output_time += output_interval;
+        }
+
+        // Advance simulation time
+        input_time += 0.05;  // Step increment for simulation accuracy
+    }
+
+    return 0;
+}
+===============================================================================================================================
+
+Output @ 0.00 s: insufficient data
+Output @ 0.10 s: insufficient data
+Output @ 0.20 s: insufficient data
+...
+Output @ 2.90 s: 0.2380
+Output @ 3.00 s: 0.1411
+Output @ 3.10 s: 0.0416
+
+
+===============================================================================================================================
+
+Reference (Textbook):
+
+Burden, Richard L., Douglas J. Faires, and Annette M. Burden.
+"Numerical Analysis" (10th edition).
+Cengage Learning, 2015.
+ISBN: 978-1305253667.
+
+Specifically, the method for Lagrange interpolation is thoroughly discussed in:
+
+Chapter 3: Interpolation and Polynomial Approximation,
+Section 3.1: Lagrange Interpolation (pages ~128–137).
+
+Additional well-known resources and references include:
+Numerical Recipes (Classic Reference)
+Press, William H., et al.
+Numerical Recipes in C: The Art of Scientific Computing.
+Cambridge University Press, 1992. (Chapter 3 covers interpolation thoroughly.)
+
+Atkinson, Kendall.
+An Introduction to Numerical Analysis. (2nd Edition)
+Wiley, 1989.
+(Chapter 3 contains a clear explanation of Lagrange interpolation.)
+
+If you need a direct academic paper specifically describing interpolation in an asynchronous sampling context similar to your scenario (ASRC — asynchronous sample rate conversion), a foundational reference is:
+
+Smith, Julius O.
+Digital Audio Resampling Home Page,
+Center for Computer Research in Music and Acoustics (CCRMA), Stanford University.
+Online available: https://ccrma.stanford.edu/~jos/resample/
+
+Although Smith emphasizes spline interpolation and windowed-sinc interpolation methods (often preferable in audio or DSP contexts), he provides a broad conceptual framework for interpolation-based resampling.
+
+
+
+Reference for Neville's Algorithm:
+Burden, R. L., Faires, D. J., & Burden, A. M. (2015).
+Numerical Analysis (10th Edition),
+Chapter 3 (Interpolation),
+Section 3.2: Neville’s Method.

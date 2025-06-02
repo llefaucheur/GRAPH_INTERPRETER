@@ -246,8 +246,8 @@ void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *
         case STREAM_RUN:   
         {
             arm_filter_instance *pinstance;
-            intPtr_t nb_data;
-            intPtr_t stream_xdmbuffer_size_in, stream_xdmbuffer_size_out;
+            intptr_t nb_data;
+            intptr_t stream_xdmbuffer_size_in, stream_xdmbuffer_size_out;
             stream_xdmbuffer_t *pt_pt;
             int16_t *inBuf;
             int16_t *outBuf;
