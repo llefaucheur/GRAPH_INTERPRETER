@@ -25,7 +25,7 @@
  * 
  */
 
-#include "platform.h"
+#include "presets.h"
 #ifdef CODE_ARM_STREAM_MODULATOR
 
 #ifdef __cplusplus
@@ -110,7 +110,7 @@ void arm_stream_modulator (unsigned int command, void *instance, void *data, uns
                 memory pointers are in the same order as described in the NODE manifest
         */
         case STREAM_RESET: 
-        {   stream_al_services *stream_entry = (stream_al_services *)data;
+        {   stream_services *stream_entry = (stream_services *)data;
             intptr_t *memresults = (intptr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
 

@@ -15,4 +15,9 @@ node_mem                1
 node_mem_alloc         30
 node_mem_type           2                       ; backup memory (Z7..)
 
+node_mem                2
+node_mem_alloc         16
+node_mem_type           1                       ; working (tests)
+
+
 end

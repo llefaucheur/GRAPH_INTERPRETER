@@ -51,5 +51,8 @@ void arm_stream_demodulator_process (arm_stream_demodulator_instance *instance, 
 #ifdef __cplusplus
 }
 #endif
- 
+#else
+void arm_stream_demodulator_process (void)
+{
+}
 #endif

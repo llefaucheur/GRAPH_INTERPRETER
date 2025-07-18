@@ -79,6 +79,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -148,7 +149,9 @@
     <ClCompile Include="..\..\stream_tool_read_script.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\stream_nodes\stream_common_const.h" />
     <ClInclude Include="..\..\..\stream_platform\computer\graph_computer_header.h" />
+    <ClInclude Include="..\..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\stream_tool.h" />
     <ClInclude Include="..\..\stream_tool_define.h" />
     <ClInclude Include="..\..\stream_tool_include.h" />
@@ -159,7 +162,7 @@
     <Text Include="..\..\..\stream_nodes\arm\filter2D\node_manifest_filter2D.txt" />
     <Text Include="..\..\..\stream_nodes\arm\filter\node_manifest_filter.txt" />
     <Text Include="..\..\..\stream_nodes\arm\modulator\node_manifest_modulator.txt" />
-    <Text Include="..\..\..\stream_nodes\arm\mouver\node_manifest_mouver.txt" />
+    <Text Include="..\..\..\stream_nodes\arm\router\node_manifest_router.txt" />
     <Text Include="..\..\..\stream_nodes\arm\script\node_manifest_script.txt" />
     <Text Include="..\..\..\stream_nodes\bitbank\JPEGENC\node_manifest_bitbank_JPEGENC.txt" />
     <Text Include="..\..\..\stream_nodes\elm-lang\TJpgDec\node_manifest_TjpgDec.txt" />
@@ -169,12 +172,11 @@
     <Text Include="..\..\..\stream_nodes\signal-processingFR\detector2D\node_manifest_detector2D.txt" />
     <Text Include="..\..\..\stream_nodes\signal-processingFR\detector\node_manifest_detector.txt" />
     <Text Include="..\..\..\stream_nodes\signal-processingFR\resampler\node_manifest_resampler.txt" />
-    <Text Include="..\..\..\stream_platform\computer\graph_computer.txt" />
     <Text Include="..\..\..\stream_platform\computer\graph_computer_bin.txt" />
-    <Text Include="..\..\..\stream_platform\computer\graph_computer_debug.txt" />
+    <Text Include="..\..\..\stream_platform\computer\graph_computer_filter.txt" />
+    <Text Include="..\..\..\stream_platform\computer\graph_computer_filter_bin.txt" />
     <Text Include="..\..\..\stream_platform\computer\graph_computer_router.txt" />
     <Text Include="..\..\..\stream_platform\computer\graph_computer_router_bin.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\procmap_manifest_computer.txt" />
     <Text Include="..\..\..\stream_platform\computer\manifest\top_manifest_computer.txt" />
     <Text Include="..\..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306.txt" />
     <Text Include="..\..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_bin.txt" />

@@ -60,34 +60,33 @@
                       
   @remark
  */
-void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, void *data, uint32_t size)
+void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uintptr_t ptr1, uintptr_t ptr2)
 {   
 	switch (RD(command, COMMAND_CMD))
     {
         /* usage: arm_stream(STREAM_RESET, &instance,graph_input, 0); */
 	    case STREAM_RESET: 
-	    {   
-            //arm_stream_services(STREAM_SERVICE_INTERNAL_RESET, (uint8_t *)&(S), 0, 0, 0); 
+	    {   extern void platform_init_stream_instance(arm_stream_instance_t *S);
+            platform_init_stream_instance (S);
             stream_scan_graph (S, STREAM_RESET, 0);
             break;
         }
 
+
         /* usage: arm_stream(STREAM_RUN, &instance,0, 0); */
 	    case STREAM_RUN:   
-	    {   if (RD(S->scheduler_control, INSTANCE_SCTRL))
-            {   stream_scan_graph (S, STREAM_RUN, 0);
-            }
+	    {   stream_scan_graph (S, STREAM_RUN, 0);
             break;
         }   
 
-        /* change the use-case  : 
-            usage: arm_graph_interpreter (STREAM_SET_PARAMETER, &instance, &use-case, 0); */
+
+        /* change the parameters of a node  : 
+            usage: 
+                1) update the table of node_offset + parameters 
+                2) call arm_graph_interpreter (STREAM_SET_PARAMETER, &instance, node offset, 0); 
+         */
         case STREAM_SET_PARAMETER:
-	    {   /* calls the main script with SET_PARAMETER */
-            /* update parameter of a specific nanoAppRT 
-                usage: arm_graph_interpreter (STREAM_SET_NANOAPPRT_PARAMETER, &instance, &parameters, 0); */
-	        /* calls specific nanoAppRT with SET_PARAMETER */
-            stream_scan_graph (S, STREAM_SET_PARAMETER, (uint32_t *)data);
+	    {   stream_scan_graph (S, STREAM_SET_PARAMETER, ptr1);
             break;
         }
 

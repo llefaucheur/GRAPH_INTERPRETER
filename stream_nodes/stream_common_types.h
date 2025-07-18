@@ -33,8 +33,8 @@
 #ifndef cSTREAM_COMMON_TYPES_H
 #define cSTREAM_COMMON_TYPES_H
 
-#include "platform.h"
 #include "stream_common_const.h"
+#include "presets.h"
 
 
 /* ------------------------------------------------------------------------------------------
@@ -117,8 +117,8 @@ struct stream_xdmbuffer
 
 typedef struct stream_xdmbuffer stream_xdmbuffer_t;
 
-typedef void    (stream_al_services) (uint32_t service_command, void *ptr1, void *ptr2, void *ptr3, uint32_t n); 
-typedef void (*p_stream_al_services) (uint32_t service_command, void *ptr1, void *ptr2, void *ptr3, uint32_t n); 
+typedef void    (stream_services) (uint32_t service_command, intptr_t ptr1, intptr_t ptr2, intptr_t ptr3, intptr_t n); 
+typedef void (*p_stream_services) (uint32_t service_command, intptr_t ptr1, intptr_t ptr2, intptr_t ptr3, intptr_t n); 
 
 
 #endif /* cSTREAM_COMMON_TYPES_H */

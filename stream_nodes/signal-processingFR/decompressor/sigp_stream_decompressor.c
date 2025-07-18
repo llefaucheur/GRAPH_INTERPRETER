@@ -24,7 +24,7 @@
  * 
  */ 
 
-#include "platform.h"
+#include "presets.h"
 #ifdef CODE_SIGP_STREAM_DECOMPRESSOR
 
 #ifdef __cplusplus
@@ -33,7 +33,7 @@
 
 
 #include <stdint.h>
-#include "platform.h"                   // compilation options to save code size 
+#include "presets.h"                    // compilation options to save code size 
 #include "stream_common_const.h"        // 
 #include "stream_common_types.h"        // types for the interface to the scheduler
 
@@ -105,9 +105,9 @@ void sigp_stream_decompressor (unsigned int command, void *instance, void *data,
                 memresult[9] : output arc WORD 3  is domain-dependent : audio mapping  
         */
         case STREAM_RESET: 
-        {   stream_al_services *stream_entry = (stream_al_services *)data;
+        {   //stream_services *stream_entry = (stream_services *)data;
             intptr_t *memreq = (intptr_t *)instance;
-            uint16_t preset = RD(command, PRESET_CMD);
+            //uint16_t preset = RD(command, PRESET_CMD);
 
             sigp_stream_decompressor_instance *pinstance = (sigp_stream_decompressor_instance *) (memreq[0]);
             pinstance->TCM = (uint32_t *) (memreq[1]);       /* second bank = fast memory */
@@ -118,7 +118,7 @@ void sigp_stream_decompressor (unsigned int command, void *instance, void *data,
             pinstance->output_format[3] = (memreq[9]);
 
             /* save the address of the "services" */
-            pinstance->stream_service_entry = (stream_al_services *)(intptr_t)data;
+            pinstance->stream_service_entry = (stream_services *)(intptr_t)data;
 
             /* clear memory */
             MEMSET(&(pinstance->memory_state[0]), 0, sizeof(pinstance->memory_state));

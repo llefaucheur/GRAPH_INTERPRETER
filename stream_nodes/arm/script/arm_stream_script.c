@@ -31,7 +31,7 @@
  * 
  */
 
-#include "platform.h"
+#include "presets.h"
 
 #ifdef CODE_ARM_STREAM_SCRIPT
 
@@ -85,7 +85,7 @@ void arm_stream_script (uint32_t command, void *instance, void *data, uint32_t *
             pinstance = *((arm_script_instance_t **) instance);           /* main instance */
 
             /* "data" is the Stream interpreter instance, for access to the services */
-            pinstance->services = (stream_al_services *)data;
+            pinstance->services = (stream_services *)data;
             break;
         }
 
@@ -122,7 +122,7 @@ void arm_stream_script (uint32_t command, void *instance, void *data, uint32_t *
 
             pinstance->codes = RD(pinstance->arc_desc[SCRIPT_SCRARCW1], CODESIZE_SCRARCW1);
             pinstance->nstack = RD(pinstance->arc_desc[DBGFMT_SCRARCW4], NSTACK_SCRARCW4);
-            pinstance->nregs = RD(pinstance->arc_desc[DBGFMT_SCRARCW4], NREGS_SCRARCW4);
+            pinstance->nregs = (uint8_t)RD(pinstance->arc_desc[DBGFMT_SCRARCW4], NREGS_SCRARCW4);
             pinstance->SP = pinstance->nregs;     // after { R0 .. R(nregs),R12 }
             pinstance->PC = 0;         // PC pre-incremented before read
             pinstance->test_flag = 0;

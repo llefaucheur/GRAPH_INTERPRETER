@@ -23,7 +23,7 @@
  * limitations under the License.
  * 
  */
-#include "platform.h"
+#include "presets.h"
 #ifdef CODE_SIGP_STREAM_DETECTOR2D
 
 #ifdef __cplusplus

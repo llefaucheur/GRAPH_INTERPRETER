@@ -36,6 +36,7 @@
 
 
 #include <stdint.h>
+#include "presets.h"
 #include "stream_common_const.h"
 #include "stream_common_types.h"
 #include "arm_stream_filter.h"
@@ -169,7 +170,7 @@ void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *
                     break;
             }
 
-            pinstance->services = (stream_al_services *)data;
+            pinstance->services = (stream_services *)data;
             break;
         }       
 
@@ -181,29 +182,34 @@ void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *
         case STREAM_SET_PARAMETER:  
         {   uint8_t *pt8bsrc;
             uint8_t i; 
-            uint8_t numStages;
+            uint8_t cmsisFormat, rawFormat, numStages, postShift;
             uint16_t *pt16src, *pt16dst;
-            uint8_t postShift;
             arm_filter_instance *pinstance;
 
             pinstance = (arm_filter_instance *) instance;
             /* copy the parameters 
                 parameter_start
-                1  i8;  2                           Two biquads
-                1  i8;  0                           postShift
-                5 h16; 5678 2E5B 71DD 2166 70B0     b0/b1/b2/a1/a2 
-                5 h16; 5678 2E5B 71DD 2166 70B0     second biquad
+                1  u8;  0                               ; CMSIS format
+                1  u8;  1                               ; q15 format
+                1  u8;  2                               ; numStages
+                1  s8;  1                               ; postShift
+                5 s16; 681   422   681 23853 -15161     ; INT16 elliptic band-pass 1450..1900/16kHz
+                5 s16; 681 -1342   681 26261 -15331     ; 
                 parameter_end                
             */
             pt8bsrc = (uint8_t *) data;
             pt16src = (uint16_t *) data;
-            numStages = pt8bsrc[0];
-            postShift = pt8bsrc[1];
 
-            pt16src = &(pt16src[1]);
+            cmsisFormat = *pt8bsrc++;
+            rawFormat = *pt8bsrc++;
+            numStages = *pt8bsrc++;
+            postShift = *pt8bsrc++;
+
+            pt16src = &(pt16src[2]);    /* skip the above 4bytes header */
             pt16dst = (uint16_t *)(&(pinstance->TCM->coefs[0]));
+
             for (i = 0; i < numStages; i++)
-            {   /* format:  {b10, 0, b11, b12, a11, a12, b20, 0, b21, b22, a21, a22, ...} */
+            {   /* destination format:  {b10, 0, b11, b12, a11, a12,   b20, 0, b21, b22, a21, a22, ...} */
                 *pt16dst++ = *pt16src++;    // b10
                 *pt16dst++ = 0;             // 0
                 *pt16dst++ = *pt16src++;    // b11    
@@ -212,26 +218,16 @@ void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *
                 *pt16dst++ = *pt16src++;    // a12
             }
 
-#ifdef STREAM_PLATFORM_SERVICES
-
             /* optimized kernels INIT */
-            pinstance->iir_service = PACK_SERVICE(SERV_INIT,NOOPTION_SSRV,NOTAG_SSRV, SERV_CASCADE_DF1_Q15,SERV_GROUP_DSP_ML);
+            pinstance->iir_service = PACK_SERVICE(SERV_DSP_INIT,NOOPTION_SSRV,NOTAG_SSRV, SERV_DSP_CASCADE_DF1_Q15,SERV_GROUP_DSP_ML);
 
             pinstance->services(                                            // void arm_stream_services (      
                 pinstance->iir_service,                                     //      uint32_t command, 
-                (void *)&(pinstance->TCM->biquad_casd_df1_inst_q15),        //      void *ptr1, 
-                (void *)&(pinstance->TCM->coefs),                           //      void *ptr2, 
-                (void *)&(pinstance->TCM->state),                           //      void *ptr3, 
-                (postShift << 8u) | numStages                               //      uint32_t n)
+                (intptr_t)&(pinstance->TCM->biquad_cascade_df1_inst_q15),   //      intptr_t ptr1, 
+                (intptr_t)&(pinstance->TCM->coefs),                         //      intptr_t ptr2, 
+                (intptr_t)&(pinstance->TCM->state),                         //      intptr_t ptr3, 
+                (intptr_t)(numStages << 8u) | postShift                     //      intptr_t n)
                 );
-#else
-            stream_filter_arm_biquad_cascade_df1_init_q15(
-                &(pinstance->TCM->biquad_casd_df1_inst_q15),
-                numStages,
-                (const q15_t *)&(pinstance->TCM->coefs[0]),
-                (q15_t *)&(pinstance->TCM->state),
-                postShift);
-#endif
             break;
         }
 
@@ -265,25 +261,22 @@ void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *
                 nb_data = stream_xdmbuffer_size_in / sizeof(int16_t);
             }
 
-#ifdef STREAM_PLATFORM_SERVICES
             /* optimized kernels RUN */
-            pinstance->iir_service = PACK_SERVICE(SERV_RUN,NOOPTION_SSRV,NOTAG_SSRV,SERV_CASCADE_DF1_Q15,SERV_GROUP_DSP_ML);
+            pinstance->iir_service = PACK_SERVICE(SERV_DSP_RUN,NOOPTION_SSRV,NOTAG_SSRV,SERV_DSP_CASCADE_DF1_Q15,SERV_GROUP_DSP_ML);
 
             pinstance->services(
                 pinstance->iir_service,
-                (void *)inBuf, 
-                (void *)outBuf,
-                (void *)(&(pinstance->TCM->biquad_casd_df1_inst_q15)),
-                nb_data
+                (intptr_t)(&(pinstance->TCM->biquad_cascade_df1_inst_q15)),
+                (intptr_t)inBuf, 
+                (intptr_t)outBuf,
+                (intptr_t)nb_data
                 );
 
             pt_pt = data;   *(&(pt_pt->size)) = nb_data * sizeof(int16_t); /* amount of data consumed */
             pt_pt ++;       *(&(pt_pt->size)) = nb_data * sizeof(int16_t); /* amount of data produced */
             
             break;
-#else
-       //  #error call CMSIS-DSP
-#endif
+
 
         }
 

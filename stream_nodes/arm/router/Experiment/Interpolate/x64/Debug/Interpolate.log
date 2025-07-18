@@ -1,0 +1,4 @@
+﻿  main.c
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes\arm\router\Experiment\Interpolate\main.c(792,1): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes\arm\router\Experiment\Interpolate\main.c(803,1): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  Interpolate.vcxproj -> C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes\arm\router\Experiment\Interpolate\x64\Debug\Interpolate.exe

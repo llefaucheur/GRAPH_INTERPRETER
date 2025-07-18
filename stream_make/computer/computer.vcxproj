@@ -72,23 +72,27 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\computer\stream_libraries\CMSIS-DSP\Include;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_src;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\computer\stream_libraries\CMSIS-DSP\Include;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_src;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\paltform_defaults;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\computer;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <WarningLevel>Level2</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <DisableSpecificWarnings>4820</DisableSpecificWarnings>
+      <Optimization>Disabled</Optimization>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -165,13 +169,17 @@
     <ClCompile Include="..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector_process.c" />
     <ClCompile Include="..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler.c" />
     <ClCompile Include="..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler_process.c" />
-    <ClCompile Include="..\..\stream_platform\computer\platform_computer.c" />
-    <ClCompile Include="..\..\stream_platform\computer\platform_computer_io_services.c" />
-    <ClCompile Include="..\..\stream_platform\computer\platform_computer_services.c" />
-    <ClCompile Include="..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_f32.c" />
+    <ClCompile Include="..\..\stream_platform\computer\computer_init.c" />
+    <ClCompile Include="..\..\stream_platform\computer\computer_io_services.c" />
     <ClCompile Include="..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_fast_q15.c" />
-    <ClCompile Include="..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_init_f32.c" />
     <ClCompile Include="..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_init_q15.c" />
+    <ClCompile Include="..\..\stream_platform\computer\stream_libraries\standard_library\floating_point.c" />
+    <ClCompile Include="..\..\stream_platform\platform_defaults\platform_init.c" />
+    <ClCompile Include="..\..\stream_platform\platform_defaults\default_services.c" />
+    <ClCompile Include="..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\default_biquad_cascade_df1_f32.c" />
+    <ClCompile Include="..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\default_biquad_cascade_df1_fast_q15.c" />
+    <ClCompile Include="..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\default_biquad_cascade_df1_init_f32.c" />
+    <ClCompile Include="..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\default_biquad_cascade_df1_init_q15.c" />
     <ClCompile Include="..\..\stream_src\stream_graph_interpreter.c" />
     <ClCompile Include="..\..\stream_src\stream_io.c" />
     <ClCompile Include="..\..\stream_src\stream_scheduler.c" />
@@ -179,23 +187,30 @@
     <ClCompile Include="main_call_computer.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\stream_nodes\arm\filter\arm_stream_filter.h" />
     <ClInclude Include="..\..\stream_nodes\arm\router\arm_stream_router.h" />
     <ClInclude Include="..\..\stream_nodes\arm\script\arm_stream_script.h" />
     <ClInclude Include="..\..\stream_nodes\arm\script\arm_stream_script_instructions.h" />
     <ClInclude Include="..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector.h" />
     <ClInclude Include="..\..\stream_nodes\stream_common_const.h" />
     <ClInclude Include="..\..\stream_nodes\stream_common_types.h" />
-    <ClInclude Include="..\..\stream_platform\computer\graph_computer_header.h" />
-    <ClInclude Include="..\..\stream_platform\platform.h" />
+    <ClInclude Include="..\..\stream_platform\computer\computer_init.h" />
+    <ClInclude Include="..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Include\dsp\Computer_filtering_functions.h" />
+    <ClInclude Include="..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Include\dsp\default_filtering_functions.h" />
+    <ClInclude Include="..\..\stream_platform\presets.h" />
     <ClInclude Include="..\..\stream_platform\platform_computer.h" />
     <ClInclude Include="..\..\stream_src\stream_const.h" />
     <ClInclude Include="..\..\stream_src\stream_extern.h" />
+    <ClInclude Include="..\..\stream_src\stream_types.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\stream_platform\computer\graph_computer.txt" />
+    <Text Include="..\..\stream_nodes\arm\filter\node_manifest_filter.txt" />
     <Text Include="..\..\stream_platform\computer\graph_computer_debug.txt" />
+    <Text Include="..\..\stream_platform\computer\graph_computer_filter.txt" />
+    <Text Include="..\..\stream_platform\computer\graph_computer_filter_bin.txt" />
     <Text Include="..\..\stream_platform\computer\graph_computer_router.txt" />
     <Text Include="..\..\stream_platform\computer\graph_computer_router_bin.txt" />
+    <Text Include="..\..\stream_platform\computer\manifest\top_manifest_computer.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

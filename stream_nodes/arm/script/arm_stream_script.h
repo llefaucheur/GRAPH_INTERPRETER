@@ -32,9 +32,9 @@
 #ifndef carm_stream_script_H
 #define carm_stream_script_H
 
-#include "../../../stream_src/stream_const.h"      
-#include "../../../stream_src/stream_types.h"  
-#include "../../stream_common_types.h"  
+#include "stream_const.h"      
+#include "stream_types.h"  
+#include "stream_common_types.h"  
 
     
 typedef union
@@ -83,10 +83,10 @@ typedef union
     {
         arm_stream_instance_t *S;   
         uint32_t *arc_desc;
-        stream_al_services *services;
+        stream_services *services;
         regdata_t *REGS;                /* registers and stack */
         uint32_t *byte_code;            /* program to run */
-        uint16_t instruction;           /* current instruction */
+        uint32_t instruction;           /* current instruction */
         uint16_t PC;                    /* in uint32 */          
         uint16_t codes;                 /* code size */          
         uint16_t max_cycle;

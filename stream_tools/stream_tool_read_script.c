@@ -529,7 +529,7 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
         clean_line (pt_line, &thereIsHash, &thereAreBrackets, &thereAreVerticals, script_comment);
 
         /* -------------------- SEPARATE THE LINE IN 7 FIELDS --------------------- */
-        fields_extract(pt_line, "CCCCCCC", s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[cNFIELDS-1]); 
+        fields_extract(pt_line, "ccccccc", s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[cNFIELDS-1]); 
 
 
         /* -------------------- label N ---------------------label L_symbol      no code-------- 

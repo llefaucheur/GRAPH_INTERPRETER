@@ -58,7 +58,7 @@ typedef struct
     /* memory area reserved for Codec internal computations */
     uint32_t *TCM;
 
-    stream_al_services *stream_service_entry;
+    stream_services *stream_service_entry;
     uint32_t output_format[STREAM_FORMAT_SIZE_W32];
 
     /* LAST FIELD OF THE DECLARATION,  to let it grow without changing the "*TCM" field 

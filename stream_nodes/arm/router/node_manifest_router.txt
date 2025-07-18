@@ -7,24 +7,27 @@ node_name            arm_stream_router      ; node name
 
 ;----------------------------------------------------------------------------------------
 ;   MEMORY ALLOCATIONS
+;----------
+node_mem                  0		            ; first memory bank (node instance)
+node_mem_alloc           24			        ; 
+;----------
+node_mem                  1			        ; second memory bank (node fast static area)
+node_mem_alloc           78                 ; (coef + state)50 + (pointers + index)24
+node_mem_type             0                 ; static memory
+node_mem_speed            2                 ; critical fast 
 
-node_mem                0		    ; first memory bank (node instance)
-node_mem_alloc         24			; 
+node_mem_nbchan          40 0               ; 40 bytes (10 words ) of input arc 0
+node_mem_frame_size_mono  2 maxin           ; declare the Bytes maximum size of input arcs x2 (float/int16)
 
-node_mem                1			; second memory bank (node fast static area)
-node_mem_alloc         78           ; (coef + state)50 + (pointers + index)24
-node_mem_type           0           ; static memory
-node_mem_speed          2           ; critical fast 
-node_mem_nbchan      40 1           ; 40 bytes (10 words) reserved from input arc nb channels
 ;--------------------------------------------------------------------------------------------
-;    ARCS CONFIGURATION
+;    ARCS CONFIGURATION OPTIONS
 node_arc            0
-node_arc_nb_channels      {1 1 2}   {-1 1 1 2 }   ; arc intleaved,  options for the number of channels
-node_arc_raw_format     {1 17 27}   ; options for the raw arithmetics STREAM_S16, STREAM_FP32
+node_arc_nb_channels    {1 1 4}             ; arc intleaved,  options for the number of channels
+node_arc_raw_format     {1 17 27}           ; options for the raw arithmetics STREAM_S16, STREAM_FP32
 
 node_arc            1
-node_arc_nb_channels    {1 1 2}     ; options for the number of channels
-node_arc_raw_format     {1 17 27}   ; options for the raw arithmetics STREAM_S16, STREAM_FP32
+node_arc_nb_channels    {1 1 4}             ; options for the number of channels
+node_arc_raw_format     {1 17 27}           ; options for the raw arithmetics STREAM_S16, STREAM_FP32
 
 
 end

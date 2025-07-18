@@ -26,14 +26,16 @@
  */
 
 #include "stream_tool_include.h"
-#include "platform.h"
+#include "presets.h"
 
 #ifdef PLATFORM_COMPUTER 
 
-#define GRAPH_TXT           "../../../stream_platform/computer/graph_computer_router.txt"     /* graph */
-#define GRAPH_BIN           "../../../stream_platform/computer/graph_computer_router_bin.txt" /* binary graph file */
+//#define GRAPH_TXT           "../../../stream_platform/computer/graph_computer_router.txt"     /* graph */
+//#define GRAPH_BIN           "../../../stream_platform/computer/graph_computer_router_bin.txt" /* binary graph file */
+#define GRAPH_TXT           "../../../stream_platform/computer/graph_computer_filter.txt"     /* graph */
+#define GRAPH_BIN           "../../../stream_platform/computer/graph_computer_filter_bin.txt" /* binary graph file */
 
-#define GRAPH_ALL_MANIFESTS "../../../stream_platform/computer/manifest/top_manifest_computer.txt"
+#define GRAPH_TOP_MANIFEST  "../../../stream_platform/computer/manifest/top_manifest_computer.txt"
 #define GRAPH_HEADER        "../../../stream_platform/computer/graph_computer_header.h"  /* list of labels to do "set_parameter" from scripts */
 #define GRAPH_DEBUG         "../../../stream_platform/computer/graph_computer_debug.txt" /* comments made during graph conversion  */
 #endif
@@ -96,7 +98,7 @@ void main(void)
     if (0 == (graph->ptf_debug = fopen(GRAPH_DEBUG, "wt"))) {  printf (  "\n init error \n"); exit(-1); }
 
 
-    read_input_file (GRAPH_ALL_MANIFESTS, all_files);
+    read_input_file (GRAPH_TOP_MANIFEST, all_files);
     arm_stream_read_manifests(platform, all_files);
     
 

@@ -36,6 +36,7 @@
 #ifdef _MSC_VER 
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
+#include <ctype.h>
 #include <stdio.h>    
 #include <string.h>
 #include <stdint.h>
@@ -45,7 +46,7 @@
 #include <stdarg.h>  /* for void fields_extract(char **pt_line, char *types,  ...) */
 
 #include "../stream_src/stream_const.h"
-#include "../stream_platform/platform.h"
+#include "../stream_platform/presets.h"
 #include "../stream_src/stream_types.h"
 #include "stream_tool_define.h"
 #include "stream_tool.h"
@@ -56,6 +57,7 @@
 
 extern uint8_t globalEndFile, FoundEndSection;
 
+extern void convert_to_mks_unit(char *unit, float *fdata);
 extern void jump2next_line (char** line);
 extern void jump2next_valid_line (char** line);
 extern void read_binary_param(char** pt_line, void* X, uint8_t* raw_type, uint32_t* nb_option);
@@ -70,8 +72,8 @@ extern void stream_tool_read_parameters(char **pt_line,
         struct stream_graph_linkedlist *graph, 
         uint32_t *ParameterSizeW32,
         uint32_t *PackedParameters);
-extern int  vid_malloc(uint32_t VID, uintptr_t size, uint32_t alignment, uint32_t *pack27b, int working, char *comment, struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph);
-extern void search_platform_node(char *cstring, struct stream_node_manifest **platform_node, uint32_t *platform_NODE_idx,
+extern int  vid_malloc(uint32_t VID, uint64_t size, uint32_t alignment, uint32_t *packxxb, int working, char *comment, struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph);
+extern void search_platform_node(char *cstring, struct stream_node_manifest **platform_node, uint32_t *platform_node_idx,
             struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph);
 extern void search_graph_node(char *cstring, struct stream_node_manifest **graph_node, uint32_t *graph_NODE_idx, struct stream_graph_linkedlist *graph);
 extern void compute_memreq(struct node_memory_bank *m, struct formatStruct *all_format, struct stream_node_manifest *node);

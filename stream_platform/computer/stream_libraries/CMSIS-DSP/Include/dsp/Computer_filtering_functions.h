@@ -59,7 +59,7 @@ extern "C"
     const q15_t *pCoeffs;          /**< Points to the array of coefficients.  The array is of length 5*numStages. */
           int8_t numStages;        /**< number of 2nd order stages in the filter.  Overall order is 2*numStages. */
           int8_t postShift;        /**< Additional shift, in bits, applied to each output sample. */
-  } Computer_arm_biquad_casd_df1_inst_q15;
+  } platform_arm_biquad_cascade_df1_inst_q15;
 
 
   /**
@@ -70,7 +70,7 @@ extern "C"
           uint32_t numStages;      /**< number of 2nd order stages in the filter.  Overall order is 2*numStages. */
           float32_t *pState;       /**< Points to the array of state coefficients.  The array is of length 4*numStages. */
     const float32_t *pCoeffs;      /**< Points to the array of coefficients.  The array is of length 5*numStages. */
-  } Computer_arm_biquad_casd_df1_inst_f32;
+  } platform_arm_biquad_cascade_df1_inst_f32;
 
 #if defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE)
   /**
@@ -89,8 +89,8 @@ extern "C"
    * @param[out] pDst       points to the block of output data.
    * @param[in]  blockSize  number of samples to process.
    */
-  void Computer_arm_biquad_cascade_df1_q15(
-  const Computer_arm_biquad_casd_df1_inst_q15 * S,
+  void platform_arm_biquad_cascade_df1_q15(
+  const platform_arm_biquad_cascade_df1_inst_q15 * S,
   const q15_t * pSrc,
         q15_t * pDst,
         uint32_t blockSize);
@@ -103,8 +103,8 @@ extern "C"
    * @param[in]     pState     points to the state buffer.
    * @param[in]     postShift  Shift to be applied to the output. Varies according to the coefficients format
    */
-  void Computer_arm_biquad_cascade_df1_init_q15(
-        Computer_arm_biquad_casd_df1_inst_q15 * S,
+  void platform_arm_biquad_cascade_df1_init_q15(
+        platform_arm_biquad_cascade_df1_inst_q15 * S,
         uint8_t numStages,
   const q15_t * pCoeffs,
         q15_t * pState,
@@ -117,8 +117,8 @@ extern "C"
    * @param[out] pDst       points to the block of output data.
    * @param[in]  blockSize  number of samples to process.
    */
-  void Computer_arm_biquad_cascade_df1_fast_q15(
-  const Computer_arm_biquad_casd_df1_inst_q15 * S,
+  void platform_arm_biquad_cascade_df1_fast_q15(
+  const platform_arm_biquad_cascade_df1_inst_q15 * S,
   const q15_t * pSrc,
         q15_t * pDst,
         uint32_t blockSize);
@@ -131,8 +131,8 @@ extern "C"
    * @param[out] pDst       points to the block of output data.
    * @param[in]  blockSize  number of samples to process.
    */
-  void Computer_arm_biquad_cascade_df1_f32(
-  const Computer_arm_biquad_casd_df1_inst_f32 * S,
+  void platform_arm_biquad_cascade_df1_f32(
+  const platform_arm_biquad_cascade_df1_inst_f32 * S,
   const float32_t * pSrc,
         float32_t * pDst,
         uint32_t blockSize);
@@ -146,16 +146,16 @@ extern "C"
    * @param[in]     pState     points to the state buffer.
    */
 #if defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE)
-  void Computer_arm_biquad_cascade_df1_mve_init_f32(
-      arm_biquad_casd_df1_inst_f32 * S,
+  void platform_arm_biquad_cascade_df1_mve_init_f32(
+      arm_biquad_cascade_df1_inst_f32 * S,
       uint8_t numStages,
       const float32_t * pCoeffs, 
       arm_biquad_mod_coef_f32 * pCoeffsMod, 
       float32_t * pState);
 #endif
   
-  void Computer_arm_biquad_cascade_df1_init_f32(
-        Computer_arm_biquad_casd_df1_inst_f32 * S,
+  void platform_arm_biquad_cascade_df1_init_f32(
+        platform_arm_biquad_cascade_df1_inst_f32 * S,
         uint8_t numStages,
   const float32_t * pCoeffs,
         float32_t * pState);

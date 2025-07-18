@@ -35,8 +35,36 @@
 #include "stream_const.h"
 #include "stream_types.h"
 #include "stream_extern.h"
+#include "presets.h" // for DATA_MEMORY_BARRIER
 
 
+
+/*----------------------------------------------------------------------------
+    convert a physical address to a portable multiprocessor address (software MMU)
+ *----------------------------------------------------------------------------*/
+static uint32_t lin2pack (intptr_t buffer, uint8_t ** long_offset)
+{
+    intptr_t distance;
+    uint32_t ret;
+    uint8_t i;
+
+    /* packed address range is [ long_offset[IDX]  +/- 8MB ]*/
+#define MAX_PACK_ADDR_RANGE (((1<<(SIZE_FMT0_MSB - SIZE_FMT0_LSB+1))-1))
+
+    /* find the base offset */
+    for (i = 0; i < (uint8_t)MAX_NB_MEMORY_OFFSET; i++)
+    {
+        distance = buffer - (intptr_t)(long_offset[i]);
+        if (ABS(distance) < MAX_PACK_ADDR_RANGE) 
+        {   break;
+        }
+    }
+
+    ret = 0;
+    ST(ret, DATAOFF_ARCW0, i);              // base index (software MMU)
+    ST(ret, SIGNED_SIZE_FMT0, distance);    // signed offset from this address
+    return ret;
+}
 
 
 /**
@@ -74,36 +102,30 @@
   @remark
  */
 
-void arm_stream_io_ack (uint8_t graph_io_idx, void *data, uint32_t size)
+void arm_stream_io_ack (uint8_t graph_hwio_idx, void *data, uint32_t size)
 {
     extern arm_stream_instance_t * platform_io_callback_parameter;
     arm_stream_instance_t *S = platform_io_callback_parameter;
     uint32_t *arc;
     uint8_t *ongoing;
     uint32_t *pio_control;
+    uint8_t *long_base;
+    uint8_t *src;
+    uint8_t *dst;
 
     uint32_t read;
     uint32_t write;
     uint32_t fifosize;
-    int32_t signed_base;
-    uint8_t *long_base;
-    uint8_t *src;
-    uint8_t *dst;
-    uint8_t extend;
+    uint8_t graph_idx;
 
-    pio_control = &(S->graph[(int)GRAPH_HEADER_NBWORDS + (int)graph_io_idx * (int)STREAM_IOFMT_SIZE_W32]);
-    ongoing = &(S->ongoing[graph_io_idx]);
+    read = S->pio_hw[graph_hwio_idx * TRANSLATE_PLATFORM_IO_AL_IDX_SIZE_W32]; /* IO HW index decode */
+    graph_idx = RD(read, IDX_TO_STREAM_IO_CONTROL); 
+    pio_control = &(S->pio_graph[graph_idx * STREAM_IOFMT_SIZE_W32]);            /* graph IO structure */
+
+    ongoing = &(S->ongoing[graph_idx]);
     arc = S->all_arcs;
     arc = &(arc[(int)SIZEOF_ARCDESC_W32 * (int)RD(*pio_control, IOARCID_IOFMT0)]);
-
-    long_base = S->long_offset[RD(arc[0],ADDR_OFFSET_FMT0)];   /* platfom memory offsets */
-    signed_base = RD(arc[2], SIGNED_SIZE_FMT0);
-    signed_base = signed_base << (32-SIGNED_SIZE_FMT0_MSB);
-    signed_base = signed_base >> (32-SIGNED_SIZE_FMT0_MSB);
-    extend = RD(arc[2], EXTENSION_FMT0);
-    signed_base <<= (extend << 1);
-    long_base = (uint8_t *) &(long_base[signed_base]);
-
+    PACK2LIN((intptr_t)long_base, (S->long_offset), arc[0]);
     fifosize = RD(arc[1], BUFF_SIZE_ARCW1);
     read = RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
@@ -151,7 +173,7 @@ void arm_stream_io_ack (uint8_t graph_io_idx, void *data, uint32_t size)
         {   
             /* arc_set_base_address_to_arc */
             dst = data;
-            ST(arc[0], BASEIDXOFFARCW0, platform_lin2pack((intptr_t)data));
+            ST(arc[0], BASEIDXOFFARCW0, lin2pack((intptr_t)data, (uint8_t **)S->long_offset));
             ST(arc[1], BUFF_SIZE_ARCW1, size);  /* FIFO size aligned with the buffer size */
             ST(arc[2], READ_ARCW2, 0);
             write = size;
@@ -232,7 +254,7 @@ void arm_stream_io_ack (uint8_t graph_io_idx, void *data, uint32_t size)
         else /* IO_COMMAND_SET_BUFFER for the next frame to send */
         {
             /*arc_set_base_address_to_arc */
-            ST(arc[0], BASEIDXOFFARCW0, platform_lin2pack((intptr_t)data));
+            ST(arc[0], BASEIDXOFFARCW0, lin2pack((intptr_t)data, (uint8_t **)S->long_offset));
             ST(arc[2], READ_ARCW2, 0);
             ST(arc[3], WRITE_ARCW3, 0);
             CLEAR_BIT(*ongoing, ONGOING_IO_LSB);

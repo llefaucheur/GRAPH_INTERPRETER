@@ -31,8 +31,8 @@
  * 
  */
 
-#include "platform.h"
-#ifdef CODE_ARM_STREAM_router
+#include "presets.h"
+#ifdef CODE_ARM_STREAM_ROUTER
 
 #ifdef __cplusplus
  extern "C" {

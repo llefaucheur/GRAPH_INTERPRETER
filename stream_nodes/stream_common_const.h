@@ -55,19 +55,19 @@
 #define IO_DOMAIN_GENERAL                  0u /* (a)synchronous sensor + rescaling, electrical, chemical, color, .. remote data, compressed streams, JSON, SensorThings*/
 #define IO_DOMAIN_AUDIO_IN                 1u /* microphone, line-in, I2S, PDM RX */
 #define IO_DOMAIN_AUDIO_OUT                2u /* line-out, earphone / speaker, PDM TX, I2S, */
-#define IO_DOMAIN_GPIO_IN                  3u /* generic digital IO , control of relay, */
-#define IO_DOMAIN_GPIO_OUT                 4u /* generic digital IO , control of relay, */
-#define IO_DOMAIN_MOTION                   5u /* accelerometer, combined or not with pressure and gyroscope */
-#define IO_DOMAIN_2D_IN                    6u /* camera sensor */
-#define IO_DOMAIN_2D_OUT                   7u /* display, led matrix, */
-#define IO_DOMAIN_ANALOG_IN                8u /* analog sensor with aging/sensitivity/THR control, example : light, pressure, proximity, humidity, color, voltage */
-#define IO_DOMAIN_ANALOG_OUT               9u /* D/A, position piezzo, PWM converter  */
-#define IO_DOMAIN_RTC                     10u /* ticks sent from a programmable timer */
-#define IO_DOMAIN_USER_INTERFACE_IN       11u /* button, slider, rotary button */
-#define IO_DOMAIN_USER_INTERFACE_OUT      12u /* LED, digits, display, */
-#define IO_DOMAIN_PLATFORM_3              13u /*  */                             
-#define IO_DOMAIN_PLATFORM_2              14u /* platform-specific #2, decoded with callbacks */                             
-#define IO_DOMAIN_PLATFORM_1              15u /* platform-specific #1, decoded with callbacks */                             
+#define IO_DOMAIN_GPIO                     3u /* generic digital IO, control of relay, timer ticks */
+#define IO_DOMAIN_MOTION                   4u /* accelerometer, combined or not with pressure and gyroscope */
+#define IO_DOMAIN_2D_IN                    5u /* camera sensor */
+#define IO_DOMAIN_2D_OUT                   6u /* display, led matrix, */
+#define IO_DOMAIN_ANALOG_IN                7u /* analog sensor with aging/sensitivity/THR control, example : light, pressure, proximity, humidity, color, voltage */
+#define IO_DOMAIN_ANALOG_OUT               8u /* D/A, position piezzo, PWM converter  */
+#define IO_DOMAIN_USER_INTERFACE           9u /* button, slider, rotary button, LED, digits, display */
+#define IO_DOMAIN_PLATFORM_6              10u                              
+#define IO_DOMAIN_PLATFORM_5              11u                              
+#define IO_DOMAIN_PLATFORM_4              12u                              
+#define IO_DOMAIN_PLATFORM_3              13u
+#define IO_DOMAIN_PLATFORM_2              14u /* platform-specific #2, decoded with callbacks */
+#define IO_DOMAIN_PLATFORM_1              15u /* platform-specific #1, decoded with callbacks */
 #define IO_DOMAIN_MAX_NB_DOMAINS          16u
 
 
@@ -297,14 +297,23 @@ enum stream_processor_sub_arch_fpu
     
     Format 23+4_offsets for buffer BASE ADDRESS
     Frame SIZE and ring indexes are using 22bits linear (0..4MB)
+
+
+        Word0: Frame size, interleaving scheme, arithmetics raw data type
+        Word1: time-stamp, domain, nchan, physical unit (pixel format, IMU interleaving..)
+        Word2: depends on IO Domain
+        Word3: depends on IO Domain
+
 */
 
 #define STREAM_FORMAT_SIZE_W32 4u     /*  digital, common part of the format  */
 /*
 *   _FMT0 word 0 : common to all domains : frame size
 *   _FMT1 word 1 : common to all domains : time-stamp, nchan, raw format, interleaving, domain, size extension
-*   _FMT2 word 2 : specific to domains : hashing, sampling rate
-*   _FMT3 word 3 : specific to domains : hashing, channel mapping 
+*   _FMT2 word 2 : specific to domains : sampling rate
+*   _FMT3 word 3 : specific to domains : hashing, channel mapping  ..
+*       _FMT4 word 4 : specific to domains TBD
+*       _FMT5 word 5 : specific to domains TBD
 */
 
 /* for MISRA-2012 compliance to Rule 10.4 */
@@ -320,7 +329,7 @@ enum stream_processor_sub_arch_fpu
 //                                                    payload : [nb samples] [samples]  */
 #define NO_TIMESTAMP    0u
 #define FRAME_COUNTER   1u          /* 32bits counter of data frames */
-#define TIMESTAMP_ABS   2u          /* float64 absolute frame distance in [s] from Jan 1st 2025 */
+#define TIMESTAMP_ABS   2u          /* float64 absolute frame distance in [s] from Unix Epoch */
 #define TIMESTAMP_REL   3u          /* float32 relative frame distance in [s] */
 
 
@@ -330,55 +339,84 @@ enum stream_processor_sub_arch_fpu
 
 //enum frame_format_type {
 #define FMT_INTERLEAVED 0u          /* "arc_descriptor_interleaved" for example L/R audio or IMU stream..   */
-                                    /* the pointer associated to the stream points to data (L/R/L/R/..)     */
-#define FMT_DEINTERLEAVED_1PTR 1u   /* single pointer to the first channel, next channel base address is    */
-                                    /*  computed by adding the frame size or buffer size/nchan, also for ring buffers  */
+#define FMT_DEINTERLEAVED_1PTR 1u   /* pointer to the first channel, next base address is frame size/nchan */
 
-////enum direction_rxtx {
+//enum direction_rxtx {
 #define IODIRECTION_RX 0u          /* RX from the Graph pont of view */
 #define IODIRECTION_TX 1u
 
 
 /*          SIZE_EXT_FMT0 / COLLISION_ARC / NODE memory bank
 
-    -8 bits-|--------24 bits -------
-  
+    -8 bits-[--------24 bits ------]
     1_987654321_987654321_987654321_
-    III_____________________________  NALLOCM1 node memory banks
     cccccccc________________________  collision byte in the WRITE word32
+    R_______________________________  flag: relocatable memory segment
     ____OOOO________________________  long offset of the buffer base address
     ________EXT_____________________  extension 3bits shifter
-    ___________sbbbbbbbbbbbbbbbbbbbb  signed length in 20 bits BYTES x (1 << (EXT x 2))
-    ___________s44443333222211110000  5 hex signed digits
-   
-   max = 0x000FFFFF << (2x7) = +/- 1M x 16k = +/- 16G
-*/
+    ___________s44443333222211110000  5 hex signed digits[1+20b] = FrameSize and Arc-R/W
+            <--SIZE_EXT_FMT0_MSB--->  R/W arc indexe leaves one byte
+        <---SIZE_EXT_OFF_FMT0_MSB-->  base addresses on 28bits 
+    <-->                              tells the loader to copy a graph section in RAM
+    
+   max = +/- 0x000FFFFF << (EXT x 2) 
 
-#define SIZE_EXT_OFF_FMT_MSB 27u /* 28    28 = offsets(4) + EXT(3) + sign(1) + size(20) */
-#define ADDR_OFFSET_FMT0_MSB 27u
-#define ADDR_OFFSET_FMT0_LSB 24u
-#define    SIZE_EXT_FMT0_MSB 23u /* 24    24 = EXT(3) + sign(1) + size(20) */
-#define   EXTENSION_FMT0_MSB 23u /*    */
-#define   EXTENSION_FMT0_LSB 21u /*  3 */
-#define SIGNED_SIZE_FMT0_MSB 20u /*       21 bits for sign(1) + size(20) */
-#define   SIZE_SIGN_FMT0_MSB 20u /*    */
-#define   SIZE_SIGN_FMT0_LSB 20u /*  1 */
-#define        SIZE_FMT0_MSB 19u /*    */
-#define        SIZE_FMT0_LSB  0u /* 20 */
-#define SIGNED_SIZE_FMT0_LSB  0u /*    */
-#define    SIZE_EXT_FMT0_LSB  0u /*    */
-#define SIZE_EXT_OFF_FMT_LSB  0u /*    */
+   EXT  Shift   Granul  range   
+   0    0       1       1MB     
+   1    2       4       4MB     
+   2    4       16      16MB
+   3    6       64      64MB
+   4    8       256     256MB
+   5    10      1K      1GB
+   6    14      16K     16GB    (TBD)
+   7    18      256K    256GB   (TBD)
+
+   max = (+/-)0x000FFFFF << (2xEXT) = +/-1M x (2<<EXT) 
+*/
+#define SIZE_EXT_OFF_FMT0_MSB 27u /*       28 = offsets(4) + EXT(3) + sign(1) + size(20) */
+#define  ADDR_OFFSET_FMT0_MSB 27u
+#define  ADDR_OFFSET_FMT0_LSB 24u /*  4    offsets */
+#define     SIZE_EXT_FMT0_MSB 23u /*       24 = EXT(3) + sign(1) + size(20) */
+         
+#define    EXTENSION_FMT0_MSB 23u /*    */
+#define    EXTENSION_FMT0_LSB 21u /*  3 */
+#define  SIGNED_SIZE_FMT0_MSB 20u /*       21 bits for sign(1) + size(20) */
+#define    SIZE_SIGN_FMT0_MSB 20u /*    */
+#define    SIZE_SIGN_FMT0_LSB 20u /*  1 */
+#define         SIZE_FMT0_MSB 19u /*    */
+#define         SIZE_FMT0_LSB  0u /* 20 */
+#define  SIGNED_SIZE_FMT0_LSB  0u /*    */
+
+#define     SIZE_EXT_FMT0_LSB  0u /*    */
+#define SIZE_EXT_OFF_FMT0_LSB  0u /*    */
+
+#define MAX_NB_MEMORY_OFFSET ((-1) + (1<<(ADDR_OFFSET_FMT0_MSB-ADDR_OFFSET_FMT0_LSB+1)))
+
+#define PACK2LIN(R,LL,I)                                            \
+    {   uint8_t *base;                                              \
+        uint8_t extend;                                             \
+        int32_t signed_base;                                        \
+                                                                    \
+        base = LL[RD(I,ADDR_OFFSET_FMT0)];                          \
+        signed_base = RD(I, SIGNED_SIZE_FMT0);                      \
+        signed_base = signed_base << (32-SIGNED_SIZE_FMT0_MSB);     \
+        signed_base = signed_base >> (32-SIGNED_SIZE_FMT0_MSB);     \
+        extend = (uint8_t)RD(I, EXTENSION_FMT0);                    \
+        signed_base <<= (extend << 1);                              \
+        R = (intptr_t)(&(base[signed_base]));                       \
+    }
+
 
 /*  WORD 0 - frame size --------------- */
 #define FRAMESZ_FMT0   0u          
-    /* frame size in bytes for one deinterleaved channel Byte-acurate up to 4MBytes         */
-    /* raw interleaved buffer size is framesize x nb channel, max = 4MB x nchan             */
-    /* in node manifests it gives the minimum input size (grain) before activating the node */
     /* A "frame" is the combination of several channels sampled at the same time            */
+    /* frame size in bytes, data interleaved or not                                         */
     /* A value =0 means the size is any or defined by the IO AL.                            */
+    /* in node manifests it gives the minimum input size (grain) before activating the node */
     /* For sensors delivering burst of data not isochronous, it gives the maximum           */
     /* framesize; same comment for the sampling rate.                                       */
     /* The frameSize is including the time-stamp field                                      */
+
     #define unused____FMT0_MSB  31u /*  8 reserved */
     #define unused____FMT0_LSB  24u 
     #define FRAMESIZE_FMT0_MSB  SIZE_EXT_FMT0_MSB
@@ -403,7 +441,7 @@ enum stream_processor_sub_arch_fpu
     #define   NCHANM1_FMT1_MSB   4u 
     #define   NCHANM1_FMT1_LSB   0u /* 5  nb channels-1 [1..32] */
 
-/*  WORD2 - sampling rate for IO_DOMAIN_AUDIO_IN and IO_DOMAIN_AUDIO_OUT */
+/*  WORD2 - sampling rate */
 #define SAMPLINGRATE_FMT2   2
     /*--------------- WORD 2 -------------*/
     #define      FS1D_FMT2_MSB  31u /* 32 IEEE-754, 0 means "asynchronous" or "any" */
@@ -486,7 +524,7 @@ enum stream_processor_sub_arch_fpu
             Command + nb arcs, preset 0..15, TAG 0..255
         -  (STREAM_RESET, ptr1, ptr2, ptr3); 
             ptr1 = instance pointer, memory banks
-            ptr2 = stream_al_services function address, followed by all the arc format
+            ptr2 = stream_services function address, followed by all the arc format
         -  (STREAM_SET_PARAMETER, ptr1, ptr2, ptr3); 
             ptr1 = instance
             ptr2 = byte pointer to parameters, depends on the TAG 
@@ -811,7 +849,7 @@ enum stream_processor_sub_arch_fpu
     //STREAM_READ_TIME (high-resolution timer), STREAM_READ_TIME_FROM_START, 
     //STREAM_TIME_DIFFERENCE, STREAM_TIME_CONVERSION,  
     // 
-    //STREAM_TEA,
+    //STREAM_TEAM
 
     /* From Android CHRE  https://source.android.com/docs/core/interaction/contexthub
     String/array utilities: memcmp, memcpy, memmove, memset, strlen
@@ -820,19 +858,19 @@ enum stream_processor_sub_arch_fpu
     Exponential/power functions: expf, log2f, powf, sqrtf
     Trigonometric/hyperbolic functions: sinf, cosf, tanf, asinf, acosf, atan2f, tanhf
     */
-    #define SERV_SQRT_Q15       15
-    #define SERV_SQRT_F32       16
-    #define SERV_LOG_Q15        17
-    #define SERV_LOG_F32        18
+    #define SERV_MATH_SQRT_Q15       15
+    #define SERV_MATH_SQRT_F32       16
+    #define SERV_MATH_LOG_Q15        17
+    #define SERV_MATH_LOG_F32        18
 
-    #define SERV_SINE_Q15       19
-    #define SERV_SINE_F32       20
-    #define SERV_COS_Q15        21
-    #define SERV_COS_F32        22
-    #define SERV_ATAN2_Q15      23
-    #define SERV_ATAN2_F32      24
-
-    #define SERV_SORT           3 
+    #define SERV_MATH_SINE_Q15       19
+    #define SERV_MATH_SINE_F32       20
+    #define SERV_MATH_COS_Q15        21
+    #define SERV_MATH_COS_F32        22
+    #define SERV_MATH_ATAN2_Q15      23
+    #define SERV_MATH_ATAN2_F32      24
+               
+    #define SERV_MATH_SORT           3 
 
 
 /* --------------------------------------------------------------------------- */
@@ -846,29 +884,29 @@ enum stream_processor_sub_arch_fpu
     */
     /* minimum service : IIRQ15/FP32, DFTQ15/FP32 */
             /* FUNCTION_SSRV */
-    #define SERV_CHECK_COPROCESSOR  1u   /* check for services() */
-    #define SERV_CHECK_END_COMP     2u   /* check completion for the caller */
-    #define SERV_DFT_Q15            9u   /* DFT/Goertzel windowing, module, dB */
-    #define SERV_DFT_F32            10u
-    #define SERV_CASCADE_DF1_Q15    3u   /* IIR filters, use SERV_CHECK_COPROCESSOR */
-    #define SERV_CASCADE_DF1_F32    4u         
+    #define SERV_DSP_CHECK_COPROCESSOR  1u   /* check for services() */
+    #define SERV_DSP_CHECK_END_COMP     2u   /* check completion for the caller */
+    #define SERV_DSP_DFT_Q15            9u   /* DFT/Goertzel windowing, module, dB */
+    #define SERV_DSP_DFT_F32            10u
+    #define SERV_DSP_CASCADE_DF1_Q15    3u   /* IIR filters, use SERV_CHECK_COPROCESSOR */
+    #define SERV_DSP_CASCADE_DF1_F32    4u         
 
             /* COMMAND_SSRV */
-    #define SERV_RUN                0u   /* run = default */
-    #define SERV_INIT               1u   /* */
-    #define SERV_WINDOW             2u    
-    #define SERV_WINDOW_DB          3u    
+    #define SERV_DSP_RUN                0u   /* run = default */
+    #define SERV_DSP_INIT               1u   /* */
+    #define SERV_DSP_WINDOW             2u    
+    #define SERV_DSP_WINDOW_DB          3u    
 
             /* OPTION_SSRV */
     #define SERV_WAIT_COMP          0u   /* tell to return when processing completed (default) */
     #define SERV_RETASAP            1u   /* return even when init/computation is not finished */
 
             /* FFT with tables rebuilded */
-    #define SERV_rFFT_Q15           5u   /* RFFT windowing, module, dB , use SERV_CHECK_COPROCESSOR */
-    #define SERV_rFFT_F32           6u
-                                       
-    #define SERV_cFFT_Q15           7u   /* cFFT windowing, module, dB */
-    #define SERV_cFFT_F32           8u
+    #define SERV_DSP_rFFT_Q15           5u   /* RFFT windowing, module, dB , use SERV_CHECK_COPROCESSOR */
+    #define SERV_DSP_rFFT_F32           6u
+                                   
+    #define SERV_DSP_cFFT_Q15           7u   /* cFFT windowing, module, dB */
+    #define SERV_DSP_cFFT_F32           8u
                                        
 
 
@@ -952,83 +990,11 @@ enum stream_processor_sub_arch_fpu
 
 
 
-//------------------------------------------------------------------------------------------------------
-/*  Time format - 64 bits
- * 
- *  140 years ~2^32 ~ 4.4 G = 0x1.0000.0000 seconds 
- *  1 year = 31.56 M seconds
- *  1 day = 86.400 seconds
- * 
- *  "stream_time64" 
- *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
- *  ____ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqq q32.28 [s]  140 Y + Q28 [s]
- *  systick increment for  1ms =  0x00041893 =  1ms x 2^28
- *  systick increment for 10ms =  0x0028F5C2 = 10ms x 2^28
- *
- *  140 years in ms = 4400G ms = 0x400.0000.0000 ms 42bits
- *  milliseconds from January 1st 1970 UTC (or internal AL reference)
- *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
- *  ______________________mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm ms 
- *
- *
- *  Local time in BINARY bit-fields : years/millisecond, WWW=day of the week 
- *  (0=Sunday, 1=Monday..)
- *      COVESA allowed formats : ['YYYY_MM_DD', 'DD_MM_YYYY', 'MM_DD_YYYY', 'YY_MM_DD', 'DD_MM_YY', 'MM_DD_YY']
- *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
- *  _________________________.YY.YY.YY.YY.MMM.DDDD.SSSSS.MM.MM.MM.WW
- * 
- */
-
-//typedef uint64_t stream_time64;
-#define   TYPE_T64_MSB 63u
-#define   TYPE_T64_LSB 61u
-#define SECOND_T64_MSB 60u
-#define SECOND_T64_LSB 29u
-#define  FRACT_T64_MSB 28u
-#define  FRACT_T64_LSB  0u
-
-/*
- * stream_time_seconds in 32bits : "stream_time32"
- *  FEDCBA9876543210FEDCBA9876543210
- *  ssssssssssssssssssssssssssssqqqq q28.4  [s] (8.5 years +/- 0.0625s)
- *  stream_time32 = (stream_time64 >> 24) 
- *
- * delta_stream_time_seconds in 32bits : "stream_time32_diff"
- *  FEDCBA9876543210FEDCBA9876543210
- *  sssssssssssssssssqqqqqqqqqqqqqqq q17.15 [s] (36h, +/- 30us)
- *  stream_time32_diff = (stream_time64 >> 13) 
-
- * ARC time-stamp in 32bits : "stream_timestamp32" 
- *  FEDCBA9876543210FEDCBA9876543210
- *  ssssssssssssssssssssqqqqqqqqqqqq q20.12 [s] (12 days, +/- 0.25ms)
- *  stream_time32_diff = (stream_time64 >> 10) 
- *
- */
-//typedef uint32_t stream_time32;
-#define   FORMAT_T32_MSB 31u
-#define   FORMAT_T32_LSB 30u
-#define     TIME_T32_MSB 29u
-#define     TIME_T32_LSB  0u
-
-/*
- *  stream_time_seconds in 16bits : "stream_time16"
- *  FEDCBA9876543210
- *  ssssssssssssqqqq q14.2   1 hour + 8mn +/- 0.0625s
- *
- *  FEDCBA9876543210
- *  stream_time_seconds differencein 16bits : "stream_time16diff"
- *  qqqqqqqqqqqqqqqq q15 [s] time difference +/- 15us
- */
-//typedef uint32_t stream_time16;
-#define     TIME_T16_MSB 15u
-#define     TIME_T16_LSB  0u
-
-
 /*================================ STREAM ARITHMETICS DATA/TYPE ====================================================*/
 /* types fit in 6bits, arrays start with 0, stream_bitsize_of_raw() is identical */
 
 
-#define STREAM_DATA_ARRAY 0u /* see stream_array: [0NNNTT00] 0, type, nb */
+#define STREAM_DATA_ARRAY 0u /* stream_array : [0NNNTT00] 0, type, nb */
 #define STREAM_S1         1u /* S, one signed bit, "0" = +1 */                           /* one bit per data */
 #define STREAM_U1         2u /* one bit unsigned, boolean */
 #define STREAM_S2         3u /* SX  */                                                   /* two bits per data */
@@ -1040,7 +1006,7 @@ enum stream_processor_sub_arch_fpu
 #define STREAM_FP4_E2M1   9u /* Seem  micro-float [8 .. 64] */
 #define STREAM_FP4_E3M0  10u /* Seee  [8 .. 512] */
 #define STREAM_S8        11u /* Sxxxxxxx  */                                             /* eight bits per data */
-#define STREAM_U8        12u /* xxxxxxxx  ASCII char, numbers.. */
+#define STREAM_U8        12u /* xxxxxxxx  ASCII char UTF-8, numbers.. */
 #define STREAM_Q7        13u /* Sxxxxxxx  arithmetic saturation */
 #define STREAM_CHAR      14u /* xxxxxxxx  */
 #define STREAM_FP8_E4M3  15u /* Seeeemmm  NV tiny-float  +/-[0, 0.015 .. 240]  */ 
@@ -1051,23 +1017,22 @@ enum stream_processor_sub_arch_fpu
 #define STREAM_FP16      20u /* Seeeeemm.mmmmmmmm  half-precision float */
 #define STREAM_BF16      21u /* Seeeeeeee.mmmmmmm  bfloat truncated FP32 = BFP16 = S E8 M7 */
 #define STREAM_Q23       22u /* Sxxxxxxx.xxxxxxxx.xxxxxxxx  24bits */                    /* 3 bytes per data */ 
-#define STREAM_S8_24     23u /* SSSSSSSS.xxxxxxxx.xxxxxxxx.xxxxxxxx  */                  /* 4 bytes per data, s8_24 */
+#define STREAM_S9_23     23u /* SSSSSSSS.Sxxxxxxx.xxxxxxxx.xxxxxxxx  */                  /* 4 bytes per data, s8_24 */
 #define STREAM_S32       24u /* one long word  */
 #define STREAM_U32       25u /* xxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx UTF-32, .. */
 #define STREAM_Q31       26u /* Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx  */
-#define STREAM_FP32      27u /* Seeeeeeee.mmmmmmm.mmmmmmmm.mmmmmmmm  FP32 = S E8 M23 */             
+#define STREAM_FP32      27u /* Seeeeeee.emmmmmmm.mmmmmmmm.mmmmmmmm  FP32 = S E8 M23 */             
 #define STREAM_CQ15      28u /* Sxxxxxxx.xxxxxxxx Sxxxxxxx.xxxxxxxx (I Q) */             
 #define STREAM_CFP16     29u /* Seeeeemm.mmmmmmmm Seeeeemm.mmmmmmmm (I Q) */             
 #define STREAM_S64       30u /* long long */                                             /* 8 bytes per data */
 #define STREAM_U64       31u /* unsigned  64 bits */
 #define STREAM_Q63       32u /* Sxxxxxxx.xxxxxx ....... xxxxx.xxxxxxxx  */
 #define STREAM_CQ31      33u /* Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx Sxxxx..*/
-#define STREAM_FP64      34u /* Seeeeeee.eeemmmmm.mmmmmmm ... double = S E11 M52 */
+#define STREAM_FP64      34u /* Seeeeeee.eeeemmmm.mmmmmmm ... double = S E11 M52 */
 #define STREAM_CFP32     35u /* Seeeeeee.mmmmmmmm.mmmmmmmm.mmmmmmmm Seee.. (I Q)  */
-#define STREAM_FP128     36u /* Seeeeeee.eeeeeeee.mmmmmmm ... quadruple precision */     /* 16 bytes per data */
+#define STREAM_FP128     36u /* Seeeeeee.eeeeeeee.mmmmmmm ... quadruple S E15 M112 */    /* 16 bytes per data */
 #define STREAM_CFP64     37u /* fp64 fp64 (I Q)  */
-#define STREAM_FP256     38u /* Seeeeeee.eeeeeeee.eeeeemm ... octuple precision  */      /* 32 bytes per data */
-
+#define STREAM_FP256     38u /* Seeeeeee.eeeeeeee.eeeeemm ... octuple  S E19 M236 */     /* 32 bytes per data */
 #define STREAM_WGS84     39u /* <--LATITUDE 32B--><--LONGITUDE 32B-->  lat="52.518611" 0x4252130f   lon="13.376111" 0x4156048d - dual IEEE754 */   
 #define STREAM_HEXBINARY 40u /* UTF-8 lower case hexadecimal byte stream */
 #define STREAM_BASE64    41u /* RFC-2045 base64 for xsd:base64Binary XML data */
@@ -1075,16 +1040,6 @@ enum stream_processor_sub_arch_fpu
 #define STREAM_STRING16  43u /* UTF-16 string of char terminated by 0 */
 
 #define LAST_RAW_TYPE    64u /* coded on 6bits RAW_FMT0_LSB */
-                             /*   |123456789|123456789|123456789|123456789|123456789|123456789|123 */
-
-
-// STREAM_TIME16    39 /* ssssssssssssqqqq q14.2   1 hour + 8mn +/- 0.0625 */
-// STREAM_TIME16D   40 /* qqqqqqqqqqqqqqqq q15 [s] time difference +/- 15us */
-// STREAM_TIME32    41 /* ssssssssssssssssssssssssssssqqqq q28.4  [s] (8.5 years +/- 0.0625s) */ 
-// STREAM_TIME32D   42 /* ssssssssssssssssqqqqqqqqqqqqqqqq q17.15 [s] (36h, +/- 30us) time difference */   
-// STREAM_TIME64    43 /* 0000ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqq q32.28 [s] 140 Y +Q28 [s] */   
-// STREAM_TIME64MS  44 /* 0010000000000000000000mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm u42 [ms] 140 years */   
-// STREAM_TIME64ISO 45 /* 010..YY..YY..YY..YY..MM..MM..DD..DD..SS..SS.....offs..MM..MM..MM ISO8601 signed offset 2024-05-04T21:12:02+07:00  */   
 
 /* ========================== MINIFLOAT 8bits ======================================*/
 
@@ -1134,6 +1089,22 @@ enum stream_processor_sub_arch_fpu
 // 1 1110 …	?128	?144	?160	?176	?192	?208	?224	?240
 // 1 1111 …	?Inf	NaN	NaN	NaN	NaN	NaN	NaN	NaN
 
+                       /* |123456789|123456789|123456789|123456789|123456789|123456789|123 */
+// STREAM_TIME16    39 /* ssssssssssssqqqq q14.2   1 hour + 8mn +/- 0.0625 */
+// STREAM_TIME16D   40 /* qqqqqqqqqqqqqqqq q15 [s] time difference +/- 15us */
+// STREAM_TIME32    41 /* ssssssssssssssssssssssssssssqqqq q28.4  [s] (8.5 years +/- 0.0625s) */ 
+// STREAM_TIME32D   42 /* ssssssssssssssssqqqqqqqqqqqqqqqq q17.15 [s] (36h, +/- 30us) time difference */   
+// STREAM_TIME64    43 /* 0000ssssssssssssssssssssssssssssssssqqqqqqqqqqqqqqqqqqqqqqqqqqqq q32.28 [s] 140 Y +Q28 [s] */   
+// STREAM_TIME64MS  44 /* 0010000000000000000000mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm u42 [ms] 140 years */   
+// 
+// STREAM_TIME64ISO 45 /* 010..YY..YY..YY..YY..MM..MM..DD..DD..SS..SS.....offs..MM..MM..MM ISO8601 signed offset 2024-05-04T21:12:02+07:00  */   
+// *  Local time in BINARY bit-fields : years/millisecond, WWW=day of the week 
+// *  (0=Sunday, 1=Monday..)
+// *      COVESA allowed formats : ['YYYY_MM_DD', 'DD_MM_YYYY', 'MM_DD_YYYY', 'YY_MM_DD', 'DD_MM_YY', 'MM_DD_YY']
+// *  FEDCBA987654321 FEDCBA987654321 FEDCBA987654321 FEDCBA9876543210
+// *  _________________________.YY.YY.YY.YY.MMM.DDDD.SSSSS.MM.MM.MM.WW
+
+
 /*============================ BIT-FIELDS MANIPULATIONS ============================*/
 /*
  *  stream constants / Macros.
@@ -1157,7 +1128,7 @@ enum stream_processor_sub_arch_fpu
 #define ABS(a) (((a)>0)? (a):-(a))
 
 #define MAXINT32 0x7FFFFFFFL
-#define MEMCPY(dst,src,n) {uint32_t i; for(i=0;i<(n);i++){((dst)[i])=((src)[i]);}}
+#define MEMCPY(dst,src,n) {uint32_t imcpy; for(imcpy=0;imcpy<(n);imcpy++){((dst)[imcpy])=((src)[imcpy]);}}
 #define MEMSET(dst,c,n) {uint32_t i; uint8_t *pt8=(uint8_t *)(dst); for(i=0;i<(n);i++){(pt8[i])=(c);} }
 
 

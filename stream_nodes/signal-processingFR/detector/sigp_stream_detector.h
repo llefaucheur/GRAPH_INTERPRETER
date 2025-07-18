@@ -96,7 +96,7 @@ typedef struct
 
 typedef struct 
 {
-    stream_al_services *services;
+    stream_services *services;
     detector_parameters config; /* 8 bytes */
     int32_t z1;    /* memory of the high-pass filter (recursive part) */
     int32_t z2;    /* memory of the high-pass filter (direct part) */

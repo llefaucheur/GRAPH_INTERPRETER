@@ -71,7 +71,7 @@
         - Low data storage overhead for minimum bits per audio sample.
 */
 
-#include "platform.h"
+#include "presets.h"
 #ifdef CODE_SIGP_STREAM_COMPRESSOR
 
 #include <stdio.h>
@@ -135,11 +135,12 @@ void encode_imadpcm(uint32_t *state, int16_t* input, uint32_t numSamples, uint8_
     int16_t bufferstep;		/* toggle between outputbuffer/output */
 
 	// Note: Initial states are 0 which gives step = 7
-    valpred = state[VALPREV];
-    index = state[INDEX];
+    valpred = (int16_t)state[VALPREV];
+    index = (int16_t)state[INDEX];
     step = stepsizeTable[index];
     
     bufferstep = 1;
+    outputbuffer = 0;
 
     for ( ; numSamples > 0 ; numSamples-- ) 
     {
@@ -192,7 +193,7 @@ void encode_imadpcm(uint32_t *state, int16_t* input, uint32_t numSamples, uint8_
 	    if ( bufferstep ) {
 	        outputbuffer = delta & 0x0f;
 	    } else {
-	        *output++ = ((delta << 4) & 0xf0) | outputbuffer;
+	        *output++ = (uint8_t)(((delta << 4) & 0xf0) | outputbuffer);
 	    }
 	    bufferstep = !bufferstep;
     }

@@ -56,7 +56,6 @@
 
 #define MAXPARAMETERSIZE ((int64_t)1e4)  /* in word32 */
 
-#define MAX_NBOPTIONS_SETS 8
 #define MAX_NBOPTIONS 256 
 
 #define MAX_PROC_MEMBANK 63     /* number of physical memory banks of the processor, for the graph processing */
@@ -69,6 +68,8 @@
 #define MAX_POSSIBLE_NB_MEMORY_OFFSET 8 /* long_offset[] size */
 
 #define SECTION_END "end"
+
+#define MAX_VID_FOR_MALLOC 254
 /*----------------------------------------------------------------------- IO MANIFESTS ------------- */
 #define io_commander0_servant1      "io_commander0_servant1"
 #define io_direction_rx0tx1         "io_direction_rx0tx1"
@@ -170,7 +171,7 @@
 #define node_mem                        "node_mem "
 #define node_mem_alloc                  "node_mem_alloc"
 #define node_mem_nbchan                 "node_mem_nbchan"
-#define node_mem_sampling_rate          "node_mem_sampling_rate"
+#define node_mem_frame_size_mono        "node_mem_frame_size_mono"
 #define node_mem_frame_size             "node_mem_frame_size"
 #define node_mem_alignement             "node_mem_alignement"
 #define node_mem_type                   "node_mem_type"
@@ -196,8 +197,8 @@
 /*----------------------------------------------------------------------- GRAPH HEADER ------------- */
 #define subgraph                        "subgraph"
 #define graph_file_path                 "graph_file_path"
-#define graph_location                  "graph_location"
-#define graph_location_offset           "graph_location_offset"
+#define graph_locations                 "graph_locations"
+//#define graph_location_offset           "graph_location_offset"
 #define graph_memory_bank               "graph_memory_bank"
 #define debug_script_fields             "debug_script_fields"
 #define scheduler_return                "scheduler_return"
@@ -205,7 +206,7 @@
 #define include                         "include"
 #define memory_mapping                  "memory_mapping"
 #define top_trace_node                  "top_trace_node"
-#define stream_io_new                   "stream_io"
+#define stream_io_graph                 "stream_io_graph"
 #define stream_io_format                "stream_io_format"
 #define stream_io_hwid                  "stream_io_hwid"
 #define stream_io_setting               "stream_io_setting"
@@ -221,10 +222,11 @@
 #define format_frame_length             "format_frame_length"
 #define format_interleaving             "format_interleaving"
 #define format_nbchan                   "format_nbchan"
+#define format_sampling_rate            "format_sampling_rate"
+#define format_sampling_period          "format_sampling_period "
 #define format_time_stamp               "format_time_stamp"
 #define format_sdomain                  "format_sdomain"
 #define format_domain                   "format_domain"
-#define format_sampling_rate            "format_sampling_rate"
 #define format_audio_mapping            "format_audio_mapping"
 #define format_motion_mapping           "format_motion_mapping"
 #define format_2d_height                "format_2d_height"

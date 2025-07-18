@@ -56,6 +56,19 @@
 //  2 f32: 0.25  0.1 
 //  4  i8; 1     1     3     1     ; move arc1-right to arc3 right no mixing
 //  2 f32: 0.25  0.1 
+//
+//        1  u8;  2                   ; nb lines
+//        1  u8;  0                   ; index of the arc used for its frame size as time reference
+//        1  u8;  1                   ; accuracy level
+//        1  u8;  0                   ; 4 bytes alignment padding
+//;
+//;   Left input direct to Left output (Fifo0) no mixer
+//        4  u8;  0 0 1 0 -1 -1 -1 0  ; SRC[arc, chan]  DST[arc, chan] ififo-mix1 imix2 imix3 padding
+//        4 f32;  1.0 0.0 0.0 1.0     ; Gmix1 Gmix2 Gmix3 GmixOut
+//;
+//;   Left+Right fifo input, mixed+gainx2 to Right output (Fifo1)
+//        4  u8;  0 1 1 1  0  1 -1 0  ; SRC[arc, chan]  DST[arc, chan] ififo-mix1 imix2 imix3 padding
+//        4 f32;  0.5 0.5 0.0 2.0     ; Gmix1 Gmix2 Gmix3 GmixOut
 
 //typedef struct
 //{
@@ -77,9 +90,13 @@
 */
 typedef struct
 {
+    // per channel
     uint32_t frame_size;
     uint32_t raw_stride;
-    float_t input_time;
+
+    // global
+    float_t time_period;                // 
+    float_t input_time;                 // 
     float_t next_xxput_time;            // 
     uint8_t raw_format_conversion;      // switch case of th conversion
     uint8_t time_stamp_type;            // 0 or STREAM_TIME(D)xx
@@ -100,7 +117,7 @@ typedef struct
     uint32_t raw_stride;
     uint8_t raw_format;
 
-    stream_al_services *stream_entry;
+    stream_services *stream_entry;
 
     uint8_t hqos_in;                                // low-latency arc indexes, >128 means not applicable
     uint8_t hqos_out;
@@ -127,58 +144,4 @@ extern void arm_stream_router_process (arm_stream_router_instance *instance, str
 
 #ifdef __cplusplus
 }
-#endif
- 
-#if 0
-#include <stdio.h>
-#include <stdint.h>
-#include <math.h>
-
-float minifloat_to_float(uint8_t mf) {
-    // Extract bits
-    int sign = (mf >> 7) & 0x01;
-    int exp = (mf >> 3) & 0x0F;
-    int mantissa = mf & 0x07; // 3 bits mantissa
-
-    float value;
-    int bias = 7; // Exponent bias = 2^(4-1) - 1
-
-    if (exp == 0) {
-        if (mantissa == 0) {
-            // Zero
-            value = 0.0f;
-        } else {
-            // Denormalized number
-            float frac = mantissa / 8.0f; // 3 mantissa bits
-            value = powf(2, 1 - bias) * frac;
-        }
-    } else if (exp == 0x0F) {
-        // Special cases (Inf or NaN)
-        if (mantissa == 0) {
-            value = INFINITY;
-        } else {
-            value = NAN;
-        }
-    } else {
-        // Normalized number
-        float frac = 1 + (mantissa / 8.0f);
-        value = powf(2, exp - bias) * frac;
-    }
-
-    // Apply sign
-    if (sign)
-        value = -value;
-
-    return value;
-}
-
-int main() {
-    // Example: Test with minifloat 0x4B
-    uint8_t minifloat = 0x4B; // 0b01001011 example
-    float result = minifloat_to_float(minifloat);
-    printf("Minifloat 0x%02X translates to float: %f\n", minifloat, result);
-
-    return 0;
-}
-
 #endif

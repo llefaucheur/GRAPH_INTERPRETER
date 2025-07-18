@@ -35,6 +35,57 @@
 uint8_t globalEndFile;
 uint8_t FoundEndSection;
  
+/*
+* 
+*/
+void decode_memreq_type(char *type, uint32_t *itype)
+{
+    uint32_t i, d;
+    
+    for (i = 0; i < strlen(type); i++) type[i] = tolower(type[i]);      /* change to lower case */
+
+
+    d = 0;
+    if (0==strncmp(type, "arc"   , strlen("arc"   ))) {d=1; *itype = 0; }
+    if (0==strncmp(type, "maxin" , strlen("maxin" ))) {d=1; *itype = 0; }
+    if (0==strncmp(type, "maxout", strlen("maxout"))) {d=1; *itype = 0; }
+    if (0==strncmp(type, "maxall", strlen("maxall"))) {d=1; *itype = 0; }
+    if (0==strncmp(type, "sumin" , strlen("sumin" ))) {d=1; *itype = 0; }
+    if (0==strncmp(type, "sumout", strlen("sumout"))) {d=1; *itype = 0; }
+    if (0==strncmp(type, "sumall", strlen("sumall"))) {d=1; *itype = 0; }
+
+    if (d == 0) {
+        fprintf(stderr, "\n\n decode_memreq_type error %s \n\n", type); exit (-6); 
+    }
+}
+
+/*
+* 
+*/
+void convert_to_mks_unit(char *unit, float *fdata)
+{
+    uint32_t i, d;
+    
+    for (i = 0; i < strlen(unit); i++) unit[i] = tolower(unit[i]);      /* change to lower case */
+
+    d = 0;
+    if (0==strncmp(unit, "hert", 4)) {d=1;   *fdata = *fdata; }       
+    if (0==strncmp(unit, "hz"  , 2)) {d=1;   *fdata = *fdata; }                
+    if (0==strncmp(unit, "minu", 4)) {d=1;   *fdata = 1 / (*fdata / 60); }
+    if (0==strncmp(unit, "seco", 4)) {d=1;   *fdata = 1 / (*fdata); } 
+    if (0==strncmp(unit, "hour", 4)) {d=1;   *fdata = 1 / (*fdata / 3600); }
+    if (0==strncmp(unit, "day" , 3)) {d=1;   *fdata = 1 / (*fdata / (24 * 3600)); }
+    if (0==strncmp(unit, "mher", 4)) {d=1;   *fdata = 1000 * (*fdata); }
+    if (0==strncmp(unit, "mhz",  3)) {d=1;   *fdata = 1000 * (*fdata); }
+
+    if (d == 0) {
+        fprintf(stderr, "\n\n convert_to_mks_unit error %s \n\n", unit); exit (-6); 
+    }
+}
+
+/* 
+*   size of RAW data formats
+*/ 
 int stream_bitsize_of_raw(uint8_t raw)
 {
     switch (raw)
@@ -105,6 +156,7 @@ int stream_bitsize_of_raw(uint8_t raw)
 //    arc->settings[2] = 0; 
 //}
 
+
 /**
   @brief            MALLOC with VIDs
   @param[in/out]    
@@ -115,8 +167,8 @@ int stream_bitsize_of_raw(uint8_t raw)
   parse the membank
 
  */
-int vid_malloc (uint32_t VID, uintptr_t size, uint32_t alignment, 
-                uint32_t *pack27b, int working,       
+int vid_malloc (uint32_t VID, uint64_t size, uint32_t alignment, 
+                uint32_t *packxxb, int working,       
                 char *comments, 
                 struct stream_platform_manifest *platform,       
                 struct stream_graph_linkedlist *graph) 
@@ -130,9 +182,9 @@ int vid_malloc (uint32_t VID, uintptr_t size, uint32_t alignment,
         increment its ptalloc_static with the corresponding alignment
     */
 
-    for (found = ibank = 0; ibank < platform->nbMemoryBank_detailed; ibank++)
+    for (found = ibank = 0; ibank < platform->nbMemoryBank_shared_and_private; ibank++)
     {
-        if (platform->membank[ibank].virtualID == VID)
+        if (platform->membank[ibank].offsetID == VID)
         {   found = 1;
             offsetID = platform->membank[ibank].offsetID;
             offset = (uint32_t)(platform->membank[ibank].ptalloc_static);
@@ -145,8 +197,8 @@ int vid_malloc (uint32_t VID, uintptr_t size, uint32_t alignment,
         exit(-5);
     }
 
-    sprintf(tmpstring, " OFF %d BASE 0x%04X PT 0x%04X MAXW 0x%04X SIZE_bytes %04X", 
-        offsetID, offset, platform->membank[ibank].ptalloc_static, platform->membank[ibank].max_working_booking, size);
+    sprintf(tmpstring, "OFFSET %d PTstatic 0x%04llX MAXWorking 0x%04llX Nbytes %04llX", 
+        offsetID, platform->membank[ibank].ptalloc_static, platform->membank[ibank].max_working_booking, size);
 
     /* no buffer alignment on Bytes and Word16 */
     if (alignment < MEM_REQ_4BYTES_ALIGNMENT)
@@ -158,9 +210,9 @@ int vid_malloc (uint32_t VID, uintptr_t size, uint32_t alignment,
     alignmask =  ~((1u << (2)) -1u);
     size = (intptr_t)((uint32_t)(size + 3u) & alignmask);
      
-    *pack27b = 0;
-    ST(*pack27b, DATAOFF_ARCW0, offsetID);
-    ST(*pack27b, BUFFBASE_ARCW0, offset);   /* offset is in BYTES !! @@ missing sign and extension*/
+    *packxxb = 0;
+    ST(*packxxb, DATAOFF_ARCW0, offsetID);
+    ST(*packxxb, BUFFBASE_ARCW0, offset);   /* offset is in BYTES !! @@ missing sign and extension*/
 
     if (working == MEM_TYPE_WORKING)
     {   if (size > platform->membank[ibank].max_working_booking)
@@ -171,11 +223,12 @@ int vid_malloc (uint32_t VID, uintptr_t size, uint32_t alignment,
     {   
         platform->membank[ibank].ptalloc_static += size;    /* next malloc is WORD32 aligned */
     }
+
     
     if (platform->membank[ibank].ptalloc_static +
         platform->membank[ibank].max_working_booking > 
         platform->membank[ibank].size)
-    {   printf ("\n vid_malloc error overflow %d > %d \n", 
+    {   printf ("\n vid_malloc error overflow %lld > %lld \n", 
         platform->membank[ibank].ptalloc_static +
         platform->membank[ibank].max_working_booking, platform->membank[ibank].size );/* check overflow */
         exit(-7);
@@ -427,9 +480,7 @@ int search_word(char line[], char word[])
  */
 
 /* ----------------------------------------------------------------------
-    options sets : { index  list } { index  list } 
- 
-    when index == 0 it means "any", the list can be empty, the default value is not changed from reset   
+    options sets : { index  list/range } 
  
     when index > 0 the list gives the allowed values the scheduler can select
         The Index tells the default "value" to take at reset time and to put in the graph 
@@ -450,55 +501,47 @@ int search_word(char line[], char word[])
 
 int fields_options_extract(char **pt_line, struct options *opt)
 {
-    int i, iBrace, nBrace, option_index, forScanf;
+    int option_index, forScanf;
     char *p;
-    int bracePositions[MAX_NBOPTIONS_SETS * 2]; // open and close braces
     float A, B, C;
 
     p = *pt_line;
-
-    for (iBrace = i = 0; i < NBCHAR_LINE; i++)
-    {   if (*p == ';' || *p == '\n')  break;
-        if (*p == '{')  
-        {   bracePositions[iBrace++] = i;
-        }
-        p++;
+    p = strchr(p,'{');
+    if (p == 0) {
+        fprintf(stderr, "\n\n no option %s \n\n", *pt_line); exit (-6); 
     }
-
-    nBrace = iBrace;
-    if (nBrace == 0) return 1;  /* nothing */
 
 #define NON_BLKSPACE()  {int i; for(i=0;i<NBCHAR_LINE;i++){if(*p != ' ') break; p++;}}  /* now p points to the start of data */ 
 #define BLKSPACE() {int i; for(i=0;i<NBCHAR_LINE;i++){if(*p == '}') break; if(*p == ' ') break; p++;}} /* now p points to the end of data */ 
 
-    /* loop on option sets */
-    for (opt->nb_option = iBrace = 0; iBrace < nBrace; iBrace ++, opt->nb_option ++)
-    {
-        p = *pt_line;
-        p = p + bracePositions[iBrace++] + 1;       /* p { x   idx */ 
+     p++;       /* p { x   idx */ 
 
-        NON_BLKSPACE()  
-        forScanf = sscanf(p, "%d", &option_index);  BLKSPACE() NON_BLKSPACE()   
-        opt->default_index[opt->nb_option] = option_index;
+     NON_BLKSPACE()  
+     forScanf = sscanf(p, "%d", &option_index);  BLKSPACE() NON_BLKSPACE()   
+     opt->default_index = option_index; 
 
-        if (option_index < 0)   /* is it an option range ? */
-        {   
-            forScanf = sscanf(p, "%f", &A);    BLKSPACE() NON_BLKSPACE()   
-            forScanf = sscanf(p, "%f", &B);    BLKSPACE() NON_BLKSPACE()   
-            forScanf = sscanf(p, "%f", &C);    BLKSPACE() NON_BLKSPACE()   
-            opt->optionRange[opt->nb_option][0] = A;
-            opt->optionRange[opt->nb_option][1] = B;
-            opt->optionRange[opt->nb_option][2] = C;
-        }
+     if (option_index < 0)   /* is it an option range ? */
+     {   
+         forScanf = sscanf(p, "%f", &A);    BLKSPACE() NON_BLKSPACE()   
+         forScanf = sscanf(p, "%f", &B);    BLKSPACE() NON_BLKSPACE()   
+         forScanf = sscanf(p, "%f", &C);    BLKSPACE() NON_BLKSPACE()   
+         opt->optionRange[0] = A;
+         opt->optionRange[1] = B;
+         opt->optionRange[2] = C;
+     }
 
-        if (option_index > 0)       /* is it an option list ? */
-        {   do {   
-            forScanf = sscanf(p, "%f", &A);    BLKSPACE() NON_BLKSPACE()   
-            
-            opt->optionList[opt->nb_option][opt->nbElementsInList[opt->nb_option]] = A;
-            opt->nbElementsInList[opt->nb_option] ++;
-            } while (*p != '}');
-        }
+     if (option_index > 0)       /* is it an option list ? */
+     {  
+        do {   
+         forScanf = sscanf(p, "%f", &A);    BLKSPACE() NON_BLKSPACE()   
+         
+         opt->optionList[opt->nbElementsInList] = A;
+         opt->nbElementsInList ++;
+         } while (*p != '}');
+     }
+
+    if (option_index == 0) {
+        fprintf(stderr, "\n\n option index error %s \n\n", *pt_line); exit (-6); 
     }
 
     jump2next_valid_line (pt_line);
@@ -524,10 +567,12 @@ int fields_options_extract(char **pt_line, struct options *opt)
 int fields_extract(char **pt_line, char *types,  ...)
 {
     char *ptstart, *ptstart0, S[200], *vaS;
-    int ifield, I, *vaI, nchar, n, nfields;
+    int ifield, nchar, n, nfields;
     long IL,*vaIL;
+    int64_t ILL,*vaILL;
     va_list vl;
     float F, *vaF;
+    double FL, *vaFL;
 #define Characters 'c'
 #define CHARACTERS 'C'
 #define Float 'f'
@@ -537,6 +582,7 @@ int fields_extract(char **pt_line, char *types,  ...)
 #define Hexadecimal 'h'
 #define HEXADECIMAL 'H'
 
+    globalEndFile = 0;
     va_start(vl,types);
 
     if (0 == strncmp (*pt_line,SECTION_END,strlen(SECTION_END)))
@@ -569,35 +615,39 @@ int fields_extract(char **pt_line, char *types,  ...)
                 break;
 
             case Float:
-            case FLOAT:
                 n = sscanf (ptstart0,"%f",&F);
                 vaF = va_arg (vl,float *);
                 *vaF = F;
                 break;
+            case FLOAT:
+                n = sscanf (ptstart0,"%lf",&FL);
+                vaFL = va_arg (vl,double *);
+                *vaFL = FL;
+                break;
 
             default:
             case Integer:
-                n = sscanf (ptstart0,"%d",&I);
-                vaI = va_arg (vl,int *);
-                *vaI = I;
+                n = sscanf (ptstart0,"%d",&IL);
+                vaIL = va_arg (vl,int32_t *);
+                *vaIL = IL;
                 break;
             case INTEGER:
-                n = sscanf (ptstart0,"%ld",&IL);
-                vaIL = va_arg (vl,long *);
-                *vaIL = IL;
+                n = sscanf (ptstart0,"%lld",&ILL);
+                vaILL = va_arg (vl,int64_t *);
+                *vaILL = ILL;
                 break;
 
             case Hexadecimal:
                 n = sscanf (ptstart0,"%s",S);
-                n = sscanf(&(S[1]),"%X",&I); /* remove the 'h' */
-                vaI = va_arg (vl,int *);
-                *vaI = I;
+                n = sscanf(&(S[1]),"%X",&IL); /* remove the 'h' */
+                vaIL = va_arg (vl,int32_t *);
+                *vaIL = IL;
                 break;
             case HEXADECIMAL:
                 n = sscanf (ptstart0,"%s",S);
-                n = sscanf(&(S[1]),"%lX",&IL); 
-                vaIL = va_arg (vl,long *);
-                *vaIL = IL;
+                n = sscanf(&(S[1]),"%llX",&ILL); 
+                vaILL = va_arg (vl,int64_t *);
+                *vaILL = ILL;
                 break;
         }
 

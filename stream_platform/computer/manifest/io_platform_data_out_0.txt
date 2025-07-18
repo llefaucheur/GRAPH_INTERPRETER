@@ -2,11 +2,15 @@
 ; Manifest of generic data_out (to the application)
 ; ------------------------------------------------------------------------------------------------------------
                                                                        
-io_platform_data_out_0 ; name for the tools                            
-data_out               ; domain name,   no specific field
-
-io_direction_rx0tx1 1
-
-io_frame_length        {32}
+    io_platform_data_out_0      ; name for the tools                            
+    general                     ; domain name,   no specific field
+    
+    io_direction_rx0tx1     1
+    
+    io_frame_length     {2 8 40 64}         ; default = 40Bytes = 5 stereo samples (5x2x4)
+    io_nb_channels      {2 1 2 3 4}         ; stereo default
+    io_raw_format       {1 i32 f32}         ; float / int32
+    
+    io_sampling_rate Hz {2 16e3 44.1e3 48000}; 44.1kHz = default
 
     end

@@ -38,8 +38,6 @@
 //#include "../../stream_types.h"  
 
 
-#ifdef STREAM_PLATFORM_SERVICES 
-
     /* with MVE assembly or coprocessor acceleration */
     /* --------------------------------------------- */
     typedef int16_t q15_t;
@@ -53,53 +51,8 @@
       const q15_t *pCoeffs;          /**< Points to the array of coefficients.  The array is of length 5*numStages. */
             int8_t numStages;        /**< number of 2nd order stages in the filter.  Overall order is 2*numStages. */
             int8_t postShift;        /**< Additional shift, in bits, applied to each output sample. */
-    } Computer_arm_biquad_casd_df1_inst_q15; 
+    } platform_arm_biquad_cascade_df1_inst_q15; 
   
- #else
-    /* use CMSIS-DSP plain software  */
-    /* ----------------------------- */
-#include "filtering_functions.h"
-    ///**
-    // * @brief Instance structure for the Q15 Biquad cascade filter.
-    // */
-    //typedef struct
-    //{
-    //        q15_t *pState;           /**< Points to the array of state coefficients.  The array is of length 4*numStages. */
-    //  const q15_t *pCoeffs;          /**< Points to the array of coefficients.  The array is of length 5*numStages. */
-    //        int8_t numStages;        /**< number of 2nd order stages in the filter.  Overall order is 2*numStages. */
-    //        int8_t postShift;        /**< Additional shift, in bits, applied to each output sample. */
-    //} arm_biquad_casd_df1_inst_q15;
-
-
-    ///**
-    // * @brief Processing function for the Q15 Biquad cascade filter.
-    // * @param[in]  S          points to an instance of the Q15 Biquad cascade structure.
-    // * @param[in]  pSrc       points to the block of input data.
-    // * @param[out] pDst       points to the block of output data.
-    // * @param[in]  blockSize  number of samples to process.
-    // */
-    //extern void stream_filter_arm_biquad_cascade_df1_q15(
-    //const arm_biquad_casd_df1_inst_q15 * S,
-    //const q15_t * pSrc,
-    //      q15_t * pDst,
-    //      uint32_t blockSize);
-
-    ///**
-    // * @brief  Initialization function for the Q15 Biquad cascade filter.
-    // * @param[in,out] S          points to an instance of the Q15 Biquad cascade structure.
-    // * @param[in]     numStages  number of 2nd order stages in the filter.
-    // * @param[in]     pCoeffs    points to the filter coefficients.
-    // * @param[in]     pState     points to the state buffer.
-    // * @param[in]     postShift  Shift to be applied to the output. Varies according to the coefficients format
-    // */
-    //extern void stream_filter_arm_biquad_cascade_df1_init_q15(
-    //      arm_biquad_casd_df1_inst_q15 * S,
-    //      uint8_t numStages,
-    //const q15_t * pCoeffs,
-    //      q15_t * pState,
-    //      int8_t postShift);
-#endif
-
 /* ----------------------------- */
 
 #define MAX_NB_BIQUAD_Q15 2
@@ -111,28 +64,20 @@
     a1 and a2 have the opposite sign given by Matlab
 */
 
-//typedef struct
-//{   int8_t numStages;        
-//    q15_t  coefs[MAX_NB_BIQUAD_Q15*6];        
-//    int8_t postShift;        
-//} arm_biquad_casd_df1_q15_preset;
-
 
 typedef struct
-{   q15_t coefs[MAX_NB_BIQUAD_Q15*6];
-    q15_t state[MAX_NB_BIQUAD_Q15*4];    
+{   
+    platform_arm_biquad_cascade_df1_inst_q15 biquad_cascade_df1_inst_q15;
 
-#ifdef STREAM_PLATFORM_SERVICES 
-    Computer_arm_biquad_casd_df1_inst_q15 biquad_casd_df1_inst_q15;
-#else
-    arm_biquad_casd_df1_inst_q15 biquad_casd_df1_inst_q15;
-#endif
+    q15_t coefs[MAX_NB_BIQUAD_Q15*6];
+    q15_t state[MAX_NB_BIQUAD_Q15*4];        
+
 } arm_filter_memory;
 
 
 typedef struct
 {   uint32_t iir_service;
-    stream_al_services *services;
+    stream_services *services;
     arm_filter_memory *TCM;
 } arm_filter_instance;
 

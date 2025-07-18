@@ -31,7 +31,7 @@
  * 
  */
 
-#include "platform.h"
+#include "presets.h"
 #ifdef CODE_ARM_STREAM_FILTER2D
 
 #ifdef __cplusplus
@@ -158,7 +158,7 @@ void arm_stream_filter2D (int32_t command, stream_handle_t instance, stream_xdmb
                     break;
             }
 
-            pinstance->services = (stream_al_services *)data;
+            pinstance->services = (stream_services *)data;
             break;
         }       
 

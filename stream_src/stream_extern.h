@@ -32,27 +32,25 @@
  extern "C" {
 #endif
 
-extern p_stream_node node_entry_points[NB_NODE_ENTRY_POINTS];
+extern p_stream_node node_entry_points[];
 
 /* entry point from the application  */
-extern void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, void *data, uint32_t size);
+extern void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uintptr_t ptr1, uintptr_t ptr2);
 
 /* entry point from the device drivers */
 extern void arm_stream_io_ack (uint8_t io_al_idx, void *data,  uint32_t size);
 
 /* entry point from the computing nodes */
-extern void arm_stream_services (uint32_t service_command, void *ptr1, void *ptr2, void *ptr3, uint32_t n);
+extern void arm_stream_services (uint32_t service_command, uintptr_t ptr1, uintptr_t ptr2, uintptr_t ptr3, uintptr_t n);
 
 
 /* ---- REFERENCES --------------------------------------------*/
 
 extern int32_t stream_bitsize_of_raw(uint8_t raw);
-extern void stream_scan_graph (arm_stream_instance_t *stream_instance, int8_t reset_option, uint32_t *data);
-extern void * pack2linaddr_ptr(uint8_t **long_offset, uint32_t x, uint32_t unit);
 
-/* ---- PLATFORM SERVICES --------------------------------------------*/
-extern uint32_t platform_lin2pack (uint32_t x);
-extern void * platform_pack2linaddr_ptr(uint32_t data);
+extern void stream_scan_graph (arm_stream_instance_t *stream_instance, int8_t command, uintptr_t data);
+
+extern void * pack2linaddr_ptr(uint32_t data, uint8_t **long_offset);
 
 #ifdef __cplusplus
 }

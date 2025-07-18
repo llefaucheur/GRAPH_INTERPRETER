@@ -27,7 +27,7 @@
 #ifdef __cplusplus
  extern "C" {
 #endif
-#include "../../../stream_platform/platform.h"
+#include "presets.h"
 
 #ifdef CODE_SIGP_STREAM_COMPRESSOR
 
@@ -60,7 +60,7 @@ typedef struct
     /* memory area reserved for Codec internal computations */
     uint32_t *TCM;
 
-    stream_al_services *stream_service_entry;
+    stream_services *stream_service_entry;
     uint32_t output_format[STREAM_FORMAT_SIZE_W32];
 
     uint32_t state[STATE_DEFAULT_SIZE];      /* LAST FIELD OF THE DECLARATION !! */

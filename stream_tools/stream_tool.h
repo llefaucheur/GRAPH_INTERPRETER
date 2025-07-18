@@ -59,17 +59,15 @@
 
 struct options
 {
-    /* default_index = 0 means "any" in the data allowed following values   A1 A2 A3 .. */
     /* default_index = -1 means data range followed by three values   Amin Astep Amax */
 
     uint32_t nb_option;         // number of "sets" (list of enums or  list of ranges)
+    int32_t default_index; 
 
-    int32_t default_index[MAX_NBOPTIONS_SETS]; 
+    float optionRange[3];               /* Min, step, Max  (A,B,C) */
 
-    float optionRange[MAX_NBOPTIONS_SETS][3];               /* Min, step, Max  (A,B,C) */
-
-    int32_t nbElementsInList[MAX_NBOPTIONS_SETS]; 
-    float optionList[MAX_NBOPTIONS_SETS][MAX_NBOPTIONS];    /* list of options offered through SW settings and stream converters */
+    int32_t nbElementsInList; 
+    float optionList[MAX_NBOPTIONS];    /* list of options offered through SW settings and stream converters */
 };
 
 
@@ -199,12 +197,13 @@ struct node_memory_bank
             + E x maxParameterSize 
     */
 
-    intptr_t size0;             /* A */
-    uint32_t sizeFromGraph;     /* E */
-    uint32_t sizeNchan;
-    float sizeFS;
-    uint32_t sizeFrame;
-    uint32_t iarcChannelI, iarcSamplingJ, iarcFrameK;
+    char    iarc_max_sum[10];   /* "type" of node_mem_frame_size_mono .. */ 
+
+    uint32_t size_additional;                   /* A TODO : should be int64_t */
+    uint32_t MulFrameSizeMono, iarcFrameMono; char TypeFrameMono[NBCHAR_LINE];  /* B */
+    uint32_t MulFrameSize    , iarcFrame    ; char TypeFrame    [NBCHAR_LINE];  /* C */
+    uint32_t MulFrameSizeChan, iarcFrameChan; char TypeFrameChan[NBCHAR_LINE];  /* D */
+
     uint32_t alignmentBytes;    /* enum buffer_alignment_type in NUMBER OF BYTES >= 4 */
     uint32_t stat0work1ret2;    /* enum mem_mapping_type : static, working, pseudo working, backup */
     uint32_t speed;             /* enum mem_speed_type */
@@ -213,40 +212,39 @@ struct node_memory_bank
     uint32_t toSwap, swapVID;   /* memory bank to swap to swapVID */
     uint32_t toClear;           /* memory bank to clear */
     uint32_t malloc_add;        /* added from graph */
+    uint32_t swap_arc;          /* an arc is declared for its buffer used for memory swap */
+    uint32_t addrW32s;          /* address of the arc descriptor of the swap buffer */
 
     uint32_t mem_VID;           /* optimization during graphTXT node declaration */
 
-    intptr_t graph_memreq_size; /* computed after graph reading */
-    uint32_t graph_base;     /* memory base address in 27 bits pack format (offsetID + offset) */
+    int64_t graph_memreq_size; /* node's memory bank requirements computed after graph reading */
+    uint32_t graph_base;       /* memory base address in 28 bits pack format (offsetID 4 + offset 24) */
 };
 typedef struct node_memory_bank node_memory_bank_t;
 
 struct processor_memory_bank
 {
-    uint32_t offsetID;          /* long_offset64 index addressing the range of the memory bank */
-    uint32_t virtualID;         /* used to map memory section in the graph */
-    uint32_t speed;             /* mem_speed_type 0:best effort, 1:normal, 2:fast, 3:critical fast */
-    uint32_t stat0work1ret2;    /* mem_mapping_type 0:static 1:working(shared with the application) 3:retention*/
-    uint32_t private_ram;       /* is it a private (processor ID) or shareable memory bank (= 0) */
-    uint32_t hwio;              /* is it reserved for IO and DMA data moves */
-    uint32_t data0prog1;        /* data / program memory */
-    uintptr_t size;             /* which size is guaranteed for graph operations */
-    uintptr_t base64;           /* which offset is it from the offset64b long integer */
+    uint32_t offsetID;          /* MEMID long_offset64 index addressing the range of the memory bank */
+    uint64_t size;              /* SIZE which size is guaranteed for graph operations */
+    uint32_t private_ram;       /* P    is it a private (processor ID) or shareable memory bank (= 0) */
+    uint32_t access;            /* A    0 data/prog R/W, 1 data R, 2 R/W, 3 Prog, 4 R/W */
+    uint32_t speed;             /* S    mem_speed_type 0:best effort, 1:normal, 2:fast, 3:critical fast */
+    uint32_t stat0work1ret2;    /* T    0 Static, 1 Retention, 2 scratch mem */
 
 
-    intptr_t ptalloc_static;    /* starting from 0 to size, working area follows */
-    uintptr_t max_working;      /* during init: max size of memreq-working */
-    uintptr_t max_working_alignement; /* during init: worst-case of memory alignement */
-    uintptr_t max_working_booking;
+    uint64_t ptalloc_static;        /* starting from 0 to size, working area follows */
+    uint64_t max_working;           /* during init: max size of memreq-working */
+    uint64_t max_working_alignement; /* during init: worst-case of memory alignement */
+    uint64_t max_working_booking;
 
-    char comments[NBCHAR_LINE]; /* comments used when printing the memory map listing */
+    char comments[NBCHAR_LINE];     /* comments used when printing the memory map listing */
 };
 typedef struct processor_memory_bank processor_memory_bank_t;
 
 /* ===================================================================================================== */
 struct formatStruct 
 {
-    uint32_t idx_arc_in_graph;          /* "format_new new" index field , versus the real index after format merge @@@@ */
+    //uint32_t idx_arc_in_graph;          /* "format_new new" index field , versus the real index after format merge @@@@ */
 
     /* FMT0 */
     uint32_t raw_data;          /* FMT1    raw data format */
@@ -260,8 +258,9 @@ struct formatStruct
     float samplingRate;
     uint32_t timestamp;         /* FMT1                 */
     uint32_t timeformat;        /* FMT1                 */
-    float frame_length;         /* FMT0    frame length format (0:in milliseconds 1:in samples) */
-    uint32_t framelength_format; /* frame length format (0:in milliseconds 1:in samples) */
+    uint32_t frame_length_bytes; /* FMT0    frame length format (0:in milliseconds 1:in samples) */
+    float frame_length_second;   /* FMT0    frame length format (0:in milliseconds 1:in samples) */
+    uint32_t frame_length_format; /* frame length format (0:in seconds 1:in samples) */
 
     /* format section specific to each domain */
     union
@@ -284,12 +283,16 @@ struct arcStruct
     //uint32_t top_graph_index;         // index used during the declarion of IO-arcs, allows easy redirection to other IOs  
     uint32_t rx0tx1;                    // ARC0_LW1 and RX0TX1_IOFMT : direction rx=0 tx=1 parameter=2 (rx never consumed) 
     uint8_t  ioarc_flag;                // boolean this arc connects to IOs 
+    char manifest_file[MAXCHAR_NAME];   // HW IO arc manifest name for debug
     float    setupTime;                 // [ms] to avoid this information to being only in the BSP 
     uint32_t settings[STREAM_IOFMT_SIZE_W32-1];   // pack format of digital + MSIC options (SETTINGS_IOFMT2), the format depends on the IO domain 
-    uint32_t idx_arc_in_graph;          // "stream_io new" index field 
+    uint32_t idx_arc_in_graph;          // "stream_io new" index field (HW IO ID)
     uint32_t domain;                    // domain of operation
     uint32_t HQoS;                      // treat this stream of data with highest priority whatever the other arc content
     struct formatStruct format;         // stream_format 
+    uint32_t procID;                    // IO affinity for the processor ID
+    uint32_t archID;                    // IO affinity for the architecture ID
+    uint32_t arc_graph_ID;              // index of the arc used in the graph for this HW IO arc
     uint32_t fw_io_idx;                 // ID of the interface given in "files_manifests_computer" associated function (platform dependent) 
     uint32_t format_idx;                // stream format index
     uint32_t initialized_from_platform; // manifest IO data from platform have been copied
@@ -315,8 +318,8 @@ struct arcStruct
     struct options raw_format_options;
     struct options nb_channels_option;    
     struct options sampling_rate_option;
-    struct options sampling_period_s;
-    struct options sampling_period_day;
+    struct options sampling_period_s_option;
+    struct options sampling_period_day_option;
     struct options frame_length_option;
     struct options frame_duration_option;
     float sampling_accuracy;
@@ -324,7 +327,7 @@ struct arcStruct
     /* ----- graph data ----- */    
     uint32_t memVID;
     uint32_t graph_base;
-    uint32_t I[SIZEOF_ARCDESC_W32];     /* temporary buffer used when printing the script */
+    //uint32_t I[SIZEOF_ARCDESC_W32];     /* temporary buffer used when printing the script */
 
     /* ------ COMPILATION RESULT-- */
     //uint32_t ioarc;                   /* arc index used in the graph description */
@@ -336,7 +339,7 @@ struct arcStruct
     uint32_t inPlaceProcessing;         /* SWCONLY flag buffer overlay with another arcID, 0=none*/
     uint32_t arcIDbufferOverlay;        /* SWCONLY   arcID being overlaid */
     uint32_t src_instanceid, dst_instanceid; /* for information during graph reading */
-    //uint32_t platform_NODE_idx_src, platform_NODE_idx_dst;    /* SWC */
+    //uint32_t platform_node_idx_src, platform_node_idx_dst;    /* SWC */
 };
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -368,8 +371,8 @@ struct stream_script
     char  script_comments[AVG_SCRIPT_LEN][NBCHAR_LINE];
     uint32_t script_ID;                                     // script instance from the graph
     uint32_t arc_script;                                    // arc descriptor used for the state and pointer to the instance
-    uint32_t script_instance27b, nbw32_allocated;           // static address, size
-    uint32_t stack_memory_shared, ram_heap_size;               // flag, heap size
+    uint32_t nbw32_allocated;                               // static address, size
+    uint32_t stack_memory_shared, ram_heap_size;            // flag, heap size
     uint32_t script_nb_instruction, nb_reg, nb_stack;       // memory allocation parameters
     uint32_t code_param32;                                  // size of code + parameters in w32
     uint32_t stack_memory_script, mem_VID;
@@ -390,10 +393,10 @@ struct stream_node_manifest
     char developerName[MAXCHAR_NAME];   /* developer's name */
     char nodeName[MAXCHAR_NAME];        /* node name used in the GUI */
        
-    uint32_t nbInputArc, nbOutputArc, nbParamArc;
+    uint32_t nbParamArc;
     uint32_t nbArch, arch[MAXNBARCH];   /* stream_processor_architectures (max 256) */
     uint32_t fpu[MAXNBARCH];            /* stream_processor_sub_arch_fpu */
-    uint32_t NODE_assigned_arch, NODE_assigned_proc, NODE_verbose, NODE_assigned_priority;
+    uint32_t node_assigned_arch, node_assigned_proc, node_assigned_priority;
     uint32_t formatUsed;                /* buffer format is used by the component */
     uint32_t masklib;                   /* mask of up to 16 family of processing extensions "SERVICE_COMMAND_GROUP" */
     uint32_t codeVersion, schedulerVersion;  /* version of the scheduler it is compatible with */
@@ -409,20 +412,20 @@ struct stream_node_manifest
     uint32_t graph_instance;            // occurence of the same node
     
     /* to build the header */
-    uint32_t platform_NODE_idx; 
+    uint32_t platform_node_idx;         // index of the node used by the graph scheduler
     uint32_t arcsrdy;                   
     uint32_t narc_streamed;
     uint32_t locking_arc;               /* from the SWC in ROM */    
     uint32_t lock_proc;
     uint32_t lock_arch;                 
     uint32_t headerPACK;
-    uint32_t use_user_key, user_key[MAXNB_WORD32_USER_KEY];    /* max 1024 bits user key */
+    uint64_t use_user_key, user_key[MAXNB_WORD32_USER_KEY];    /* max 1024 bits user key */
 
     /* memory */
     uint32_t nbMemorySegment;
     node_memory_bank_t memreq[MAX_NB_MEM_REQ_PER_NODE]; /* memory allocations request */
-    intptr_t sum_of_working_simplemap;   /* cumulate the multiple working segment memory requirements */
-    processor_memory_bank_t usedmem[MAX_PROC_MEMBANK];
+    int64_t sum_of_working_simplemap;   /* cumulate the multiple working segment memory requirements */
+    /*processor_memory_bank_t usedmem[MAX_PROC_MEMBANK];*/
 
     /* parameters */
     uint32_t preset;                     /* default "preset value" */
@@ -434,9 +437,10 @@ struct stream_node_manifest
     uint32_t PackedParameters[MAXPARAMETERSIZE]; /* words32 PACK */
 
     /* arcs and buffers */
+    uint32_t nbInputArc, nbOutputArc;
     uint32_t initialized_from_platform;
     uint32_t inPlaceProcessing, arcIDbufferOverlay;
-    //uint16_t nb_arcs;
+    uint16_t connected_to_the_graph;    /* check dummy nodes */
     struct arcStruct arc[MAX_NB_STREAM_PER_NODE]; /* loaded with default data */
 
     uint32_t node_position_in_graph;    /* for script callsys */
@@ -452,12 +456,14 @@ typedef struct stream_node_manifest stream_node_manifest_t;
 struct processing_architecture
 {   
     uint32_t processorID;
+    uint32_t architectureID;
     uint32_t IamTheMainProcessor;
-    intptr_t architecture;
-    intptr_t libraries_b;   /* bit-field of embedded libraries in the flash of the device */
+    uint32_t nb_private_memory_banks; /* number of mem */
+    uint32_t libraries_b;           /* bit-field of embedded libraries in the flash of the device */
+    uint32_t nb_hwio_processor;     /* number of IOs associated to this processor */
 
-    uint32_t nb_threads;    /* RTOS threads (0..3) have decreasing priority (see PRIORITY_LW0) */
-    uint32_t nb_long_offset;
+    //uint32_t nb_threads;    /* RTOS threads (0..3) have decreasing priority (see PRIORITY_LW0) */
+    //uint32_t nb_long_offset;
 };
 typedef struct processing_architecture processing_architecture_t;
 
@@ -467,28 +473,33 @@ typedef struct processing_architecture processing_architecture_t;
 * ---------------------------------------------------------------------- */
 struct stream_platform_manifest
 {   
-    uint32_t nb_nodes;                   /* number of software components to build the graph */
     uint32_t nb_processors;              /* number of processors */
-    uint32_t nb_architectures;           /* number of architecture */
+    uint32_t nb_shared_memory_banks;     /* number of mem */
     processing_architecture_t processor[MAX_GRAPH_NB_PROCESSORS];
+
+
+    /* nodes can be shared among several processors in SMP */
+    uint32_t nb_nodes;                   /* number of software components to build the graph */
+    struct stream_node_manifest all_nodes[MAX_NB_NODES];    // NODE_IDX + memreq
+
 
     uint32_t nbOffset;                  /* Nb Base addresses :  MAX_NB_MEMORY_OFFSET
                                             static uint32_t MEXT[SIZE_MBANK_DMEM_EXT];
                                             static uint32_t TCM1[SIZE_MBANK_DMEMFAST]; 
-                                            const intptr_t long_offset[MAX_NB_MEMORY_OFFSET] = 
-                                            {   (const intptr_t) &(MEXT[0]),
-                                                (const intptr_t) &(TCM1[0]),
+                                            const int64_t long_offset[MAX_NB_MEMORY_OFFSET] = 
+                                            {   (const int64_t) &(MEXT[0]),
+                                                (const int64_t) &(TCM1[0]),
             */
-    uint32_t nbMemoryBank_detailed;
+    uint32_t nbMemoryBank_shared_and_private;
     processor_memory_bank_t membank[MAX_PROC_MEMBANK];
 
     uint32_t nb_hwio_stream;
-    struct arcStruct arc[MAX_GRAPH_NB_IO_STREAM];
+    struct arcStruct arc[MAX_GRAPH_NB_HW_IO];   /* format of HW IO arcs */
 
-    struct stream_node_manifest all_nodes[MAX_NB_NODES];    // NODE_IDX + memreq
-
-    /* desired platform domains mapping to platform capabilities (fw_io_idx) */
+    /* desired platform domains mapping to platform capabilities (fw_io_idx) TODO @@@@*/
     int domains_to_fw_io_idx[IO_DOMAIN_MAX_NB_DOMAINS];
+
+    uint32_t max_io_al_idx;
 
     uint32_t platform_key[MAXNB_WORD32_PLAFORM_KEY];
 };
@@ -539,7 +550,7 @@ struct stream_graph_linkedlist
 
     /* ------- OUTPUT ------- */
     uint32_t end_binary_graph, memVID;              /* compilation result, location of the graph in memory */
-    uint32_t option_graph_location;
+    uint8_t option_graph_locations[NB_HEADER_MEMORY_FIELDS];
     uint32_t graph_location_from_0;                 /* graph_location offset from VID0 (long_offset[0]) */
     uint32_t binary_graph[MAXBINARYGRAPHW32];   
     char  binary_graph_comments[MAXBINARYGRAPHW32][NBCHAR_LINE];

@@ -24,7 +24,7 @@
  * 
  */
 
-#include "platform.h"
+#include "presets.h"
 #ifdef CODE_SIGP_STREAM_COMPRESSOR
 
 #include <stdint.h>
@@ -75,7 +75,7 @@
   @param[out]    pstatus    execution state (0=processing not finished)
   @return        status     finalized processing
  */
-void sigp_stream_compressor (unsigned int command, void *instance, void *data, unsigned int *status)
+void sigp_stream_compressor (unsigned int command, void *instance, intptr_t data, unsigned int *status)
 {
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
@@ -97,9 +97,9 @@ void sigp_stream_compressor (unsigned int command, void *instance, void *data, u
                 memresult[9] : output arc WORD 3  is domain-dependent : audio mapping  
         */
         case STREAM_RESET: 
-        {   stream_al_services *stream_entry = (stream_al_services *)data;
+        {   //stream_services *stream_entry = (stream_services *)data;
             intptr_t *memreq = (intptr_t *)instance;
-            uint16_t preset = RD(command, PRESET_CMD);
+            //uint16_t preset = RD(command, PRESET_CMD);
 
             sigp_stream_compressor_instance *pinstance = (sigp_stream_compressor_instance *) (memreq[0]);
             pinstance->TCM = (uint32_t *) (memreq[1]);       /* second bank = fast memory */
@@ -110,7 +110,7 @@ void sigp_stream_compressor (unsigned int command, void *instance, void *data, u
             pinstance->output_format[3] = (memreq[9]);
 
             /* save the address of the "services" */
-            pinstance->stream_service_entry = (stream_al_services *)(intptr_t)data;
+            pinstance->stream_service_entry = (stream_services *)data;
             break;
         }    
 
@@ -132,7 +132,7 @@ void sigp_stream_compressor (unsigned int command, void *instance, void *data, u
             SAMP_IN *inBuf;
             SAMP_OUT *outBuf;
 
-            pt_pt = data;   inBuf  = (SAMP_IN *)pt_pt->address;   
+            pt_pt = (stream_xdmbuffer_t *)data;   inBuf  = (SAMP_IN *)pt_pt->address;   
                             stream_xdmbuffer_size = pt_pt->size;
 
             pt_pt++;        outBuf = (SAMP_OUT *)(pt_pt->address); 
@@ -151,7 +151,7 @@ void sigp_stream_compressor (unsigned int command, void *instance, void *data, u
                     /*  update only the size field 
                         the NODE is producing an amount of data different from the consumed one (see xdm11 in the manifest) 
                     */
-                    pt_pt = data;   *(&(pt_pt->size)) = nb_samp * sizeof(SAMP_IN);      /* amount of data consumed */
+                    pt_pt = (stream_xdmbuffer_t *)data;   *(&(pt_pt->size)) = nb_samp * sizeof(SAMP_IN);      /* amount of data consumed */
                     pt_pt ++;       *(&(pt_pt->size)) = nb_bytes * sizeof(SAMP_OUT);    /* amount of data produced */
 
                     break;

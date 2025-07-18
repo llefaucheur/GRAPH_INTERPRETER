@@ -30,7 +30,7 @@
 #endif
     
 #include <stdint.h>
-#include "platform.h"
+#include "presets.h"
 #include "stream_common_const.h"
 #include "stream_common_types.h"
 #include "stream_const.h"      /* graph list */
@@ -42,7 +42,9 @@ static void read_header (arm_stream_instance_t *S);
 static void reset_component (arm_stream_instance_t *S);
 static uint8_t lock_this_component (arm_stream_instance_t *S);
 static uint8_t unlock_this_component (arm_stream_instance_t *S);
-static void set_new_parameters (arm_stream_instance_t *S, uint32_t *ptr_param32b);
+static void set_reset_parameters (arm_stream_instance_t *S, uint32_t *ptr_param32b);
+static void upload_new_parameters (arm_stream_instance_t *S);
+
 static void run_node (arm_stream_instance_t *S);
 static uint8_t arc_ready_for_write(arm_stream_instance_t *S, uint32_t *arc, uint32_t *frame_size);
 static uint8_t arc_ready_for_read(arm_stream_instance_t *S, uint32_t *arc, uint32_t *frame_size);
@@ -50,8 +52,8 @@ static intptr_t arc_extract_info_int (uint32_t *arc, uint8_t tag);
 static void load_clear_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1);
 static void check_graph_boundaries(arm_stream_instance_t *S);
 
-#define script_option (RD(S->scheduler_control, SCRIPT_SCTRL))
-#define return_option (RD(S->scheduler_control, RETURN_SCTRL))
+#define script_option (RD(S->scheduler_control, SCRIPT_SCTRL_HW1))
+#define return_option (RD(S->scheduler_control, RETURN_SCTRL_HW1))
 
 
 /*----------------------------------------------------------------------------
@@ -89,6 +91,44 @@ static void stream_calls_node (arm_stream_instance_t *S,
     ST(S->scheduler_control, NODEEXEC_SCTRL, 0);
 }
 
+
+/**
+  @brief        unpack a 27-bits address to physical address
+  @param[in]    offset     table of long offsets of idx_memory_base_offset
+  @param[in]    data       packed address
+  @return       inPtr_t    address in the format of the processor
+
+  @par          A graph gives the address of buffers as indexes ("packed address") in a 
+                way independent of the memory mapping of the processor interpreting the graph.
+                The scheduler of each Stream instance sends a physical address to the Nodes
+                and translates here the indexes to physical address using a table of offsets.
+ */
+static intptr_t pack2linaddr_int(uint32_t x, uint8_t ** LL)
+{
+    uint32_t R;
+#if 0
+    {   uint8_t *long_base;                                     
+        uint8_t extend;                                         
+        int32_t signed_base;                                    
+                                                            
+        long_base = LL[x];                                       
+        signed_base = RD(x, SIGNED_SIZE_FMT0);                  
+        signed_base = signed_base << (32-SIGNED_SIZE_FMT0_MSB); 
+        signed_base = signed_base >> (32-SIGNED_SIZE_FMT0_MSB); 
+        extend = (uint8_t)RD(x, EXTENSION_FMT0);                
+        signed_base <<= (extend << 1);                          
+        R = (intptr_t)(&(long_base[signed_base]));              
+    }
+#else
+    PACK2LIN(R,LL,x);
+#endif
+    return R;  
+}
+
+static void * pack2linaddr_ptr(uint32_t data, uint8_t ** long_offset)
+{
+    return (void *) (pack2linaddr_int(data, long_offset));
+}
 
 /**
   @brief        debug script 
@@ -151,7 +191,7 @@ static intptr_t arc_extract_info_int (uint32_t *arc, uint8_t tag)
 }
 
 /**
-  @brief         Tool box : Arc descriptor fields extraction, returns a byte pointer
+  @brief         Arc descriptor fields extraction, returns a byte pointer
   @param[in]     instance   global data of the instance
   @param[in]     arc        pointer to the arc descriptor to read
   @param[in]     command    operation to do
@@ -166,20 +206,14 @@ static uint8_t * arc_extract_info_pt (arm_stream_instance_t *S, uint32_t *arc, u
 {
     uint32_t read;
     uint32_t write;
-    int32_t signed_base;
     uint8_t *long_base;
     uint8_t *ret;
-    uint8_t extend;
+
+    PACK2LIN(read, (S->long_offset), arc[0]);
+    long_base = (uint8_t *) read;
 
     read =  RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
-    long_base = S->long_offset[RD(arc[0],ADDR_OFFSET_FMT0)];   /* platfom memory offsets */
-    signed_base = RD(arc[2], SIGNED_SIZE_FMT0);
-    signed_base = signed_base << (32-SIGNED_SIZE_FMT0_MSB);
-    signed_base = signed_base >> (32-SIGNED_SIZE_FMT0_MSB);
-    extend = RD(arc[2], EXTENSION_FMT0);
-    signed_base <<= (extend << 1);
-    long_base = (uint8_t *) &(long_base[signed_base]);
 
     switch (tag)
     {
@@ -340,19 +374,12 @@ static void arc_data_operations (
     uint32_t read;
     uint32_t write;
     uint32_t size;
-    int32_t signed_base;
     uint8_t *long_base;
     uint8_t *src;
     uint8_t* dst;
-    uint8_t extend;
 
-    long_base = S->long_offset[RD(arc[0],ADDR_OFFSET_FMT0)];   /* platfom memory offsets */
-    signed_base = RD(arc[2], SIGNED_SIZE_FMT0);
-    signed_base = signed_base << (32-SIGNED_SIZE_FMT0_MSB);
-    signed_base = signed_base >> (32-SIGNED_SIZE_FMT0_MSB);
-    extend = RD(arc[2], EXTENSION_FMT0);
-    signed_base <<= (extend << 1);
-    long_base = (uint8_t *) &(long_base[signed_base]);
+    PACK2LIN(read, (S->long_offset), arc[0]);
+    long_base = (uint8_t *) read;
 
     switch (tag)
     {
@@ -593,19 +620,10 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
     }
 
 
-
-#if 0    /* if critical fast memory is relocatble => use STREAM_UPDATE_RELOCATABLE instead 
-    *  in cases where the memory is not relocatable the node will be assigned to a processor
+    /* if critical fast memory is relocatable => use STREAM_UPDATE_RELOCATABLE  
+    *  from external script
     */
-    // DTCM/FastMem in stack : AL gives the address of the the fast memory
-    //if (TEST_BIT(S->node_header[S->node_memory_banks_offset+ADDR_LW2], DTCM_LW2_LSB))
-    //{   /* push the DTCM address of the processor */
-    //    const p_stream_al_services *al_func;
-    //    uint32_t *fast_mem;
-    //    al_func = &(S->al_services[0]);
-    //    (*al_func)(PACK_AL_SERVICE(0,SERV_READ_MEMORY_FAST_MEM_ADDRESS,SERV_READ_MEMORY), (uint8_t *)&fast_mem, 0, 0, 0);
-    //    xdm_data[narc].address = (intptr_t)(fast_mem);
-#endif     //}
+
     return ret;
  }
 
@@ -623,12 +641,14 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
 /* --------------------------------------------------------------------------------------------------
       check input ring buffers :
       each Stream instance has a list of graph boundary to check for in/out data
+
+      CLEARSWAP_LW2S is set => at least one memory segment needs a clear or a swap
  */
 void load_clear_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1)
 {
     uint8_t imem;
     intptr_t *memaddr;
-    uint32_t *memreq, memlen;
+    uint32_t *memreq, memlen, memReqWord2;
     
     imem = pre0post1;   // provision for swap postprocessing @@@@
 
@@ -636,10 +656,11 @@ void load_clear_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1)
     
     for (imem = 0; imem < MAX_NB_MEM_REQ_PER_NODE; imem++)
     {   
-        memaddr = (intptr_t *)platform_pack2linaddr_ptr (memreq[NBW32_MEMREQ_LW2 * imem + ADDR_LW2]);
+        memaddr = (intptr_t *)pack2linaddr_ptr (memreq[NBW32_MEMREQ_LW2 * imem + ADDR_LW2], (uint8_t **)S->long_offset);
+        memReqWord2 = memreq[NBW32_MEMREQ_LW2 * imem + SIZE_LW2];
 
         /* swap memory with the arc buffer "SWAPBUFID" */ 
-        if (RD(memreq[NBW32_MEMREQ_LW2 * imem + SIZE_LW2], SWAP_LW2S) != 0)
+        if (TEST_BIT(memReqWord2, SWAP_LW2S_LSB))
         {   uint8_t arcID;
             uint32_t *arc;
 
@@ -681,25 +702,25 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
     uint8_t graph_io_idx;
     uint8_t need_data_move;
     uint32_t size;
+    //uint32_t offset_to_stream_io;
     uint8_t *buffer;
     uint32_t *arc;
     uint8_t *ongoing;
     uint32_t *pio_control;
-    uint32_t io_mask = S->iomask;
-    uint32_t nio;
     const p_io_function_ctrl *io_func;
 static int dbgc;
 
-    nio = RD((S->graph)[1],NB_IOS_GR1);
+    //nio = RD((S->graph)[1],NB_IOS_GR1);
 
-    for (graph_io_idx = 0; graph_io_idx < nio; graph_io_idx++)
+    for (graph_io_idx = 0; graph_io_idx < S->nb_graph_io; graph_io_idx++)
     {
         /* jump to next graph port */
-        pio_control = &(S->graph[GRAPH_HEADER_NBWORDS + graph_io_idx * STREAM_IOFMT_SIZE_W32]);
+        //offset_to_stream_io = GRAPH_HEADER_NBWORDS + RD((S->graph)[0], NBHWIOIDX_GR0);
+        //pio_control = &(S->graph[offset_to_stream_io + graph_io_idx * STREAM_IOFMT_SIZE_W32]);
+        pio_control = &(S->pio_graph[graph_io_idx * STREAM_IOFMT_SIZE_W32]);
         ongoing = &(S->ongoing[graph_io_idx]);
 
-        /* to change when NB_IOS_GR1 allows 32 IOs active from the 128 IOs available on the platform */ 
-        if (0u == U(io_mask & (1u << graph_io_idx)))
+        if (0u == U(S->iomask & ((const uint64_t)1 << graph_io_idx)))
             continue;
         
         /* a previous request is in process or if the IO is commander on the interface, then no 
@@ -793,19 +814,19 @@ static int dbgc;
 static uint32_t check_hwsw_compatibility(arm_stream_instance_t *S) 
 {
     uint8_t match = 1;
-    uint32_t whoami = S->whoami_ports;
+    uint32_t whoami = S->scheduler_control;
     uint32_t header = (S->node_header)[0];
 
     if (RD(header, ARCHID_LW0) > 0u) /* do we care about the architecture ID ? */
-    {   match = (uint8_t)(RD(header, ARCHID_LW0) == RD(whoami, ARCHID_PARCH));
+    {   match = (uint8_t)(RD(header, ARCHID_LW0) == RD(whoami, ARCHID_LW0));
     }
 
     if (RD(header, PROCID_LW0) > 0u) /* do we care about the processor ID ? */
-    {   match = match & (RD(header, PROCID_LW0) == RD(whoami, PROCID_PARCH));
+    {   match = match & (RD(header, PROCID_LW0) == RD(whoami, PROCID_LW0));
     }
 
     if (RD(header, PRIORITY_LW0) > 0u) /* do we care about the priority ? */
-    {   match = match & (RD(header, PRIORITY_LW0) == RD(whoami, PRIORITY_PARCH));
+    {   match = match & (RD(header, PRIORITY_LW0) == RD(whoami, PRIORITY_LW0));
     }
 
     return match;
@@ -832,14 +853,30 @@ static uint32_t check_hwsw_compatibility(arm_stream_instance_t *S)
  */
 
 
-void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data) 
+void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uintptr_t data) 
 {   
     static long DEBUG_CNT;
+
+    /* parameter change : call from a script or from  arm_graph_interpreter(STREAM_SET_PARAMETER...) 
+        data -> line index of the node in the graph
+        parameters are in the global list (in RAM) of [node idx; parameter address]..[0;0] 
+    */
+    if (command == STREAM_SET_PARAMETER)
+    {   uint32_t *backup_linked_list_ptr;
+        backup_linked_list_ptr = S->linked_list_ptr;            // save position of the scheduler
+        S->linked_list_ptr = &((S->linked_list)[data]);         // point to the node to update
+        read_header(S);                                         // read the header of the node to update
+        SET_BIT((S->pt8b_collision_arc) [-7], NEW_PARAM_ARCW2_LSB); // point to the previous W32 "RDFLOW_ARCW2"
+        S->linked_list_ptr = backup_linked_list_ptr;            // restore original position of the scheduler
+        return;
+    }
+
 
     //if (script_option & STREAM_SCHD_SCRIPT_START) { script_processing (S->main_script, 0);}
 
     /* continue from the last position, index in W32 */
-    S->linked_list_ptr = &((S->linked_list)[RD(S->whoami_ports, NODE_W32OFF_PARCH)]);
+    S->linked_list_ptr = &((S->linked_list)[RD(S->link_offset, NODE_LINK_W32OFF)]);
+
 
     /* loop until all the components are blocked by the data streams */
 	do 
@@ -862,6 +899,9 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
          
             /* read all the information about the Node and the way to set its parameters */
             read_header (S);
+            if (S->idx_node == 0)
+            {   continue;
+            }
 
             /* does the NODE is executable on this processor */
             if (0U == check_hwsw_compatibility(S))
@@ -877,14 +917,10 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
             if (command == STREAM_RESET)
             {   reset_component (S);
 
-                /* read the parameter header -   "word 3+n" */
-                set_new_parameters (S, &((S->node_header)[S->node_parameters_offset]));
+                /* read the parameter */
+                set_reset_parameters (S, &((S->node_header)[S->node_parameters_offset]));
             }
 
-            /* a script called scan_graph for a parameter change */
-            if (command == STREAM_SET_PARAMETER)
-            {   set_new_parameters (S, data);
-            }
 
             /* end of graph processing ? */
             if (command == STREAM_STOP)
@@ -895,7 +931,7 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uint32_t *data
 
             /* check input arc has enough data and output arc is free */
             if (command == STREAM_RUN) 
-            {   run_node (S);
+            {    run_node (S);
             }
     
             unlock_this_component(S);
@@ -941,7 +977,6 @@ static void read_header (arm_stream_instance_t *S)
 {
     uint32_t x;
     uint16_t narc, iarc;
-    uint16_t idx_node;
     uint8_t TX_found;
 
     S->node_header = S->linked_list_ptr;                             // linked_list_ptr => HEADER
@@ -950,8 +985,9 @@ static void read_header (arm_stream_instance_t *S)
     S->node_memory_banks_offset = (uint8_t)(1u + ((1u + narc)>>1u)); // memreq is at +1(header) +narc/2
 
     S->node_parameters_offset = S->node_memory_banks_offset;
-    x = S->node_header[S->node_memory_banks_offset];
-    S->node_parameters_offset  += NBW32_MEMREQ_LW2 * (1u + RD(x, NALLOCM1_LW2));
+
+    x = RD(S->node_header[0], NALLOCM1_LW0);
+    S->node_parameters_offset = S->node_parameters_offset + (uint8_t)(NBW32_MEMREQ_LW2 * (1u + x));
     
     if (0 != RD(S->node_header[1], KEY_LW1))
     {   S->node_parameters_offset += NBWORDS_KEY_USER_PLATFORM;
@@ -966,12 +1002,7 @@ static void read_header (arm_stream_instance_t *S)
         0);     /* command */
 
     /* physical address of the instance (descriptor address for scripts) */
-    idx_node = (uint16_t)RD(S->node_header[0], NODE_IDX_LW0);
-    S->node_instance_addr = (stream_handle_t)platform_pack2linaddr_int(S->node_header[S->node_memory_banks_offset]);
-
-
-    /* read the physical address */
-    S->address_node = S->node_entry_points[idx_node];
+    S->node_instance_addr = (stream_handle_t)pack2linaddr_int(S->node_header[S->node_memory_banks_offset], (uint8_t **)S->long_offset);
 
     /* read the arc indexes */
     TX_found = 0;
@@ -1014,9 +1045,46 @@ static void read_header (arm_stream_instance_t *S)
     } 
 
     /* save the position in word32 */
-    ST(S->whoami_ports, NODE_W32OFF_PARCH, (uint32_t)(S->linked_list_ptr - S->linked_list));
+    ST(S->link_offset, NODE_LINK_W32OFF, (uint32_t)(S->linked_list_ptr - S->linked_list));
+
+    /* read the physical address */
+    S->idx_node = (uint16_t)RD(S->node_header[0], NODE_IDX_LW0);
+    S->address_node = S->node_entry_points[S->idx_node];
 }
 
+
+/**
+  @brief         search the address of the new parameters and call "set_reset_parameters" which calls the Node
+                 global data parameters -> list of [node idx; parameter address(reset after parameter set)]..[0;0]
+
+  @param[in]     instance   pointer to the static area of the current Stream instance
+
+  @return        none
+
+  @par           When the parameters are updated reset the address 
+  @remark
+ */
+
+
+static void upload_new_parameters (arm_stream_instance_t *S)
+{   
+#define NEWPARAM_INDEX 0
+#define NEWPARAM_ADDRESS 1
+
+    uintptr_t *new_parameters = (uintptr_t *)(S->new_parameters);
+    uint32_t max_param_search = MAX_NB_PENDING_PARAM_UPDATES;
+    uint32_t node_offset = (S->linked_list_ptr) - (S->linked_list);
+
+    while ((new_parameters[NEWPARAM_INDEX] != 0) && (new_parameters[NEWPARAM_ADDRESS] != 0) && (max_param_search > 0))
+    {
+        if (new_parameters[NEWPARAM_INDEX] == node_offset)
+        {   set_reset_parameters(S, (uint32_t *)(new_parameters[NEWPARAM_ADDRESS]));
+            new_parameters[NEWPARAM_ADDRESS] = 0;   // tell the parameters have been taken into account
+            break;
+        }
+        max_param_search--;
+    }
+}
 
 /**
   @brief         Lock this component against collisions with other process/processors
@@ -1035,12 +1103,12 @@ static uint8_t lock_this_component (arm_stream_instance_t *S)
 {
     uint8_t check;
     uint8_t whoAmI;
-    const p_stream_al_services *al_func;
+    const p_stream_services *al_func;
 
     al_func = &(S->al_services);
-    whoAmI = RD(S->whoami_ports, INST_ID_PARCH);  
+    whoAmI = RD(S->scheduler_control, INST_ID_SCTRL);  
     (*al_func)(PACK_SERVICE(0,0,0,SERV_INTERNAL_MUTUAL_EXCLUSION_WR_BYTE_AND_CHECK_MP,SERV_GROUP_INTERNAL), 
-        S->pt8b_collision_arc, &check, &whoAmI, 0);
+        (uintptr_t)(S->pt8b_collision_arc), (uintptr_t)&check, (uintptr_t)&whoAmI, 0);
 
     if (0u == check)
     {   /* a collision occured, don't wait, jump to next nanoAppRT */
@@ -1054,12 +1122,12 @@ static uint8_t lock_this_component (arm_stream_instance_t *S)
 
 static uint8_t unlock_this_component (arm_stream_instance_t *S)
 {
-    p_stream_al_services *al_func = &(S->al_services);
+    p_stream_services *al_func = &(S->al_services);
     uint8_t tmp = 0;
 
     /*  PACK_SERVICE(COMMAND,OPTION,TAG,FUNC,GROUP) */
     (*al_func)(PACK_SERVICE(0,0,0,SERV_INTERNAL_MUTUAL_EXCLUSION_WR_BYTE_MP,SERV_GROUP_INTERNAL), 
-        (void *)(S->pt8b_collision_arc), (void *)&tmp, 0, 0);
+        (uintptr_t)(S->pt8b_collision_arc), (uintptr_t)&tmp, 0, 0);
 
     return 1;
 }
@@ -1090,16 +1158,16 @@ static void reset_component (arm_stream_instance_t *S)
     #define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (STREAM_FORMAT_SIZE_W32*MAX_NB_STREAM_PER_NODE))
     intptr_t memreq_physical[MEMRESET];
     
-    memreq = &(S->node_header[S->node_memory_banks_offset]);
-    nbmem = (uint8_t)RD(memreq[0],NALLOCM1_LW2);
+    nbmem = (uint8_t)RD(S->node_header,NALLOCM1_LW0);
     nbmem ++;
     memreq_physical[0] = (intptr_t)(S->node_instance_addr);
 
     /* start the loop with the second memory bank */
+    memreq = &(S->node_header[S->node_memory_banks_offset]);
     imem_graph = NBW32_MEMREQ_LW2;          
     for (imem = 1; imem < nbmem; imem++)
     {   /* create pointers to the right memory bank */
-        memreq_physical[imem] = platform_pack2linaddr_int(memreq[imem_graph]);
+        memreq_physical[imem] = pack2linaddr_int(memreq[imem_graph], (uint8_t **)S->long_offset);
         imem_graph += NBW32_MEMREQ_LW2;
     }
     
@@ -1109,7 +1177,7 @@ static void reset_component (arm_stream_instance_t *S)
         memreq_physical[imem] = memreq[imem_graph];    imem ++; /* user key */
         memreq_physical[imem] = memreq[imem_graph +1]; imem ++;
         
-        arm_stream_services (PACK_SERVICE(NOCOMMAND_SSRV,NOOPTION_SSRV,NOTAG_SSRV, SERV_INTERNAL_KEYEXCHANGE, SERV_GROUP_INTERNAL), &key, 0, 0, 0);
+        arm_stream_services (PACK_SERVICE(NOCOMMAND_SSRV,NOOPTION_SSRV,NOTAG_SSRV, SERV_INTERNAL_KEYEXCHANGE, SERV_GROUP_INTERNAL), (uintptr_t)&key, 0, 0, 0);
         memreq_physical[imem] = key[0]; imem ++;    /* platform key */
         memreq_physical[imem] = key[1]; imem ++;
     }
@@ -1138,7 +1206,8 @@ static void reset_component (arm_stream_instance_t *S)
     
 
     /* reset the component with the parameter TraceID (6bits) */
-    ST(S->pack_command, COMMAND_CMD, STREAM_RESET);
+    ST(S->pack_command, COMMAND_CMD, STREAM_RESET);  
+    ST(S->pack_command, COMMDEXT_CMD, RD(S->scheduler_control, BOOT_SCTRL));   // warm / cold boot selection   
     ST(S->pack_command, NODE_TAG_CMD, RD((S->node_header)[S->node_parameters_offset], TRACEID_LW4));
 
     stream_calls_node (S,
@@ -1149,7 +1218,7 @@ static void reset_component (arm_stream_instance_t *S)
 
 
 /**
-  @brief         Set new parameters
+  @brief         Set reset parameters
   @param[in]     instance   pointer to the static area of the current Stream instance
                  ptr_param32b : 32bits-aligned section of parameters (32 TAGS + 
                     parameters following, see PARAM_TAG_LW4)
@@ -1158,7 +1227,7 @@ static void reset_component (arm_stream_instance_t *S)
   @remark
  */
 
-static void set_new_parameters (arm_stream_instance_t *S, uint32_t *ptr_param32b)
+static void set_reset_parameters (arm_stream_instance_t *S, uint32_t *ptr_param32b)
 {
     uint32_t tmp;
     uint32_t status;
@@ -1206,7 +1275,13 @@ static void run_node (arm_stream_instance_t *S)
     stream_xdmbuffer_t xdm_data[MAX_NB_STREAM_PER_NODE];
     uint32_t check;
     uint8_t loop_counter;
-  
+
+    /* is there a pending request to update the parameters of this node ? */  
+    if (TEST_BIT((S->pt8b_collision_arc)[-7], NEW_PARAM_ARCW2_LSB))
+    {   upload_new_parameters (S);
+        CLEAR_BIT((S->pt8b_collision_arc)[-7], NEW_PARAM_ARCW2_LSB);
+    }
+
     /* push all the ARCs on the stack and check arcs buffer are ready */
     if (0u == arc_index_update(S, xdm_data, 0))
     {   return; /* buffers are not ready */

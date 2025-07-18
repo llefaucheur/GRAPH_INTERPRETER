@@ -32,7 +32,7 @@
  */
 
 
-#include "platform.h"
+#include "presets.h"
 
 
 #ifdef CODE_ARM_STREAM_AMPLIFIER
@@ -97,13 +97,13 @@ void arm_stream_amplifier (uint32_t command, void *instance, void *data, uint32_
         */
         case STREAM_RESET: 
         {
-            //stream_al_services *stream_entry = (stream_al_services *)data;
+            //stream_services *stream_entry = (stream_services *)data;
             intptr_t *memresults = (intptr_t *)instance;
             //uint16_t preset = RD(command, PRESET_CMD);
 
             /* here reset */
             arm_amplitude_instance *pinstance = (arm_amplitude_instance *) *memresults;
-            pinstance->services = (stream_al_services *)data;
+            pinstance->services = (stream_services *)data;
 
             memresults++;   /* memresult points to the */
 

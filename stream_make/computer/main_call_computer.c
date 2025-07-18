@@ -25,7 +25,7 @@
  * 
  */
 
-#include "platform.h"
+#include "presets.h"
 #ifdef PLATFORM_COMPUTER
 
 #include <string.h>
@@ -37,10 +37,15 @@
 #include "stream_types.h"  
 #include "stream_extern.h"
 
+/*
+    global variables : all the instances of the graph interpreter
+*/
+#define STREAM_CURRENT_INSTANCE 0
+#define STREAM_NB_INSTANCE 1
+
+arm_stream_instance_t instance[STREAM_NB_INSTANCE];
 
 
-
-arm_stream_instance_t instance;
 
 /**
   @brief            (main) demonstration
@@ -48,16 +53,48 @@ arm_stream_instance_t instance;
   @return           int
   @remark
  */
-void main_init(void)
-{
+void main_init(uint32_t *graph)
+{ 
     extern void platform_init_stream_instance(arm_stream_instance_t *instance);
 
-    /* copy the graph, initializes the interpreter instance */
-    platform_init_stream_instance (&instance);
+    instance[STREAM_CURRENT_INSTANCE].scheduler_control = PACK_STREAM_PARAM(
+            STREAM_INSTANCE_LOWLATENCYTASKS,    // low-latency priority
+            STREAM_MAIN_INSTANCE,               // this interpreter instance is the main one (multi-thread)
+            STREAM_NB_INSTANCE,                 // total number of instances executing this graph
+            STREAM_COLD_BOOT,                   // is it a warm or cold boot
+            STREAM_SCHD_NO_SCRIPT,              // debugging scheme used during execution
+            STREAM_SCHD_RET_END_ALL_PARSED      // interpreter returns after all nodes are parsed
+            );
+
+    /* provision protocol for situation when the graph comes from the application */
+    instance[STREAM_CURRENT_INSTANCE].graph = graph;
 
     /* reset the graph */
-    arm_graph_interpreter (STREAM_RESET, &instance, 0, 0);
+    arm_graph_interpreter (STREAM_RESET, &(instance[STREAM_CURRENT_INSTANCE]), 0, 0);
 }
+
+
+/**
+  @brief            (main) demonstration
+  @param[in/out]    none
+  @return           int
+  @remark
+ */
+void main_set_parameters(void)
+{
+//    uint32_t new_parameters_arm_stream_router__0[4] = { 1,2,3,4 };
+//
+//#define arm_stream_router__0       0x26 // node position in the graph
+//    arm_graph_interpreter (STREAM_SET_PARAMETER, &(instance[STREAM_CURRENT_INSTANCE]), 
+//        arm_stream_router__0, (uintptr_t)new_parameters_arm_stream_router__0);  
+
+/*
+    STREAM_SET_PARAMETER from scripts :
+    1) main script calls arm_graph_interpreter (STREAM_SET_PARAMETER, IDX, @param)
+    2) the script associated to the node calls S->application_callbacks[USE_CASE_CONTROL] 
+        then updates its node 
+*/
+}  
 
 
 /**
@@ -68,15 +105,22 @@ void main_init(void)
  */
 void main_run(void)
 {
-    arm_graph_interpreter (STREAM_RUN, &instance, 0, 0);
+    arm_graph_interpreter (STREAM_RUN, &(instance[STREAM_CURRENT_INSTANCE]), 0, 0);
 }  
+
+
+/**
+  @brief            Example of Master IO pushing new data
+  @param[in/out]    none
+  @return           int
+  @remark
+ */
 
 void Push_Ping_Pong(uint32_t *data, uint32_t size)
 {
     extern void arm_stream_io_ack (uint8_t graph_io_idx, void *data, uint32_t size);
-    extern uint8_t platform_io_al_idx_to_stream[];
 
-    arm_stream_io_ack (platform_io_al_idx_to_stream[IO_PLATFORM_ANALOG_SENSOR_0], (uint8_t *)data, size);
+    arm_stream_io_ack (IO_PLATFORM_ANALOG_SENSOR_0, (uint8_t *)data, size);
 }
 
 /**
@@ -87,6 +131,6 @@ void Push_Ping_Pong(uint32_t *data, uint32_t size)
  */
 void main_stop(void)
 {
-    arm_graph_interpreter (STREAM_STOP, &instance, 0, 0);
+    arm_graph_interpreter (STREAM_STOP, &(instance[STREAM_CURRENT_INSTANCE]), 0, 0);
 }
 #endif

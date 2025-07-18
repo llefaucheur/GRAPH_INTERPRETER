@@ -22,20 +22,17 @@
     <Filter Include="Source Files\platform">
       <UniqueIdentifier>{33f88ae1-2b73-42c3-b2f7-43caa4feebb4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\platform\library">
+    <Filter Include="Source Files\platform_computer">
+      <UniqueIdentifier>{8ce76c41-b5be-471c-aadc-e8119aa5582b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\platform_computer\library">
       <UniqueIdentifier>{295cc5c5-5558-4591-b27a-a14b8e7a43f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\platform\standard_library">
+      <UniqueIdentifier>{1e845f81-a64c-469a-a485-bf4cadebdde2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\stream_platform\computer\platform_computer_services.c">
-      <Filter>Source Files\platform</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\stream_platform\computer\platform_computer_io_services.c">
-      <Filter>Source Files\platform</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\stream_platform\computer\platform_computer.c">
-      <Filter>Source Files\platform</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\stream_nodes\arm\amplifier\arm_stream_amplifier.c">
       <Filter>Source Files\nodes</Filter>
     </ClCompile>
@@ -114,18 +111,6 @@
     <ClCompile Include="..\..\stream_src\stream_scheduler.c">
       <Filter>Source Files\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_f32.c">
-      <Filter>Source Files\platform\library</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_fast_q15.c">
-      <Filter>Source Files\platform\library</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_init_f32.c">
-      <Filter>Source Files\platform\library</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_init_q15.c">
-      <Filter>Source Files\platform\library</Filter>
-    </ClCompile>
     <ClCompile Include="main_call_computer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -138,17 +123,41 @@
     <ClCompile Include="..\..\stream_nodes\arm\router\arm_stream_router_process.c">
       <Filter>Source Files\nodes</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\stream_platform\platform_defaults\platform_init.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\stream_platform\platform_defaults\default_services.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\stream_platform\computer\stream_libraries\standard_library\floating_point.c">
+      <Filter>Source Files\platform_computer\library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_fast_q15.c">
+      <Filter>Source Files\platform_computer\library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_init_q15.c">
+      <Filter>Source Files\platform_computer\library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\stream_platform\computer\computer_init.c">
+      <Filter>Source Files\platform_computer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\stream_platform\computer\computer_io_services.c">
+      <Filter>Source Files\platform_computer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\default_biquad_cascade_df1_f32.c">
+      <Filter>Source Files\platform\standard_library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\default_biquad_cascade_df1_fast_q15.c">
+      <Filter>Source Files\platform\standard_library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\default_biquad_cascade_df1_init_f32.c">
+      <Filter>Source Files\platform\standard_library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\default_biquad_cascade_df1_init_q15.c">
+      <Filter>Source Files\platform\standard_library</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\stream_platform\platform.h">
-      <Filter>Source Files\platform</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\stream_platform\platform_computer.h">
-      <Filter>Source Files\platform</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\stream_platform\computer\graph_computer_header.h">
-      <Filter>Source Files\platform</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\stream_src\stream_const.h">
       <Filter>Source Files\src</Filter>
     </ClInclude>
@@ -173,17 +182,49 @@
     <ClInclude Include="..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector.h">
       <Filter>Source Files\nodes</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\stream_platform\presets.h">
+      <Filter>Source Files\platform</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Include\dsp\Computer_filtering_functions.h">
+      <Filter>Source Files\platform_computer\library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\stream_src\stream_types.h">
+      <Filter>Source Files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\stream_platform\computer\computer_init.h">
+      <Filter>Source Files\platform_computer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\stream_platform\platform_computer.h">
+      <Filter>Source Files\platform_computer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\stream_nodes\arm\filter\arm_stream_filter.h">
+      <Filter>Source Files\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Include\dsp\default_filtering_functions.h">
+      <Filter>Source Files\platform\standard_library</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\stream_platform\computer\graph_computer_debug.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="..\..\stream_platform\computer\graph_computer.txt" />
-    <Text Include="..\..\stream_platform\computer\graph_computer_router_bin.txt">
-      <Filter>Source Files\platform</Filter>
-    </Text>
     <Text Include="..\..\stream_platform\computer\graph_computer_router.txt">
-      <Filter>Source Files\platform</Filter>
+      <Filter>Source Files\platform_computer</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\graph_computer_router_bin.txt">
+      <Filter>Source Files\platform_computer</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\graph_computer_filter.txt">
+      <Filter>Source Files\platform_computer</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\graph_computer_filter_bin.txt">
+      <Filter>Source Files\platform_computer</Filter>
+    </Text>
+    <Text Include="..\..\stream_nodes\arm\filter\node_manifest_filter.txt">
+      <Filter>Source Files\nodes</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\graph_computer_debug.txt">
+      <Filter>Source Files\platform_computer</Filter>
+    </Text>
+    <Text Include="..\..\stream_platform\computer\manifest\top_manifest_computer.txt">
+      <Filter>Source Files\platform_computer</Filter>
     </Text>
   </ItemGroup>
 </Project>

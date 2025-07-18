@@ -3,7 +3,7 @@
 ; ------------------------------------------------------------------------------------------------------------
                                                                        
     io_platform_gpio_out_0 ; name for the tools                            
-    gpio_out               ; domain name,   no specific field
+    gpio                   ; domain name,   no specific field
 
     io_direction_rx0tx1 1
 

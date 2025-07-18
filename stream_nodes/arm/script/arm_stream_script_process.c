@@ -29,7 +29,7 @@
  * limitations under the License.
  * 
  */
-#include "platform.h"
+#include "presets.h"
 #ifdef CODE_ARM_STREAM_SCRIPT
 
 #ifdef __cplusplus
@@ -50,6 +50,38 @@ static void test_arithmetic_operation(arm_script_instance_t *I);
 static void readreg(arm_script_instance_t *I, regdata_t *data, int32_t srcID, uint8_t K);
 static void writreg(arm_script_instance_t *I, int32_t dstID, regdata_t *src, uint8_t dtype);
 static void jmov_operation(arm_script_instance_t *I);
+
+
+//float minifloat_to_float(uint8_t mf) {
+//    // Extract bits
+//    int sign = (mf >> 7) & 0x01;
+//    int exp = (mf >> 3) & 0x0F;
+//    int mantissa = mf & 0x07; // 3 bits mantissa
+//
+//    float value;
+//    int bias = 7; // Exponent bias = 2^(4-1) - 1
+//
+//    if (exp == 0) {
+//        if (mantissa == 0) {
+//            // Zero
+//            value = 0.0f;
+//        } else {
+//            // Denormalized number
+//            float frac = mantissa / 8.0f; // 3 mantissa bits
+//            value = powf(2, 1 - bias) * frac;
+//        }
+//    } else {
+//        // Normalized number
+//        float frac = 1 + (mantissa / 8.0f);
+//        value = powf(2, exp - bias) * frac;
+//    }
+//
+//    // Apply sign
+//    if (sign)
+//        value = -value;
+//
+//    return value;
+//}
 
 
 /*
@@ -480,13 +512,13 @@ static void jmov_operation(arm_script_instance_t *I)
     // remove several registers from the stack : delete 4
     // IIyyy-OPARDST______________YYYYY     OPLJ_DELETE 
     case OPLJ_DELETE:
-        I->SP -= K;
+        I->SP = (uint8_t)(I->SP - K);
         break;
 
     // jump to an address and optional save 2 registers : jump label R1
     // IIyyy-OPARSRC0SRC1SRC3######SRC2  OPLJ_JUMP   
     case OPLJ_JUMP    : 
-        I->PC += K-1;   // JMP offset_K8, PUSH SRC1/SRC2/SRC3, PC was already post incremented
+        I->PC = (uint16_t)(I->PC + K-1);   // JMP offset_K8, PUSH SRC1/SRC2/SRC3, PC was already post incremented
         optional_push(I, dst); optional_push(I, src1); 
         break;
 
@@ -496,7 +528,7 @@ static void jmov_operation(arm_script_instance_t *I)
     case OPLJ_BANZ    : 
         I->REGS[RD(instruction,OP_DST_INST)].v_i32[REGS_DATA] --;   // decrement loop counter
         if (I->REGS[src1].v_i32[REGS_DATA] != 0)   
-        {   I->PC += K-1;
+        {   I->PC = (uint16_t)(I->PC + K-1);
         }
         break;
 
@@ -506,7 +538,7 @@ static void jmov_operation(arm_script_instance_t *I)
         reg_src2K.v_i32[REGS_DATA] = (1+ I->PC);
         I->REGS[I->SP] = reg_src2K;
         I->SP ++;                      // push return address
-        I->PC += K-1;           // call
+        I->PC = (uint16_t)(I->PC + K-1);           // call
         optional_push(I, dst);  optional_push(I, src1);  
         break;
 
@@ -527,19 +559,19 @@ static void jmov_operation(arm_script_instance_t *I)
     */
     case OPLJ_SYSCALL : // SYSCALL  {K11} system calls (FIFO, TIME, debug, SetParam, DSP/ML, IO/HW, Pointers)  
         {   
-        const p_stream_al_services *al_func;
-        uint8_t K_service = (uint8_t)RD(instruction, SYSCALL_K_INST); 
-        uint8_t src3 = (uint8_t)RD(instruction, OP_SRC3_INST); 
-        uint8_t src4 = (uint8_t)RD(instruction, OP_SRC4_INST); 
+        const p_stream_services *al_func;
+        //uint8_t K_service = (uint8_t)RD(instruction, SYSCALL_K_INST); 
+        //uint8_t src3 = (uint8_t)RD(instruction, OP_SRC3_INST); 
+        //uint8_t src4 = (uint8_t)RD(instruction, OP_SRC4_INST); 
 
         /* void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3, uint32_t n); */
         al_func = &(I->S->al_services);
-        (*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV, SERV_INTERNAL_PLATFORM_CLEAR_BACKUP_MEM, K_service), 
-            (void *)(I->REGS[dst].v_i32[REGS_DATA]),  
-            (void *)(I->REGS[src1].v_i32[REGS_DATA]),
-            (void *)(I->REGS[src3].v_i32[REGS_DATA]),
-            (uint32_t)(I->REGS[src4].v_i32[REGS_DATA])
-            );
+        //(*al_func)(PACK_SERVICE(0,0,NOTAG_SSRV, SERV_INTERNAL_PLATFORM_CLEAR_BACKUP_MEM, K_service), 
+        //    (void *)(I->REGS[dst].v_i32[REGS_DATA]),  
+        //    (void *)(I->REGS[src1].v_i32[REGS_DATA]),
+        //    (void *)(I->REGS[src3].v_i32[REGS_DATA]),
+        //    (uint32_t)(I->REGS[src4].v_i32[REGS_DATA])
+        //    );
         }
         break;
 
@@ -569,7 +601,7 @@ static void jmov_operation(arm_script_instance_t *I)
     // return from subroutine 
     // IIyyy-OPAR______________________  OPLJ_RETURN 
     case OPLJ_RETURN : 
-        I->PC = I->REGS[I->SP++].v_i32[REGS_DATA];
+        I->PC = (uint16_t)(I->REGS[I->SP++].v_i32[REGS_DATA]);
         break;
     }
 }
@@ -679,7 +711,7 @@ void arm_stream_script_interpreter (arm_script_instance_t *I)
             }
             else 
             {  I->SP--; 
-               I->PC = (int32_t)I->REGS[I->SP].v_i32[REGS_DATA];
+               I->PC = (int16_t)(I->REGS[I->SP].v_i32[REGS_DATA]);
             }
         }
 

@@ -26,7 +26,7 @@
  * limitations under the License.
  */
 
-#include "dsp/Computer_filtering_functions.h"
+#include "../../Include/dsp/computer_filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -39,26 +39,10 @@
 
 /**
   @brief         Processing function for the Q15 Biquad cascade filter (fast variant).
-  @param[in]     S         points to an instance of the Q15 Biquad cascade structure
-  @param[in]     pSrc      points to the block of input data
-  @param[out]    pDst      points to the block of output data
-  @param[in]     blockSize number of samples to process per call
-  @return        none
-
-  @par           Scaling and Overflow Behavior
-                   This fast version uses a 32-bit accumulator with 2.30 format.
-                   The accumulator maintains full precision of the intermediate multiplication results but provides only a single guard bit.
-                   Thus, if the accumulator result overflows it wraps around and distorts the result.
-                   In order to avoid overflows completely the input signal must be scaled down by two bits and lie in the range [-0.25 +0.25).
-                   The 2.30 accumulator is then shifted by <code>postShift</code> bits and the result truncated to 1.15 format by discarding the low 16 bits.
- @remark
-                   Refer to \ref arm_biquad_cascade_df1_q15() for a slower implementation of this function
-                   which uses 64-bit accumulation to avoid wrap around distortion. Both the slow and the fast versions use the same instance structure.
-                   Use the function \ref arm_biquad_cascade_df1_init_q15() to initialize the filter structure.
  */
 
-void Computer_arm_biquad_cascade_df1_fast_q15(
-  const Computer_arm_biquad_casd_df1_inst_q15 * S,
+void platform_biquad_cascade_df1_q15(
+  const platform_arm_biquad_cascade_df1_inst_q15 * S,
   const q15_t * pSrc,
         q15_t * pDst,
         uint32_t blockSize)

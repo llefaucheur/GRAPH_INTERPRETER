@@ -24,7 +24,7 @@
  * 
  */
 
-#include "platform.h"
+#include "presets.h"
 #ifdef CODE_SIGP_STREAM_DETECTOR2D
 
 #ifdef __cplusplus
@@ -107,7 +107,7 @@ void sigp_stream_detector2D (unsigned int command, void *instance, void *data, u
                 memory pointers are in the same order as described in the NODE manifest
         */
         case STREAM_RESET: 
-        {   stream_al_services *stream_entry = (stream_al_services *)data;
+        {   stream_services *stream_entry = (stream_services *)data;
             intptr_t *memresults = (intptr_t *)instance;
             uint16_t preset = RD(command, PRESET_CMD);
             uint8_t *pt8bdst, i, n;

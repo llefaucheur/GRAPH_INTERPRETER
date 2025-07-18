@@ -25,7 +25,7 @@
  * 
  */
 
-#include "platform.h"
+#include "presets.h"
 #ifdef CODE_ARM_STREAM_MODULATOR
 
 #ifdef __cplusplus

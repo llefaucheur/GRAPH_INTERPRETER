@@ -26,7 +26,7 @@
  * limitations under the License.
  */
 
-#include "dsp/Computer_filtering_functions.h"
+#include "../../Include/dsp/computer_filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -39,37 +39,11 @@
 
 /**
   @brief         Initialization function for the Q15 Biquad cascade filter.
-  @param[in,out] S           points to an instance of the Q15 Biquad cascade structure.
-  @param[in]     numStages   number of 2nd order stages in the filter.
-  @param[in]     pCoeffs     points to the filter coefficients.
-  @param[in]     pState      points to the state buffer.
-  @param[in]     postShift   Shift to be applied to the accumulator result. Varies according to the coefficients format
-  @return        none
-
-  @par           Coefficient and State Ordering
-                   The coefficients are stored in the array <code>pCoeffs</code> in the following order:
-  <pre>
-      {b10, 0, b11, b12, a11, a12, b20, 0, b21, b22, a21, a22, ...}
-  </pre>
-  @par
-                   where <code>b1x</code> and <code>a1x</code> are the coefficients for the first stage,
-                   <code>b2x</code> and <code>a2x</code> are the coefficients for the second stage,
-                   and so on.  The <code>pCoeffs</code> array contains a total of <code>6*numStages</code> values.
-                   The zero coefficient between <code>b1</code> and <code>b2</code> facilities  use of 16-bit SIMD instructions on the Cortex-M4.
-  @par
-                   The state variables are stored in the array <code>pState</code>.
-                   Each Biquad stage has 4 state variables <code>x[n-1], x[n-2], y[n-1],</code> and <code>y[n-2]</code>.
-                   The state variables are arranged in the <code>pState</code> array as:
-  <pre>
-      {x[n-1], x[n-2], y[n-1], y[n-2]}
-  </pre>
-                   The 4 state variables for stage 1 are first, then the 4 state variables for stage 2, and so on.
-                   The state array has a total length of <code>4*numStages</code> values.
-                   The state variables are updated after each block of data is processed; the coefficients are untouched.
+ 
  */
 
-void Computer_arm_biquad_cascade_df1_init_q15(
-        Computer_arm_biquad_casd_df1_inst_q15 * S,
+void platform_biquad_cascade_df1_init_q15(
+        platform_arm_biquad_cascade_df1_inst_q15 * S,
         uint8_t numStages,
   const q15_t * pCoeffs,
         q15_t * pState,

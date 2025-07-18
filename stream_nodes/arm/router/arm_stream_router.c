@@ -30,8 +30,8 @@
  * limitations under the License.
  * 
  */
-#include "platform.h"
-#ifdef CODE_ARM_STREAM_router
+#include "presets.h"
+#ifdef CODE_ARM_STREAM_ROUTER
 
 #ifdef __cplusplus
  extern "C" {
@@ -55,15 +55,15 @@ extern void arm_stream_router_process (arm_stream_router_instance *instance, str
 
     Input streams are moved, routed and mixed to generate the output streams in a desired stream format. 
     The output stream are isochronous to the other graph streams (they have a known sampling rate), but the input can 
-    be asynchronous (each sample have a time-stamp).
+    be synchronous (same or different sampling rate) or asynchronous (each sample have a time-stamp).
 
-    The first parameters give the number of arcs, the input arc to use with HQoS (High Quality of Service), or 
-    -1. Followed by a list of routing and mixing information. When there is an HQoS arc the amount of data moves 
-    is aligned with it, in the time-domain, to all the other arcs (in case of flow issue data is zeroed or interpolated). 
-    Otherwise the node checks all the input and output arcs and finds the minimum amount of data, in the time domain, 
-    possible for all arcs. 
+    The node can be associated with a script (SCRIPT_LW0) in charge of HQoS arcs (High Quality of Service) and 
+    synchronization between two arcs (for example I/V sensing stream synchronization)
 
-
+    Operation:
+    At reset time the node checks the conditions of operations (simple routing use-case, time-stamp format, time
+        window of the processing, filters conputing for synchronous high-quality rate converter)
+    The node starts checking all the input and output arcs in the time domain and use float intermediate format
 
 **Parameters**
 
@@ -79,7 +79,7 @@ extern void arm_stream_router_process (arm_stream_router_instance *instance, str
 
 
 
-    Example with the router with two stereo input arcs and two output arcs. The first output arc is mono and the 
+    Example with a router with two stereo input arcs and two output arcs. The first output arc is a mono 
     sum of all the input channels, the second arc is stereo combining the two left channels of the input arcs.
     ```
                  ┌───────────────────┐                         
@@ -89,6 +89,28 @@ extern void arm_stream_router_process (arm_stream_router_instance *instance, str
       Stereo     │                   │ Stereo Left(arc0), Right(arc1)
      ─arc 1─────►│      ─────────────┼─arc 3─────────►          
                  └───────────────────┘                                    
+
+        1  u8;  2                   ; nb lines
+        1  u8;  0                   ; index of the arc used for its frame size as time reference
+        1  u8;  1                   ; accuracy level
+        1  u8;  0                   ; 4 bytes alignment padding
+
+        ;  [arc, sub channel]  
+        2  u8;  0 0                 ; buffer "0"  Arc0, Left 
+        2  u8;  0 1                 ; buffer "1"  Arc0, right 
+        2  u8;  1 0                 ; buffer "2"  Arc1, Left 
+        2  u8;  1 1                 ; buffer "3"  Arc1, right
+;
+;   Left+Right fifo input, mixed+gainx2 to Right output (Fifo1)
+        4  u8;  0 1 1 1  0  1 -1 0  ; SRC[arc, chan]  DST[arc, chan] ififo-mix1 imix2 imix3 padding
+        4 f32;  0.5 0.5 0.0 2.0     ; Gmix1 Gmix2 Gmix3 GmixOut
+    ; input "0"   Left input direct to Left output (Fifo0) no mixer
+        4  u8;  0 0 1 0 -1 -1 -1 0  ; SRC[arc, chan]  DST[arc, chan] ififo-mix1 imix2 imix3 padding
+        4 f32;  1.0 0.0 0.0 1.0     ; Gmix1 Gmix2 Gmix3 GmixOut
+;
+;   Left+Right fifo input, mixed+gainx2 to Right output (Fifo1)
+        4  u8;  0 1 1 1  0  1 -1 0  ; SRC[arc, chan]  DST[arc, chan] ififo-mix1 imix2 imix3 padding
+        4 f32;  0.5 0.5 0.0 2.0     ; Gmix1 Gmix2 Gmix3 GmixOut
 
       2  i8; 2 2          nb input/output arcs
       2  i8; -1 -1        no HQoS arc on input and output
@@ -156,7 +178,7 @@ void arm_stream_router (unsigned int command, void *instance, void *data, unsign
                 the number of arcs (NARC_CMD) is used to configure arm_stream_router_instance.configuration
         */
         case STREAM_RESET: 
-        {   //stream_al_services *stream_entry = (stream_al_services *)data;
+        {   //stream_services *stream_entry = (stream_services *)data;
             //intptr_t *memresults = (intptr_t *)instance;
             //uint16_t preset = RD(command, PRESET_CMD);
             //arm_stream_router_instance *pinstance = (arm_stream_router_instance *) *memresults;
@@ -176,10 +198,10 @@ void arm_stream_router (unsigned int command, void *instance, void *data, unsign
         */ 
         case STREAM_SET_PARAMETER:  
         {   uint8_t *pt8bsrc;
-            uint16_t *pt16bdst;
-            uint16_t *pt16bsrc;
-            uint16_t i;
-            uint16_t n;
+            //uint16_t *pt16bdst;
+            //uint16_t *pt16bsrc;
+            //uint16_t i;
+            //uint16_t n;
             
             arm_stream_router_instance *pinstance = (arm_stream_router_instance *) instance;
 

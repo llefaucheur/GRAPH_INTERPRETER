@@ -2,9 +2,14 @@
 ; Manifest of generic data input 
 ; ------------------------------------------------------------------------------------------------------------
                                                                        
-io_platform_data_in_1  ; name for the tools                            
-data_in                ; domain name,   no specific field
-
-io_frame_length        {1 32} ; #define size_data_in_1 32 // bytes
-
+    io_platform_data_in_1  ; name for the tools                            
+    general                ; domain name,   no specific field
+    
+    io_frame_length     {3 1 4 16 64}       ; #define size_data_in_1  16 bytes
+    io_nb_channels      {2 1 2 3 4}         ; 
+    io_raw_format       {1 s16}             ; int16
+    
+    io_sampling_rate Hz {1 16e3 44.1e3 48e3} ; 16kHz 
+    
+    
     end

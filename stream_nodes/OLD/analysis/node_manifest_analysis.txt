@@ -1,9 +1,0 @@
-; ------------------------------------------------------------------------------------------------------------
-; SOFTWARE COMPONENT MANIFEST - "arm_stream_analysis"
-; ------------------------------------------------------------------------------------------------------------
-;
-    node_developer_name    ARM                             ; developer name
-    node_name              arm_stream_analysis             ; node name
-
- 
-end

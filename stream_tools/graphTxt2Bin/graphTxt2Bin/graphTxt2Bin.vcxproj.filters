@@ -53,6 +53,12 @@
     <ClInclude Include="..\..\..\stream_platform\computer\graph_computer_header.h">
       <Filter>Graph</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\stream_common_const.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_const.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\stream_nodes\signal-processingFR\resampler\node_manifest_resampler.txt">
@@ -97,14 +103,8 @@
     <Text Include="..\..\..\stream_nodes\node_manifest_none.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\..\..\stream_platform\computer\manifest\procmap_manifest_computer.txt">
-      <Filter>Resource Files</Filter>
-    </Text>
     <Text Include="..\..\..\stream_platform\computer\manifest\top_manifest_computer.txt">
       <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="..\..\..\stream_platform\computer\graph_computer.txt">
-      <Filter>Graph</Filter>
     </Text>
     <Text Include="..\..\..\stream_platform\computer\graph_computer_bin.txt">
       <Filter>Graph</Filter>
@@ -115,17 +115,20 @@
     <Text Include="..\..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_bin.txt">
       <Filter>Graph</Filter>
     </Text>
-    <Text Include="..\..\..\stream_platform\computer\graph_computer_debug.txt">
-      <Filter>Graph</Filter>
-    </Text>
-    <Text Include="..\..\..\stream_nodes\arm\mouver\node_manifest_mouver.txt">
-      <Filter>Resource Files</Filter>
-    </Text>
     <Text Include="..\..\..\stream_platform\computer\graph_computer_router.txt">
       <Filter>Graph</Filter>
     </Text>
     <Text Include="..\..\..\stream_platform\computer\graph_computer_router_bin.txt">
       <Filter>Graph</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_platform\computer\graph_computer_filter_bin.txt">
+      <Filter>Graph</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_platform\computer\graph_computer_filter.txt">
+      <Filter>Graph</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\arm\router\node_manifest_router.txt">
+      <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>
 </Project>

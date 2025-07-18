@@ -25,26 +25,27 @@
  * 
  */
 
-#include "platform.h"
+#include "stream_common_const.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
-/*   mask = ~((1 << (7 & mem_req_2bytes_alignment) -1) */
-
-extern void main_init(void);
+extern void main_init(uint32_t *graph);
 extern void main_run(void);
 extern void main_stop(void);
+
+
+uint32_t graph[] = { 0 };   // case when the graph comes the application 
 
 int main(void)
 {   int i;
 
-    main_init();
+    main_init(graph);
 
     for (i = 0; i < 240000; i++)
     {   main_run();
     }
 
     main_stop();
+    exit(-3);
 }
-
-//#endif

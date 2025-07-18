@@ -31,7 +31,7 @@
  * 
  */
 
-#include "platform.h"
+#include "presets.h"
 #ifdef CODE_ARM_STREAM_AMPLIFIER
 
 

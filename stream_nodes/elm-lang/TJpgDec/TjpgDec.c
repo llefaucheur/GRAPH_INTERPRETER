@@ -24,7 +24,7 @@
  * 
  */
 
-#include "platform.h"
+#include "presets.h"
 #ifdef CODE_TJPGDEC
 
 
