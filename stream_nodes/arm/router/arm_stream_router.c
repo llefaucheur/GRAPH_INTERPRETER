@@ -223,21 +223,24 @@ void arm_stream_router (unsigned int command, void *instance, void *data, unsign
             arm_stream_router_instance *pinstance = (arm_stream_router_instance *) instance;
             stream_xdmbuffer_t *pt_pt;
 
-//
-//
-//gather nb_input / output, frame size ..
-//check memrory allocation fits
-// 
-//copy to deinterleaved data scratch buffers  amount decided by HQOS 
-//convert to fp32 and extrapolate missing samples for other arcs
-//resample / asrc 
-//
-//mix(A(i) x input)i)) => A(j) x output(j) 
-//    resample
-//    Raw convcert
-//    interleaved stride
-//
-//shift scratch buffer to next interpolations
+            //
+            //
+            //gather nb_input / output, frame size ..
+            //check memrory allocation fits
+            // 
+            //copy to deinterleaved data scratch buffers  amount decided by HQOS 
+            //convert to fp32 and extrapolate missing samples for other arcs
+            //resample / asrc 
+            //
+            //mix(A(i) x input)i)) => A(j) x output(j) 
+            //    resample
+            //    Raw convcert
+            //    interleaved stride
+            //
+            //shift scratch buffer to next interpolations
+
+            //while all input arcs 
+
 
 
             pt_pt = data;

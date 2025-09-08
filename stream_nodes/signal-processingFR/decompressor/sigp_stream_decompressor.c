@@ -112,10 +112,10 @@ void sigp_stream_decompressor (unsigned int command, void *instance, void *data,
             sigp_stream_decompressor_instance *pinstance = (sigp_stream_decompressor_instance *) (memreq[0]);
             pinstance->TCM = (uint32_t *) (memreq[1]);       /* second bank = fast memory */
 
-            pinstance->output_format[0] = (memreq[6]);
-            pinstance->output_format[1] = (memreq[7]);
-            pinstance->output_format[2] = (memreq[8]);
-            pinstance->output_format[3] = (memreq[9]);
+            //pinstance->output_format[0] = (memreq[6]);
+            //pinstance->output_format[1] = (memreq[7]);
+            //pinstance->output_format[2] = (memreq[8]);
+            //pinstance->output_format[3] = (memreq[9]);
 
             /* save the address of the "services" */
             pinstance->stream_service_entry = (stream_services *)(intptr_t)data;
@@ -157,7 +157,7 @@ void sigp_stream_decompressor (unsigned int command, void *instance, void *data,
             {
                 case DECODER_IMADPCM            :
                     nb_samp = (nb_data << 1);   /* one byte generates 2 samples */ 
-                    decode_imadpcm((int32_t *)&(pinstance->memory_state[0]), inBuf, nb_samp, outBuf, pinstance->decoder_state);
+                    decode_imadpcm((int32_t *)&(pinstance->memory_state[0]), inBuf, (uint32_t)nb_samp, outBuf, pinstance->decoder_state);
 
                     /*  update only the size field 
                         the NODE is producing an amount of data different from the consumed one (see xdm11 in the manifest) 

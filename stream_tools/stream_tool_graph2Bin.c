@@ -43,7 +43,7 @@
 
 */
 
-void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph, FILE *ptf_graph_bin)
+void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph, FILE *ptf_graph_bin, char* ggraph_source)
 {
     uint32_t FMT0, FMT1, FMT2, FMT3, FMT4, FMT5; 
     uint32_t ARCW[SIZEOF_ARCDESC_W32];
@@ -75,16 +75,20 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     fprintf(graph->ptf_graph_bin, "//--------------------------------------\n"); 
     time ( &rawtime );
     timeinfo = localtime ( &rawtime );
-    fprintf(graph->ptf_graph_bin, "//  DATE %s", asctime (timeinfo)); 
-    fprintf(graph->ptf_graph_bin, "//  AUTOMATICALLY GENERATED CODES\n"); 
+    fprintf(graph->ptf_graph_bin, "//  DATE %s", asctime(timeinfo));
+    fprintf(graph->ptf_graph_bin, "//  AUTOMATICALLY GENERATED CODES\n");
     fprintf(graph->ptf_graph_bin, "//  DO NOT MODIFY !\n"); 
-    fprintf(graph->ptf_graph_bin, "//--------------------------------------\n"); 
+    fprintf(graph->ptf_graph_bin, "//--------------------------------------\n");
+    fprintf(graph->ptf_graph_bin, "//  Source %s \n", ggraph_source);
+    fprintf(graph->ptf_graph_bin, "//--------------------------------------\n");
 
     fprintf(graph->ptf_header, "//--------------------------------------\n"); 
     fprintf(graph->ptf_header, "//  DATE %s", asctime (timeinfo)); 
     fprintf(graph->ptf_header, "//  AUTOMATICALLY GENERATED CODES\n"); 
     fprintf(graph->ptf_header, "//  DO NOT MODIFY !\n"); 
-    fprintf(graph->ptf_header, "//--------------------------------------\n"); 
+    fprintf(graph->ptf_header, "//--------------------------------------\n");
+    fprintf(graph->ptf_header, "//  Source %s\n", ggraph_source);
+    fprintf(graph->ptf_header, "//--------------------------------------\n");
 
 
     /* ------------------------------------------------------------------------------------------------------------------------------
@@ -138,15 +142,15 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     {   
         FMT0 = 0;
         ST(FMT0,      PRIORITY_IO_CONTROL, 0);
-        ST(FMT0,        PROCID_IO_CONTROL, platform->arc[j].procID);
-        ST(FMT0,        ARCHID_IO_CONTROL, platform->arc[j].archID);
-        ST(FMT0, IDX_TO_STREAM_IO_CONTROL, platform->arc[j].arc_graph_ID);
-        if (platform->arc[j].arc_graph_ID == NOT_CONNECTED_TO_GRAPH)
-        {   sprintf(tmpstring, "IO(HW%d) Not Connected ProcID_%d archID_%d", j, platform->arc[j].procID, platform->arc[j].archID); 
+        ST(FMT0,        PROCID_IO_CONTROL, platform->IO_arc[j].procID);
+        ST(FMT0,        ARCHID_IO_CONTROL, platform->IO_arc[j].archID);
+        ST(FMT0, IDX_TO_STREAM_IO_CONTROL, platform->IO_arc[j].arc_graph_ID);
+        if (platform->IO_arc[j].arc_graph_ID == NOT_CONNECTED_TO_GRAPH)
+        {   sprintf(tmpstring, "IO(HW%d) Not Connected ProcID_%d archID_%d", j, platform->IO_arc[j].procID, platform->IO_arc[j].archID);
         }
         else
-        {   sprintf(tmpstring, "IO(HW%d) GraphID(%d)    ProcID_%d archID_%d %s", j, platform->arc[j].arc_graph_ID, 
-                platform->arc[j].procID, platform->arc[j].archID, platform->arc[j].manifest_file); 
+        {   sprintf(tmpstring, "IO(HW%d) GraphID(%d)    ProcID_%d archID_%d %s", j, platform->IO_arc[j].arc_graph_ID,
+                platform->IO_arc[j].procID, platform->IO_arc[j].archID, platform->IO_arc[j].manifest_file);
         }
         GTEXT(tmpstring); GWORDINC(FMT0);
     }   
@@ -843,7 +847,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         sizeCons = (float)(graph->arcFormat[graph->arc[iarc].fmtCons].frame_length_bytes);
 
         if (sizeProd > sizeCons) 
-        {   size = sizeProd; 
+        {   size = sizeProd;
         } else 
         {   size = sizeCons;
         }
@@ -1060,7 +1064,6 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         /* word 2 - memory banks  compute the static area  */
         for (imem = 0; imem < node->nbMemorySegment; imem++)    
         {   struct node_memory_bank *membank = &(node->memreq[imem]);
-            uint32_t graph_malloc;
 
             FMT0 = FMT1 = 0;
             ST(FMT1, CLEARSWAP_LW2S, clearswap_lw2s); 
@@ -1081,8 +1084,6 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
                 }
                 
                 compute_memreq (membank, graph->arcFormat, node);
-                graph_malloc = node->memreq[imem].malloc_add;
-                membank->graph_memreq_size += graph_malloc; 
             
                 sprintf(tmpstring3, "inode %d %s imem %d Size %lld h%llx", inode, node->nodeName, imem, membank->graph_memreq_size, membank->graph_memreq_size);
 
@@ -1182,7 +1183,6 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         /* word 2 - memory banks  ---  Working allocations are made in THIS second pass */
         for (imem = 0; imem < node->nbMemorySegment; imem++)    
         {   struct node_memory_bank *membank = &(node->memreq[imem]);
-            uint32_t graph_malloc;
 
             if (membank->stat0work1ret2 == MEM_TYPE_WORKING)
             {
@@ -1194,8 +1194,6 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
                 }
 
                 compute_memreq (membank, graph->arcFormat, node);
-                graph_malloc = node->memreq[imem].malloc_add;
-                membank->graph_memreq_size += graph_malloc; 
             
                 sprintf(tmpstring3, "inode %d imem %d (Scratch) Size %lld  h%llx", inode, imem, membank->graph_memreq_size, membank->graph_memreq_size);
 
@@ -1300,8 +1298,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     }
 
 
-    FMT1 = platform->membank[0].ptalloc_static +
-        platform->membank[0].max_working_booking;
+    FMT1 = (uint32_t)(platform->membank[0].ptalloc_static + platform->membank[0].max_working_booking);
     FMT1 = FMT1/4;
     FMT1 += LK_PIO;
 

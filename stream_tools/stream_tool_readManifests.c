@@ -67,7 +67,7 @@ void decode_domain(int *domain_index, char *input)
 
     if (*domain_index == (char)(-1))
     {   fprintf(stderr, "\n\n decode_domain error for %s \n\n", input);
-        exit (-6);
+        exit( 6);
     }
 }
 
@@ -197,44 +197,39 @@ void read_common_data_options(char** pt_line, struct options *pt)
 
 #define COMPARE(x) 0==strncmp(pt_line, x, strlen(x))
 
-void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *arc)
+void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *IO_arc)
 {
-    char* pt_line, cstring[NBCHAR_LINE];
+    char* pt_line, domain[NBCHAR_LINE], cstring[NBCHAR_LINE];
     int32_t nb_io_stream;
 
     pt_line = inputFile;
     nb_io_stream = 0;
 
     jump2next_valid_line(&pt_line);
-    fields_extract(&pt_line, "c", (arc->IO_name));
-    fields_extract(&pt_line, "c", cstring);
-    decode_domain(&(arc->format.domain), cstring);
+    fields_extract(&pt_line, "c", (IO_arc->IO_name));
+    fields_extract(&pt_line, "c", domain);
+    decode_domain(&(IO_arc->IO_FMT_manifest.domain), domain);
 
-    /* default IO values */
-    arc->commander0_servant1 = 1;
-    arc->format.nchan = 1;
-    arc->format.frame_length_format = 1;   /* frame length format (0:in milliseconds 1:in Bytes) */
-    arc->format.frame_length_bytes = 1;         
 
     while (globalEndFile != FOUND_END_OF_FILE /* && *pt_line != '\0'*/ )
     {
         if (COMPARE(io_commander0_servant1))
-        {   fields_extract(&pt_line, "ci", cstring, &(arc->commander0_servant1)); 
+        {   fields_extract(&pt_line, "ci", cstring, &(IO_arc->commander0_servant1)); 
         }
         if (COMPARE(io_direction_rx0tx1))
-        {   fields_extract(&pt_line, "ci", cstring, &(arc->rx0tx1));
+        {   fields_extract(&pt_line, "ci", cstring, &(IO_arc->rx0tx1));
         }
         if (COMPARE(io_raw_format))
-        {   fields_extract(&pt_line, "ci", cstring, &(arc->format.raw_data)); 
+        {   fields_extract(&pt_line, "ci", cstring, &(IO_arc->IO_FMT_manifest.raw_data));
         }
         if (COMPARE(io_interleaving))
-        {   fields_extract(&pt_line, "ci", cstring, &(arc->format.deinterleaved)); 
+        {   fields_extract(&pt_line, "ci", cstring, &(IO_arc->IO_FMT_manifest.deinterleaved));
         }
         if (COMPARE(io_nb_channels))
-        {   fields_options_extract(&pt_line, &(arc->nb_channels_option)); 
+        {   fields_options_extract(&pt_line, &(IO_arc->nb_channels_option)); 
         }
         if (COMPARE(io_frame_length))
-        {   fields_options_extract(&pt_line, &(arc->frame_length_option));  
+        {   fields_options_extract(&pt_line, &(IO_arc->frame_length_samples_option));  
         }
 
         if (COMPARE(io_frame_duration))
@@ -243,72 +238,72 @@ void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *arc)
             convert_to_mks_unit(cstring, &fdata);   /* conversion to standard unit used in "format" (Hz) */
         }   
         //if (COMPARE(io_units_rescale))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_units_rescale_multiple))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_power_mode))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_position))
-        //{   fields_extract(&pt_line, "ci",cstring,  &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci",cstring,  &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_euler_angles))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         if (COMPARE(io_sampling_rate))
-        {   fields_options_extract(&pt_line, &(arc->sampling_rate_option)); 
+        {   fields_options_extract(&pt_line, &(IO_arc->sampling_rate_option)); 
         }
         //if (COMPARE(io_sampling_period_s))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_sampling_period_day))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_sampling_rate_accuracy))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_time_stamp_format))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
 
         /* --------------  DOMAIN SPECIFIC --------------- */
         //if (COMPARE(io_analog_scale))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_units_rescale))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_channel_mapping))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_analog_gain))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_digital_gain))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_hp_filter))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_agc))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_router))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
 
 
 
         //if (COMPARE(io_motion_format))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_motion_sensitivity))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
         //if (COMPARE(io_motion_averaging))
-        //{   fields_extract(&pt_line, "ci", cstring, &(arc->graphalloc_X_bsp_0)); 
+        //{   fields_extract(&pt_line, "ci", cstring, &(IO_arc->graphalloc_X_bsp_0)); 
         //}
 
 
@@ -357,7 +352,10 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         if (COMPARE(node_logo))                     // file name (file path of the manifest) 
         {   //fields_extract(&pt_line, "cic", ctmp, node->nodeName);  
         }
-        if (COMPARE(node_use_mpdtcm))                
+        if (COMPARE(node_stack_usage))              // approximate and max number of bytes used on stack
+        {   fields_extract(&pt_line, "cii", ctmp, &(node->stack_usage_max), &(node->stack_usage_running) );
+        }
+        if (COMPARE(node_use_mpdtcm))
         {   fields_extract(&pt_line, "ci", ctmp, &i);  // TBC
         }
         if (COMPARE(node_mask_library))
@@ -378,10 +376,14 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         if (COMPARE(node_stream_version))
         {   fields_extract(&pt_line, "ci", ctmp, &i);  // TBC
         }
+
         if (COMPARE(node_mem))              // node_mem  block ID
         {   fields_extract(&pt_line, "ci", ctmp, &idx_mem);  
             if (idx_mem +1 > node->nbMemorySegment) // memory segment counts from 0
             {   node->nbMemorySegment = idx_mem +1;
+            }
+            for (i = 0; i < MAX_NB_MEM_REQ_PER_NODE; i++)
+            {   node->memreq[i].iarcFrameMono = node->memreq[i].iarcFrame = node->memreq[i].iarcFrameChan = (uint32_t) (-1); // "unused"
             }
         }
         if (COMPARE(node_mem_alignement))
@@ -397,19 +399,28 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
             }
         }
         if (COMPARE(node_mem_alloc))            // node_mem_alloc    A=32 
-        {   fields_extract(&pt_line, "cici", ctmp, &(node->memreq[idx_mem].size_additional), ctmp, &i); 
+        {   fields_extract(&pt_line, "cici", ctmp, &(node->memreq[idx_mem].size_mem_alloc_A), ctmp, &i);
         }
         if (COMPARE(node_mem_frame_size_mono))  // "mulfac B" "type" ("i") 
-        {   fields_extract(&pt_line, "cici", ctmp,  &(node->memreq[idx_mem].MulFrameSizeMono), 
+        {   fields_extract(&pt_line, "cfci", ctmp,  &(node->memreq[idx_mem].MulFrameSizeMono), 
                node->memreq[idx_mem].TypeFrameMono, &(node->memreq[idx_mem].iarcFrameMono));
+            if (0 != strncmp(node->memreq[idx_mem].TypeFrameMono, "arc", strlen("arc")))
+            {   node->memreq[idx_mem].iarcFrameMono = (-1); // no arc is selected
+            }
         }
         if (COMPARE(node_mem_frame_size))       // "mulfac C" "type" ("j")   
-        {   fields_extract(&pt_line, "cici", ctmp,  &(node->memreq[idx_mem].MulFrameSize), 
+        {   fields_extract(&pt_line, "cfci", ctmp,  &(node->memreq[idx_mem].MulFrameSize), 
                   node->memreq[idx_mem].TypeFrame, &(node->memreq[idx_mem].iarcFrame));
+            if (0 != strncmp(node->memreq[idx_mem].TypeFrame, "arc", strlen("arc")))
+            {   node->memreq[idx_mem].iarcFrame = (-1); // no arc is selected
+            }
         }
         if (COMPARE(node_mem_nbchan))           // "mulfac D" "type" ("k")
-        {   fields_extract(&pt_line, "cici", ctmp,  &(node->memreq[idx_mem].MulFrameSizeChan), 
+        {   fields_extract(&pt_line, "cfci", ctmp,  &(node->memreq[idx_mem].MulFrameSizeChan), 
                node->memreq[idx_mem].TypeFrameChan, &(node->memreq[idx_mem].iarcFrameChan));
+            if (0 != strncmp(node->memreq[idx_mem].TypeFrameChan, "arc", strlen("arc")))
+            {   node->memreq[idx_mem].iarcFrameChan = (-1); // no arc is selected
+            }
         }
         if (COMPARE(node_mem_type))
         {   fields_extract(&pt_line, "ci", ctmp, &(node->memreq[idx_mem].stat0work1ret2));
@@ -420,11 +431,13 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         if (COMPARE(node_mem_relocatable))
         {   fields_extract(&pt_line, "ci", ctmp, &i);// TBC
         }
+        // When the program memory allocation is not possible the address shared to the node will be (uint32)(-1)
         if (COMPARE(node_mem_data0prog1))
-        {   fields_extract(&pt_line, "ci", ctmp, &i); // TBC
+        {   fields_extract(&pt_line, "ci", ctmp, &i); 
         }
         if (COMPARE(node_not_reentrant))
-        {   fields_extract(&pt_line, "ci", ctmp, &i); // default : node_not_reentrant = 0  all nodes are reentrant
+        {   fields_extract(&pt_line, "c", ctmp); // default : node_not_reentrant = 0  all nodes are reentrant
+            node->not_reentrant = 1;
         }
 
         if (COMPARE(node_new_arc))
@@ -448,8 +461,8 @@ void read_node_manifest(char* inputFile, struct stream_node_manifest* node)
         if (COMPARE(node_arc_raw_format))
         {   fields_options_extract(&pt_line, &(node->arc[idx_arc].raw_format_options)); 
         }
-        if (COMPARE(node_arc_frame_length))
-        {   fields_options_extract(&pt_line, &(node->arc[idx_arc].frame_length_option)); 
+        if (COMPARE(node_arc_frame_samples))    /* TODO @@@ check the allowed frame_samples against graph frame_length */
+        {   fields_options_extract(&pt_line, &(node->arc[idx_arc].frame_length_samples_option)); 
         }
         if (COMPARE(node_arc_frame_duration))
         {   fields_options_extract(&pt_line, &(node->arc[idx_arc].frame_duration_option)); 
@@ -500,7 +513,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     strcpy(graph_platform_manifest_name, "");
     strcpy(IO_name, "");
     strcpy(node_name_, "");
-    if (0 == (inputFile = calloc (MAXINPUT, 1))) {  printf ("\n init error \n"); exit(-1); }
+    if (0 == (inputFile = calloc (MAXINPUT, 1))) {  printf ("\n init error \n"); exit( 1); }
 
     /*
         STEP 1 : FILE PATHS
@@ -576,7 +589,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
 
             fields_extract(&pt_line, "ici", &ipath, tmpchar, &io_al_idx);
 
-            strcpy(platform->arc[io_al_idx].manifest_file, tmpchar);
+            strcpy(platform->IO_arc[io_al_idx].manifest_file, tmpchar);
 
             for (i = 0; i < nb_paths; i++) {  if (ipath == indexpaths[i]) {strcpy(file_name, paths[i]); break; } }
 
@@ -585,11 +598,11 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
             read_input_file(file_name, inputFile);
 
             /* read all the parameters of the IO arc from this IO manifest */
-            read_platform_io_stream_manifest(inputFile, &(platform->arc[io_al_idx]));
-            platform->arc[io_al_idx].fw_io_idx = io_al_idx;
-            platform->arc[io_al_idx].procID = platform->processor[platform->nb_processors].processorID;
-            platform->arc[io_al_idx].archID = platform->processor[platform->nb_processors].architectureID;
-            platform->arc[io_al_idx].arc_graph_ID = NOT_CONNECTED_TO_GRAPH;
+            read_platform_io_stream_manifest(inputFile, &(platform->IO_arc[io_al_idx]));
+            platform->IO_arc[io_al_idx].fw_io_idx = io_al_idx;
+            platform->IO_arc[io_al_idx].procID = platform->processor[platform->nb_processors].processorID;
+            platform->IO_arc[io_al_idx].archID = platform->processor[platform->nb_processors].architectureID;
+            platform->IO_arc[io_al_idx].arc_graph_ID = NOT_CONNECTED_TO_GRAPH;
         } 
 
         platform->nb_hwio_stream += platform->processor[iproc].nb_hwio_processor; /* sum of all IO, one per processor */
@@ -609,7 +622,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
         char tmpchar[NBCHAR_LINE] = "";
     
         if (platform->nb_nodes > MAX_NB_NODES)
-        {   printf("too much nodes !"); exit(-4);
+        {   printf("too much nodes !"); exit( 4);
         }
         fields_extract(&pt_line, "icii", &ipath, tmpchar, &procID, &archID);
         foundEndOfNodeList = (globalEndFile == FOUND_END_OF_FILE);

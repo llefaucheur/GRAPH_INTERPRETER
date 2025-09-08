@@ -59,7 +59,7 @@ extern void platform_init_io(arm_stream_instance_t *S, uint32_t nhwio);
     default and specific compute services
     the table is initialized here in  platform_init_io()
 */
-extern void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void *ptr3, uint32_t n);
+extern void arm_stream_services(uint32_t command, intptr_t ptr1, intptr_t ptr2, intptr_t ptr3, intptr_t n);
 
 
 /**
@@ -87,7 +87,7 @@ extern void arm_stream_services (uint32_t command, void *ptr1, void *ptr2, void 
  */
 intptr_t pack2linaddr_int(uint32_t x, uint8_t ** LL)
 {
-    uint32_t R;
+    intptr_t R;
 #if 0
     {   uint8_t *long_base;                                     
         uint8_t extend;                                         
@@ -181,6 +181,7 @@ void platform_init_stream_instance(arm_stream_instance_t *S)
     S->application_callbacks = platform_specific_data.application_callbacks;
     S->node_entry_points = (const p_stream_node *)platform_specific_data.node_entry_points;
     S->al_services = arm_stream_services;
+
     S->new_parameters = platform_specific_data.new_parameters;
 
     S->pio_hw      = read_graph_and_copy(S, graph_input, GRAPH_PIO_HW);     // IO provided by the platform

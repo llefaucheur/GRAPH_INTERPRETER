@@ -82,38 +82,74 @@ void arm_stream_null_task (int32_t c, stream_handle_t i, void *d, uint32_t *s)  
 */
 
 
-FILE *ptf_data_in_1;
+FILE* ptf_data_in_0;
+FILE* ptf_data_in_1;
 FILE *ptf_analog_sensor_0;
 FILE *ptf_gpio_out_0;
 FILE *ptf_data_out_0;
 
 
-#define size_data_in_1 32
-static int16_t buffer_data_in_1[size_data_in_1/2];
+#define size_data_in_0 16
+static int16_t buffer_data_in_0[size_data_in_0 / sizeof(int16_t)];
+
+#define size_data_in_1 2
+static int16_t buffer_data_in_1[size_data_in_1 / sizeof(int16_t)];
 
 #define size_data_out_0 32
-static int16_t buffer_data_out_0[size_data_out_0/2];
+static int16_t buffer_data_out_0[size_data_out_0/ sizeof(int16_t)];
 
-#define size_gpio_out_0 32
-static uint32_t buffer_gpio_out_0[size_gpio_out_0/4];
+#define size_gpio_out_0 96                      
+static uint32_t buffer_gpio_out_0[size_gpio_out_0/ sizeof(int32_t)];    // 96 Bytes = 24 samples_32b (=3 samples x 8 channels)
 
-
+/* 
+    multichannel tests 
+*/
 void data_in_0 (uint32_t command, stream_xdmbuffer_t *data) 
 {
+    int32_t tmp, stream_format_io_setting, count;
+
     switch (command)
     {
     case STREAM_RESET:
-        //stream_format_io_setting = *(uint32_t *)(data->address);
-        break;        
-    case STREAM_SET_PARAMETER:  /* presets reloaded */
+        if (NULL == (ptf_data_in_0 = fopen("..\\stream_test\\data_in_0.wav", "rb"))) 
+        {
+            exit(1);
+        }
+        else
+        {
+            int i, c;
+            for (i = 0; i < 64; i++)
+            {
+                fread(&c, 1, 1, ptf_data_in_0); // skip WAV header
+            }
+        }
+        stream_format_io_setting = *(uint32_t*)(data->address);
         break;
-    case STREAM_SET_BUFFER:     /* if memory allocation is made in the graph */
+    case STREAM_SET_PARAMETER:
         break;
-    case STREAM_RUN:            /* data moves */
+    case STREAM_SET_BUFFER:
+    {
+        stream_xdmbuffer_t* pt_pt;
+        pt_pt = (stream_xdmbuffer_t*)data;
+        pt_pt->address = (intptr_t)buffer_data_in_0;
+        pt_pt->size = size_data_in_0;
+    }
+    break;
+    case STREAM_RUN:
+        count = size_data_in_0 / sizeof(int16_t);
+        tmp = (int32_t)fread(buffer_data_in_0, sizeof(int16_t), count, ptf_data_in_0);
+        if (tmp != count)
+        {
+            arm_stream_io_ack(IO_PLATFORM_DATA_IN_0, buffer_data_in_0, 0);
+            fclose(ptf_data_in_0);
+        }
+        else
+        {
+            arm_stream_io_ack(IO_PLATFORM_DATA_IN_0, buffer_data_in_0, size_data_in_0);
+        }
         break;
-    case STREAM_STOP:           /* stop data moves */
-        break;
-    case STREAM_READ_PARAMETER: /* setting done ? device is ready ? calibrated ? */
+    case STREAM_STOP:
+        fclose(ptf_data_in_0);
         break;
     default:
         break;
@@ -129,8 +165,8 @@ void data_in_1 (uint32_t command, stream_xdmbuffer_t *data)
     switch (command)
     {
     case STREAM_RESET:
-        if (NULL == (ptf_data_in_1 = fopen("stream_test\\test3.wav", "rb")))
-        {   exit (-1); 
+        if (NULL == (ptf_data_in_1 = fopen("..\\stream_test\\test3.wav", "rb")))
+        {   exit (1); 
         }
         else 
         {   int i, c; 
@@ -150,8 +186,8 @@ void data_in_1 (uint32_t command, stream_xdmbuffer_t *data)
         }
         break;
     case STREAM_RUN:
-        count = size_data_in_1/2;
-        tmp = fread(buffer_data_in_1, 2, count, ptf_data_in_1);
+        count = size_data_in_1/sizeof(int16_t);
+        tmp = (int32_t) fread(buffer_data_in_1, sizeof(int16_t), count, ptf_data_in_1);
         if (tmp != count)
         {   arm_stream_io_ack (IO_PLATFORM_DATA_IN_1, buffer_data_in_1, 0);
             fclose (ptf_data_in_1);
@@ -178,9 +214,9 @@ void analog_sensor_0 (uint32_t command, stream_xdmbuffer_t *data)
     switch (command)
     {
     case STREAM_RESET:
-        //if (NULL == (ptf_in_stream_in_0_data = fopen("stream_test\\sine_noise_offset.wav", "rb"))) 
-        if (NULL == (ptf_analog_sensor_0 = fopen("stream_test\\chirp_M6dB.wav", "rb")))
-        {   exit (-1); 
+        //if (NULL == (ptf_in_stream_in_0_data = fopen("..\\stream_test\\sine_noise_offset.wav", "rb"))) 
+        if (NULL == (ptf_analog_sensor_0 = fopen("..\\stream_test\\chirp_M6dB.wav", "rb")))
+        {   exit ( 1); 
         }
         else 
         {   int i, c; 
@@ -196,7 +232,7 @@ void analog_sensor_0 (uint32_t command, stream_xdmbuffer_t *data)
         break;
     case STREAM_RUN:
         /* "io_platform_stream_in_0," frame_size option in samples + FORMAT-0 in the example graph */
-        tmp = fread(data, 1, FORMAT_PRODUCER_FRAME_SIZE, ptf_analog_sensor_0);
+        tmp = (int32_t) fread(data, 1, FORMAT_PRODUCER_FRAME_SIZE, ptf_analog_sensor_0);
 
         if (FORMAT_PRODUCER_FRAME_SIZE != tmp)
         {   arm_stream_io_ack (IO_PLATFORM_ANALOG_SENSOR_0, data, 0);
@@ -311,9 +347,9 @@ void gpio_out_0 (uint32_t command, stream_xdmbuffer_t *data)
         //stream_format_io_setting = *(uint32_t *)(data->address);          
         break;    
     case STREAM_SET_PARAMETER:
-        #define FILE_GPIO_OUT_0 "stream_test\\gpio_out_0.raw"
+        #define FILE_GPIO_OUT_0 "..\\stream_test\\gpio_out_0.raw"
             if (NULL == (ptf_gpio_out_0 = fopen(FILE_GPIO_OUT_0, "wb")))
-            {   exit (-1);
+            {   exit ( 1);
             }
         break; 
     case STREAM_SET_BUFFER:
@@ -366,9 +402,9 @@ void data_out_0 (uint32_t command, stream_xdmbuffer_t *data)
     switch (command)
     {
     case STREAM_RESET:
-        #define FILE_DATA_OUT_0 "stream_test\\data_out_0.raw"
+        #define FILE_DATA_OUT_0 "..\\stream_test\\data_out_0.raw"
             if (NULL == (ptf_data_out_0 = fopen(FILE_DATA_OUT_0, "wb")))
-            {   exit (-1);
+            {   exit ( 1);
             }
         break;      
     case STREAM_SET_PARAMETER:

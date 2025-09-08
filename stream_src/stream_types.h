@@ -117,7 +117,7 @@ typedef struct
     p_stream_services application_callbacks;    // callbacks used by scripts
     p_stream_node node_entry_points;            // list of nodes
     p_io_function_ctrl platform_io;             // list of IO functions
-    uintptr_t *new_parameters;                   // list of [node index, parameter address]..[0;0]
+    uintptr_t new_parameters;                   // list of [node index, parameter address]..[0;0]
     uint8_t procID;
     uint8_t archID;
 

@@ -19,10 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <VCProjectVersion>16.0</VCProjectVersion>
+    <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{1aecf575-9230-45f4-b52c-7b2f5d11821c}</ProjectGuid>
-    <RootNamespace>graphTxt2Bin</RootNamespace>
+    <ProjectGuid>{1270be9e-dbef-4567-85e5-a0e6ff0eeda1}</ProjectGuid>
+    <RootNamespace>Computer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -70,19 +70,8 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_src;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform;$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes;$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\computer\stream_libraries\CMSIS-DSP\Include;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -107,8 +96,6 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -116,7 +103,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -135,26 +122,77 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\stream_tool_graph2Bin.c" />
-    <ClCompile Include="..\..\stream_tool_library.c" />
-    <ClCompile Include="..\..\stream_tool_main.c" />
-    <ClCompile Include="..\..\stream_tool_readManifests.c" />
-    <ClCompile Include="..\..\stream_tool_read_graph.c" />
-    <ClCompile Include="..\..\stream_tool_read_script.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\demodulator\arm_stream_demodulator.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\demodulator\arm_stream_demodulator_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\filter2D\arm_stream_filter2D.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\filter\arm_stream_filter.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\router\arm_stream_router.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\router\arm_stream_router_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_script.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_script_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\bitbank\JPEGENC\bitbank_JPEGENC.c" />
+    <ClCompile Include="..\..\..\stream_nodes\elm-lang\TJpgDec\TjpgDec.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor_imadpcm.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor_imadpcm.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector2D\sigp_stream_detector2D.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector2D\sigp_stream_detector2D_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler_process.c" />
+    <ClCompile Include="..\..\..\stream_platform\computer\computer_init.c" />
+    <ClCompile Include="..\..\..\stream_platform\computer\computer_io_services.c" />
+    <ClCompile Include="..\..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_fast_q15.c" />
+    <ClCompile Include="..\..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_init_q15.c" />
+    <ClCompile Include="..\..\..\stream_platform\platform_defaults\default_services.c" />
+    <ClCompile Include="..\..\..\stream_platform\platform_defaults\platform_init.c" />
+    <ClCompile Include="..\..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\default_biquad_cascade_df1_f32.c" />
+    <ClCompile Include="..\..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\default_biquad_cascade_df1_fast_q15.c" />
+    <ClCompile Include="..\..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\default_biquad_cascade_df1_init_f32.c" />
+    <ClCompile Include="..\..\..\stream_platform\platform_defaults\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\default_biquad_cascade_df1_init_q15.c" />
+    <ClCompile Include="..\..\..\stream_src\stream_graph_interpreter.c" />
+    <ClCompile Include="..\..\..\stream_src\stream_io.c" />
+    <ClCompile Include="..\..\..\stream_src\stream_scheduler.c" />
+    <ClCompile Include="..\..\main.c" />
+    <ClCompile Include="..\main_call_computer.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\demodulator\arm_stream_demodulator.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\filter2D\arm_stream_filter2D.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\filter\arm_stream_filter.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\router\arm_stream_router.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_stream_script.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_stream_script_instructions.h" />
+    <ClInclude Include="..\..\..\stream_nodes\bitbank\JPEGENC\bitbank_JPEGENC.h" />
+    <ClInclude Include="..\..\..\stream_nodes\elm-lang\TJpgDec\TjpgDec.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor_imadpcm.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor_imadpcm.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\detector2D\sigp_stream_detector2D.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler.h" />
     <ClInclude Include="..\..\..\stream_nodes\stream_common_const.h" />
-    <ClInclude Include="..\..\..\stream_platform\computer\graph_computer_header.h" />
+    <ClInclude Include="..\..\..\stream_nodes\stream_common_types.h" />
+    <ClInclude Include="..\..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Include\dsp\computer_filtering_functions.h" />
+    <ClInclude Include="..\..\..\stream_platform\platform_computer.h" />
+    <ClInclude Include="..\..\..\stream_platform\presets.h" />
     <ClInclude Include="..\..\..\stream_src\stream_const.h" />
-    <ClInclude Include="..\..\stream_tool.h" />
-    <ClInclude Include="..\..\stream_tool_define.h" />
-    <ClInclude Include="..\..\stream_tool_include.h" />
+    <ClInclude Include="..\..\..\stream_src\stream_extern.h" />
+    <ClInclude Include="..\..\..\stream_src\stream_types.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\stream_nodes\arm\amplifier\node_manifest_amplifier.txt" />
@@ -166,37 +204,15 @@
     <Text Include="..\..\..\stream_nodes\arm\script\node_manifest_script.txt" />
     <Text Include="..\..\..\stream_nodes\bitbank\JPEGENC\node_manifest_bitbank_JPEGENC.txt" />
     <Text Include="..\..\..\stream_nodes\elm-lang\TJpgDec\node_manifest_TjpgDec.txt" />
-    <Text Include="..\..\..\stream_nodes\node_manifest_none.txt" />
     <Text Include="..\..\..\stream_nodes\signal-processingFR\compressor\node_manifest_compressor.txt" />
     <Text Include="..\..\..\stream_nodes\signal-processingFR\decompressor\node_manifest_decompressor.txt" />
     <Text Include="..\..\..\stream_nodes\signal-processingFR\detector2D\node_manifest_detector2D.txt" />
     <Text Include="..\..\..\stream_nodes\signal-processingFR\detector\node_manifest_detector.txt" />
     <Text Include="..\..\..\stream_nodes\signal-processingFR\resampler\node_manifest_resampler.txt" />
-    <Text Include="..\..\..\stream_platform\computer\graph_computer.txt" />
-    <Text Include="..\..\..\stream_platform\computer\graph_computer_bin.txt" />
     <Text Include="..\..\..\stream_platform\computer\graph_computer_filter.txt" />
     <Text Include="..\..\..\stream_platform\computer\graph_computer_filter_bin.txt" />
-    <Text Include="..\..\..\stream_platform\computer\graph_computer_filter_detector.txt" />
-    <Text Include="..\..\..\stream_platform\computer\graph_computer_filter_detector_bin.txt" />
     <Text Include="..\..\..\stream_platform\computer\graph_computer_router.txt" />
     <Text Include="..\..\..\stream_platform\computer\graph_computer_router_bin.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_2d_in_0.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_analog_sensor_0.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_audio_in_0.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_data_in_0.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_data_in_1.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_data_out_0.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_gpio_out_0.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_gpio_out_1.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_imu_temperature_0.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_line_in_0.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_line_out_0.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_motion_in_0.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_node_trace_0.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\io_platform_stream_in_0.txt" />
-    <Text Include="..\..\..\stream_platform\computer\manifest\top_manifest_computer.txt" />
-    <Text Include="..\..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306.txt" />
-    <Text Include="..\..\..\stream_platform\lp-mspm0l1306\graph_lp-mspm0l1306_bin.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

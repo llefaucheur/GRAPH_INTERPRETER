@@ -105,7 +105,7 @@ static void stream_calls_node (arm_stream_instance_t *S,
  */
 static intptr_t pack2linaddr_int(uint32_t x, uint8_t ** LL)
 {
-    uint32_t R;
+    intptr_t R;
 #if 0
     {   uint8_t *long_base;                                     
         uint8_t extend;                                         
@@ -204,8 +204,8 @@ static intptr_t arc_extract_info_int (uint32_t *arc, uint8_t tag)
 
 static uint8_t * arc_extract_info_pt (arm_stream_instance_t *S, uint32_t *arc, uint8_t tag)
 {
-    uint32_t read;
-    uint32_t write;
+    uintptr_t read;
+    uintptr_t write;
     uint8_t *long_base;
     uint8_t *ret;
 
@@ -368,12 +368,12 @@ static void arc_data_operations (
         uint32_t *arc, 
         uint8_t tag, 
         uint8_t *buffer, 
-        uint32_t datasize
+        uintptr_t datasize
         )
 {
-    uint32_t read;
-    uint32_t write;
-    uint32_t size;
+    uintptr_t read;
+    uintptr_t write;
+    uintptr_t size;
     uint8_t *long_base;
     uint8_t *src;
     uint8_t* dst;
@@ -648,7 +648,8 @@ void load_clear_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1)
 {
     uint8_t imem;
     intptr_t *memaddr;
-    uint32_t *memreq, memlen, memReqWord2;
+    uint32_t *memreq, memReqWord2;
+    uintptr_t memlen;
     
     imem = pre0post1;   // provision for swap postprocessing @@@@
 
@@ -664,7 +665,7 @@ void load_clear_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1)
         {   uint8_t arcID;
             uint32_t *arc;
 
-            arcID = (uint8_t) RD(memaddr, SWAPBUFID_LW2S);
+            arcID = (uint8_t) RD(*memaddr, SWAPBUFID_LW2S);
             arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
             memlen = RD(arc[1], BUFF_SIZE_ARCW1);
 
@@ -1073,7 +1074,7 @@ static void upload_new_parameters (arm_stream_instance_t *S)
 
     uintptr_t *new_parameters = (uintptr_t *)(S->new_parameters);
     uint32_t max_param_search = MAX_NB_PENDING_PARAM_UPDATES;
-    uint32_t node_offset = (S->linked_list_ptr) - (S->linked_list);
+    uint32_t node_offset = (uint32_t)((S->linked_list_ptr) - (S->linked_list));
 
     while ((new_parameters[NEWPARAM_INDEX] != 0) && (new_parameters[NEWPARAM_ADDRESS] != 0) && (max_param_search > 0))
     {
@@ -1158,7 +1159,7 @@ static void reset_component (arm_stream_instance_t *S)
     #define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (STREAM_FORMAT_SIZE_W32*MAX_NB_STREAM_PER_NODE))
     intptr_t memreq_physical[MEMRESET];
     
-    nbmem = (uint8_t)RD(S->node_header,NALLOCM1_LW0);
+    nbmem = (uint8_t)RD(S->node_header[0], NALLOCM1_LW0);
     nbmem ++;
     memreq_physical[0] = (intptr_t)(S->node_instance_addr);
 

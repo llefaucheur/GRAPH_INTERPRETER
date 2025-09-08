@@ -34,7 +34,6 @@ extern void main_init(uint32_t *graph);
 extern void main_run(void);
 extern void main_stop(void);
 
-
 uint32_t graph[] = { 0 };   // case when the graph comes the application 
 
 int main(void)
@@ -47,5 +46,5 @@ int main(void)
     }
 
     main_stop();
-    exit(-3);
+    exit(3);
 }

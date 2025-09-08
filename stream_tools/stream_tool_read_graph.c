@@ -156,104 +156,139 @@ float read_default_option (struct options *option, uint32_t graph_data)
 }
 
 
-/* ========================================================================
-    compute node  frame_length max sum 
-
-*/
-void compute_frame_length (struct stream_node_manifest *node, struct formatStruct *all_format,
-    uint64_t *memChan, uint32_t iarcFrameMono, uint64_t *sizeArcMono, uint32_t iarcFrame, uint64_t *sizeArc,
-    uint64_t *maxin, uint64_t *maxout, uint64_t *maxall, uint64_t *sumin, uint64_t *sumout, uint64_t *sumall, 
-    uint64_t *maxinMono, uint64_t *maxoutMono, uint64_t *maxallMono, uint64_t *suminMono, uint64_t *sumoutMono, uint64_t *sumallMono,
-    uint32_t MulFrameSizeMono, uint32_t MulFrameSize, uint32_t MulFrameSizeChan)
-{
-    struct formatStruct *format;
-    uint32_t iarc, fmtProd, fmtCons;
-    uint64_t sizeMono, size;
-
-    /* specific arc MONO */
-    if (iarcFrameMono < node->nbInputArc)   /* is it an input arc ? => read consumer fields */
-    {   fmtCons = node->arc[iarcFrameMono].fmtCons; format = &(all_format[fmtCons]);
-    } else
-    {   fmtProd = node->arc[iarcFrameMono].fmtProd; format = &(all_format[fmtProd]);
-    }
-
-    if (format->frame_length_format == 0)
-    {   *sizeArcMono = (uint64_t)(0.5 + format->frame_length_second * format->samplingRate);
-    } else
-    {   *sizeArcMono = format->frame_length_bytes;
-    }
-    (*sizeArcMono) =  ((*sizeArcMono) * MulFrameSizeMono) / format->nchan;
-
-    /* specific arc multichannel */
-    if (iarcFrame < node->nbInputArc)   /* is it an input arc ? => read consumer fields */
-    {   fmtCons = node->arc[iarcFrame].fmtCons; format = &(all_format[fmtCons]);
-    } else
-    {   fmtProd = node->arc[iarcFrame].fmtProd; format = &(all_format[fmtProd]);
-    }
-
-    if (format->frame_length_format == 0)
-    {   *sizeArc = (uint64_t)(0.5 + format->frame_length_second * format->samplingRate);
-    } else
-    {   *sizeArc = format->frame_length_bytes;
-    }
-    (*sizeArc) *= MulFrameSize;
-    (*memChan) = MulFrameSizeChan;
-
-
-    /* input arcs , read the producer format */
-    for (iarc = 0; iarc < node->nbInputArc; iarc++)
-    {   
-        fmtProd = node->arc[iarc].fmtProd; format = &(all_format[fmtProd]);
-
-        if (format->frame_length_format == 0)
-        {   size = (uint64_t)(0.5 + format->frame_length_second * format->samplingRate);
-        } else
-        {   size = format->frame_length_bytes;
-        }
-        sizeMono   = (MulFrameSizeMono * size) / format->nchan;
-        *maxin     =  MulFrameSize     * (MAX(*maxin,     size));
-        *maxinMono = (MulFrameSizeMono * (MAX(*maxinMono, sizeMono))) / format->nchan;
-        *sumin     =  MulFrameSize     * (*sumin     + size);
-        *suminMono = (MulFrameSizeMono * (*suminMono + sizeMono)) / format->nchan;
-    }
-
-    /* output arcs , read the consumer formats */
-    for (iarc = node->nbInputArc; iarc < node->nbInputArc + node->nbOutputArc; iarc++)
-    {   
-        fmtCons = node->arc[iarc].fmtCons; format = &(all_format[fmtCons]);
-
-        if (format->frame_length_format == 0)
-        {   size = (uint64_t)(0.5 + format->frame_length_second * format->samplingRate);
-        } else
-        {   size = format->frame_length_bytes;
-        }
-        sizeMono    = (MulFrameSizeMono * size) / format->nchan;
-        *maxout     =  MulFrameSize     * (MAX(*maxout, size));
-        *maxoutMono = (MulFrameSizeMono * (MAX(*maxoutMono, sizeMono))) / format->nchan;
-        *sumout     =  MulFrameSize     * (*sumout     + size);
-        *sumoutMono = (MulFrameSizeMono * (*sumoutMono + sizeMono)) / format->nchan;
-    }
-
-    *maxall = MAX((*maxin), (*maxout));
-    *sumall = (*sumin) + (*sumout);
-}
+///* ========================================================================
+//    compute node  frame_length max sum
+//
+//*/
+//void compute_frame_length(struct stream_node_manifest* node, struct formatStruct* all_format,
+//    uint32_t iarcFrameMono, uint64_t* sizeArcMono, uint32_t iarcFrame, uint64_t* sizeArc,
+//    uint64_t* maxin, uint64_t* maxout, uint64_t* maxall, uint64_t* sumin, uint64_t* sumout, uint64_t* sumall,
+//    uint64_t* maxinMono, uint64_t* maxoutMono, uint64_t* maxallMono, uint64_t* suminMono, uint64_t* sumoutMono, uint64_t* sumallMono,
+//    uint32_t MulFrameSizeMono, uint32_t MulFrameSize)
+//{
+//    struct formatStruct* format;
+//    uint32_t iarc, fmtProd, fmtCons;
+//    uint64_t sizeMono, size;
+//
+//
+//}
+//
+///* ========================================================================
+//    compute node  size from nb_chan / max sum
+//
+//*/
+//void compute_nbchan_length(struct stream_node_manifest* node, struct formatStruct* all_format,
+//    uint64_t* memChan, uint32_t iarcFrame, uint64_t* sizeArc,
+//    uint64_t* maxin, uint64_t* maxout, uint64_t* maxall, uint64_t* sumin, uint64_t* sumout, uint64_t* sumall,
+//    uint64_t* maxinMono, uint64_t* maxoutMono, uint64_t* maxallMono, uint64_t* suminMono, uint64_t* sumoutMono, uint64_t* sumallMono,
+//    uint32_t MulFrameSizeMono, uint32_t MulFrameSize, uint32_t MulFrameSizeChan)
+//{
+//    struct formatStruct* format;
+//    uint32_t iarc, fmtProd, fmtCons;
+//    uint64_t sizeMono, size;
+//
+//    /* specific arc MONO */
+//    if (iarcFrameMono < node->nbInputArc)   /* is it an input arc ? => read consumer fields */
+//    {
+//        fmtCons = node->arc[iarcFrameMono].fmtCons; format = &(all_format[fmtCons]);
+//    }
+//    else
+//    {
+//        fmtProd = node->arc[iarcFrameMono].fmtProd; format = &(all_format[fmtProd]);
+//    }
+//
+//    if (format->frame_format_byte0_time1 == 0)
+//    {
+//        *sizeArcMono = (uint64_t)(0.5 + format->frame_length_second * format->samplingRate);
+//    }
+//    else
+//    {
+//        *sizeArcMono = format->frame_length_bytes;
+//    }
+//    (*sizeArcMono) = ((*sizeArcMono) * MulFrameSizeMono) / format->nchan;
+//
+//    /* specific arc multichannel */
+//    if (iarcFrame < node->nbInputArc)   /* is it an input arc ? => read consumer fields */
+//    {
+//        fmtCons = node->arc[iarcFrame].fmtCons; format = &(all_format[fmtCons]);
+//    }
+//    else
+//    {
+//        fmtProd = node->arc[iarcFrame].fmtProd; format = &(all_format[fmtProd]);
+//    }
+//
+//    if (format->frame_format_byte0_time1 == 0)
+//    {
+//        *sizeArc = (uint64_t)(0.5 + format->frame_length_second * format->samplingRate);
+//    }
+//    else
+//    {
+//        *sizeArc = format->frame_length_bytes;
+//    }
+//    (*sizeArc) *= MulFrameSize;
+//    (*memChan) = MulFrameSizeChan;
+//
+//
+//    /* input arcs , read the producer format */
+//    for (iarc = 0; iarc < node->nbInputArc; iarc++)
+//    {
+//        fmtProd = node->arc[iarc].fmtProd; format = &(all_format[fmtProd]);
+//
+//        if (format->frame_format_byte0_time1 == 0)
+//        {
+//            size = (uint64_t)(0.5 + format->frame_length_second * format->samplingRate);
+//        }
+//        else
+//        {
+//            size = format->frame_length_bytes;
+//        }
+//        sizeMono = (MulFrameSizeMono * size) / format->nchan;
+//        *maxin = MulFrameSize * (MAX(*maxin, size));
+//        *maxinMono = (MulFrameSizeMono * (MAX(*maxinMono, sizeMono))) / format->nchan;
+//        *sumin = MulFrameSize * (*sumin + size);
+//        *suminMono = (MulFrameSizeMono * (*suminMono + sizeMono)) / format->nchan;
+//    }
+//
+//    /* output arcs , read the consumer formats */
+//    for (iarc = node->nbInputArc; iarc < node->nbInputArc + node->nbOutputArc; iarc++)
+//    {
+//        fmtCons = node->arc[iarc].fmtCons; format = &(all_format[fmtCons]);
+//
+//        if (format->frame_format_byte0_time1 == 0)
+//        {
+//            size = (uint64_t)(0.5 + format->frame_length_second * format->samplingRate);
+//        }
+//        else
+//        {
+//            size = format->frame_length_bytes;
+//        }
+//        sizeMono = (MulFrameSizeMono * size) / format->nchan;
+//        *maxout = MulFrameSize * (MAX(*maxout, size));
+//        *maxoutMono = (MulFrameSizeMono * (MAX(*maxoutMono, sizeMono))) / format->nchan;
+//        *sumout = MulFrameSize * (*sumout + size);
+//        *sumoutMono = (MulFrameSizeMono * (*sumoutMono + sizeMono)) / format->nchan;
+//    }
+//
+//    *maxall = MAX((*maxin), (*maxout));
+//    *sumall = (*sumin) + (*sumout);
+//}
 
 
 /* ========================================================================
     compute node  memreq_size  for one of the 6 memreq
 
 */
-void compute_add_length (uint32_t *d, char *type, uint64_t *size, 
+void compute_add_length (char *type, uint64_t *size, 
         uint64_t sizeArc, uint64_t maxin, uint64_t maxout, uint64_t maxall, uint64_t sumin, uint64_t sumout, uint64_t sumall)
 {
-    if (strlen(type) == 0) {*d=1; } /* nothing to add */
-    if (0==strncmp(type, "arc"   , strlen("arc"   ))) {*d=1; *size += sizeArc;}
-    if (0==strncmp(type, "maxin" , strlen("maxin" ))) {*d=1; *size += maxin ; }
-    if (0==strncmp(type, "maxout", strlen("maxout"))) {*d=1; *size += maxout; }
-    if (0==strncmp(type, "maxall", strlen("maxall"))) {*d=1; *size += maxall; }
-    if (0==strncmp(type, "sumin" , strlen("sumin" ))) {*d=1; *size += sumin ; }
-    if (0==strncmp(type, "sumout", strlen("sumout"))) {*d=1; *size += sumout; }
-    if (0==strncmp(type, "sumall", strlen("sumall"))) {*d=1; *size += sumall; }
+    if (strlen(type) == 0) { *size += 0; }      /* nothing to add */
+    if (0==strncmp(type, "arc"   , strlen("arc"   ))) {*size += sizeArc;}
+    if (0==strncmp(type, "maxin" , strlen("maxin" ))) {*size += maxin ; }
+    if (0==strncmp(type, "maxout", strlen("maxout"))) {*size += maxout; }
+    if (0==strncmp(type, "maxall", strlen("maxall"))) {*size += maxall; }
+    if (0==strncmp(type, "sumin" , strlen("sumin" ))) {*size += sumin ; }
+    if (0==strncmp(type, "sumout", strlen("sumout"))) {*size += sumout; }
+    if (0==strncmp(type, "sumall", strlen("sumall"))) {*size += sumall; }
 }
 
 
@@ -263,34 +298,88 @@ void compute_add_length (uint32_t *d, char *type, uint64_t *size,
 */
 void compute_memreq(struct node_memory_bank *m, struct formatStruct *all_format, struct stream_node_manifest *node)
 {
-    uint32_t detect;
-    uint64_t size, sizeArc, sizeArcMono, memChan;
+    uint64_t finalSize, sizeArcMono;
     uint64_t maxin, maxout, maxall, sumin, sumout, sumall;
     uint64_t maxinMono, maxoutMono, maxallMono, suminMono, sumoutMono, sumallMono;
+    uint64_t maxinChan, maxoutChan, maxallChan;
+    struct formatStruct* format;
+    uint32_t iarc, fmtProd, fmtCons;
+    uint64_t sizeArc, nbChan, memSize;
 
-    size = maxin = maxout = maxall = sumin = sumout = sumall = maxinMono = maxoutMono = maxallMono = suminMono = sumoutMono = sumallMono = 0;
-    
-    compute_frame_length (node, all_format, &memChan, m->iarcFrameMono, &sizeArcMono, m->iarcFrame, &sizeArc, 
-        &maxin, &maxout, &maxall, &sumin, &sumout, &sumall,
-        &maxinMono, &maxoutMono, &maxallMono, &suminMono, &sumoutMono, &sumallMono,
-        m->MulFrameSize, m->MulFrameSizeMono, m->MulFrameSizeChan);
+    sizeArcMono = maxinMono = maxoutMono = maxallMono = suminMono = sumoutMono = sumallMono = 0;
+    sizeArc = maxin = maxout = maxall = sumin = sumout = sumall = maxinChan = maxoutChan = maxallChan = 0;
+    finalSize = 0;
 
-    size = m->size_additional;                    // A
-    size = size + memChan;
+    for (iarc = 0; iarc < node->nbInputArc + node->nbOutputArc; iarc++)
+    {
+        if (iarc < node->nbInputArc)                /* is it an input arc ? => read producer format */
+        {   fmtProd = node->arc[iarc].fmtProd; format = &(all_format[fmtProd]);
+        }
+        else                                        /* is it an output arc ? => read consumer format */
+        {   fmtCons = node->arc[iarc].fmtCons; format = &(all_format[fmtCons]);
+        }
 
-    detect = 0;
-    compute_add_length(&detect, m->TypeFrameMono, &size,
-        sizeArcMono, maxinMono, maxoutMono, maxallMono, suminMono, sumoutMono, sumallMono);
+        if (format->frame_format_byte0_time1 != 0)       /* format in samples of in time unit */
+        {   sizeArc = (uint32_t)(0.5 + format->frame_length_second * format->samplingRate);
+            sizeArcMono = (uint32_t)(0.5 + format->frame_length_second * format->samplingRate) / format->nchan;
+        }
+        else
+        {   sizeArc = format->frame_length_bytes;
+            sizeArcMono = format->frame_length_bytes / format->nchan;
+        }
+        nbChan = format->nchan;
 
-    compute_add_length(&detect, m->TypeFrame    , &size,
-        sizeArc, maxin, maxout, maxall, sumin, sumout, sumall);
+        memSize = 0;
+        if (m->iarcFrameMono != (-1))               /* did we selected a specific mono arc ? */
+        {   if (iarc == m->iarcFrameMono)           /*   is it this one ? */
+            {   memSize = (uint64_t)(sizeArcMono * m->MulFrameSizeMono);
+            }
+        }
 
-    if (detect == 0) {
-        fprintf(stderr, "\n\n compute_memreq error\n\n"); exit (-6); 
+        if (m->iarcFrame != (-1))                   /* did we selected a specific multichannel frame size ? */
+        {   if (iarc == m->iarcFrame)               /*   is it this one ? */
+            {   memSize = (uint64_t)(sizeArcMono * m->MulFrameSize);
+            }
+        }
+
+        if (m->iarcFrameChan != (-1))               /* did we selected a specific number of channels */
+        {   if (iarc == m->iarcFrameChan)           /*   is it this one ? */
+            {   memSize = (uint64_t)(nbChan * m->MulFrameSizeChan);
+            }
+        }
+
+        if (iarc < node->nbInputArc)
+        {   maxin = MAX(maxin, sizeArc);
+            maxinMono = MAX(maxinMono, sizeArcMono);
+            sumin = sumin + sizeArc;
+            suminMono = suminMono + sizeArcMono;
+        }
+        else
+        {   maxout = MAX(maxout, sizeArc);
+            maxoutMono = MAX(maxoutMono, sizeArcMono);
+            sumout = sumout + sizeArc;
+            sumoutMono = sumoutMono + sizeArcMono;
+        }
+
+        maxall = MAX(maxin, maxout);
+        sumall = sumin + sumout;
+
+        compute_add_length(m->TypeFrameMono, &finalSize,
+            sizeArcMono, maxinMono, maxoutMono, maxallMono, suminMono, sumoutMono, sumallMono);
+
+        compute_add_length(m->TypeFrame, &finalSize,
+            sizeArc, maxin, maxout, maxall, sumin, sumout, sumall);
+
+        compute_add_length(m->TypeFrameChan, &finalSize,
+            sizeArc, maxin, maxout, maxall, sumin, sumout, sumall);
     }
 
-    size = ((size+3)>>2)<<2;
-    m->graph_memreq_size = size;
+    finalSize = ((finalSize +3)>>2) <<2;
+
+    /* add the extra memory requested in the graph (command "node_malloc_add Bytes segment") */
+    m->graph_memreq_size = m->size_mem_alloc_A;
+    m->graph_memreq_size += finalSize;
+    m->graph_memreq_size += m->malloc_add;
 }
 
 
@@ -302,7 +391,9 @@ void stream_tool_read_subgraph (char **pt_line, struct stream_platform_manifest*
     char *new_ggraph, file_name[NBCHAR_NAME], file_name2[NBCHAR_NAME], *subName, paths[MAX_NB_PATH][NBCHAR_LINE], dbg;
     uint32_t ipath, i;
     char *dbgchar;
-    extern void arm_stream_read_graph (struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph, char *ggraph_txt);
+    extern void arm_stream_read_graph(struct stream_platform_manifest* platform,
+        struct stream_graph_linkedlist* graph,
+        char* ggraph_txt);
     
     strcpy(file_name, ""); strcpy(file_name2, "");
     new_ggraph = calloc (MAXINPUT, 1);
@@ -391,7 +482,7 @@ void search_graph_node(char *cstring,  struct stream_node_manifest **graph_node,
 
     if (found == 0)
     {   printf("\n search_graph_node not found \n");
-        exit (-1);
+        exit( 1);
     }
     *graph_NODE_idx = inode;
     *graph_node = &(graph->all_nodes[inode]);
@@ -406,6 +497,18 @@ void search_graph_node(char *cstring,  struct stream_node_manifest **graph_node,
  */
 void LoadPlatformArc(struct arcStruct *Agraph, struct arcStruct *Aplatform)
 {
+    /* decode options :
+        struct options raw_format_options;
+        struct options nb_channels_option;
+        struct options sampling_rate_option;
+        struct options sampling_period_s_option;
+        struct options sampling_period_day_option;
+        struct options frame_length_samples_option;
+        struct options frame_duration_option;
+    */
+    //Agraph->raw_data =
+    //Agraph->IO_FMT_manifest.raw_data =
+
     Agraph->rx0tx1=                   Aplatform->rx0tx1;                    // ARC0_LW1 and RX0TX1_IOFMT : direction rx=0 tx=1 parameter=2 (rx never consumed) 
     Agraph->setupTime=                Aplatform->setupTime;                 // [ms] to avoid this information to being only in the BSP 
     Agraph->settings[0]=              Aplatform->settings[0];               // @@@@@TODO pack format of digital + MSIC options (SETTINGS_IOFMT2), the format depends on the IO domain 
@@ -418,7 +521,7 @@ void LoadPlatformArc(struct arcStruct *Agraph, struct arcStruct *Aplatform)
     Agraph->sampling_rate_option=     Aplatform->sampling_rate_option;
     Agraph->sampling_period_s_option= Aplatform->sampling_period_s_option;
     Agraph->sampling_period_day_option=Aplatform->sampling_period_day_option;
-    Agraph->frame_length_option=      Aplatform->frame_length_option;
+    Agraph->frame_length_samples_option=Aplatform->frame_length_samples_option;
     Agraph->frame_duration_option=    Aplatform->frame_duration_option;
     Agraph->sampling_accuracy=        Aplatform->sampling_accuracy;
 
@@ -437,7 +540,7 @@ void LoadPlatformNode(struct stream_node_manifest *graph_node, struct stream_nod
     graph_node->nbInputArc         = platform_node->nbInputArc;        
     graph_node->nbOutputArc        = platform_node->nbOutputArc;       
     graph_node->nbParamArc         = platform_node->nbParamArc;        
-    graph_node->formatUsed         = platform_node->formatUsed;           
+    //graph_node->formatUsed         = platform_node->formatUsed;           
     graph_node->masklib            = platform_node->masklib;              
     graph_node->codeVersion        = platform_node->codeVersion;          
     graph_node->arc_parameter      = platform_node->arc_parameter;        
@@ -475,7 +578,8 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 #define COMPARE(x) (0==strncmp(pt_line, x, strlen(x)))
 
     char* pt_line, ctmp[NBCHAR_LINE], paths[MAX_NB_PATH][NBCHAR_LINE];
-    int32_t idx_format, idx_node, idx_stream_io, idx_path, i, j, platform_node_idx, idx_node_script;
+    int32_t idx_format, idx_node, idx_stream_io, idx_path, i, j, iarc, platform_node_idx, idx_node_script;
+    int32_t current_arc_is_IO;
     int64_t iL;
     
     pt_line = ggraph_txt;
@@ -543,9 +647,9 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             graph->nb_arcs++; graph->nb_io_arcs++;
 
             graph->arc[graph->current_io_arc].fw_io_idx = io_al_idx;
-            LoadPlatformArc(&(graph->arc[graph->current_io_arc]), &(platform->arc[io_al_idx]));
+            LoadPlatformArc(&(graph->arc[graph->current_io_arc]), &(platform->IO_arc[io_al_idx]));
             graph->arc[graph->current_io_arc].initialized_from_platform = 1; /* initialization is done */
-            platform->arc[io_al_idx].arc_graph_ID = graph->current_io_arc;
+            platform->IO_arc[io_al_idx].arc_graph_ID = graph->current_io_arc;
 
             if (platform->max_io_al_idx <= io_al_idx)  /* largest io_al_idx to dimension platform_io_al_idx_to_stream[] */
             {   platform->max_io_al_idx = io_al_idx+1;
@@ -555,7 +659,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         {   
         }
         if (COMPARE(stream_io_format))          // stream_io FORMAT 
-        {   fields_extract(&pt_line, "ci", ctmp, &(graph->arc[graph->current_io_arc].format)); 
+        {   fields_extract(&pt_line, "ci", ctmp, &(graph->arc[graph->current_io_arc].format_idx));
         }            
         if (COMPARE(stream_io_setting))
         {   uint32_t w1, w2, w3;
@@ -714,7 +818,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         if (COMPARE(common_script))
         {   fields_extract(&pt_line, "ci", ctmp, &(graph->all_scripts[graph->idx_script].script_ID)); /* instance number (its identification) */
             graph->idx_script = graph->nb_scripts;
-            graph->all_scripts[graph->idx_script].nb_reg = 6+1;       /* default number of registers  + R12 + stack size */
+            graph->all_scripts[graph->idx_script].nb_reg = 16;       /* default number of registers  + R12 + stack size */
             graph->all_scripts[graph->idx_script].nb_stack = 6;
             graph->all_scripts[graph->idx_script].ram_heap_size = 0;
             graph->all_scripts[graph->idx_script].arc_script = graph->nb_arcs;
@@ -723,14 +827,6 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         }
         if (COMPARE(script_name))               // script_name TEST1    ; for references in the GUI
         {   fields_extract(&pt_line, "cc", ctmp, ctmp); 
-        }
-        if (COMPARE(script_register))           // script_register  6       numer of registers
-        {   fields_extract(&pt_line, "ci", ctmp, &i); 
-            if (idx_node_script >= 0)
-            {  graph->all_nodes[idx_node_script].node_script.nb_reg = i + 1; // R12 added
-            } else
-            {   graph->all_scripts[graph->idx_script].nb_reg = i + 1;       // R12 added
-            }
         }
         if (COMPARE(script_stack))              // script_stack        6    size of the stack in word64 (default = 6)
         {   fields_extract(&pt_line, "ci", ctmp, &i); 
@@ -781,6 +877,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
             fields_extract(&pt_line, "ciiiciiic", ctmp, &idx_stream_io, &set0copy1, &fmtProd, Consumer, &instCons, &inPort, &fmtCons, HQOS); 
             findArcIOWithThisID(graph, idx_stream_io, &arcIO);          /* arcIO receives the stream from idx_stream_IO */
+            current_arc_is_IO = 1;
             //graph->arc[arcIO] = graph->arc[arcIO];                    /* copy the already filled arc IO details to this new arc */
 
             search_graph_node(Consumer, &graph_node_Cons, &SwcConsGraphIdx, graph); /* update the arc of the consumer */
@@ -802,6 +899,7 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
 
             fields_extract(&pt_line, "ciiiciiic", ctmp, &idx_stream_io, &set0copy1, &fmtCons, Producer, &instProd, &outPort, &fmtProd, HQOS);
             findArcIOWithThisID(graph, idx_stream_io, &arcIO);      /* arcIO send the stream to idx_stream_IO */
+            current_arc_is_IO = 1;
             //graph->arc[arcIO] = graph->arc[arcIO];                  /* copy the already filled arc IO details to this new arc */
 
             search_graph_node(Producer, &graph_node_Prod, &SwcProdGraphIdx, graph);
@@ -817,13 +915,15 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
             graph_node_Prod->arc[outPort].HQoS = HQOS[0] == 'h' || HQOS[0] == 'H';      // HQoS
             graph_node_Prod->connected_to_the_graph = 1;
         }
-        if (COMPARE(arc_new))  //arc   node1 instance arc_index arc_format_src     node2 instance arc_index arc_format_dst
+        if (COMPARE(arc_nodes))  //arc_nodes node1 instance arc_index arc_format_src     node2 instance arc_index arc_format_dst
         {   uint32_t instProd, instCons, outPort, inPort, fmtProd, fmtCons, SwcProdGraphIdx, SwcConsGraphIdx;
             struct stream_node_manifest *graph_node_Prod, *graph_node_Cons;
             char Producer[NBCHAR_LINE], Consumer[NBCHAR_LINE], HQOS[NBCHAR_LINE];
 
             fields_extract(&pt_line, "cciiiciiic", ctmp, Producer, &instProd, &outPort, &fmtProd, Consumer, &instCons, &inPort, &fmtCons, HQOS);
             search_graph_node(Producer, &graph_node_Prod, &SwcProdGraphIdx, graph);
+            current_arc_is_IO = 0;
+
             graph_node_Prod->arc[outPort].fmtProd = fmtProd;
             graph_node_Prod->arc[outPort].SwcProdGraphIdx = SwcProdGraphIdx;
             graph_node_Prod->arc[outPort].arcID = graph->nb_arcs;  
@@ -850,36 +950,45 @@ void arm_stream_read_graph (struct stream_platform_manifest *platform,
         } 
         if (COMPARE(arc_map_hwblock))    //arc_map_hwblock     0    
         {   fields_extract(&pt_line, "ci", ctmp, &i); 
-            graph->arc[graph->nb_arcs -1].memVID = i;
+            iarc = current_arc_is_IO ? idx_stream_io : graph->nb_arcs - 1;
+            graph->arc[iarc].memVID = i;
         }
         if (COMPARE(arc_flow_error))     //arc_flow_error  1 1 ; read write 
         {   fields_extract(&pt_line, "cii", ctmp, &i, &j); 
-            graph->arc[graph->nb_arcs -1].flow_error_rd = i;
-            graph->arc[graph->nb_arcs -1].flow_error_wr = j;
+            iarc = current_arc_is_IO ? idx_stream_io : graph->nb_arcs - 1;
+            graph->arc[iarc].flow_error_rd = i;
+            graph->arc[iarc].flow_error_wr = j;
         }
         if (COMPARE(arc_debug_cmd))
         {   fields_extract(&pt_line, "ci", ctmp, &i); 
-            graph->arc[graph->nb_arcs -1].memVID = i;
+            iarc = current_arc_is_IO ? idx_stream_io : graph->nb_arcs - 1;
+            graph->arc[iarc].memVID = i;
         }
         if (COMPARE(arc_debug_reg))
         {   fields_extract(&pt_line, "ci", ctmp, &i); 
-            graph->arc[graph->nb_arcs -1].memVID = i;
+            iarc = current_arc_is_IO ? idx_stream_io : graph->nb_arcs - 1;
+            graph->arc[iarc].memVID = i;
         }
         if (COMPARE(arc_flush))
         {   fields_extract(&pt_line, "ci", ctmp, &i); 
-            graph->arc[graph->nb_arcs -1].memVID = i;
+            iarc = current_arc_is_IO ? idx_stream_io : graph->nb_arcs - 1;
+            graph->arc[iarc].memVID = i;
         }
         if (COMPARE(arc_extend_address))
         {   fields_extract(&pt_line, "ci", ctmp, &i); 
-            graph->arc[graph->nb_arcs -1].memVID = i;
+            iarc = current_arc_is_IO ? idx_stream_io : graph->nb_arcs - 1;
+            graph->arc[iarc].memVID = i;
         }
         if (COMPARE(arc_map_hwblock))
         {   fields_extract(&pt_line, "ci", ctmp, &i); 
-            graph->arc[graph->nb_arcs -1].memVID = i;
-
+            iarc = current_arc_is_IO ? idx_stream_io : graph->nb_arcs - 1;
+            graph->arc[iarc].memVID = i;
         }
         if (COMPARE(arc_jitter_ctrl))   // factor to apply to the minimum size between the producer and the consumer, default = 1.0 (no jitter)
-        {   fields_extract(&pt_line, "cf", ctmp, &(graph->arc[graph->nb_arcs -1].sizeFactor)); 
+        {   float jitterFactor;
+            fields_extract(&pt_line, "cf", ctmp, &jitterFactor);
+            iarc = current_arc_is_IO ? idx_stream_io : graph->nb_arcs - 1;
+            graph->arc[iarc].sizeFactor = jitterFactor;
         }
     }
 }

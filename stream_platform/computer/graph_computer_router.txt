@@ -1,62 +1,83 @@
-;--------------------------------------------------------------------------
+﻿;-------74-------------------------------------------------------------------
 ;   Stream-based processing using a graph interpreter :                    
 ; 
 ;   +----------+     +-----------+      +--------+
-;   | ADC      +-----> converter +------> GPIO   | 
+;   | ADC      +----->  router   +------> GPIO   | 
 ;   +----------+     +-----------+      +--------+
 ;                
 ;----------------------------------------------------------------------
 graph_locations -1 -1 -1 -1 0 0 0   ; script and linked-list stays in flash 
 ;----------------------------------------------------------------------
 format_index            0                           ; router input
-format_frame_length     20                          ; 
+format_frame_length     16          ; size_data_in_0 
 format_raw_data         17                          ; STREAM_S16
 format_nbchan           2                           ; stereo
 format_sampling_rate    hertz 16000                 ; 
 format_interleaving     0                           ; raw data interleaving
 ;
 format_index            1                           ; router output
-format_frame_length     32                          ; 
+format_frame_length     96          ; size_gpio_out_0 96
 format_raw_data         27                          ; STREAM_FP32
-format_nbchan           2                           ; stereo
+format_nbchan           1                           ; mono
 format_sampling_rate    hertz 48000                 ; 
 format_interleaving     0                           ; raw data interleaving
+;
+format_index            2                           ; router output
+format_frame_length     32          ; size_data_out_0 32
+format_raw_data         17                          ; STREAM_S16
+format_nbchan           2                           ; stereo
+format_sampling_rate    hertz 32000                 ; 
+format_interleaving     0                           ; raw data interleaving
 ;----------------------------------------------------------------------
-stream_io_graph         0   1                       ; io_platform_data_in_1.txt
+stream_io_graph         0   0                       ; load default configuration of io_platform_data_in_0
 stream_io_format        0                           ; 
 stream_io_setting       2 0 0                       ; see manifest : io_sampling_rate hertz {1 8e3 16e3 48e3}, '2' to set 16kHz
 ;
-stream_io_graph         1   9                       ; io_platform_data_out_0.txt
+stream_io_graph         1   9                       ; load default configuration of io_platform_data_out_0
 stream_io_format        1                           ; 
 stream_io_setting       3 0 0                       ; see manifest : io_sampling_rate hertz {2 16e3 44.1e3 48000}, '3' to set 48kHz
 ;----------------------------------------------------------------------
+;                               ┌───────────────────┐                         
+;                    Stereo     │ F0,F1  ┌───────┐  │ Mono, sum of arcs data {Left arc0 + Right arc0} 
+; Format 0 16kHz    ─arc 0─────►│ F2     │  +    ┼──┼─arc 2─────────► Format 1, 48kHz, fp32
+;                               │        └───────┘  │ 
+;                    Stereo     │                   │ Stereo Left(arc0), Right(arc1)
+; Format 0 16kHz    ─arc 1─────►│ F3   ─────────────┼─arc 3─────────► Format 2, 32kHz, s16     
+;                               └───────────────────┘                                    
+;----------------------------------------------------------------------
 node arm_stream_router  0 
     node_preset         2           ; 0:just interleaving, 1:just format conversion, 2:with ASRC, 3:with SSRC
+    node_malloc_add     60 1        ; Adds 3 FIFO (20 bytes each) on Segment-1 (default = 1 FIFO)
     node_parameters     0           ; TAG = "all parameters"
 ;
-        1  u8;  2                   ; nb input lines
-        1  u8;  0                   ; index of the arc used for its frame size as time reference
-        1  u8;  1                   ; accuracy level
-        1  u8;  0                   ; 4 bytes alignment padding
+        1  u8;  2                   ; nb input arcs
+        1  u8;  2                   ; nb output arcs
+        1  u8;  5                   ; nb intermediate FIFO
+        1  u8;  1                   ; nb mixers (used for arc 2 {Left arc0 + Right arc0})
+        1  u8;  3                   ; nb output channels
+        2  u8;  255 255             ; arc (in/out) used with HQOS: none
+        1  u8;  1                   ; accuracy level (1..4)
+        1 f32;  0.0002              ; 0.2ms processing granularity (3.2 @16k, 6.4 @32k, 9.6 @48kHz)
 ;
-;   Left input 
-        4  u8;  0 0  1 0   0   0 0 0    ; SRC[arc, chan]  DST[arc, chan] nbMix=0  N/A N/A N/A
+        3  u8;  0 0  2              ; FIFO 0  Left arc0 to arc 2 (for Mixer 0)
+        3  u8;  0 0  3              ; FIFO 1  Left arc0 to arc 3
+        3  u8;  0 1  2              ; FIFO 2  Righ arc0 to arc 2 (for Mixer 0)
+        3  u8;  1 0  1              ; FIFO 3  Righ arc1 to arc 3 
+        3  u8;  0 0  2              ; FIFO 4  Mixer output to arc 2
 ;
-;   Right input
-        4  u8;  0 1  1 1   2   0 1 0    ; SRC[arc, chan]  DST[arc, chan] nbMix=2 ififo-mix1 ififo-imix2 N/A
-
-;   Left input direct to Left output (Fifo0) no mixer
-        4 f32;  1.0 0.0 0.0 1.0         ; Gmix1 Gmix2 Gmix3 GmixOut
-;   Left+Right fifo input, mixed+gainx2 to Right output (Fifo1)
-        4 f32;  0.5 0.5 0.0 2.0         ; Gmix1 Gmix2 Gmix3 GmixOut
-
+        4  u8;  4 0 2 255           ; MIXER 0 (FIFO 4) = FIFO 0 + FIFO 2 + (none)
+        4 f32;  0.5 0.5 0.0 1.0     ;           Gmix0    Gmix1 (none)  GmixOut
+;
+        3  u8;  4 0 0               ; OUT 0 FIFO 4 to DST[arc, chan]  
+        3  u8;  1 3 0               ; OUT 1 FIFO 1 to DST[arc, chan]    
+        3  u8;  3 3 1               ; OUT 2 FIFO 3 to DST[arc, chan]    
     end
 ;----------------------------------------------------------------------
-; arc         { inst / arc / fmtProd }     + { inst / arc / fmtCons }
+; arc_nodes   { inst / arc / fmtProd }     + { inst / arc / fmtCons }
 ; arc_input   { io / set0copy1 / fmtProd } + { node / inst / arc / fmtCons }
 ; arc_output  { io / set0copy1 / fmtCons } + { node / inst / arc / fmtProd }
 ;
-arc_input   0 1 1 arm_stream_router  0 0 0          ; INPUT => router with HQoS
-arc_output  1 1 0 arm_stream_router  0 1 0          ; router => OUTPUT 
+arc_input   0 1 0 arm_stream_router  0 0 0          ; INPUT => router with HQoS
+arc_output  1 1 1 arm_stream_router  0 1 0          ; router => OUTPUT 
 
 end

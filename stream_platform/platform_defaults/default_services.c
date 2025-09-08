@@ -57,18 +57,17 @@ int32_t stream_bitsize_of_raw(uint8_t raw)
 {
     switch (raw)
     {
-    /* one bit per data */
-    case STREAM_S1: case STREAM_U1: return 1;
-    case STREAM_S2: case STREAM_U2: case STREAM_Q1: return 2;
-    case STREAM_S4: case STREAM_U4: case STREAM_Q3: return 4;
-    default:
-    case STREAM_S8:   case STREAM_U8:   case STREAM_Q7:  case STREAM_FP8_E4M3: case STREAM_FP8_E5M2: return 8;
-    case STREAM_S16:  case STREAM_U16:  case STREAM_Q15: case STREAM_FP16:     case STREAM_BF16:     return 16;
-    case STREAM_Q23:  return 24;
-    case STREAM_S32:  case STREAM_U32:  case STREAM_Q31: case STREAM_CQ15:     case STREAM_FP32:    case STREAM_CFP16: return 32;
-    case STREAM_S64:  case STREAM_U64:  case STREAM_Q63: case STREAM_CQ31:     case STREAM_FP64:    case STREAM_CFP32: return 64;
+        /* one bit per data */
+    case STREAM_S2: case STREAM_U2: return 2;
+    case STREAM_S4: case STREAM_U4: return 4;
+    case STREAM_S8:   case STREAM_U8:   case STREAM_FP8_E4M3: case STREAM_FP8_E5M2: return 8;
+    case STREAM_S16:  case STREAM_U16:  case STREAM_FP16:     case STREAM_BF16:     return 16;
+    case STREAM_S23:  return 24;
+    case STREAM_S32:  case STREAM_U32:  case STREAM_CS16:     case STREAM_FP32:     case STREAM_CFP16: return 32;
+    case STREAM_S64:  case STREAM_U64:  case STREAM_FP64:    case STREAM_CFP32: return 64;
     case STREAM_FP128:case STREAM_CFP64: return 128;
     case STREAM_FP256: return 256;
+    default: return 0;
     }
 }
 

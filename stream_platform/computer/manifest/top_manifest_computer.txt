@@ -15,7 +15,6 @@
     5 ../../../stream_nodes/elm-lang/             
 
 
-
 ;=================================================================
     3           number of processors
     2           number of shared memory 
@@ -43,30 +42,28 @@
     2    1000   1 2 1   simulates ITCM
 
 ;-----IO AFFINITY WITH PROCESSOR 1-------------------------------
-    ;Path      Manifest       IO_AL_idx    Comments               
-    1 io_platform_data_in_0.txt       0    application proc
-    1 io_platform_data_in_1.txt       1    application proc
-    1 io_platform_analog_sensor_0.txt 2    ADC                    
-    1 io_platform_audio_in_0.txt      4    microphone       
-    1 io_platform_line_out_0.txt      6    audio out stereo       
-    1 io_platform_gpio_out_0.txt      7    GPIO/LED               
-    1 io_platform_data_out_0.txt      9    application proc  
-
+    ;Path      Manifest       IO_AL_idx    Comments             (frame size in Bytes)  
+    1 io_platform_data_in_0.txt       0    application proc     size_data_in_0 16
+    1 io_platform_data_in_1.txt       1    application proc     size_data_in_1 2
+    1 io_platform_analog_sensor_0.txt 2    ADC                  
+    1 io_platform_audio_in_0.txt      4    microphone           
+    1 io_platform_line_out_0.txt      6    audio out stereo     
+    1 io_platform_gpio_out_0.txt      7    GPIO/LED             size_data_out_0 32
+    1 io_platform_data_out_0.txt      9    application proc     size_gpio_out_0 96 
 
 
 
 ;=================================================================
 ;   Processor #2
 ;   proc ID, arch ID, main proc, nb mem, service mask, I/O
-    2        1        0          2       15            2  
+    2        1        0          2       15            1  
 
 ;---MEMID SIZE  A S T   Comments
-    1    1000   1 2 0   index 1/2 point to different physical addresses 
-    2    1000   1 2 1   index 1/2 point to different physical addresses
+    3    1000   1 2 0   
+    4    1000   1 2 1   
 
 ;------IO AFFINITY WITH PROCESSOR 2-------------------------------
     ;Path   IO Manifest        IO_AL_idx    Comments               
-    1 io_platform_data_in_0.txt        0    shared with Proc 1
     1 io_platform_motion_in_0.txt      3    accelero=gyro          
            
 

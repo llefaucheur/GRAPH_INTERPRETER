@@ -34,6 +34,7 @@
 #define cSTREAM_TOOL_DEFINE_H
 
 #define MAX_NB_NODES 50
+#define MAX_NB_ARCS MAX_NB_NODES
 #define MAX_NB_FORMAT 32
 
 #define MAXINPUT 100000
@@ -161,6 +162,7 @@
 #define node_name                       "node_name"
 #define node_logo                       "node_logo"
 #define node_nb_arcs                    "node_nb_arcs"
+#define node_stack_usage                "node_stack_usage"
 #define node_use_mpdtcm                 "node_use_mpdtcm"
 #define node_mask_library               "node_mask_library"
 #define node_subtype_units              "node_subtype_units"
@@ -170,9 +172,9 @@
 #define node_stream_version             "node_stream_version"
 #define node_mem                        "node_mem "
 #define node_mem_alloc                  "node_mem_alloc"
-#define node_mem_nbchan                 "node_mem_nbchan"
 #define node_mem_frame_size_mono        "node_mem_frame_size_mono"
 #define node_mem_frame_size             "node_mem_frame_size"
+#define node_mem_nbchan                 "node_mem_nbchan"
 #define node_mem_alignement             "node_mem_alignement"
 #define node_mem_type                   "node_mem_type"
 #define node_mem_speed                  "node_mem_speed"
@@ -186,7 +188,7 @@
 #define node_arc_nb_channels            "node_arc_nb_channels"
 #define node_arc_interleaving           "node_arc_interleaving"
 #define node_arc_raw_format             "node_arc_raw_format"
-#define node_arc_frame_length           "node_arc_frame_length"
+#define node_arc_frame_samples          "node_arc_frame_samples"
 #define node_arc_frame_duration         "node_arc_frame_duration"
 #define node_arc_sampling_rate          "node_arc_sampling_rate"
 #define node_arc_sampling_period_s      "node_arc_sampling_period_s"
@@ -253,7 +255,6 @@
 /*----------------------------------------------------------------------- GRAPH SCRIPTS ------------- */
 #define common_script                   "script "
 #define script_name                     "script_name"
-#define script_register                 "script_register"
 #define script_stack                    "script_stack"
 #define script_parameter                "script_parameter"
 #define script_mem_shared               "script_mem_shared"
@@ -266,7 +267,7 @@
 /*----------------------------------------------------------------------- GRAPH ARCS ------------- */
 #define arc_input                       "arc_input"
 #define arc_output                      "arc_output"
-#define arc_new                         "arc"
+#define arc_nodes                       "arc_nodes"
 #define arc_flow_error                  "arc_flow_error"
 #define arc_debug_cmd                   "arc_debug_cmd"
 #define arc_debug_reg                   "arc_debug_reg"

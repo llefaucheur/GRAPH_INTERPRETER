@@ -1,12 +1,144 @@
+#define GROK_POLY2            0
+
 #define SPLINES2            0
 #define TAYLOR_3            0
-#define TAYLOR_2            0
-#define LAGRANGE            1
+#define TAYLOR_2              0
+#define LAGRANGE              1
 #define NEVILLE             0
 #define TAYLOR_1            0
 #define taylor_nonuniform   0 
 #define NEVILLE3            0
 #define SPLINES             0
+
+#if GROK_POLY2
+
+#include <stdio.h>
+#include <stdlib.h>
+
+
+// Structure to hold asynchronous data sample
+typedef struct {
+    double time_diff; // Time difference from previous sample (seconds)
+    double data;      // Data value
+} Sample;
+
+// Structure to hold interpolated/downsampled data
+typedef struct {
+    double time; // Absolute time
+    double data; // Downsampled data value
+} DownsampledSample;
+
+// Function to perform linear interpolation
+double linear_interpolate(double x0, double y0, double x1, double y1, double x) {
+    return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+}
+
+// Function to apply a simple moving average filter
+void moving_average_filter(Sample* samples, int num_samples, double* abs_times,
+    double* filtered_data, int window_size) {
+    for (int i = 0; i < num_samples; i++) {
+        double sum = 0.0;
+        int count = 0;
+        // Use a symmetric window around the current point
+        for (int j = i - window_size / 2; j <= i + window_size / 2; j++) {
+            if (j >= 0 && j < num_samples) {
+                sum += samples[j].data;
+                count++;
+            }
+        }
+        filtered_data[i] = sum / count;
+    }
+}
+
+// Function to downsample data with filtering
+DownsampledSample* downsample_samples(Sample* samples, int num_samples,
+    double target_interval, int* out_count) {
+    // Calculate total time span
+    double total_time = 0;
+    for (int i = 0; i < num_samples; i++) {
+        total_time += samples[i].time_diff;
+    }
+
+    // Calculate number of output samples (lower data rate)
+    *out_count = (int)(total_time / target_interval) + 1;
+    DownsampledSample* result = (DownsampledSample*)malloc(*out_count * sizeof(DownsampledSample));
+
+    // Calculate absolute times for input samples
+    double* abs_times = (double*)malloc(num_samples * sizeof(double));
+    abs_times[0] = 0;
+    for (int i = 1; i < num_samples; i++) {
+        abs_times[i] = abs_times[i - 1] + samples[i].time_diff;
+    }
+
+    // Apply moving average filter
+    double* filtered_data = (double*)malloc(num_samples * sizeof(double));
+    int window_size = 3; // Adjust based on desired smoothing (odd number)
+    moving_average_filter(samples, num_samples, abs_times, filtered_data, window_size);
+
+    // Perform linear interpolation on filtered data
+    int sample_idx = 0;
+    for (int i = 0; i < *out_count; i++) {
+        double current_time = i * target_interval;
+        result[i].time = current_time;
+
+        // Find the bracketing samples
+        while (sample_idx < num_samples - 1 && abs_times[sample_idx + 1] < current_time) {
+            sample_idx++;
+        }
+
+        // Handle edge cases
+        if (sample_idx == 0 && current_time < abs_times[0]) {
+            result[i].data = filtered_data[0];
+        }
+        else if (sample_idx == num_samples - 1) {
+            result[i].data = filtered_data[num_samples - 1];
+        }
+        else {
+            // Linear interpolation on filtered data
+            result[i].data = linear_interpolate(
+                abs_times[sample_idx], filtered_data[sample_idx],
+                abs_times[sample_idx + 1], filtered_data[sample_idx + 1],
+                current_time
+            );
+        }
+    }
+
+    free(abs_times);
+    free(filtered_data);
+    return result;
+}
+
+int main() {
+    // Example asynchronous samples: (time_diff, data)
+    Sample samples[] = {
+        {0.0, 10.0},  // First sample at t=0
+        {0.3, 12.0},  // 0.3s later
+        {0.5, 15.0},  // 0.5s after previous
+        {0.2, 14.0},  // 0.2s after previous
+        {0.4, 16.0}   // 0.4s after previous
+    };
+    int num_samples = 5;
+
+    // Desired regular interval for downsampling (larger for lower data rate)
+    double target_interval = 0.1; // Downsampling to a lower rate than 0.2s
+
+    int out_count;
+    DownsampledSample* downsampled = downsample_samples(samples, num_samples,
+        target_interval, &out_count);
+
+    // Print results
+    printf("Downsampled data at %.2fs intervals (with moving average filter):\n", target_interval);
+    printf("Time\tData\n");
+    for (int i = 0; i < out_count; i++) {
+        printf("%.2f\t%.2f\n", downsampled[i].time, downsampled[i].data);
+    }
+
+    // Clean up
+    free(downsampled);
+
+    return 0;
+}
+#endif
 
 #if taylor_nonuniform
 #include <stdio.h>
@@ -700,6 +832,8 @@ typedef struct {
 
 // Add a new sample to the buffer (ring buffer logic)
 void add_sample(Buffer *buf, float timestamp, float value) {
+    int i;
+
     if (buf->count < BUFFER_SIZE) {
         buf->samples[buf->count++] = (Sample){timestamp, value};
     } else {
@@ -708,6 +842,12 @@ void add_sample(Buffer *buf, float timestamp, float value) {
             buf->samples[i - 1] = buf->samples[i];
         buf->samples[BUFFER_SIZE - 1] = (Sample){timestamp, value};
     }
+
+    printf("+  ");
+    for (i = 0; i < buf->count; i++)
+    {   printf("%6.3f [%6.3f] ", buf->samples[i].value, buf->samples[i].timestamp);
+    }
+    printf("\n");
 }
 
 // Perform Lagrange interpolation
@@ -781,11 +921,11 @@ float lagrange_interpolate(Buffer *buf, float t, int degree) {
 // Example usage
 int main() {
     Buffer buffer = {.count = 0};
-#define INPUT_INTERVAL 0.05
+#define INPUT_INTERVAL 0.01
 #define OUTPUT_INTERVAL 0.04
     // Simulate input samples (irregular intervals)
     float input_time = 0.0;
-    float simulation_end = 30.0;
+    float simulation_end = 2.0;
     float next_input_time = 0.0;
 
     // Output configuration
@@ -800,8 +940,8 @@ int main() {
         if (input_time >= next_input_time) {
             jitter = 0; //((float)rand() / RAND_MAX) * (INPUT_INTERVAL/2); // jitter
 
-            float value = sin(2*3.141592654 * next_input_time/2);
-            //float value = next_input_time/2; 
+            //float value = sin(2*3.141592654 * next_input_time/2);
+            float value = next_input_time; 
             add_sample(&buffer, next_input_time, value);
 
             //{   int i;
@@ -822,14 +962,14 @@ int main() {
         while (next_output_time <= input_time) {
             float interpolated = lagrange_interpolate(&buffer, next_output_time, MAX_POLY_DEGREE);
             if (!isnan(interpolated)) {
-                printf("%4.2f %4.2f %4.2f %7.4f  S0 %6.3f[%6.3f] S1 %6.3f[%6.3f] S2 %6.3f[%6.3f]  interpolated = %6.3f\n", 
-                    time_inc, input_time, next_input_time, next_output_time, 
+                printf("INCIN %4.4f INCOUT %4.4f INT %4.4f NEXTIN %4.4f NEXTOUT%7.4f  \n S0 %6.3f[%6.4f] S1 %6.3f[%6.4f] S2 %6.3f[%6.4f]  interpolated = %6.4f\n", 
+                    time_inc, output_interval, input_time, next_input_time, next_output_time,
                     buffer.samples[0].value, buffer.samples[0].timestamp, 
                     buffer.samples[1].value, buffer.samples[1].timestamp, 
                     buffer.samples[2].value, buffer.samples[2].timestamp, interpolated
                     );
             } else {
-                printf("inc input_t next_in next_ou \n Output @ %.2f s: insufficient data\n", next_output_time);
+                printf("inc input_t next_in next_ou \n Output @ %.2f s <  %.2f: insufficient data\n", next_output_time, input_time);
             }
             next_output_time += output_interval;
         }

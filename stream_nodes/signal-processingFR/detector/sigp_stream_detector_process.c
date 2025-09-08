@@ -132,7 +132,7 @@ void sigp_stream_detector_process (sigp_detector_instance *pinstance,
         else
         	pResult[0] = 0x0000;
 
-#ifdef PLATFORM_COMPUTER        
+#if 0 //PLATFORM_COMPUTER        
         {   
             extern FILE *ptf_data_out_0;
             long x, SD=4; 

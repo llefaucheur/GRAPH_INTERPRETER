@@ -167,7 +167,7 @@ void dst_srcx_register (uint32_t *INST, char *s, uint32_t msb, uint32_t lsb, uin
         {   INSERT_BITS(INST[0], msb, lsb, RegSP0);         // DST = S0   
         }   else
         {   if (not_sp1)
-            {   printf("SP1 cannot be used on instruction %d !", INST[0]); exit(-4);
+            {   printf("SP1 cannot be used on instruction %d !", INST[0]); exit( 4);
             } 
             else
             {   INSERT_BITS(INST[0], msb, lsb, RegSP1);      // DST = S1
@@ -285,7 +285,6 @@ void K_register (uint32_t *INST, char S[cNFIELDS][cASM], int offset, uint32_t ms
 void check_JMOV_opar (char *s0, char *s2, int *oparf)
 {
     *oparf = OPLJ_NONE;
-    if ((0 != strstr(s0, "set")) && (0 == strstr(s2, "ptr")))  { *oparf = OPLJ_CAST    ; } 
     if ((0 != strstr(s0, "set")) && (0 != strstr(s2, "ptr")))  { *oparf = OPLJ_CASTPTR ; } 
     if ((0 != strstr(s0, "set")) && (0 != strstr(s2, "base"))) { *oparf = OPLJ_BASE    ; } 
     if ((0 != strstr(s0, "set")) && (0 != strstr(s2, "size"))) { *oparf = OPLJ_SIZE    ; } 
@@ -330,15 +329,11 @@ void check_alu_opar (char *s, int *oparf, int *opar0reg1RKm1)
     if (0 != strstr(s, "nor"))    { *oparf = OPAR_NOR ;   *opar0reg1RKm1 = opar_ALU; } 
     if (0 != strstr(s, "and"))    { *oparf = OPAR_AND ;   *opar0reg1RKm1 = opar_ALU; } 
     if (0 != strstr(s, "xor"))    { *oparf = OPAR_XOR ;   *opar0reg1RKm1 = opar_ALU; } 
-    if (0 != strstr(s, "shr"))    { *oparf = OPAR_SHR ;   *opar0reg1RKm1 = opar_ALU; } 
-    if (0 != strstr(s, "shl"))    { *oparf = OPAR_SHL ;   *opar0reg1RKm1 = opar_ALU; } 
+    if (0 != strstr(s, "shr"))    { *oparf = OPAR_RSHFT;  *opar0reg1RKm1 = opar_ALU; }
     if (0 != strstr(s, "set"))    { *oparf = OPAR_SET ;   *opar0reg1RKm1 = opar_ALU; } 
     if (0 != strstr(s, "clr"))    { *oparf = OPAR_CLR ;   *opar0reg1RKm1 = opar_ALU; } 
     if (0 != strstr(s, "max"))    { *oparf = OPAR_MAX ;   *opar0reg1RKm1 = opar_ALU; } 
     if (0 != strstr(s, "min"))    { *oparf = OPAR_MIN ;   *opar0reg1RKm1 = opar_ALU; } 
-    if (0 != strstr(s, "amax"))   { *oparf = OPAR_AMAX;   *opar0reg1RKm1 = opar_ALU; } 
-    if (0 != strstr(s, "amin"))   { *oparf = OPAR_AMIN;   *opar0reg1RKm1 = opar_ALU; } 
-    if (0 != strstr(s, "norm"))   { *oparf = OPAR_NORM;   *opar0reg1RKm1 = opar_ALU; } 
     if (0 != strstr(s, "addmod")) { *oparf = OPAR_ADDMOD; *opar0reg1RKm1 = opar_ALU; } 
     if (0 != strstr(s, "submod")) { *oparf = OPAR_SUBMOD; *opar0reg1RKm1 = opar_ALU; } 
 }
@@ -662,10 +657,6 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
             if (OPLJ_DELETE == oparf)
             {   K_SRC2_register (INST, s, 2, OP_SRC2_INST_MSB, OP_SRC2_INST_LSB, NOT_SP1); 
             }
-            if (OPLJ_CAST    == oparf)
-            {   dtype_register (INST, s, 3, &dtype); 
-                ST(INST[0], OP_K_INST, dtype + UNSIGNED_K_OFFSET);
-            }
             if (OPLJ_CASTPTR == oparf)
             {   dtype_register (INST, s, 3, &dtype); 
                 ST(INST[0], OP_K_INST, dtype + UNSIGNED_K_OFFSET);
@@ -828,7 +819,7 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
                 dst_srcx_register (INST, s[0],  OP_DST_INST_MSB,  OP_DST_INST_LSB, 0); 
                 if (s[1][0] == '|')
                 {   if (s[4][0] != '|' || s[5][0] != '=')  
-                    {   printf(" missing '|' or '='  !"); exit(-4);
+                    {   printf(" missing '|' or '='  !"); exit( 4);
                     }
                     tmp = sscanf(s[2], "%d", &lsb); tmp = sscanf(s[3], "%d", &msb);
                     ST(INST[0], BITFIELD_LSB_INST, lsb);
@@ -838,7 +829,7 @@ void stream_tool_read_code(char **pt_line, struct stream_platform_manifest *plat
                 }
                 else
                 {   if (s[3][0] != '|' || s[1][0] != '=')  
-                    {   printf( " missing '|' or '='  !"); exit(-4);
+                    {   printf( " missing '|' or '='  !"); exit( 4);
                     }
                     tmp = sscanf(s[4], "%d", &lsb); tmp = sscanf(s[5], "%d", &msb);
                     ST(INST[0], BITFIELD_LSB_INST, lsb);

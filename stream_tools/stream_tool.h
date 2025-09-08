@@ -197,12 +197,12 @@ struct node_memory_bank
             + E x maxParameterSize 
     */
 
-    char    iarc_max_sum[10];   /* "type" of node_mem_frame_size_mono .. */ 
+    char    iarc_max_sum[10];   /* "type" of node_mem_frame_size_mono .. */
 
-    uint32_t size_additional;                   /* A TODO : should be int64_t */
-    uint32_t MulFrameSizeMono, iarcFrameMono; char TypeFrameMono[NBCHAR_LINE];  /* B */
-    uint32_t MulFrameSize    , iarcFrame    ; char TypeFrame    [NBCHAR_LINE];  /* C */
-    uint32_t MulFrameSizeChan, iarcFrameChan; char TypeFrameChan[NBCHAR_LINE];  /* D */
+    uint32_t size_mem_alloc_A;                   /* A TODO : should be int64_t */
+    float MulFrameSizeMono; uint32_t iarcFrameMono; char TypeFrameMono[NBCHAR_LINE];  /* B */
+    float MulFrameSize;     uint32_t iarcFrame    ; char TypeFrame    [NBCHAR_LINE];  /* C */
+    float MulFrameSizeChan; uint32_t iarcFrameChan; char TypeFrameChan[NBCHAR_LINE];  /* D */
 
     uint32_t alignmentBytes;    /* enum buffer_alignment_type in NUMBER OF BYTES >= 4 */
     uint32_t stat0work1ret2;    /* enum mem_mapping_type : static, working, pseudo working, backup */
@@ -258,9 +258,9 @@ struct formatStruct
     float samplingRate;
     uint32_t timestamp;         /* FMT1                 */
     uint32_t timeformat;        /* FMT1                 */
-    uint32_t frame_length_bytes; /* FMT0    frame length format (0:in milliseconds 1:in samples) */
-    float frame_length_second;   /* FMT0    frame length format (0:in milliseconds 1:in samples) */
-    uint32_t frame_length_format; /* frame length format (0:in seconds 1:in samples) */
+    uint32_t frame_length_bytes; /* FMT0    frame length format (0:in seconds 1:in samples) */
+    float frame_length_second;   /* FMT0    frame length format (0:in seconds 1:in samples) */
+    uint32_t frame_format_byte0_time1; /* frame length format (0:in bytes 1:in seconds) */
 
     /* format section specific to each domain */
     union
@@ -289,7 +289,6 @@ struct arcStruct
     uint32_t idx_arc_in_graph;          // "stream_io new" index field (HW IO ID)
     uint32_t domain;                    // domain of operation
     uint32_t HQoS;                      // treat this stream of data with highest priority whatever the other arc content
-    struct formatStruct format;         // stream_format 
     uint32_t procID;                    // IO affinity for the processor ID
     uint32_t archID;                    // IO affinity for the architecture ID
     uint32_t arc_graph_ID;              // index of the arc used in the graph for this HW IO arc
@@ -311,6 +310,7 @@ struct arcStruct
     uint32_t flush;                     // control of register "MPFLUSH_ARCW1" : forced flush of data in MProcessing and shared tasks
     uint32_t extend_addr;               // address range extension-mode of the arc descriptor "EXTEND_ARCW2" for large NN models, default = #0 (no extension)
     uint32_t map_hwblock;               // mapping VID index from "procmap_manifest_xxxx.txt" to map the buffer, default = #0 (VID0)
+    struct formatStruct IO_FMT_manifest;// stream_format of IOs, used when reading manifests
     uint32_t SwcProdGraphIdx, fmtProd;  // index to the producer node graph->all_nodes[IDX], index format of the producer
     uint32_t SwcConsGraphIdx, fmtCons;  // index to the consumer node graph->all_nodes[IDX], index format of the consumer
 
@@ -320,7 +320,7 @@ struct arcStruct
     struct options sampling_rate_option;
     struct options sampling_period_s_option;
     struct options sampling_period_day_option;
-    struct options frame_length_option;
+    struct options frame_length_samples_option;
     struct options frame_duration_option;
     float sampling_accuracy;
 
@@ -397,10 +397,13 @@ struct stream_node_manifest
     uint32_t nbArch, arch[MAXNBARCH];   /* stream_processor_architectures (max 256) */
     uint32_t fpu[MAXNBARCH];            /* stream_processor_sub_arch_fpu */
     uint32_t node_assigned_arch, node_assigned_proc, node_assigned_priority;
-    uint32_t formatUsed;                /* buffer format is used by the component */
+    //uint32_t formatUsed;                /* buffer format is used by the component */
     uint32_t masklib;                   /* mask of up to 16 family of processing extensions "SERVICE_COMMAND_GROUP" */
     uint32_t codeVersion, schedulerVersion;  /* version of the scheduler it is compatible with */
-    uint32_t deliveryMode;               /* 0:source, 1:binary 2:2 binaries (fat binary)*/
+    uint32_t deliveryMode;              /* 0:source, 1:binary 2:2 binaries (fat binary)*/
+    uint32_t stack_usage_max;           /* maximum stack usage reset time and run */
+    uint32_t stack_usage_running;       /* maximum stack usage while running */
+    uint32_t not_reentrant;             /* if <>0 it means only one instance of the node can be executed */
 
     uint32_t arc_parameter;             // SWC with extra-large amount of parameters (NN models) will declare it with extra arcs
     uint32_t mask_library;              // default 0 bit-field of dependencies to computing libraries
@@ -494,7 +497,7 @@ struct stream_platform_manifest
     processor_memory_bank_t membank[MAX_PROC_MEMBANK];
 
     uint32_t nb_hwio_stream;
-    struct arcStruct arc[MAX_GRAPH_NB_HW_IO];   /* format of HW IO arcs */
+    struct arcStruct IO_arc[MAX_GRAPH_NB_HW_IO];   /* format of HW IO arcs */
 
     /* desired platform domains mapping to platform capabilities (fw_io_idx) TODO @@@@*/
     int domains_to_fw_io_idx[IO_DOMAIN_MAX_NB_DOMAINS];

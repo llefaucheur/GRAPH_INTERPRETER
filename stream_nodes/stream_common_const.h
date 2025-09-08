@@ -350,12 +350,12 @@ enum stream_processor_sub_arch_fpu
 
     -8 bits-[--------24 bits ------]
     1_987654321_987654321_987654321_
-    cccccccc________________________  collision byte in the WRITE word32
+    cccccccc________________________  collision byte in the WRITE word32, IO affinity ARCHID_LW0
     R_______________________________  flag: relocatable memory segment
     ____OOOO________________________  long offset of the buffer base address
     ________EXT_____________________  extension 3bits shifter
     ___________s44443333222211110000  5 hex signed digits[1+20b] = FrameSize and Arc-R/W
-            <--SIZE_EXT_FMT0_MSB--->  R/W arc indexe leaves one byte
+            <--SIZE_EXT_FMT0_MSB--->  R/W arc index (with EXT) leaves one byte
         <---SIZE_EXT_OFF_FMT0_MSB-->  base addresses on 28bits 
     <-->                              tells the loader to copy a graph section in RAM
     
@@ -994,50 +994,41 @@ enum stream_processor_sub_arch_fpu
 /* types fit in 6bits, arrays start with 0, stream_bitsize_of_raw() is identical */
 
 
-#define STREAM_DATA_ARRAY 0u /* stream_array : [0NNNTT00] 0, type, nb */
-#define STREAM_S1         1u /* S, one signed bit, "0" = +1 */                           /* one bit per data */
-#define STREAM_U1         2u /* one bit unsigned, boolean */
-#define STREAM_S2         3u /* SX  */                                                   /* two bits per data */
-#define STREAM_U2         4u /* XX  */
-#define STREAM_Q1         5u /* Sx ~stream_s2 with saturation management*/
-#define STREAM_S4         6u /* Sxxx  */                                                 /* four bits per data */
-#define STREAM_U4         7u /* xxxx  */
-#define STREAM_Q3         8u /* Sxxx  */
-#define STREAM_FP4_E2M1   9u /* Seem  micro-float [8 .. 64] */
-#define STREAM_FP4_E3M0  10u /* Seee  [8 .. 512] */
-#define STREAM_S8        11u /* Sxxxxxxx  */                                             /* eight bits per data */
-#define STREAM_U8        12u /* xxxxxxxx  ASCII char UTF-8, numbers.. */
-#define STREAM_Q7        13u /* Sxxxxxxx  arithmetic saturation */
-#define STREAM_CHAR      14u /* xxxxxxxx  */
-#define STREAM_FP8_E4M3  15u /* Seeeemmm  NV tiny-float  +/-[0, 0.015 .. 240]  */ 
-#define STREAM_FP8_E5M2  16u /* Seeeeemm  IEEE-754       +/-[0, 0.015 .. 15.5] */
-#define STREAM_S16       17u /* Sxxxxxxx.xxxxxxxx  */                                    /* 2 bytes per data */
-#define STREAM_U16       18u /* xxxxxxxx.xxxxxxxx  Numbers, UTF-16 characters */
-#define STREAM_Q15       19u /* Sxxxxxxx.xxxxxxxx  arithmetic saturation */
-#define STREAM_FP16      20u /* Seeeeemm.mmmmmmmm  half-precision float */
-#define STREAM_BF16      21u /* Seeeeeeee.mmmmmmm  bfloat truncated FP32 = BFP16 = S E8 M7 */
-#define STREAM_Q23       22u /* Sxxxxxxx.xxxxxxxx.xxxxxxxx  24bits */                    /* 3 bytes per data */ 
-#define STREAM_S9_23     23u /* SSSSSSSS.Sxxxxxxx.xxxxxxxx.xxxxxxxx  */                  /* 4 bytes per data, s8_24 */
-#define STREAM_S32       24u /* one long word  */
-#define STREAM_U32       25u /* xxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx UTF-32, .. */
-#define STREAM_Q31       26u /* Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx  */
-#define STREAM_FP32      27u /* Seeeeeee.emmmmmmm.mmmmmmmm.mmmmmmmm  FP32 = S E8 M23 */             
-#define STREAM_CQ15      28u /* Sxxxxxxx.xxxxxxxx Sxxxxxxx.xxxxxxxx (I Q) */             
-#define STREAM_CFP16     29u /* Seeeeemm.mmmmmmmm Seeeeemm.mmmmmmmm (I Q) */             
-#define STREAM_S64       30u /* long long */                                             /* 8 bytes per data */
-#define STREAM_U64       31u /* unsigned  64 bits */
-#define STREAM_Q63       32u /* Sxxxxxxx.xxxxxx ....... xxxxx.xxxxxxxx  */
-#define STREAM_CQ31      33u /* Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx Sxxxx..*/
-#define STREAM_FP64      34u /* Seeeeeee.eeeemmmm.mmmmmmm ... double = S E11 M52 */
-#define STREAM_CFP32     35u /* Seeeeeee.mmmmmmmm.mmmmmmmm.mmmmmmmm Seee.. (I Q)  */
-#define STREAM_FP128     36u /* Seeeeeee.eeeeeeee.mmmmmmm ... quadruple S E15 M112 */    /* 16 bytes per data */
-#define STREAM_CFP64     37u /* fp64 fp64 (I Q)  */
-#define STREAM_FP256     38u /* Seeeeeee.eeeeeeee.eeeeemm ... octuple  S E19 M236 */     /* 32 bytes per data */
-#define STREAM_WGS84     39u /* <--LATITUDE 32B--><--LONGITUDE 32B-->  lat="52.518611" 0x4252130f   lon="13.376111" 0x4156048d - dual IEEE754 */   
-#define STREAM_HEXBINARY 40u /* UTF-8 lower case hexadecimal byte stream */
-#define STREAM_BASE64    41u /* RFC-2045 base64 for xsd:base64Binary XML data */
-#define STREAM_STRING8   42u /* UTF-8 string of char terminated by 0 */
-#define STREAM_STRING16  43u /* UTF-16 string of char terminated by 0 */
+#define STREAM_DATA_ARRAY  0u // stream_array : { 0NNN TT 00 } number, type           
+#define STREAM_FP32        1u //  Seeeeeee.mmmmmmmm.mmmmmmmm..  FP32                  
+#define STREAM_FP64        2u //  Seeeeeee.eeemmmmm.mmmmmmm ...  double               
+#define STREAM_S16         3u //  Sxxxxxxx.xxxxxxxx 2 bytes per data                  
+#define STREAM_S32         4u // one long word                                          
+#define STREAM_S2          5u // Sx two bits per data                                 
+#define STREAM_U2          6u // uu                                                   
+#define STREAM_S4          7u // Sxxx four bits per data                              
+#define STREAM_U4          8u // xxxx                                                 
+#define STREAM_FP4_E2M1    9u // Seem  micro-float [8 .. 64]                          
+#define STREAM_FP4_E3M0   10u // Seee   [8 .. 512]                                    
+#define STREAM_S8         11u //  Sxxxxxxx  eight bits per data                       
+#define STREAM_U8         12u //  xxxxxxxx  ASCII char, numbers..                     
+#define STREAM_FP8_E4M3   13u //  Seeeemmm  NV tiny-float [0.02 .. 448]               
+#define STREAM_FP8_E5M2   14u //  Seeeeemm  IEEE-754 [0.0001 .. 57344]                
+#define STREAM_U16        15u //  xxxxxxxx.xxxxxxxx  Numbers, UTF-16 characters       
+#define STREAM_FP16       16u //  Seeeeemm.mmmmmmmm  half-precision float             
+#define STREAM_BF16       17u //  Seeeeeee.mmmmmmmm  bfloat                           
+#define STREAM_S23        18u //  Sxxxxxxx.xxxxxxxx.xxxxxxxx  24bits 3 bytes per data 
+#define STREAM_S23_32     19u //  SSSSSSSS.Sxxxxxxx.xxxxxxxx.xxxxxxx  4 bytes per data
+#define STREAM_U32        20u //  xxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx  UTF-32, ..     
+#define STREAM_CS16       21u //  Sxxxxxxx.xxxxxxxx+Sxxxxxxx.xxxxxxxx (I Q)           
+#define STREAM_CFP16      22u //  Seeeeemm.mmmmmmmm+Seeeeemm.. (I Q)                  
+#define STREAM_S64        23u // long long 8 bytes per data                             
+#define STREAM_U64        24u // unsigned 64 bits                                       
+#define STREAM_CS32       25u //  Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx Sxxxx..         
+#define STREAM_CFP32      26u //  Seeeeeee.mmmmmmmm.mmmmmmmm.m..+Seee..  (I Q)        
+#define STREAM_FP128      27u //  Seeeeeee.eeeeeeee.mmmmmmm ...  quadruple precision  
+#define STREAM_CFP64      28u // fp64 + fp64 (I Q)                                      
+#define STREAM_FP256      29u //  Seeeeeee.eeeeeeee.eeeeemm ...  octuple precision    
+#define STREAM_WGS84      30u // <--LAT 32B--><--LONG 32B-->                          
+#define STREAM_HEXBINARY  31u // UTF-8 lower case hexadecimal byte stream               
+#define STREAM_BASE64     32u // RFC-2045 base64 for xsd:base64Binary XML data          
+#define STREAM_STRING8    33u // UTF-8 string of char terminated by 0                   
+#define STREAM_STRING16   34u // UTF-16 string of char terminated by 0                  
 
 #define LAST_RAW_TYPE    64u /* coded on 6bits RAW_FMT0_LSB */
 

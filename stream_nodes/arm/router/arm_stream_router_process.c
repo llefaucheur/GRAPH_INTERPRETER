@@ -51,6 +51,45 @@
   @param[in]     S         points to an instance of the Biquad cascade structure
   @param[in]     in_out    XDM buffer
   @return        none
+  
+  Initialization : 
+    FIFO descriptors : arcID, chanID, Ftime, 
+        Interleaving and data format details, 
+        Sampling period SrcSP (or estimate), DstSP
+  
+  check all input and output arcs fit for the time granularity of processing "DT"
+    compute "nDT", the number processing loop with DT samples
+    check if there is an HQOS arc (and its corresponding output arc)
+        OLA removal of samples on the other arcs, or duplicate last samples
+
+  Loop on nDT
+    update FIFOs
+
+    update MIXERs
+        align the FIFO time (rounding to closest) before the mixing
+
+    update OUTPUT arcs and adapt the sample format
+        realign the time reference of input arcs to the output (=0)
+
+  endLoop
+
+  update XDM descriptor with the amount of samples consumed and generated per arc
+
+
+    copy to deinterleaved data scratch buffers  amount decided by HQOS
+  convert to fp32 and extrapolate missing samples for other arcs
+  resample / asrc
+  
+  mix(A(i) x input)i)) => A(j) x output(j)
+      resample
+      Raw convcert
+      interleaved stride
+  
+  shift scratch buffer to next interpolations
+
+  while all input arcs
+
+
  */
 void arm_stream_router_process (arm_stream_router_instance *instance, stream_xdmbuffer_t *in_out)
 {

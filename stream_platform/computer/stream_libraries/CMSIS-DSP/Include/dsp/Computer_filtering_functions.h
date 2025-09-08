@@ -23,7 +23,7 @@
  * limitations under the License.
  */
 
- 
+
 #ifndef _FILTERING_FUNCTIONS_H_
 #define _FILTERING_FUNCTIONS_H_
 
@@ -60,7 +60,6 @@ extern "C"
           int8_t numStages;        /**< number of 2nd order stages in the filter.  Overall order is 2*numStages. */
           int8_t postShift;        /**< Additional shift, in bits, applied to each output sample. */
   } platform_arm_biquad_cascade_df1_inst_q15;
-
 
   /**
    * @brief Instance structure for the floating-point Biquad cascade filter.
@@ -160,9 +159,9 @@ extern "C"
   const float32_t * pCoeffs,
         float32_t * pState);
 
-
 #ifdef   __cplusplus
 }
 #endif
 
 #endif /* ifndef _FILTERING_FUNCTIONS_H_ */
+

@@ -8,9 +8,9 @@ clc;
 
 %% Parameters
 a = 0;                % Expansion point
-order = 4;            % Taylor polynomial order
-x_min = -2;           
-x_max = 2;
+order = 2;            % Taylor polynomial order
+x_min = -1;           
+x_max = 1;
 num_points = 100;
 
 %% Generate interpolation points

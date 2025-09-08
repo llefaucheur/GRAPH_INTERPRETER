@@ -32,8 +32,12 @@
 
 //#define GRAPH_TXT           "../../../stream_platform/computer/graph_computer_router.txt"     /* graph */
 //#define GRAPH_BIN           "../../../stream_platform/computer/graph_computer_router_bin.txt" /* binary graph file */
-#define GRAPH_TXT           "../../../stream_platform/computer/graph_computer_filter.txt"     /* graph */
-#define GRAPH_BIN           "../../../stream_platform/computer/graph_computer_filter_bin.txt" /* binary graph file */
+#define GRAPH_TXT           "../../../stream_platform/computer/graph_computer.txt"     /* graph */
+#define GRAPH_BIN           "../../../stream_platform/computer/graph_computer_bin.txt" /* binary graph file */
+ //#define GRAPH_TXT           "../../../stream_platform/computer/graph_computer_filter.txt"     /* graph */
+//#define GRAPH_BIN           "../../../stream_platform/computer/graph_computer_filter_bin.txt" /* binary graph file */
+//#define GRAPH_TXT           "../../../stream_platform/computer/graph_computer_filter_detector.txt"     /* graph */
+//#define GRAPH_BIN           "../../../stream_platform/computer/graph_computer_filter_detector_bin.txt" /* binary graph file */
 
 #define GRAPH_TOP_MANIFEST  "../../../stream_platform/computer/manifest/top_manifest_computer.txt"
 #define GRAPH_HEADER        "../../../stream_platform/computer/graph_computer_header.h"  /* list of labels to do "set_parameter" from scripts */
@@ -59,7 +63,7 @@
 extern void arm_stream_read_manifests (struct stream_platform_manifest *platform, char *all_files);
 extern void arm_stream_read_graph(struct stream_platform_manifest* platform,struct stream_graph_linkedlist *graph, char* ggraph_txt);
 extern void arm_stream_memory_map(struct stream_platform_manifest* platform,struct stream_graph_linkedlist *graph);
-extern void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph, FILE *ptf_graph_bin);
+extern void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct stream_graph_linkedlist *graph, FILE *ptf_graph_bin, char* ggraph_source);
 
 /**
   @brief            (main) 
@@ -78,10 +82,10 @@ void main(void)
     struct stream_platform_manifest *platform;
     struct stream_graph_linkedlist *graph;
 
-    if (0 == (all_files = calloc (MAXINPUT, 1))) {  printf ( "\n init error \n"); {  printf ( "\n init error \n"); exit(-1); } }
-    if (0 == (ggraph = calloc (MAXINPUT, 1))) {  printf ("\n init error \n"); exit(-1); }
-    if (0 == (platform = calloc (sizeof(struct stream_platform_manifest), 1))) {  printf ("\n init error \n"); exit(-1); }
-    if (0 == (graph = calloc (sizeof(struct stream_graph_linkedlist), 1))) {  printf ("\n init error \n"); exit(-1); }
+    if (0 == (all_files = calloc (MAXINPUT, 1))) {  printf ( "\n init error \n"); {  printf ( "\n init error \n"); exit( 1); } }
+    if (0 == (ggraph = calloc (MAXINPUT, 1))) {  printf ("\n init error \n"); exit( 1); }
+    if (0 == (platform = calloc (sizeof(struct stream_platform_manifest), 1))) {  printf ("\n init error \n"); exit( 1); }
+    if (0 == (graph = calloc (sizeof(struct stream_graph_linkedlist), 1))) {  printf ("\n init error \n"); exit( 1); }
 
     /* 
         Read the file names : 
@@ -92,10 +96,33 @@ void main(void)
     memset(platform, 0, sizeof(struct stream_platform_manifest));
     memset(graph, 0, sizeof(struct stream_graph_linkedlist));
 
+    /* initialize default values */
+    {   uint32_t i;
+        for (i = 0; i < MAX_NB_ARCS; i++)
+        {   struct arcStruct* arc;
+            arc = &(graph->arc[i]);
+            arc->commander0_servant1 = 1;
+            arc->IO_FMT_manifest.nchan = 1;
+            arc->IO_FMT_manifest.frame_length_bytes = 1;
+            arc = &(platform->IO_arc[i]);
+            arc->commander0_servant1 = 1;
+            arc->IO_FMT_manifest.nchan = 1;
+            arc->IO_FMT_manifest.frame_length_bytes = 1;
+        }
+        for (i = 0; i < MAX_NB_FORMAT; i++)
+        {
+            struct formatStruct* format;
+            format = &(graph->arcFormat[i]);
+            format->nchan = 1;
+            format->frame_length_bytes = 1;
+        }
+    }
 
-    if (0 == (graph->ptf_graph_bin  = fopen(GRAPH_BIN,  "wt"))) {  printf (  "\n init error \n"); exit(-1); }
-    if (0 == (graph->ptf_header = fopen(GRAPH_HEADER, "wt"))) {  printf (  "\n init error \n"); exit(-1); }
-    if (0 == (graph->ptf_debug = fopen(GRAPH_DEBUG, "wt"))) {  printf (  "\n init error \n"); exit(-1); }
+
+
+    if (0 == (graph->ptf_graph_bin  = fopen(GRAPH_BIN,  "wt"))) {  printf (  "\n init error \n"); exit( 1); }
+    if (0 == (graph->ptf_header = fopen(GRAPH_HEADER, "wt"))) {  printf (  "\n init error \n"); exit( 1); }
+    if (0 == (graph->ptf_debug = fopen(GRAPH_DEBUG, "wt"))) {  printf (  "\n init error \n"); exit( 1); }
 
 
     read_input_file (GRAPH_TOP_MANIFEST, all_files);
@@ -145,14 +172,14 @@ void main(void)
     */
     {   FILE * ptf_graph_bin;
 
-        if (0 == (ptf_graph_bin = fopen(GRAPH_BIN, "wt"))) exit(-1);
+        if (0 == (ptf_graph_bin = fopen(GRAPH_BIN, "wt"))) exit( 1);
 
-        arm_stream_graphTxt2Bin(platform, graph, ptf_graph_bin);
+        arm_stream_graphTxt2Bin(platform, graph, ptf_graph_bin, GRAPH_TXT);
 
         fclose(ptf_graph_bin); 
 
     }
 
     printf (  "\n graph compilation done \n");
-    exit (-3); 
+    exit( 3); 
 }

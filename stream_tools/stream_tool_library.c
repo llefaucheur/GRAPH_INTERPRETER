@@ -55,7 +55,7 @@ void decode_memreq_type(char *type, uint32_t *itype)
     if (0==strncmp(type, "sumall", strlen("sumall"))) {d=1; *itype = 0; }
 
     if (d == 0) {
-        fprintf(stderr, "\n\n decode_memreq_type error %s \n\n", type); exit (-6); 
+        fprintf(stderr, "\n\n decode_memreq_type error %s \n\n", type); exit( 6); 
     }
 }
 
@@ -79,7 +79,7 @@ void convert_to_mks_unit(char *unit, float *fdata)
     if (0==strncmp(unit, "mhz",  3)) {d=1;   *fdata = 1000 * (*fdata); }
 
     if (d == 0) {
-        fprintf(stderr, "\n\n convert_to_mks_unit error %s \n\n", unit); exit (-6); 
+        fprintf(stderr, "\n\n convert_to_mks_unit error %s \n\n", unit); exit( 6); 
     }
 }
 
@@ -91,17 +91,18 @@ int stream_bitsize_of_raw(uint8_t raw)
     switch (raw)
     {
     /* one bit per data */
-    case STREAM_S1: case STREAM_U1: return 1;
-    case STREAM_S2: case STREAM_U2: case STREAM_Q1: return 2;
-    case STREAM_S4: case STREAM_U4: case STREAM_Q3: return 4;
-    default:
-    case STREAM_S8:   case STREAM_U8:   case STREAM_Q7:  case STREAM_FP8_E4M3: case STREAM_FP8_E5M2: return 8;
-    case STREAM_S16:  case STREAM_U16:  case STREAM_Q15: case STREAM_FP16:     case STREAM_BF16:     return 16;
-    case STREAM_Q23:  return 24;
-    case STREAM_S32:  case STREAM_U32:  case STREAM_Q31: case STREAM_CQ15:     case STREAM_FP32:    case STREAM_CFP16: return 32;
-    case STREAM_S64:  case STREAM_U64:  case STREAM_Q63: case STREAM_CQ31:     case STREAM_FP64:    case STREAM_CFP32: return 64;
+    case STREAM_S2: case STREAM_U2: return 2;
+    case STREAM_S4: case STREAM_U4: return 4;
+    case STREAM_S8:   case STREAM_U8:   case STREAM_FP8_E4M3: case STREAM_FP8_E5M2: return 8;
+    case STREAM_S16:  case STREAM_U16:  case STREAM_FP16:     case STREAM_BF16:     return 16;
+    case STREAM_S23:  return 24;
+    case STREAM_S32:  case STREAM_U32:  case STREAM_CS16:     case STREAM_FP32:     case STREAM_CFP16: return 32;
+    case STREAM_S64:  case STREAM_U64:  case STREAM_FP64:    case STREAM_CFP32: return 64;
     case STREAM_FP128:case STREAM_CFP64: return 128;
     case STREAM_FP256: return 256;
+    default: {
+            fprintf(stderr, "\n\n stream_bitsize_of_raw error %d \n\n", raw); exit( 6);
+        }
     }
 }
 
@@ -194,7 +195,7 @@ int vid_malloc (uint32_t VID, uint64_t size, uint32_t alignment,
 
     if (found == 0) 
     {   printf ("\n vid_malloc error not found \n");
-        exit(-5);
+        exit( 5);
     }
 
     sprintf(tmpstring, "OFFSET %d PTstatic 0x%04llX MAXWorking 0x%04llX Nbytes %04llX", 
@@ -231,7 +232,7 @@ int vid_malloc (uint32_t VID, uint64_t size, uint32_t alignment,
     {   printf ("\n vid_malloc error overflow %lld > %lld \n", 
         platform->membank[ibank].ptalloc_static +
         platform->membank[ibank].max_working_booking, platform->membank[ibank].size );/* check overflow */
-        exit(-7);
+        exit( 7);
     }
 
     strcpy(platform->membank[ibank].comments, comments);
@@ -425,7 +426,7 @@ void read_input_file(char* file_name, char * inputFile)
 
     if (0 == (ptf_platform_manifest_file = fopen(file_name, "rt")))
     {   printf ("\n read_input_file, not found \n");
-        exit(-1);
+        exit( 1);
     }
     idx = 0;
     while (1) {
@@ -492,6 +493,7 @@ int search_word(char line[], char word[])
     when index < 0 a list of triplets follows to describe a combination of data intervals :  A1 B1 C1  A2 B2 C2 ... 
         A is starting value, B is the increment step, C is the included maximum value 
         The absolute index value selects the default value in this range   
+        Example -12  1 0.1 10    ; {1 1.1 1.2 .. 9.9 10} default = 1.2 (index starts at 1)
 
     extract the search range to the next ';' or '\n'  search for '{' and '}' search the non-blank segments
     number of sets from '{}' 
@@ -508,7 +510,7 @@ int fields_options_extract(char **pt_line, struct options *opt)
     p = *pt_line;
     p = strchr(p,'{');
     if (p == 0) {
-        fprintf(stderr, "\n\n no option %s \n\n", *pt_line); exit (-6); 
+        fprintf(stderr, "\n\n no option %s \n\n", *pt_line); exit ( 6); 
     }
 
 #define NON_BLKSPACE()  {int i; for(i=0;i<NBCHAR_LINE;i++){if(*p != ' ') break; p++;}}  /* now p points to the start of data */ 
@@ -541,7 +543,7 @@ int fields_options_extract(char **pt_line, struct options *opt)
      }
 
     if (option_index == 0) {
-        fprintf(stderr, "\n\n option index error %s \n\n", *pt_line); exit (-6); 
+        fprintf(stderr, "\n\n option index error %s \n\n", *pt_line); exit( 6); 
     }
 
     jump2next_valid_line (pt_line);

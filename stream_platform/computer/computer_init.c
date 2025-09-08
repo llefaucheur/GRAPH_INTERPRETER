@@ -24,6 +24,9 @@
  * limitations under the License.
 * 
  */
+
+
+
 #include "presets.h"
 
 #ifdef PLATFORM_COMPUTER
@@ -50,7 +53,6 @@
 
 
 extern const uint8_t platform_audio_out_bit_fields[];
-
 
 /* 
     this table will be extended with pointers to nodes loaded 
@@ -81,6 +83,7 @@ extern p_stream_node TjpgDec;                    /* 14 */
 
 #define TBD 0
 
+
 const p_stream_node node_entry_points[NB_NODE_ENTRY_POINTS] =
 {
     /*  0 */ (p_stream_node)&arm_stream_null_task,      /* PROC ARCH |  ID   */
@@ -100,7 +103,6 @@ const p_stream_node node_entry_points[NB_NODE_ENTRY_POINTS] =
     /* 13 */ (p_stream_node)&arm_stream_filter2D,       /*   2   2   |  13   Filter, rescale, rotate, exposure compensation */
     /* 14 */ (p_stream_node)&sigp_stream_detector2D,    /*   0   2   |  14   activity detection, pattern detection */
 };    
-
 
 
 
@@ -143,7 +145,6 @@ const uint8_t * long_offset[MAX_NB_MEMORY_OFFSET] =
     &(ITCM[0]),
     &(BACKUP[0]),
 };
-
 
 
 /*
@@ -196,10 +197,17 @@ const uint32_t graph_computer_router[] =
 #include "graph_computer_router_bin.txt"
 };
 
-const uint32_t graph_computer_filter[] = 
-{ 
+
+const uint32_t graph_computer_filter[] =
+{
 #include "graph_computer_filter_bin.txt"
 };
+
+const uint32_t graph_computer_filter_detector[] =
+{
+#include "graph_computer_filter_detector_bin.txt"
+};
+
 
 
 
@@ -252,14 +260,21 @@ uintptr_t new_node_parameters[(1+NB_PENDING_PARAM_UPDATES) * 2] =
 
 #define GRAPH_ROUTER 0
 #define GRAPH_FILTER 1
+#define GRAPH_FILTER_DETECTOR 2
 uint32_t * get_graph_address(uint32_t graph_idx)
 {
     if (graph_idx == GRAPH_ROUTER)
     {   return (uint32_t *) graph_computer_router;
     }
-    if (graph_idx ==  GRAPH_FILTER)
-    {   return (uint32_t *) graph_computer_filter;
+    if (graph_idx == GRAPH_FILTER)
+    {
+        return (uint32_t*)graph_computer_filter;
     }
+    if (graph_idx == GRAPH_FILTER_DETECTOR)
+    {
+        return (uint32_t*)graph_computer_filter_detector;
+    }
+        
     return 0;
 }
 
@@ -272,8 +287,9 @@ uint32_t * get_graph_address(uint32_t graph_idx)
 void platform_init_specific(arm_stream_init_t *data)
 {
 #if GRAPH_FROM_APP1PLATFORM2 == 2
-   // data->graph = get_graph_address(GRAPH_ROUTER);          
-    data->graph = get_graph_address(GRAPH_FILTER);          
+    data->graph = get_graph_address(GRAPH_ROUTER);          
+    //data->graph = get_graph_address(GRAPH_FILTER);  
+    //data->graph = get_graph_address(GRAPH_FILTER_DETECTOR);
 #endif
 
     data->long_offset = (uint8_t **) long_offset;           // pointer to "long_offset[MAX_NB_MEMORY_OFFSET]"
@@ -281,7 +297,7 @@ void platform_init_specific(arm_stream_init_t *data)
     data->application_callbacks = (p_stream_services)application_callbacks;  // callbacks used by scripts
     data->node_entry_points = (p_stream_node) node_entry_points;             // list of nodes
     data->platform_io = (p_io_function_ctrl)platform_io;                     // list of IO functions
-    data->new_parameters = new_node_parameters;                              // list of pairs [offset; parameter address]
+    data->new_parameters = (uintptr_t)new_node_parameters;                              // list of pairs [offset; parameter address]
 
     data->procID = PROC_ID;
     data->archID = ARCH_ID;

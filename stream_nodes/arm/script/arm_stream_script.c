@@ -126,7 +126,8 @@ void arm_stream_script (uint32_t command, void *instance, void *data, uint32_t *
             pinstance->SP = pinstance->nregs;     // after { R0 .. R(nregs),R12 }
             pinstance->PC = 0;         // PC pre-incremented before read
             pinstance->test_flag = 0;
-            pinstance->max_cycle = MAXCYCLES;
+            pinstance->debug = 0;
+            pinstance->cycles_downcounter = MAXCYCLES;
 
             /*
             *  BYTECODE 

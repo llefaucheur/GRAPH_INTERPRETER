@@ -89,13 +89,14 @@ typedef union
         uint32_t instruction;           /* current instruction */
         uint16_t PC;                    /* in uint32 */          
         uint16_t codes;                 /* code size */          
-        uint16_t max_cycle;
-#define MAXCYCLES 1000
-        uint8_t SP;                    /* in REGS unit */          
+        uint16_t cycles_downcounter;    /* error detection */
+#define MAXCYCLES 100
+        uint8_t SP;                     /* in REGS unit */          
         uint8_t nstack;          
         uint8_t nregs;          
         uint8_t errors;
         uint8_t test_flag;
+        uint8_t debug;                  /* register dump in each cycle */
     } arm_script_instance_t;
 
 

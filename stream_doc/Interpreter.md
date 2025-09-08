@@ -42,8 +42,11 @@ Here are some examples of signal processing "pieces" and software portability is
 - a pattern recognition algorithm is using images of format 300x300 pixels RGB888. What happens when the platform is using a sensor with VGA image format ?
 - an industrial proximity detector is using a 25kHz wave generator and an ultrasound echo detector using a stream of Q15 samples at 96kHz normalized at 120dBSPL full-scale. Can we manage the same behavior and performance with a 88.1kHz sampling-rate ?
 - an audio algorithm using 50kB of RAM from which 4kB are critical on speed access and 25kB have no speed constraint. What happens when several algorithms, or several instances of the same, want to use the fast tightly-coupled memory bank (TCM), how do we manage data swapping before/after calling the algorithms ?
+- a device holds two microprocessors and there is no MMU to hide the physical address.
+- the task scheduler must be portable to devices using an RTOS or running baremetal.
+- the graph can be redesigned without the need for code recompilation or the use of containers. The reconfiguration is managed by the tiny file describing the graph, which is interpreted.
 - a motion sensor subsystem is designed to integrate components from different silicon vendors. How do we manage automatically the scaling factors associated with the sensors, to have the same dynamic range and sampling-rates in the data stream ?
-- a microprocessor has a dot-product and an FFT accelerator. Can we offer an abstraction layer to the algorithm designers for such coprocessors : the developer will release one single software. The computation of the FFT will use software libraries when there is no coprocessor. 
+- a microprocessor has an FFT accelerator (or a matrix-multiply accelerator). Can we offer an abstraction layer to the algorithm designers for such coprocessors : the developer will release one single software. The computation of the FFT will use software libraries when there is no coprocessor. 
 
 Creating standard interfaces allows software component developers to deliver their IP without having to care about the capabilities of the platform used during system integration. 
 
@@ -68,11 +71,11 @@ We want to let the graph to be modified without needing to recompile and re-flas
 
 ## How
 
-Graph Interpreter is a scheduler and interpreter of a  binary representation of a [graph](#Graph-design). For portability reason the Graph Interpreter uses a minimal platform abstraction layer (AL) to the memory and to the input/output stream interfaces. Graph Interpreter manages the data flow of "arcs" between "nodes".
+Graph Interpreter is a scheduler and interpreter of a  binary representation of a [graph](#Graph-design). For portability reason the Graph Interpreter uses a minimal platform abstraction layer (AL) of the memory and of the input/output stream interfaces. Graph Interpreter manages the data flow of "arcs" between "nodes".
 
 This binary graph description is a compact data structure using indexes to the physical addresses of the nodes and memory instances. This graph description is generated in three steps:
 
-1.  [plaform manifest](#Top-Manifest) and [IO manifest](#IO-Manifest) are prepared ahead of the graph design and describe the hardware. The manifests are giving the processing capabilities (processor architecture, minimum guaranteed amount of memory per RAM blocks and their speed, TCM sizes). The platform manifest gives references to [node manifests](#Node-manifest) for each of the installed processing Nodes : developer identification, input/output data formats,
+1.  [plaform manifest](#Top-Manifest) and [IO manifest](#IO-Manifest) are prepared ahead of the graph design and describe the hardware. The manifests are giving the processing capabilities (processor architecture, minimum guaranteed amount of memory per RAM blocks and their speed, TCM sizes). The platform manifest gives the list of files of [node manifests](#Node-manifest) for each of the installed processing Nodes : developer identification, input/output data formats,
     memory consumption, documentation of the parameters and a list of
     "presets", test-patterns and expected results (see also [node design](#Node-design)). 
 2.  The graph is either written in a text format (syntax example [here](#Example-of-graph)) or is generated from a graphical tool (proof of concept picture of the GUI [here](#GUI-design-tool)).
@@ -134,8 +137,7 @@ Stream-based processing is facilitated using Graph-Interpreter:
     after deep-sleep periods. One of the memory banks allows
     developers to save the state of algorithms for fast return to normal
     operations. The node retention memory should be limited to tens of bytes.
-6.  Graph-Interpreter allows memory size optimization
-    with overlays of different nodes' scratch memory banks.
+6.  Graph-Interpreter allows memory size optimization with overlays of different nodes' scratch memory banks.
 7.  **Multiprocessing** SMP and AMP with 32+64bits processor architectures. The graph
     description is placed in a shared memory. Any processor having
     access to this shared memory can contribute to the processing. Buffer addresses are described with a 6-bits offset and an index, to let the same address be processed without MMU. The
@@ -315,8 +317,8 @@ The "Top" platform manifest has four sections :
     2        1        0          2       15            2  
 
 ;---MEMID SIZE  A S T   Comments
-    1    1000   1 2 0   index 1/2 point to different physical addresses 
-    2    1000   1 2 1   index 1/2 point to different physical addresses
+    3    1000   1 2 0   
+    4    1000   1 2 1   
 
 ;------IO AFFINITY WITH PROCESSOR 2-------------------------------
     ;Path   IO Manifest        IO_AL_idx    Comments               
@@ -489,7 +491,7 @@ io_direction_rx0tx1   1  ; direction of the stream  0:input 1:output
 Declaration of the size and type of the raw [Data Types](#Data-Types) using the [Declaration of options](#Declaration-of-options) format.
 
 ```
-io_raw_format {1 17}  ; raw arithmetic's computation format is STREAM_S16 
+io_raw_format {1 3}  ; raw arithmetic's computation format is STREAM_S16 
 ```
 
 ### io_interleaving "0/1"
@@ -811,11 +813,11 @@ node_mem_speed          2           ; critical fast
 ;    ARCS CONFIGURATION
 node_arc                0
 node_arc_nb_channels    {1 1 2}     ; arc intleaved,  options for the number of channels
-node_arc_raw_format     {1 17 27}   ; options for the raw arithmetics STREAM_S16, STREAM_FP32
+node_arc_raw_format     {1 3 1}   ; options for the raw arithmetics STREAM_S16, STREAM_FP32
 
 node_arc                1
 node_arc_nb_channels    {1 1 2}     ; options for the number of channels
-node_arc_raw_format     {1 17 27}   ; options for the raw arithmetics STREAM_S16, STREAM_FP32
+node_arc_raw_format     {1 3 1}   ; options for the raw arithmetics STREAM_S16, STREAM_FP32
 
 end
 ```
@@ -946,15 +948,24 @@ Example :
  node_complexity_index 1e5 1e6 ; maximum number of cycles at initialization time and execution of a frame
 ```
 
-node_not_reentrant
+### node_complexity_index    "n"
 
-### node_not_reentrant    "n"
-
-Information of reentrancy :  the function cannot be called again before it completes its previous execution. Default is "0", nodes are reentrant.
+For information and debug to set a watchdog timer: the parameters give the maximum amount of cycles for the initialization of the node and the processing of a frame.
 Example :
 
 ```
- node_not_reentrant 1 ; one single instance of the node can be scheduled in the graph
+ node_complexity_index 1e5 1e6 ; maximum number of cycles at initialization time and execution of a frame
+```
+
+node_not_reentrant
+
+### node_not_reentrant  
+
+Information of reentrancy :  the function cannot be called again before it completes its previous execution. Default nodes are reentrant.
+Example :
+
+```
+ node_not_reentrant ; one single instance of the node can be scheduled in the graph
 ```
 
 ### node_stream_version  "n"            
@@ -1021,18 +1032,18 @@ node_mem_alloc  32    ; add 32 bytes to the current node_mem
 Declaration of extra memory in proportion with the mono frame size of the stream flowing through a specified arc index. 
 
 - t = arc : tells the index of arc to consider is "i"
-- t = maxin : tells to take the maximum number of all input arcs
-- t = maxout : the maximum number of all output arcs
-- t = maxall : the maximum number of all arcs
-- t = sumin : the sum of all input arcs
-- t = sumout : the sum of all output arcs
-- t = sumall : the sum of all arcs
+- t = maxin : tells to take the maximum of all input arcs
+- t = maxout : the maximum of all output arcs
+- t = maxall : the maximum of all arcs
+- t = sumin : the sum of frame size of all input arcs
+- t = sumout : the sum of frame size of all output arcs
+- t = sumall : the sum of frame size of all arcs
 
 Example :
 
 ```
-node_mem_frame_size_mono 2 maxin ; declare the 2x maximum size of all input arcs
-node_mem_frame_size_mono 2 arc 0 ; declare the 2x frame size of arc #0
+node_mem_frame_size_mono 2 maxin   ; declare the 2x maximum size of all input arcs
+node_mem_frame_size_mono 5.3 arc 0 ;   add 5.3x frame size of arc #0
 ```
 
 ### node_mem_frame_size "C" "type" ("j")   
@@ -1107,7 +1118,10 @@ node_mem_relocatable    1   ; the address of the block can change
 
 ### node_mem_data0prog1 "0/1"
 
-This command tells if the memory will be used for data or program accesses. Default is '0' for data access.
+This command tells if the memory will be used for data or program accesses. Default is '0' for data access. 
+
+The RAM program memory segments are loaded by the node. When the memory allocation is not possible the address shared to the node will be (uint32) (-1).
+
 Example :
 
 ```
@@ -1207,17 +1221,15 @@ Raw samples data format for read/write and arithmetic's operations. The stream i
 Example :
 
 ```
-    node_arc_raw_format {1 17 27} raw format options: STREAM_S16, STREAM_FP32, default values S16
+    node_arc_raw_format {1 3 1} raw format options: STREAM_S16, STREAM_FP32, default values S16
 ```
 
-### node_arc_frame_length "n"
+### node_arc_frame_samples "n"
 
-Frame size options in Bytes. 
-node_arc_frame_length       {1 1 2 16}      ; options of possible frame_size in number of sample (can mono or multi-channel)
-Example :
+Frame size options in samples,
 
 ```
-    node_arc_frame_length 2    ; start the declaration of a new arc with index 2 
+ node_arc_frame_samples  {-1 1 1 160} ; options of possible frame_size in number of sample (which can mono or multi-channel) 
 ```
 
 ### node_arc_frame_duration "t"
@@ -1656,7 +1668,7 @@ arc_input   0 1 0 arm_stream_filter     0 0 0
 arc_output  1 1 1 sigp_stream_detector  0 1 1  
 
 ; arc going from the filter to the detector 
-arc arm_stream_filter 0 1 0 sigp_stream_detector 0 0 1                  
+arc_nodes arm_stream_filter 0 1 0 sigp_stream_detector 0 0 1                  
 arc_jitter_ctrl  1.5                    ; increase the buffer size
 
 end
@@ -1831,8 +1843,8 @@ index used to start the declaration of a new format
 ### format_raw_data "n"
 
 The parameter is the raw data code of the table below.
-Example `format_raw_data 17 ; raw data is "signed integers of 16bits" `
-The default index is 17 : STREAM_16 (see Annexe "Data Types").
+Example `format_raw_data 3 ; raw data is "signed integers of 16bits" `
+The default index is 3 : STREAM_16 (see Annexe "Data Types").
 
 ### format_frame_length "n"          
 
@@ -2247,7 +2259,6 @@ Syscall 1 r1 r4 r5        system call (below)
 script 1  			      ; script (instance) index           
     script_name    TEST1  ; for reference in the GUI
     script_stack      12  ; size of the stack in word64      
-    script_registers   4  ; only r0..r3 will be used to save memory
     script_mem_shared  1  ; default is private memory (0) or shared (1)  
  
     script_code       
@@ -2380,14 +2391,14 @@ arc_output   1 1 3 arm_stream_filter   4 1 0
 ; 0 stream is generated using the first format
 ```
 
-### arc node1 - node2
+### arc_nodes node1 - node2
 
 Declaration of an arc between two nodes.
 
 Example
 
 ``` 
-arc arm_stream_filter 4 1 0 sigp_stream_detector 0 0 1   H
+arc_nodes arm_stream_filter 4 1 0 sigp_stream_detector 0 0 1   H
 ; arm_stream_filter produces the data to the sigp_stream_detector
 ; 4 fifth instance of the node in the graph
 ; 1 arc index of the node connected to the stream (node output)
@@ -2482,13 +2493,15 @@ Example :
 
 Command used during the compilation step for the FIFO buffer memory allocation with some margin.
 
+Without this jitter added margin , the buffer size is the largest frame size value between producer and consumer of the arc.
+
 ```
     arc_jitter_ctrl  1.5  ; factor to apply to the minimum size between the producer and the consumer, default = 1.0 (no jitter) 
 ```
 
 ### arc_parameters
 
-Arcs are used to node parameters when the inlined way (with the node declaration) is limited to 256kBytes. The node manifest declares the number of arcs used for large amount of parameters (NN model, video file, etc ..).
+Arcs are used to node parameters when the inline way (with the node declaration) is limited to 256kBytes. The node manifest declares the number of arcs used for large amount of parameters (NN model, video file, etc ..).
 
 ```
     arc_parameters  0       ; (parameter arcs) buffer preloading, or arc descriptor set with script 
@@ -2599,50 +2612,41 @@ Raw data types
 
 | TYPE              | CODE | COMMENTS                                                |
 | ----------------- | ---- | :------------------------------------------------------ |
-| STREAM_DATA_ARRAY | 0    | stream_array : `{ 0NNN TT 00 }` number, type            |
-| STREAM_S1         | 1    | `S`, one signed bit, "0" = +1 one bit per data          |
-| STREAM_U1         | 2    | one bit unsigned, Boolean                               |
-| STREAM_S2         | 3    | `Sx` two bits per data                                  |
-| STREAM_U2         | 4    | `uu`                                                    |
-| STREAM_Q1         | 5    | `Sx` ~stream_s2 with saturation management              |
-| STREAM_S4         | 6    | `Sxxx` four bits per data                               |
-| STREAM_U4         | 7    | `xxxx`                                                  |
-| STREAM_Q3         | 8    | `Sxxx`                                                  |
-| STREAM_FP4_E2M1   | 9    | `Seem`  micro-float [8 .. 64]                           |
+| STREAM_DATA_ARRAY |  0   | stream_array : `{ 0NNN TT 00 }` number, type            |
+| STREAM_FP32       |  1   | ` Seeeeeee.mmmmmmmm.mmmmmmmm..`  FP32                   |
+| STREAM_FP64       |  2   | ` Seeeeeee.eeemmmmm.mmmmmmm ...`  double                |
+| STREAM_S16        |  3   | ` Sxxxxxxx.xxxxxxxx` 2 bytes per data                   |
+| STREAM_S32        |  4   | one long word                                           |
+| STREAM_S2         |  5   | `Sx` two bits per data                                  |
+| STREAM_U2         |  6   | `uu`                                                    |
+| STREAM_S4         |  7   | `Sxxx` four bits per data                               |
+| STREAM_U4         |  8   | `xxxx`                                                  |
+| STREAM_FP4_E2M1   |  9   | `Seem`  micro-float [8 .. 64]                           |
 | STREAM_FP4_E3M0   | 10   | `Seee`   [8 .. 512]                                     |
 | STREAM_S8         | 11   | ` Sxxxxxxx`  eight bits per data                        |
 | STREAM_U8         | 12   | ` xxxxxxxx`  ASCII char, numbers..                      |
-| STREAM_Q7         | 13   | ` Sxxxxxxx`  arithmetic saturation                      |
-| STREAM_CHAR       | 14   | ` xxxxxxxx`                                             |
-| STREAM_FP8_E4M3   | 15   | ` Seeeemmm`  NV tiny-float [0.02 .. 448]                |
-| STREAM_FP8_E5M2   | 16   | ` Seeeeemm`  IEEE-754 [0.0001 .. 57344]                 |
-| STREAM_S16        | 17   | ` Sxxxxxxx.xxxxxxxx` 2 bytes per data                   |
-| STREAM_U16        | 18   | ` xxxxxxxx.xxxxxxxx`  Numbers, UTF-16 characters        |
-| STREAM_Q15        | 19   | ` Sxxxxxxx.xxxxxxxx`  arithmetic saturation             |
-| STREAM_FP16       | 20   | ` Seeeeemm.mmmmmmmm`  half-precision float              |
-| STREAM_BF16       | 21   | ` Seeeeeee.mmmmmmmm`  bfloat                            |
-| STREAM_Q23        | 22   | ` Sxxxxxxx.xxxxxxxx.xxxxxxxx`  24bits 3 bytes per data  |
-| STREAM_Q23_       | 32   | ` SSSSSSSS.Sxxxxxxx.xxxxxxxx.xxxxxxx`  4 bytes per data |
-| STREAM_S32        | 24   | one long word                                           |
-| STREAM_U32        | 25   | ` xxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx`  UTF-32, ..      |
-| STREAM_Q31        | 26   | ` Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx`                  |
-| STREAM_FP32       | 27   | ` Seeeeeee.mmmmmmmm.mmmmmmmm..`  FP32                   |
-| STREAM_CQ15       | 28   | ` Sxxxxxxx.xxxxxxxx+Sxxxxxxx.xxxxxxxx (I Q)`            |
-| STREAM_CFP16      | 29   | ` Seeeeemm.mmmmmmmm+Seeeeemm.. (I Q)`                   |
-| STREAM_S64        | 30   | long long 8 bytes per data                              |
-| STREAM_U64        | 31   | unsigned 64 bits                                        |
-| STREAM_Q63        | 32   | ` Sxxxxxxx.xxxxxx ....... xxxxx.xxxxxxxx`               |
-| STREAM_CQ31       | 33   | ` Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx Sxxxx..`          |
-| STREAM_FP64       | 34   | ` Seeeeeee.eeemmmmm.mmmmmmm ...`  double                |
-| STREAM_CFP32      | 35   | ` Seeeeeee.mmmmmmmm.mmmmmmmm.m..+Seee..`  (I Q)         |
-| STREAM_FP128      | 36   | ` Seeeeeee.eeeeeeee.mmmmmmm ...`  quadruple precision   |
-| STREAM_CFP64      | 37   | fp64 + fp64 (I Q)                                       |
-| STREAM_FP256      | 38   | ` Seeeeeee.eeeeeeee.eeeeemm ...`  octuple precision     |
-| STREAM_WGS84      | 39   | `<--LAT 32B--><--LONG 32B-->`                           |
-| STREAM_HEXBINARY  | 40   | UTF-8 lower case hexadecimal byte stream                |
-| STREAM_BASE64     | 41   | RFC-2045 base64 for xsd:base64Binary XML data           |
-| STREAM_STRING8    | 42   | UTF-8 string of char terminated by 0                    |
-| STREAM_STRING16   | 43   | UTF-16 string of char terminated by 0                   |
+| STREAM_FP8_E4M3   | 13   | ` Seeeemmm`  NV tiny-float [0.02 .. 448]                |
+| STREAM_FP8_E5M2   | 14   | ` Seeeeemm`  IEEE-754 [0.0001 .. 57344]                 |
+| STREAM_U16        | 15   | ` xxxxxxxx.xxxxxxxx`  Numbers, UTF-16 characters        |
+| STREAM_FP16       | 16   | ` Seeeeemm.mmmmmmmm`  half-precision float              |
+| STREAM_BF16       | 17   | ` Seeeeeee.mmmmmmmm`  bfloat                            |
+| STREAM_S23        | 18   | ` Sxxxxxxx.xxxxxxxx.xxxxxxxx`  24bits 3 bytes per data  |
+| STREAM_S23_32     | 19   | ` SSSSSSSS.Sxxxxxxx.xxxxxxxx.xxxxxxx`  4 bytes per data |
+| STREAM_U32        | 20   | ` xxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx`  UTF-32, ..      |
+| STREAM_CS16       | 21   | ` Sxxxxxxx.xxxxxxxx+Sxxxxxxx.xxxxxxxx (I Q)`            |
+| STREAM_CFP16      | 22   | ` Seeeeemm.mmmmmmmm+Seeeeemm.. (I Q)`                   |
+| STREAM_S64        | 23   | long long 8 bytes per data                              |
+| STREAM_U64        | 24   | unsigned 64 bits                                        |
+| STREAM_CS32       | 25   | ` Sxxxxxxx.xxxxxxxx.xxxxxxxx.xxxxxxxx Sxxxx..`          |
+| STREAM_CFP32      | 26   | ` Seeeeeee.mmmmmmmm.mmmmmmmm.m..+Seee..`  (I Q)         |
+| STREAM_FP128      | 27   | ` Seeeeeee.eeeeeeee.mmmmmmm ...`  quadruple precision   |
+| STREAM_CFP64      | 28   | fp64 + fp64 (I Q)                                       |
+| STREAM_FP256      | 29   | ` Seeeeeee.eeeeeeee.eeeeemm ...`  octuple precision     |
+| STREAM_WGS84      | 30   | `<--LAT 32B--><--LONG 32B-->`                           |
+| STREAM_HEXBINARY  | 31   | UTF-8 lower case hexadecimal byte stream                |
+| STREAM_BASE64     | 32   | RFC-2045 base64 for xsd:base64Binary XML data           |
+| STREAM_STRING8    | 33   | UTF-8 string of char terminated by 0                    |
+| STREAM_STRING16   | 34   | UTF-16 string of char terminated by 0                   |
 
 ------
 
@@ -2834,7 +2838,6 @@ Special functions activated with Syscall and conditional instructions:
 ```
 node arm_stream_script 1  ; script (instance) index           
     script_stack      12  ; size of the stack in word64      
-    script_register    6  ; number of registers in word64      
     script_parameter  30  ; size of the parameter/heap in word32
     script_mem_shared  1  ; private memory (0) or shared(1)  
     script_mem_map     0  ; mapping to VID #0 (default)      
@@ -2876,19 +2879,19 @@ The first parameters give the number of arcs, the input arc to use with HQoS (Hi
 
 The following use-cases can be combined to create a new use-case:
 
-1. Router, deinterleaving, interleaving, channels recombination: the input arc data is processed deinterleaved, and the output arc is the result of recombination of any input arc. Audio example with two stereo input arcs using 5ms and 10ms frame lengths, recombined to create a stereo stream interleaved output using the left channel from the first arc and the left channel of the second arc.
+1. Router, deinterleaving, interleaving, channels recombination: the input arc data is processed deinterleaved, and the output arc is the result of recombination of any input arc. Audio example with two stereo input arcs using 5ms and 12ms frame lengths, recombined to create a stereo stream interleaved output using 20ms frame length, the left channel from the first arc and the left channel of the second arc.
 
 2. Router and mixer with smoothed gain control: the output arc data can result from the weighted mix of input arcs. The applied gain can be changed on the fly. The slope of the time taken to the desired gain is controlled. Audio example: a mono output arc is computed from the combination of two stereo input arc, by mixing the four input channels with a factor 0.25 applied in the mixer.
 
 3. Router and raw data conversion. The raw formats can be converted to any other format in this list : int16, int32, int64, float16, float32, float64.
 
-4. Router and sampling-rate conversion of isochronous streams (input streams have a determined and independent sampling-rate). Audio example: input streams sampled at 44100Hz is converter to 48000Hz. The sampling-rate information, and all the details of the arc's data format, is shared by the graph scheduler during the reset phase of the nodes.
+4. Router and sampling-rate conversion of isochronous streams (input streams have a determined and independent sampling-rate). Audio example: input streams sampled at 44100Hz is converted to 48000Hz + 0.026Hz for drift compensation. The sampling-rate information, and all the details of the arc's data format, is shared by the graph scheduler during the reset phase of the nodes.
 
-5. Router and conversion of asynchronous streams using time-stamps to an isochronous stream with a determined sampling-rate. Motion sensor example: an accelerometer is sampled at 200Hz (5ms period)  with +/- 1ms jitter sampling time uncertainty. The samples are provided with an accurate time-stamp in float32 format for time differences between samples (or float64 for absolute time reference to Jan 1st 2025). The output samples are delivered resampled at 410Hz with no jitter.
+5. Router and conversion of asynchronous streams using time-stamps to an isochronous stream with a determined sampling-rate. Motion sensor example: an accelerometer is sampled at 200Hz (5ms period)  with +/- 1ms jitter sampling time uncertainty. The samples are provided with an accurate time-stamp in float32 format of time differences between samples (or float64 for absolute time reference to Jan 1st 2025). The output samples are delivered resampled at 410Hz with no jitter.
 
-6. Router of data needing a time synchronization at sample or frame level. In this use-case the node waits the input samples are arriving within a time window before delivering an output frame. Example with motor control and the capture of current and voltage on two input arcs: it is important to send a time-synchronized pairs of data. The command [node_script “index”](node_script-"index") is used to call a script checking the arrival of current and voltage with their respective time-stamps (logged in the arc descriptors), the scripts check the arrival of data within a time and release execution of the router when conditions are met.
+6. Router of data needing a time synchronization at sample or frame level. In this use-case the node waits the input samples are arriving within a time window before delivering an output frame. Example with motor control and the capture of current and voltage on two input arcs: it is important to send time-synchronized pairs of data. The command [node_script “index”](node_script-"index") is used to call a script checking the arrival of current and voltage with their respective time-stamps (logged in the arc descriptors), the scripts check the arrival of data within a time and release execution of the router when conditions are met.
 
-7. Router of streams generated from different threads. The problem is to avoid on multiprocessing devices one channel to be delivered to the final mixer ahead and desynchronized from the others. This problem is solved with an external script like in the use-case 6.
+7. Router of streams generated from different threads. The problem is to avoid on multiprocessing devices one channel to be delivered to the final mixer ahead and desynchronized from the others. This problem is solved with an external script controlling the system time like in the use-case 6.
 
    
 
@@ -2918,23 +2921,33 @@ Example with the router with two stereo input arcs and two output arcs. The firs
 
 
 
-    ; parameters arranged to be accessed with 32bits data
-      2  i8; 2 2          nb input/output arcs
-      2  i8; -1 -1        no HQoS arc on input and output
-      ;
-      ;     arcin ichan arcout ichan 
-      4  i8; 0     0     2     0     ; move arc0-left  to arc2 mono x0.25
-      2 f32: 0.25  0.1				 ;    gain and convergence speed 
-      4  i8; 0     1     2     0     ; move arc0-right to arc2 mono x0.25
-      2 f32: 0.25  0.1
-      4  i8; 1     0     2     0     ; move arc1-left  to arc2 mono x0.25
-      2 f32: 0.25  0.1 
-      4  i8; 1     1     2     0     ; move arc1-right to arc2 mono x0.25
-      2 f32: 0.25  0.1 
-      4  i8; 0     0     3     0     ; move arc0-left  to arc3 left no mixing
-      2 f32: 0.25  0.1 
-      4  i8; 1     1     3     1     ; move arc1-right to arc3 right no mixing
-      2 f32: 0.25  0.1 
+    node arm_stream_router  0 
+        node_preset         2           ; 0:just interleaving, 1:just format conversion, 2:with ASRC, 3:with SSRC
+        node_malloc_add     60 1        ; Adds 3 FIFO (20 bytes each) on Segment-1 (default = 1 FIFO)
+        node_parameters     0           ; TAG = "all parameters"
+    ;
+            1  u8;  2                   ; nb input arcs
+            1  u8;  2                   ; nb output arcs
+            1  u8;  1                   ; nb mixers (used for arc 2)
+            1  u8;  5                   ; nb intermediate FIFO
+            1  u8;  3                   ; nb output channels
+            1  u8;  255                 ; arc used with HQOS: none
+            1  u8;  1                   ; accuracy level (1..4)
+            1 f32;  0.0004              ; 0.4ms processing granularity (6.4 @16k, 12.8 @32k, 19.2 @48kHz)
+    ;
+            3  u8;  0 0  2              ; FIFO 0  Left arc0 to arc 2 (for Mixer 0)
+            3  u8;  0 0  3              ; FIFO 1  Left arc0 to arc 3
+            3  u8;  0 1  2              ; FIFO 2  Righ arc0 to arc 2 (for Mixer 0)
+            3  u8;  0 0  1              ; FIFO 3  Righ arc1 to arc 3 
+            3  u8;  0 0  1              ; FIFO 4  Mixer output
+    ;
+            4  u8;  4 0 2 255           ; MIXER 0 (FIFO 4) = FIFO 0 + FIFO 2 + (none)
+            4 f32;  0.5 0.5 0.0 1.0     ;           Gmix0    Gmix1 (none)  GmixOut
+    ;
+            3  u8;  4 0 0               ; OUT 0 FIFO 4 to DST[arc, chan]  
+            3  u8;  1 3 0               ; OUT 1 FIFO 1 to DST[arc, chan]    
+            3  u8;  3 3 1               ; OUT 2 FIFO 3 to DST[arc, chan]    
+        end
 Operations :
 
 - when receiving the reset command: compute the time granularity for the processing, check if bypass are possible (identical sampling rate on input and output arcs).
@@ -2944,6 +2957,8 @@ Loop with "time granularity" increments :
 
 - copy the input arcs data in internal FIFO in fp32 format, deinterleaved, with time-stamps attached to each samples.
 - use Lagrange polynomial interpolation to resample the FIFO to the output rate. The interpolator is preceded by a an adaptive low-pass filter removing high-frequency content when the estimated input sampling rate higher than the output rate.
+- recombination and mixing of resampled data using a programmable gain and smoothed ramp-up to the target value.
+- raw data format conversion to the output arc
 
 ----------------------------------------------------------------------------------------
 

@@ -23,36 +23,6 @@ node arm_stream_filter  0
     node_preset         1                       ; Q15 filter
     node_parameters     0                       ; TAG = "all parameters"
 
-        ; BYPASS INT16 ---------------------------------
-        ; 1  u8;  0                               ; CMSIS format
-        ; 1  u8;  1                               ; q15 format
-        ; 1  u8;  2                               ; Two biquads
-        ; 1  s8;  1                               ; postShift
-        ; 5 s16; 0 16383 0 0 0      
-        ; 5 s16; 0 16383 0 0 0      
-
-
-        ; HIGHPASS INT16 -------------------------------
-        ; Fs = 16000;
-        ; [b_1,a_1] =  ellip(4, 0.1, 40, 150/(16000/2), 'high'); 
-        ; 1  u8;  0                               ; CMSIS format
-        ; 1  u8;  1                               ; q15 format
-        ; 1  u8;  2                               ; Two biquads
-        ; 1  s8;  1                               ; postShift
-        ; 5 s16; 16019, -16019,     0, 15455,     0, 
-        ; 5 s16; 16019, -32034, 16019, 32219, -15869 
-        ; HIGHPASS FLOAT32 -------------------------------
-        ; Fs = 16000;
-        ; [b_1,a_1] =  ellip(4, 0.1, 40, 150/(16000/2), 'high'); 
-        ; 1  u8;  0                               ; CMSIS format
-        ; 1  u8;  0                               ; fp32 format
-        ; 1  u8;  2                               ; Two biquads
-        ; 1  s8;  0                               ; N/A
-        ; 5 f32; 0.977730 -0.977730 0        0.943314f  0
-        ; 5 f32; 0.977730 -1.955252 0.977730 1.966556f -0.968597
-
-
-        ; BANDPASS INT16 -------------------------------
         1  u8;  0                               ; CMSIS format
         1  u8;  1                               ; q15 format
         1  u8;  2                               ; Two biquads
@@ -60,13 +30,6 @@ node arm_stream_filter  0
         5 s16; 681   422   681 23853 -15161     ; INT16 elliptic band-pass 1450..1900/16kHz
         5 s16; 681 -1342   681 26261 -15331     ; 
 
-        ; ; BANDPASS FLOAT32 -------------------------------
-        ; 1  u8;  0                               ; CMSIS format
-        ; 1  u8;  0                               ; fp32 format
-        ; 1  u8;  2                               ; Two biquads
-        ; 1  s8;  0                               ; N/A
-        ; 5 f32; 681   422   681 23853 -15161     ; FLOAT32 elliptic band-pass 1450..1900/16kHz
-        ; 5 f32; 681 -1342   681 26261 -15331     ; 
     end
 ;----------------------------------------------------------------------
 node sigp_stream_detector 0     
@@ -79,6 +42,8 @@ node sigp_stream_detector 0
 arc_input   0 1 0 arm_stream_filter  0 0 0  ; io0 set0copy1 fmt1     ; INPUT => IIR, format 1 (array of samples)
 arc_jitter_ctrl  3.0                                                 ;  increase the size of the input buffer 
 
-arc_output  1 1 1 arm_stream_filter  0 1 0  ; io1 set0copy1 fmt0     ; FILTER => OUTPUT 
+arc_nodes  arm_stream_filter 0 0 0   sigp_stream_detector 0 1 1
+
+arc_output  1 1 1 sigp_stream_detector  0 1 0  ; io1 set0copy1 fmt0  ; DETECT => OUTPUT (one int16 for the detector output)
 
 end

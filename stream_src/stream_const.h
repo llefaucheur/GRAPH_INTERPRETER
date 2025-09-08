@@ -169,34 +169,34 @@
 
 
 
-#define    INST_ID_SCTRL_MSB U(31)  /* from [A]pp [P]latform [S} scheduler */
+#define    INST_ID_SCTRL_MSB U(31)  /*  from [A]pp [P]latform [S} scheduler */
 #define     WHOAMI_SCTRL_MSB U(31)
 #define   PRIORITY_SCTRL_MSB U(31)  /*   different RTOS instances*/
-#define   PRIORITY_SCTRL_LSB U(30)  /* A2 [0..3] up to 4 instances per processors, 0=main instance at boot */
+#define   PRIORITY_SCTRL_LSB U(30)  /* 2 [0..3] up to 4 instances per processors, 0=main instance at boot */
 #define     PROCID_SCTRL_MSB U(29)  
-#define     PROCID_SCTRL_LSB U(27)  /* P3 processor index [1..7] for this architecture 0="commander processor" */  
-#define     ARCHID_SCTRL_MSB U(26)      
-#define     ARCHID_SCTRL_LSB U(24)  /* P3 [1..7] processor architectures 1="commander processor architecture" */
-#define     WHOAMI_SCTRL_LSB U(24)  /*    whoami used to lock a NODE to specific processor or architecture */
-#define    INST_ID_SCTRL_LSB U(24)  /*    8 bits identification for locks */
-#define     U______SCTRL_MSB U(23)      
-#define     U______SCTRL_LSB U(18)  /*  6  ____*/ 
-#define   MAININST_SCTRL_MSB U(17)      
-#define   MAININST_SCTRL_LSB U(17)  /* A1 main instance to set the graph at boot time */
-#define   NODEEXEC_SCTRL_MSB U(16)      
-#define   NODEEXEC_SCTRL_LSB U(16)  /* S1 (working bit) node execution flag start=1, done=0 */
-#define   ENDLLIST_SCTRL_MSB U(15)      
-#define   ENDLLIST_SCTRL_LSB U(15)  /* S1 (working bit) endLinkedList detected */
-#define   STILDATA_SCTRL_MSB U(14)      
-#define   STILDATA_SCTRL_LSB U(14)  /* S1 (working bit) still some_components_have_data*/
-#define   NBINSTAN_SCTRL_MSB U(13)      
-#define   NBINSTAN_SCTRL_LSB U(10)  /* A4 used at boot time to reset the synchronization flags */
-#define       BOOT_SCTRL_MSB U( 9)      
-#define       BOOT_SCTRL_LSB U( 9)  /* A1 cold0/warm1 boot : Reset + restore memory banks from retention */
-#define     SCRIPT_SCTRL_MSB U( 8)      
-#define     SCRIPT_SCTRL_LSB U( 3)  /* A6 script call options bit-field (before/after SWC/loop/full) */
-#define     RETURN_SCTRL_MSB U( 2)      
-#define     RETURN_SCTRL_LSB U( 0)  /* A3 return options (each SWC, each parse, once starving, copy of RETURN_SCTRL_GR3 */
+#define     PROCID_SCTRL_LSB U(27)  /* 3 processor index [1..7] for this architecture 0="commander processor" */  
+#define     ARCHID_SCTRL_MSB U(26)     
+#define     ARCHID_SCTRL_LSB U(24)  /* 3 [1..7] processor architectures 1="commander processor architecture" */
+#define     WHOAMI_SCTRL_LSB U(24)  /*   whoami used to lock a NODE to specific processor or architecture */
+#define    INST_ID_SCTRL_LSB U(24)  /*   8 bits identification for locks */
+#define     U______SCTRL_MSB U(23)     
+#define     U______SCTRL_LSB U(18)  /* 6  ____*/ 
+#define   MAININST_SCTRL_MSB U(17)     
+#define   MAININST_SCTRL_LSB U(17)  /* 1 main instance to set the graph at boot time */
+#define   NODEEXEC_SCTRL_MSB U(16)     
+#define   NODEEXEC_SCTRL_LSB U(16)  /* 1 (working bit) node execution flag start=1, done=0 */
+#define   ENDLLIST_SCTRL_MSB U(15)     
+#define   ENDLLIST_SCTRL_LSB U(15)  /* 1 (working bit) endLinkedList detected */
+#define   STILDATA_SCTRL_MSB U(14)     
+#define   STILDATA_SCTRL_LSB U(14)  /* 1 (working bit) still some_components_have_data*/
+#define   NBINSTAN_SCTRL_MSB U(13)     
+#define   NBINSTAN_SCTRL_LSB U(10)  /* 4 used at boot time to reset the synchronization flags */
+#define       BOOT_SCTRL_MSB U( 9)     
+#define       BOOT_SCTRL_LSB U( 9)  /* 1 cold0/warm1 boot : Reset + restore memory banks from retention */
+#define     SCRIPT_SCTRL_MSB U( 8)     
+#define     SCRIPT_SCTRL_LSB U( 3)  /* 6 script call options bit-field (before/after SWC/loop/full) */
+#define     RETURN_SCTRL_MSB U( 2)     
+#define     RETURN_SCTRL_LSB U( 0)  /* 3 return options (each SWC, each parse, once starving, copy of RETURN_SCTRL_GR3 */
 #define   PACK_STREAM_PARAM(P,M,N,B,S,R) (  \
             ((P)<<PRIORITY_SCTRL_LSB) |   \
             ((M)<<MAININST_SCTRL_LSB) |   \

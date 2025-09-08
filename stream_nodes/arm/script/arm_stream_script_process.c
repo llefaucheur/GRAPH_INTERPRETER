@@ -44,9 +44,8 @@
 #include "arm_stream_script.h"
 #include "arm_stream_script_instructions.h"
 
-static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, float_t *dst, float_t src1, float_t src2);
-static void int_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, int32_t *dst, int32_t src1, int32_t src2);
-static void test_arithmetic_operation(arm_script_instance_t *I);
+static void arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, int32_t *dst, int32_t src1, int32_t src2);
+static void test_and_arithmetic_operation(arm_script_instance_t *I);
 static void readreg(arm_script_instance_t *I, regdata_t *data, int32_t srcID, uint8_t K);
 static void writreg(arm_script_instance_t *I, int32_t dstID, regdata_t *src, uint8_t dtype);
 static void jmov_operation(arm_script_instance_t *I);
@@ -85,120 +84,51 @@ static void jmov_operation(arm_script_instance_t *I);
 
 
 /*
-*   arithmetics operations and test on floating point data
+*   arithmetics operations and test on mantissa + exponents
 */
-
-static void float_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, float_t *dst, float_t src1, float_t src2)
+static void arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, int32_t *dst_, int32_t src1, int32_t src2)
 {
-    float_t tmp; 
+    int32_t dst; 
 
-    tmp = 0.0f;
-
+    dst = 0xFFFFFFFF;
     switch (opar)
     {
-    case OPAR_ADD  : FADD(tmp, src1, src2);                     break;  
-    case OPAR_SUB  : FSUB(tmp, src1, src2);                     break; 
-    case OPAR_RSUB : FSUB(tmp, src2, src1);                     break; 
-    case OPAR_MUL  : FMUL(tmp, src1, src2);                     break; 
-    case OPAR_DIV  : FDIV(tmp, src1, src2);                     break; 
-    case OPAR_RDIV : FDIV(tmp, src2, src1);                     break; 
-
-    case OPAR_MAX  : FMAX(tmp, src2, src1);                     break;
-    case OPAR_MIN  : FMIN(tmp, src2, src1);                     break;
-    case OPAR_AMAX : FAMAX(tmp, src2, src1);                    break;
-    case OPAR_AMIN : FAMAX(tmp, src2, src1);                    break;
-
-    case OPAR_OR   : tmp = I2F(F2I(src1) |  F2I(src2));         break;  
-    case OPAR_NOR  : tmp = I2F(!F2I(src1)|  F2I(src2));         break;  
-    case OPAR_AND  : tmp = I2F(F2I(src1) &  F2I(src2));         break;  
-    case OPAR_XOR  : tmp = I2F(F2I(src1) ^  F2I(src2));         break;  
-    case OPAR_SHR  : tmp = I2F(F2I(src1) >> F2I(src2));         break;  
-    case OPAR_SHL  : tmp = I2F(F2I(src1) << F2I(src2));         break;  
-    case OPAR_SET  : tmp = I2F(F2I(src1) | (1<<F2I(src2)));     break;  
-    case OPAR_CLR  : tmp = I2F(F2I(src1) & (~(1<<F2I(src2))));  break;  
-    case OPAR_NORM :  //  NORM *iDST = normed on MSB(*iSRC1), applied shift in *iSRC2 
-            {   uint32_t count = 0U, mask = 1UL << 31;  
-                
-                while ((F2I(src1) & mask) == 0U) 
-                { count += 1U; mask = mask >> 1U; }
-
-                tmp = (float_t)((F2I(src1)) << count); 
-                src2 = (float_t)count;
-            }
-            break;
-    }
-    switch (opcode)
-    {
-    case OP_TESTEQU : *t = FTESTEQU(tmp, dst); break;
-    case OP_TESTLEQ : *t = FTESTLEQ(tmp, dst); break;
-    case OP_TESTLT  : *t = FTESTLT (tmp, dst); break;
-    case OP_TESTNEQ : *t = FTESTNEQ(tmp, dst); break;
-    case OP_TESTGEQ : *t = FTESTGEQ(tmp, dst); break;
-    case OP_TESTGT  : *t = FTESTGT (tmp, dst); break;
-    }
-
-    if (opcode == OP_LD)
-    {   *dst = tmp;   
-    }
-}
-
-
-
-/*
-*   arithmetics operations and test on integer data
-*/
-static void int_arithmetic_operation(uint8_t opcode, uint8_t opar, uint8_t *t, int32_t *dst, int32_t src1, int32_t src2)
-{
-    int32_t tmp; 
-
-    tmp = 0xFFFFFFFF;
-    switch (opar)
-    {
-    case OPAR_NOP  : tmp = src2;                            break;
-    case OPAR_ADD  : tmp = src1 + (src2);                   break;
-    case OPAR_SUB  : tmp = src1 - (src2);                   break;
-    case OPAR_RSUB : tmp = src2 - (src1);                   break;
-    case OPAR_MUL  : tmp = src1 * (src2);                   break;
-    case OPAR_DIV  : tmp = (src2 == 0) ? 0 : src1 / src2;   break;
-    case OPAR_RDIV : tmp = (src1 == 0) ? 0 : src2 / src1;   break;
+    default:
+    case OPAR_NOP  : dst = src2;                            break;
+    case OPAR_ADD  : dst = src1 + (src2);                   break;
+    case OPAR_SUB  : dst = src1 - (src2);                   break;
+    case OPAR_RSUB : dst = src2 - (src1);                   break;
+    case OPAR_MUL  : dst = src1 * (src2);                   break;
+    case OPAR_DIV  : dst = (src2 == 0) ? 0 : src1 / src2;   break;
+    case OPAR_RDIV : dst = (src1 == 0) ? 0 : src2 / src1;   break;
                   
-    case OPAR_MAX  : tmp = MAX(src2, src1);                 break;
-    case OPAR_MIN  : tmp = MIN(src2, src1);                 break;
-    case OPAR_AMAX : tmp = MAX(ABS(src2), ABS(src1));       break;
-    case OPAR_AMIN : tmp = MIN(ABS(src2), ABS(src1));       break;
+    case OPAR_MAX  : dst = MAX(src2, src1);                 break;
+    case OPAR_MIN  : dst = MIN(src2, src1);                 break;
                    
-    case OPAR_OR   : tmp = src1 | src2;                     break;
-    case OPAR_NOR  : tmp = !(src1 | src2);                  break;
-    case OPAR_AND  : tmp = src1 & src2;                     break;
-    case OPAR_XOR  : tmp = src1 ^ src2;                     break;
-    case OPAR_SHR  : tmp = src1 >> src2;                    break;
-    case OPAR_SHL  : tmp = src1 << src2;                    break;
-    case OPAR_SET  : tmp = src1 | (1<<src2);                break;
-    case OPAR_CLR  : tmp = src1 & (~(1<<src2));             break;
-    case OPAR_NORM :  //  NORM *iDST = normed on MSB(*iSRC1), applied shift in *iSRC2 
-            {   uint32_t count = 0U, mask = 1u << 31;  
-                while ((src1 & mask) == 0U) { count += 1U; mask = mask >> 1U; }
-                tmp = src1 << count; src2 = count;
-            }
-            break;
+    case OPAR_OR   : dst = src1 | src2;                     break;
+    case OPAR_NOR  : dst = !(src1 | src2);                  break;
+    case OPAR_AND  : dst = src1 & src2;                     break;
+    case OPAR_XOR  : dst = src1 ^ src2;                     break;
+    case OPAR_RSHFT: dst = src1 >> src2;                    break;
+    case OPAR_SET  : dst = src1 | (1<<src2);                break;
+    case OPAR_CLR  : dst = src1 & (~(1<<src2));             break;
     }
 
     *t = 0;
     switch (opcode)
     {
-    case OP_TESTEQU : if (*dst == tmp ) *t = 1; break;
-    case OP_TESTLEQ : if (*dst <= tmp ) *t = 1; break;
-    case OP_TESTLT  : if (*dst  < tmp ) *t = 1; break;
-    case OP_TESTNEQ : if (*dst != tmp ) *t = 1; break;
-    case OP_TESTGEQ : if (*dst >= tmp ) *t = 1; break;
-    case OP_TESTGT  : if (*dst  > tmp ) *t = 1; break;
+    case OP_TESTEQU : if (*dst_ == dst ) *t = 1; break;
+    case OP_TESTLEQ : if (*dst_ <= dst ) *t = 1; break;
+    case OP_TESTLT  : if (*dst_  < dst ) *t = 1; break;
+    case OP_TESTNEQ : if (*dst_ != dst ) *t = 1; break;
+    case OP_TESTGEQ : if (*dst_ >= dst ) *t = 1; break;
+    case OP_TESTGT  : if (*dst_  > dst ) *t = 1; break;
     }
 
     if (opcode == OP_LD)
-    {   *dst = tmp;   
+    {   *dst_ = dst;   
     }
 }
-
 
 
 
@@ -323,19 +253,19 @@ static void jmov_operation(arm_script_instance_t *I)
     src2 =  RD(instruction, OP_SRC2_INST);
     readreg(I, &reg_src2K, src2, 1);
 
-    // can be a float, convert it to int32
-    if (RD(I->REGS[src2].v_i32[REGS_TYPE], DTYPE_REGS1) > DTYPE_INT32)
-    {   I->REGS[src2].v_i32[REGS_DATA] = (int32_t)(I->REGS[src2].v_f32[REGS_DATA]);
-        ST(I->REGS[src2].v_i32[REGS_TYPE], DTYPE_REGS1, DTYPE_INT32);
-    }
+    //// can be a float, convert it to int32
+    //if (RD(I->REGS[src2].v_i32[REGS_TYPE], DTYPE_REGS1) > DTYPE_INT32)
+    //{   I->REGS[src2].v_i32[REGS_DATA] = (int32_t)(I->REGS[src2].v_f32[REGS_DATA]);
+    //    ST(I->REGS[src2].v_i32[REGS_TYPE], DTYPE_REGS1, DTYPE_INT32);
+    //}
 
     K = reg_src2K.v_i32[REGS_DATA]; 
 
     switch (opar)
     {
     // data type cast
-    // IIyyy-OPARDST_______<--K12-0SRC2     OPLJ_CAST(PTR)  dst  dtype
-    case OPLJ_CAST: 
+    // IIyyy-OPARDST_______<--K12-0SRC2     OPLJ_CASTPTR    dst  dtype
+    case OPLJ_CASTPTR:
         ST(I->REGS[dst].v_i32[REGS_TYPE], DTYPE_REGS1, K); 
         break;
 
@@ -453,7 +383,9 @@ static void jmov_operation(arm_script_instance_t *I)
         {
         case DTYPE_UINT8:  nbytes = 1; memset(p8dst, 0, sizeof(uint32_t)); break;
         case DTYPE_INT16: case DTYPE_FP16: nbytes = 2; memset(p8dst, 0, sizeof(uint32_t)); break;
-        case DTYPE_UINT32:case DTYPE_INT32:case DTYPE_FP32:case DTYPE_TIME32:case DTYPE_PTR28B: nbytes = 4; break;
+            // read the lsb bytes of int64
+        case DTYPE_INT64: case DTYPE_UINT32: case DTYPE_INT32:case DTYPE_FP32:case DTYPE_TIME32:case DTYPE_PTR28B: nbytes = 4; break;
+        // case DTYPE_FP64: read FP64, convert it to FP32, TODO
         }
         memcpy (p8dst, p8src, nbytes);              // write 8b, 16b or 32b
  
@@ -617,7 +549,7 @@ static void jmov_operation(arm_script_instance_t *I)
     IIyyy-OPARDST_SRC1xxxxxxxxx1TTTT  eq,le,lt,ne,ge,gt,ld dst src1 dtype + K-extented
 
 */
-static void test_arithmetic_operation(arm_script_instance_t *I)
+static void test_and_arithmetic_operation(arm_script_instance_t *I)
 {
     regdata_t dst, src1, src2;
     uint8_t db1, db2, dbdst;
@@ -638,22 +570,8 @@ static void test_arithmetic_operation(arm_script_instance_t *I)
     readreg(I, &src1, db2,  0);
     readreg(I, &dst, dbdst, 0);
 
-    if (db1 <= DTYPE_INT32 && db2 <= DTYPE_INT32)
-    {   int_arithmetic_operation(opcode, opar, &t, &(dst.v_i32[REGS_DATA]), src1.v_i32[REGS_DATA], src2.v_i32[REGS_DATA]);
-        writreg(I, dbdst, &dst, DTYPE_INT32);
-    } 
-    else
-    {   if (db1 != DTYPE_FP32)
-        {   I->REGS[db1].v_f32[REGS_DATA] = (float_t)(I->REGS[db1].v_i32[REGS_DATA]);
-            I->REGS[db1].v_i32[REGS_TYPE] = DTYPE_FP32;
-        }
-        if (db2 != DTYPE_FP32)
-        {   I->REGS[db2].v_f32[REGS_DATA] = (float_t)(I->REGS[db1].v_i32[REGS_DATA]);
-            I->REGS[db2].v_i32[REGS_TYPE] = DTYPE_FP32;
-        }
-        float_arithmetic_operation(opcode, opar, &t, &(dst.v_f32[REGS_DATA]), src1.v_f32[REGS_DATA], src2.v_f32[REGS_DATA]);
-        writreg(I, dbdst, &dst, DTYPE_FP32);
-    }
+    arithmetic_operation(opcode, opar, &t, &(dst.v_i32[REGS_DATA]), src1.v_i32[REGS_DATA], src2.v_i32[REGS_DATA]);
+    writreg(I, dbdst, &dst, DTYPE_INT32);
 
     I->test_flag = t;
 }
@@ -684,17 +602,30 @@ static void test_arithmetic_operation(arm_script_instance_t *I)
 
 void arm_stream_script_interpreter (arm_script_instance_t *I)
 {
-    int32_t  cond, opcode, opar, count;
-    count = I->max_cycle;
+    int32_t  cond, opcode, opar;
 
-    while (count-- > 0)
+    while (1)
     {
-        // if (I->cycle_downcounte == 1) { LOG ERROR "CYCLE OVERFLOW " }
+        /* check cycles overflow */
+        if (I->cycles_downcounter == 1)
+        {   I->services(    // TODO : implement the service 
+                PACK_SERVICE(SERV_SCRIPT_DEBUG_TRACE, 0, 0, 0, SERV_GROUP_SCRIPT), // uint32_t command, 
+                0, 0, 0, 0
+            );
+        }
 
         I->instruction = I->byte_code[I->PC++];
         cond = RD(I->instruction, OP_COND_INST);
 
-        /* conditional execution applies to all instructions */
+        /* dump the virtual machine state every cycle */
+        if (I->debug)
+        {   I->services(    // void arm_stream_services (      
+                PACK_SERVICE(SERV_SCRIPT_DEBUG_TRACE, 0, 0, 0, SERV_GROUP_SCRIPT), // uint32_t command, 
+                (intptr_t)I->REGS, 0, 0, (intptr_t)(I->nregs) * sizeof(regdata_t)
+            );
+        }
+
+        /* conditional execution is possible on all instructions */
         if ((cond == IF_YES) && (I->test_flag == TEST_KO))
         {   continue;
         } else 
@@ -719,8 +650,10 @@ void arm_stream_script_interpreter (arm_script_instance_t *I)
         {   jmov_operation(I);
         }
         else        /* OP_LD  +  OP_TESTxxx */
-        {   test_arithmetic_operation(I);
+        {   test_and_arithmetic_operation(I);
         }
+
+        I->cycles_downcounter--;
     }
 }
 
