@@ -700,10 +700,11 @@ Not used
 
 | Field name | nb bits | comments |
 | --------- | ------- | -------- |
-|   State        |      3   |      High-Z, low, high    |
+|   State        |      3   |    High-Z, low, high, detection :Level => IRQ(master) or polling (slave)    |
 |  type     |    3   |  PWM, motor control, GPIO   |
 |  control         |     3    |   PWM duty, duration, frequency (buzzer)       |
-|           |         |          |
+| debouncing | 1 | pin debouncing control |
+| edge | 2 | interrupt edge control |
 
  Domain gpio_in/out setting word 2 and word 3 are not used.
 
@@ -894,15 +895,17 @@ Example
 
 ### node_mask_library    "n" 
 
-The graph interpreter offers a short list of optimized DSP/ML and Math functions optimized for the platform using dedicated vector insttructions and coprocessors. 
-Some platform may not incorporate all the libraries, the "node_mask_library" is a bit-field associate to one of the librarry service. 
+The graph interpreter offers a short list of optimized DSP/ML and Math functions optimized for the platform using dedicated vector instructions and coprocessors. 
+Some platform may not incorporate all the libraries, the "node_mask_library" is a bit-field associate to one of the library service. 
 This list of service is specially useful when the node is delivered in binary format.
 
-bit 4 for the STDLIB library (string.h, malloc)
-bit 5 for MATH (trigonometry, random generator, time processing)
-bit 6 for DSP_ML (filtering, FFT, 2D convolution-8bits)
-bit 7 for audio codecs
-bit 8 for image and video codec
+bit 2 for the STDLIB library (string.h, malloc)
+bit 3 for MATH (trigonometry, random generator, time processing)
+bit 4 for DSP_ML (filtering, FFT, 2D convolution-8bits)
+
+bit 5 for 8bits linear algebra for neural networks
+bit 6 for audio codecs
+bit 7 for image and video codec
 
 Example :
 
@@ -948,16 +951,14 @@ Example :
  node_complexity_index 1e5 1e6 ; maximum number of cycles at initialization time and execution of a frame
 ```
 
-### node_complexity_index    "n"
+### node_dynamic_malloc
 
-For information and debug to set a watchdog timer: the parameters give the maximum amount of cycles for the initialization of the node and the processing of a frame.
+The node memory allocation is not pre-computer a graph compilation stages, but dynamically during the RESET sequence of the node. The scheduler starts the reset sequence asking for the number of bytes per memory segment (see node_mem "index"  below). It allocates the memory and restart the reset sequence with the pointers to physical memory.
 Example :
 
 ```
- node_complexity_index 1e5 1e6 ; maximum number of cycles at initialization time and execution of a frame
+ node_dynamic_malloc ; the node returns at reset time the amount of bytes per memory segment
 ```
-
-node_not_reentrant
 
 ### node_not_reentrant  
 
@@ -1583,7 +1584,7 @@ Service command bit-fields :
 | 31-28      | control  | set/init/run w/wo wait completion, in case of coprocessor usag |
 | 27-24      | options  | compute accuracy, in-place processing, frame size            |
 | 23-4       | function | Operation/function within the Group                          |
-| 3-0 (LSB)  | Group    | index to the groups of services : <br/>SERV_INTERNAL     1 <br/>SERV_SCRIPT       2 <br/>SERV_CONVERSION   3  : raw data format conversion (fp32 to int16, etc..)<br/>SERV_STDLIB       4 : extract of string and stdlib.h (atof, memset, strstr, malloc..)<br/>SERV_MATH         5 : extract of math.h (srand, sin, tan, sqrt, log..)<br/>SERV_DSP_ML       6 : filtering, spectrum fixed point and integer<br/>SERV_DEEPL        7 : fully-connected and convolutional network <br/>SERV_MM_AUDIO     8 : audio codecs (TBD)<br/>SERV_MM_IMAGE     9 : image processing (TBD) |
+| 3-0 (LSB)  | Group    | index to the groups of services : <br/SERV_INTERNAL     1 <br/>SERV_STDLIB       2 : extract of string and stdlib.h (atof, memset, strstr, malloc..)<br/>SERV_MATH         3 : extract of math.h (srand, sin, tan, sqrt, log..)<br/>SERV_DSP_ML       4 : filtering, spectrum fixed point and integer<br/>SERV_DEEPL        5 : fully-connected and convolutional network <br/>SERV_MM_AUDIO     6 : audio codecs (TBD)<br/>SERV_MM_IMAGE     7 : image processing (TBD) |
 
 TODO : application_callbacks (or scripts)
 
@@ -1993,7 +1994,8 @@ Example
 
 ## Graph: memory mapping 
 
-Split the memory mapping to ease memory overlays between nodes and arcs by defining new memory-offset index ("ID").
+Split the memory mapping to ease memory overlays between nodes and arcs by defining new memory-offset index ("ID"). Other use-case: split the TCM memory between the LOWLATENCYTASKS and the others.
+
 Format : ID, new ID to use in the node/arc declarations, byte offset within the original ID, length of the new memory offset.
 
 ```
@@ -2090,12 +2092,16 @@ Example :
     node_trace_id  0      ; IO port 0 is used to send the trace 
 ```
 
-### node_map_proc, node_map_arch, node_map_rtos
+### node_map_proc, node_map_arch, node_map_thread
 
 The graph can be executed in a multiprocessor and multi tasks platform. Those commands allow the graph interpreter scheduler to skip the nodes not associated to the current processor / architecture and task.
 The platform can define 7 architectures and 7 processors. When the parameter is not defined (or with value 0) the scheduler interprets it as "any processor" or "any architecture" can execute this node.
 Several OS threads can interpret the graph at the same time. A parameter "0" means any thread can execute this node, and the value "1" is associated to low-latency tasks, "3" to background tasks. 
 Examples :
+
+```
+node_map_proc 2 	; the node will only be executed on processor 2
+```
 
 ### node_memory_isolation  "0/1"
 
@@ -2108,16 +2114,16 @@ Example :
 
 ### node_memory_clear "m"
 
-Debug and security feature: Clear the memory bank "m" before and after the execution of the node.  
+Debug feature: clear the memory bank "m" before and after the execution of the node.  
 Example : 
 
 ```
-   node_memory_clear 2 ; clear the memory bank 2 as seen in the manifest before and after execution 
+   node_memory_clear 2 ; clear the bank 2 from manifest before and after execution 
 ```
 
-### node_script "index"
+### node_script "index" 
 
-The indexed script is executed before and after the node execution. The conditional is set on the first call and cleared on the second call.
+The indexed script is executed before and after the node execution. The conditional flag is set on the first call and cleared before calling the following calls.
 Example :
 
 ```
@@ -2311,6 +2317,11 @@ syscall index command param1 param2 param3
 | 7 (low-level functions)          | TBD, peek/poke directly to memory, direct access to IOs (I2C driver, GPIO setting, interrupts generation and settings) |
 | 8 (idle controls)                | TBD, Share to the application the recommended Idle strategy to apply (small or deep-sleep). |
 | 9 (time)                         | R1: command and time format <br/>R2: parameter1 (depends on CB)<br/>R3: parameter2 (depends on CB)<br/>R4: parameter3 (depends on CB) |
+| 10 (Script)                      | R1: command  (call before/after node execution)<br/>R2: infomation1 (node offset) |
+|                                  |                                                              |
+|                                  |                                                              |
+
+
 
 ------
 
@@ -2829,11 +2840,12 @@ The default memory configuration is "shared" meaning the buffers associated with
 To have individual static memory associated to a script the "script_mem_shared" must be 0.
 
 Special functions activated with Syscall and conditional instructions:
-      - lock   : a block of nodes to a processor to have good cache performance, 
-            - if-then: a block of nodes based on script decision (FIFO content/debug registers, ..)
 
-   - loop   : repeat a list of node several time for cache efficiency and small frame size
-   - Checks if the data it needs is available and returns to the scheduler
+- if-then: a block of nodes based on script decision (FIFO content/debug registers, ..)
+- loop : repeat a list of node several time for cache efficiency and small frame size
+- end thread : the script is the last one before a list of low-priority nodes (see "node_map_thread") and we can flush the on going IO (check_graph_boundaries()) and/or return to the application.
+
+
 
 ```
 node arm_stream_script 1  ; script (instance) index           
@@ -2933,7 +2945,8 @@ Example with the router with two stereo input arcs and two output arcs. The firs
             1  u8;  3                   ; nb output channels
             1  u8;  255                 ; arc used with HQOS: none
             1  u8;  1                   ; accuracy level (1..4)
-            1 f32;  0.0004              ; 0.4ms processing granularity (6.4 @16k, 12.8 @32k, 19.2 @48kHz)
+            1 f32;  0.0004              ; 0.4ms processing granularity (6.4 samples @16kHz
+            							;   12.8 samples @32kHz, 19.2 @48kHz)
     ;
             3  u8;  0 0  2              ; FIFO 0  Left arc0 to arc 2 (for Mixer 0)
             3  u8;  0 0  3              ; FIFO 1  Left arc0 to arc 3
@@ -3166,7 +3179,9 @@ end
 
 ## arm_stream_filter2D (TBD)
 
-Filter, rescale/zoom/extract, rotate, exposure compensation. Channel mixer : insert a portion of the processed image in a larger frame buffer.
+Filter, rescale/zoom/extract, rotate, exposure compensation, background removal. 
+
+Channel mixer : insert a portion of the processed image in a larger frame buffer.
 
 Operation : 2D filters 
 Parameters : spatial and temporal filtering, decimation, distortion, color mapping/log-effect
@@ -3220,13 +3235,11 @@ end
 
 ## sigp_stream_detector2D (TBD)
 
-Motion and pattern detector (lines)
+Motion and pattern detector. Counting moving object and build a text report (object sizes, shape, speed, color, ..) to be later processed by SLM on the application processor.
 
 Operation : detection of movement(s) and computation of the movement map
 Parameters : sensitivity, floor-noise smoothing factors
 Metadata : decimated map of movement detection
-
-
 
 ```
 node arm_stream_detector2D (i)
