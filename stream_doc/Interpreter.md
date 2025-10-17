@@ -536,7 +536,7 @@ io_setup_time  12.5 ; wait 12.5ms before receiving valid data
 
 Syntax : "physical unit name" "coefficient a" "coefficient b" "maximum value". Rescaling information between normalized (1.0  or 0x7FFF) digital ("D") and physical ("P") units with the formulae P = a x (D - b).
 
-See file [Units.md](Units.md) for the list of available Units from RFC8798 and RFC8428.
+See file [Units](#Units) for the list of available Units from RFC8798 and RFC8428.  
 
 ```
 io_units_rescale  vrms  0.0135  -10.1  0.15
@@ -596,7 +596,7 @@ io_sampling_rate_accuracy  0.01   ; in percentage, or 100ppm
 
 ### io_time_stamp_format "option"
 
-See file [Units.md](Units.md) for the definition of time-stamp format inserted before each frame :
+See file [Units](#Units) for the definition of time-stamp format inserted before each frame :
 
 - 0: no time stamp
 - 1: simple counter
@@ -1201,7 +1201,7 @@ Example :
 
 ### node_arc_units_scale "unit" "scale"
 
-Command used when the node needs the streams to be rescaled to absolute scaled units (See paragraph "Units" of [Units.md](Units.md)).
+Command used when the node needs the streams to be rescaled to absolute scaled units (See paragraph "Units" of [Units](#Units)).
 
 ```
     node_arc_units_scale VRMS  0.15  ; full-scale is equivalent to 0.15 VRMS
@@ -1209,7 +1209,7 @@ Command used when the node needs the streams to be rescaled to absolute scaled u
 
 ### node_arc_units_scale_multiple "unit" "scale"
 
-Command used when the node needs the streams to be rescaled to absolute scaled units and there are multiple units in sequence (See paragraph "Units" of [Units.md](Units.md)).
+Command used when the node needs the streams to be rescaled to absolute scaled units and there are multiple units in sequence (See paragraph "Units" of [Units](#Units)).
 
 ```
     node_arc_units_scale_multiple DPS 360 GAUSS 0.002 
