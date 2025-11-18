@@ -1,0 +1,17 @@
+; ------------------------------------------------------------------------------------------------------------
+; Manifest of interface abstraction to ADC converter and analog sensor 
+; ------------------------------------------------------------------------------------------------------------
+                                                                       
+    io_alif1_analog_in_0                            ; name for the tools                            
+    analog_in                                       ; domain name,   unit: dB, Vrms, mV/Gauss, dps, kWh, ...
+    
+  ; io_commander0_servant1 1                        ; commander=0 servant=1 (default is servant)
+  ; io_direction_rx0tx1    1                        ; direction of the stream  0:input 1:output from graph point of view
+  ; io_raw_format          {1 17}                   ; options for the raw arithmetics computation format here  STREAM_S16 
+  ; io_nb_channels         {1 1 2}                  ; multichannel intleaved (0), deinterleaved by frame-size (1) + options for the number of channels 
+  ; io_frame_length        {1 2 16}                 ; [ms]0/[samp]1  +  options of possible frame_size 
+  ; io_subtype_units       104                      ; depending on the domain. Here Units_Vrms of the "general" domain (0 = any or underfined)
+  ; io_analogscale         0.55                     ; 0.55V is corresponding to full-scale (0x7FFF or 1.0f) with the default setting
+  ; io_sampling_rate       {1 16000 44100 48000}    ; sampling rate options (enumeration in Hz)  
+  ; io_rescale_factor      12.24  -44.3             ; [1/a off] analog_input = invinterpa x ((samples/Full_Scale_Digital) - interpoff)
+end

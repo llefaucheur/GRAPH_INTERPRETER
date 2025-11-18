@@ -40,8 +40,10 @@
 #define CARM_STREAM_AMPLIFIER_H
 
 #include <stdint.h>
-#include "../stream_nodes/stream_common_const.h"      
-#include "../stream_nodes/stream_common_types.h"  
+//#include "../stream_nodes/stream_common_const.h"      
+//#include "../stream_nodes/stream_common_types.h"  
+#include "stream_common_const.h"      
+#include "stream_common_types.h"  
 
 #define TAG_CMD_RAMP 1
 #define TAG_CMD_DESIRED_GAIN 2
@@ -94,12 +96,12 @@ typedef struct
     uint32_t channel_fmt;
 
     /* CMSIS-STREAM "services" : debug traces, compute library, .. */
-    stream_al_services *services;
+    //stream_services *services;
 
 } arm_amplitude_instance;
 
 
-extern void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input, void *output /*, intPtr_t *nsamp*/);
+extern void arm_stream_amplitude_process (arm_amplitude_instance *instance, void *input, void *output /*, intptr_t *nsamp*/);
 
 #endif
 

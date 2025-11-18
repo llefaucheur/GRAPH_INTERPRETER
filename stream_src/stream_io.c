@@ -30,13 +30,7 @@
 #endif
 
 #include <stdint.h>
-#include "stream_common_const.h"
-#include "stream_common_types.h"
-#include "stream_const.h"
-#include "stream_types.h"
-#include "stream_extern.h"
-#include "presets.h" // for DATA_MEMORY_BARRIER
-
+#include "../stream_platform/stream_includes.h"
 
 
 /*----------------------------------------------------------------------------
@@ -52,7 +46,7 @@ static uint32_t lin2pack (intptr_t buffer, uint8_t ** long_offset)
 #define MAX_PACK_ADDR_RANGE (((1<<(SIZE_FMT0_MSB - SIZE_FMT0_LSB+1))-1))
 
     /* find the base offset */
-    for (i = 0; i < (uint8_t)MAX_NB_MEMORY_OFFSET; i++)
+    for (distance = i = 0; i < (uint8_t)MAX_NB_MEMORY_OFFSET; i++)
     {
         distance = buffer - (intptr_t)(long_offset[i]);
         if (ABS(distance) < MAX_PACK_ADDR_RANGE) 
@@ -110,6 +104,7 @@ void arm_stream_io_ack (uint8_t graph_hwio_idx, void *data, uint32_t size)
     uint8_t *ongoing;
     uint32_t *pio_control;
     uint8_t *long_base;
+    uintptr_t addr;
     uint8_t *src;
     uint8_t *dst;
 
@@ -119,14 +114,14 @@ void arm_stream_io_ack (uint8_t graph_hwio_idx, void *data, uint32_t size)
     uint8_t graph_idx;
 
     read = S->pio_hw[graph_hwio_idx * TRANSLATE_PLATFORM_IO_AL_IDX_SIZE_W32]; /* IO HW index decode */
-    graph_idx = RD(read, IDX_TO_STREAM_IO_CONTROL); 
+    graph_idx = (uint8_t)RD(read, IDX_TO_STREAM_IO_CONTROL); 
     pio_control = &(S->pio_graph[graph_idx * STREAM_IOFMT_SIZE_W32]);            /* graph IO structure */
 
     ongoing = &(S->ongoing[graph_idx]);
     arc = S->all_arcs;
-    arc = &(arc[(int)SIZEOF_ARCDESC_W32 * (int)RD(*pio_control, IOARCID_IOFMT0)]);
-    PACK2LIN((intptr_t)long_base, (S->long_offset), arc[0]);
-    fifosize = RD(arc[1], BUFF_SIZE_ARCW1);
+    arc = &(arc[(int)SIZEOF_ARCDESC_W32 * (int)RD(*pio_control, IOARCID_IOFMT0)]);  /* FIFO/arc descriptor */
+    pack2lin(&addr, arc[0], S->long_offset); long_base = (uint8_t*)addr;            /* FIFO base address of the buffer */
+    fifosize = RD(arc[1], BUFF_SIZE_ARCW1);                                         /* FIFO size */
     read = RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
 
@@ -143,7 +138,7 @@ void arm_stream_io_ack (uint8_t graph_hwio_idx, void *data, uint32_t size)
         {               
             /* IO_COMMAND_DATA_COPY : reset the ONGOING flag when enough small 
                 sub-frames have been received
-            */
+            */  
             if (fifosize - write < size)   /* free area too small => overflow */
             {   /* overflow issue */
                 //platform_al(PLATFORM_ERROR, 0,0,0);

@@ -5,7 +5,7 @@
 node_developer_name         ARM                 ; developer name
 node_name                   arm_stream_filter   ; node name
 
-node_mask_library            64                 ; dependency with DSP services
+node_mask_library            16                 ; dependency with DSP services
 
 ;----------------------------------------------------------------------------------------
 ;   MEMORY ALLOCATIONS
@@ -18,6 +18,15 @@ node_mem                     1			        ; second memory bank (node fast working
 node_mem_alloc              78                  ; (coef + state)50 + (pointers + index)24
 node_mem_type                0                  ; working memory
 node_mem_speed               2                  ; critical fast 
+
+
+
+;---------------------                          ; just for example:
+; node_dynamic_malloc                           ; let the scheduler manage dynamically the memory allocation
+;---------------------
+
+
+;
 ;--------------------------------------------------------------------------------------------
 ;    ARCS CONFIGURATION
 node_arc            0

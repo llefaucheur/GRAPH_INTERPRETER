@@ -1,0 +1,10 @@
+; ------------------------------------------------------------------------------------------------------------
+; Manifest of interface abstraction for general purpose input
+; ------------------------------------------------------------------------------------------------------------
+                                                                       
+    io_alif1_data_in_1                              ; name for the tools                            
+    general                                         ; 
+    
+    io_direction_rx0tx1    0                        ; direction of the stream  0:input 1:output from graph point of view
+
+end

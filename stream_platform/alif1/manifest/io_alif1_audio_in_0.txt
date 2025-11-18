@@ -1,0 +1,14 @@
+; ------------------------------------------------------------------------------------------------------------
+; Manifest of audio input (microphone) 
+; ------------------------------------------------------------------------------------------------------------
+                                                                       
+    io_alif1_microphone_in_0                ; name for the tools                            
+    audio_in                                ; domain name,   unit: dB, Vrms
+    
+    io_commander0_servant1 0                ; audio stream is master
+    io_frame_length     {1 640}             ; 16kHz x 10ms x stereo x int16
+    io_nb_channels      {1 2}               ; stereo default
+    io_raw_format       {1 i16}             ; int16
+    io_sampling_rate Hz {1 16e3}            ; 16kHz    
+    
+    end

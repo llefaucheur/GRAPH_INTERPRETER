@@ -41,7 +41,7 @@
 
 
 
-#ifdef PLATFORM_COMPUTER
+#ifdef _MSC_VER
 #include <stdio.h>
 #endif
 
@@ -127,21 +127,22 @@ void sigp_stream_detector_process (sigp_detector_instance *pinstance,
         {   DOWNCOUNTER = MINIFLOAT2Q31(RELOADCOUNTER);
         }
 
+        /* only one sample is used to the output buffer to save the VAD result */
         if (DOWNCOUNTER > 0)
         	pResult[0] = 0x7FFF;
         else
         	pResult[0] = 0x0000;
 
-#if 0 //PLATFORM_COMPUTER        
+#if 1 //PLATFORM_COMPUTER        
         {   
-            extern FILE *ptf_data_out_0;
+            extern FILE *ptf_debug_detector;
             long x, SD=4; 
-            x = input_data<<SD;                         fwrite(&x, 1, 4, ptf_data_out_0);    //1
-            x = Z7<<SD;                                 fwrite(&x, 1, 4, ptf_data_out_0);    //2
-            x = Z8<<SD;                                 fwrite(&x, 1, 4, ptf_data_out_0);    //3
-            x = ACCVAD;                                 fwrite(&x, 1, 4, ptf_data_out_0);    //4
-            x = FLAG;                                   fwrite(&x, 1, 4, ptf_data_out_0);    //5
-            x = 0; if (DOWNCOUNTER > 0) x=0x7fffffff;   fwrite(&x, 1, 4, ptf_data_out_0);    //6
+            x = input_data<<SD;                         fwrite(&x, 1, 4, ptf_debug_detector);    //1
+            x = Z7<<SD;                                 fwrite(&x, 1, 4, ptf_debug_detector);    //2
+            x = Z8<<SD;                                 fwrite(&x, 1, 4, ptf_debug_detector);    //3
+            x = ACCVAD;                                 fwrite(&x, 1, 4, ptf_debug_detector);    //4
+            x = FLAG;                                   fwrite(&x, 1, 4, ptf_debug_detector);    //5
+            x = 0; if (DOWNCOUNTER > 0) x=0x7fffffff;   fwrite(&x, 1, 4, ptf_debug_detector);    //6
         }
 #endif     
         isamp++;

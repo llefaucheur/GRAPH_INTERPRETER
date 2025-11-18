@@ -1,0 +1,176 @@
+//--------------------------------------
+//  DATE Thu Nov  6 04:37:49 2025
+//  AUTOMATICALLY GENERATED CODES
+//  DO NOT MODIFY !
+//--------------------------------------
+//  Source ../../../stream_platform/computer/graphs/graph_computer_router.txt 
+//--------------------------------------
+0x00000059, // 000 000 Size, Flash=h3C +RAM=h1D +Buffers=h85, all W32, not compressed 
+0x00000100, // 004 001 interpreter version 
+0x0000000D, // 008 002 memory consumption in bank 0-3 (0xFF = 100%, 0x3F = 25%) 
+0x00000000, // 00C 003 bank 4-7  (banks of long_offset[4-7]) 
+0x00000000, // 010 004 bank 8-11  
+0x00000000, // 014 005 bank 12-15 
+0x40000014, // 018 006 GRAPH_PIO_HW used from here 
+0x0000000A, // 01C 007  
+0x4000001E, // 020 008 GRAPH_PIO_GRAPH used from here 
+0x00000008, // 024 009  
+0x40000026, // 028 00A GRAPH_SCRIPTS used from here 
+0x00000000, // 02C 00B  
+0x40000026, // 030 00C GRAPH_LINKED_LIST used from here 
+0x00000016, // 034 00D  
+0x00000000, // 038 00E GRAPH_ONGOING to MEMID 0 position 00000000 
+0x00000001, // 03C 00F  
+0x00000004, // 040 010 GRAPH_FORMATS to MEMID 0 position 00000004 
+0x0000000C, // 044 011  
+0x00000034, // 048 012 GRAPH_ARCS to MEMID 0 position 00000034 
+0x00000010, // 04C 013  
+0x00000000, // 050 014 IO(HW0) GraphID(0)    ProcID_0 archID_0  
+0x0900FFFF, // 054 015 IO(HW1) Not Connected ProcID_1 archID_1 
+0x09000000, // 058 016 IO(HW2) GraphID(0)    ProcID_1 archID_1 io_platform_analog_sensor_0.txt 
+0x1100FFFF, // 05C 017 IO(HW3) Not Connected ProcID_2 archID_1 
+0x0900FFFF, // 060 018 IO(HW4) Not Connected ProcID_1 archID_1 
+0x0A00FFFF, // 064 019 IO(HW5) Not Connected ProcID_1 archID_2 
+0x0900FFFF, // 068 01A IO(HW6) Not Connected ProcID_1 archID_1 
+0x0900FFFF, // 06C 01B IO(HW7) Not Connected ProcID_1 archID_1 
+0x0A00FFFF, // 070 01C IO(HW8) Not Connected ProcID_1 archID_2 
+0x09000001, // 074 01D IO(HW9) GraphID(1)    ProcID_1 archID_1 io_platform_data_out_0.txt 
+0x00023000, // 078 01E IO(graph0) 2 arc 0 set0copy1=1 rx0tx1=0 servant1 1 buffer allocation 0 
+0x00000002, // 07C 01F IO(settings 0, fmtProd 0 (L=16) fmtCons 0 (L=16) 
+0x00000000, // 080 020  
+0x00000000, // 084 021  
+0x00093801, // 088 022 IO(graph1) 9 arc 1 set0copy1=1 rx0tx1=1 servant1 1 buffer allocation 0 
+0x00000003, // 08C 023 IO(settings 0, fmtProd 0 (L=16) fmtCons 1 (L=96) 
+0x00000000, // 090 024  
+0x00000000, // 094 025  
+0x00004402, // 098 026 -----  arm_stream_router(0) idx:2 nRX 1 nTX 1 lockArc 1 Who0/0/0 script0 
+0x08010000, // 09C 027 ARC 0 Rx0Tx1 0 L=16  -- ARC 1 Rx0Tx1 1 L=96 KEY0     
+0x000000E4, // 0A0 028 Nb Memreq 2  ClearSwap 0 -Static memory bank  
+0x00000018, // 0A4 029  bank 0 stat0work1ret2 = 0 size 24(h18)  
+0x000000FC, // 0A8 02A Static memory bank (Swap 0)  
+0x0000009A, // 0AC 02B  bank 1 stat0work1ret2 = 0 size 154(h9a)  
+0x0200000F, // 0B0 02C ParamLen 14+1 Preset 2 Tag0ALL 0 
+0x01050202, // 0B4 02D (0) 
+0x01FFFF03, // 0B8 02E (1) 
+0x3951B717, // 0BC 02F (2) 
+0x00020000, // 0C0 030 (3) 
+0x01000300, // 0C4 031 (4) 
+0x01000102, // 0C8 032 (5) 
+0x04020000, // 0CC 033 (6) 
+0x00FF0200, // 0D0 034 (7) 
+0x003F0000, // 0D4 035 (8) 
+0x003F0000, // 0D8 036 (9) 
+0x00000000, // 0DC 037 (10) 
+0x043F8000, // 0E0 038 (11) 
+0x03010000, // 0E4 039 (12) 
+0x01030300, // 0E8 03A (13) 
+0x000003FF, // 0EC 03B vvvvvvvvvvv RAM vvvvvvvvvvv ^^^^^^^^^ END OF LINKED-LIST ^^^^^^^^^  
+0xFFFFFEFE, // 0F0 03C 000 000 ->ongoing iomask bytes 
+0x00000010, // 0F4 03D 004 001 Format  0 frameSize 16  
+0x00008801, // 0F8 03E 008 002           nchan 2 raw 17 
+0x467A0000, // 0FC 03F 00C 003           FS[Hz]=16000.000000 
+0x00000000, // 100 040 010 004           domain-dependent 
+0x00000060, // 104 041 014 005 Format  1 frameSize 96  
+0x0000D800, // 108 042 018 006           nchan 1 raw 27 
+0x473B8000, // 10C 043 01C 007           FS[Hz]=48000.000000 
+0x00000000, // 110 044 020 008           domain-dependent 
+0x00000020, // 114 045 024 009 Format  2 frameSize 32  
+0x00008801, // 118 046 028 00A           nchan 2 raw 17 
+0x46FA0000, // 11C 047 02C 00B           FS[Hz]=32000.000000 
+0x00000000, // 120 048 030 00C           domain-dependent 
+0x00000074, // 124 049 034 00D ARC0 -IO- Base 74h (4h words) fmtProd_0 (frameL 16) 
+0x00000010, // 128 04A 038 00E       Size 10h[B] fmtCons_0 FrameL 16 jitterScaling 1.0 
+0x00000000, // 12C 04B 03C 00F       IO 2 ===> arm_stream_router 
+0x00000000, // 130 04C 040 010       fmtCons 0 fmtProd 0 dbgreg 0 dbgcmd 0   
+0x00000000, // 134 04D 044 011       log producer/consumer flow errors 
+0x00000000, // 138 04E 048 012  
+0x00000000, // 13C 04F 04C 013  
+0x00000000, // 140 050 050 014  
+0x00000084, // 144 051 054 015 ARC1 -IO- Base 84h (18h words) fmtProd_0 (frameL 16) 
+0x00000060, // 148 052 058 016       Size 60h[B] fmtCons_1 FrameL 96 jitterScaling 1.0 
+0x00000000, // 14C 053 05C 017       arm_stream_router ===> IO 9 
+0x00000000, // 150 054 060 018       fmtCons 1 fmtProd 0 dbgreg 0 dbgcmd 0   
+0x00000100, // 154 055 064 019       log producer/consumer flow errors 
+0x00000000, // 158 056 068 01A  
+0x00000000, // 15C 057 06C 01B  
+0x00000000, // 160 058 070 01C  
+0x00000000, // 164 059 074 01D S arc_0      
+0x00000000, // 168 05A 078 01E  
+0x00000000, // 16C 05B 07C 01F  
+0x00000000, // 170 05C 080 020  
+0x00000000, // 174 05D 084 021 S arc_1      
+0x00000000, // 178 05E 088 022  
+0x00000000, // 17C 05F 08C 023  
+0x00000000, // 180 060 090 024  
+0x00000000, // 184 061 094 025  
+0x00000000, // 188 062 098 026  
+0x00000000, // 18C 063 09C 027  
+0x00000000, // 190 064 0A0 028  
+0x00000000, // 194 065 0A4 029  
+0x00000000, // 198 066 0A8 02A  
+0x00000000, // 19C 067 0AC 02B  
+0x00000000, // 1A0 068 0B0 02C  
+0x00000000, // 1A4 069 0B4 02D  
+0x00000000, // 1A8 06A 0B8 02E  
+0x00000000, // 1AC 06B 0BC 02F  
+0x00000000, // 1B0 06C 0C0 030  
+0x00000000, // 1B4 06D 0C4 031  
+0x00000000, // 1B8 06E 0C8 032  
+0x00000000, // 1BC 06F 0CC 033  
+0x00000000, // 1C0 070 0D0 034  
+0x00000000, // 1C4 071 0D4 035  
+0x00000000, // 1C8 072 0D8 036  
+0x00000000, // 1CC 073 0DC 037  
+0x00000000, // 1D0 074 0E0 038  
+0x00000000, // 1D4 075 0E4 039 S inode 0 arm_stream_router imem 0 Size 24 h18 
+0x00000000, // 1D8 076 0E8 03A  
+0x00000000, // 1DC 077 0EC 03B  
+0x00000000, // 1E0 078 0F0 03C  
+0x00000000, // 1E4 079 0F4 03D  
+0x00000000, // 1E8 07A 0F8 03E  
+0x00000000, // 1EC 07B 0FC 03F S inode 0 arm_stream_router imem 1 Size 154 h9a 
+0x00000000, // 1F0 07C 100 040  
+0x00000000, // 1F4 07D 104 041  
+0x00000000, // 1F8 07E 108 042  
+0x00000000, // 1FC 07F 10C 043  
+0x00000000, // 200 080 110 044  
+0x00000000, // 204 081 114 045  
+0x00000000, // 208 082 118 046  
+0x00000000, // 20C 083 11C 047  
+0x00000000, // 210 084 120 048  
+0x00000000, // 214 085 124 049  
+0x00000000, // 218 086 128 04A  
+0x00000000, // 21C 087 12C 04B  
+0x00000000, // 220 088 130 04C  
+0x00000000, // 224 089 134 04D  
+0x00000000, // 228 08A 138 04E  
+0x00000000, // 22C 08B 13C 04F  
+0x00000000, // 230 08C 140 050  
+0x00000000, // 234 08D 144 051  
+0x00000000, // 238 08E 148 052  
+0x00000000, // 23C 08F 14C 053  
+0x00000000, // 240 090 150 054  
+0x00000000, // 244 091 154 055  
+0x00000000, // 248 092 158 056  
+0x00000000, // 24C 093 15C 057  
+0x00000000, // 250 094 160 058  
+0x00000000, // 254 095 164 059  
+0x00000000, // 258 096 168 05A  
+0x00000000, // 25C 097 16C 05B  
+0x00000000, // 260 098 170 05C  
+0x00000000, // 264 099 174 05D  
+0x00000000, // 268 09A 178 05E  
+0x00000000, // 26C 09B 17C 05F  
+0x00000000, // 270 09C 180 060  
+0x00000000, // 274 09D 184 061  
+0x00000000, // 278 09E 188 062  
+0x00000000, // 27C 09F 18C 063  
+0x00000000, // 280 0A0 190 064  
+0x00000000, // 284 0A1 194 065  
+// bank       size            consumed        static   +    working
+//  0      8000 (  1F40)    408 (  198)    408 (  198)      0 (    0)
+//  1      8000 (  1F40)      0 (    0)      0 (    0)      0 (    0)
+//  2      1000 (   3E8)      0 (    0)      0 (    0)      0 (    0)
+//  3      4000 (   FA0)      0 (    0)      0 (    0)      0 (    0)
+//  4      2000 (   7D0)      0 (    0)      0 (    0)      0 (    0)
+//  5      2000 (   7D0)      0 (    0)      0 (    0)      0 (    0)

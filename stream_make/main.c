@@ -34,12 +34,12 @@ extern void main_init(uint32_t *graph);
 extern void main_run(void);
 extern void main_stop(void);
 
-uint32_t graph[] = { 0 };   // case when the graph comes the application 
 
 int main(void)
 {   int i;
 
-    main_init(graph);
+    //uint32_t graph[1] = { 0 /* .. */};   // case when the graph comes the application 
+    main_init(0);
 
     for (i = 0; i < 240000; i++)
     {   main_run();

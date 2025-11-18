@@ -41,7 +41,7 @@
 */
 typedef struct
 {
-    stream_al_services *stream_entry;  /* calls to computing services */
+    stream_services *stream_entry;  /* calls to computing services */
     uint32_t configuration;
 } sigp_stream_resampler_instance;
 

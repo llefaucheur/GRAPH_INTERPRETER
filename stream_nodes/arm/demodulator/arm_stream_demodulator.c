@@ -38,12 +38,6 @@
  extern "C" {
 #endif
    
-
-
-
-#include <stdint.h>
-#include "stream_common_const.h"
-#include "stream_common_types.h"
 #include "arm_stream_demodulator.h"
 
 //

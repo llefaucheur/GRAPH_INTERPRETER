@@ -73,17 +73,18 @@ sigp_stream_detector
 #ifndef CODE_SIGP_STREAM_DETECTOR
 void sigp_stream_detector (int32_t command, stream_handle_t instance, stream_xdmbuffer_t *data, uint32_t *status) {}
 #else
-#define NB_PRESET 5
+#define NB_PRESET 6
 const detector_parameters detector_preset [NB_PRESET] = 
 {   /*  log2counter, log2decfMASK, 
         high_pass_shifter, low_pass_shifter, low_pass_z7_z8,  
         vad_rise, vad_fall, THR */
 
-    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #1 no HPF, fast for button debouncing */
-    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #2 VAD with HPF pre-filtering, tuned for Fs <20kHz */
-    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #3 VAD with HPF pre-filtering, tuned for Fs >20kHz */
-    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #4 IMU detector : HPF, slow time constants */
-    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #5 IMU detector : HPF, fast time constants */
+    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #0 no HPF, fast for button debouncing */
+    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #1 VAD with HPF pre-filtering, tuned for Fs <20kHz */
+    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #2 VAD with HPF pre-filtering, tuned for Fs >20kHz */
+    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #3 IMU detector : HPF, slow time constants */
+    {MINIF(1,12), 8,   3, 6, 11,  MINIF(1,18), MINIF(1,20), MINIF(3,0)}, /* #4 IMU detector : HPF, fast time constants */
+    {MINIF(1,12), 6,   4, 6, 11,  MINIF(1,20), MINIF(1,22), MINIF(4,0)}, /* #5 same as #1 with faster reaction time  */
 };
 
 /**
@@ -119,7 +120,7 @@ void sigp_stream_detector (unsigned int command, void *instance, void *data, uns
 
             /* reset the instance */            
             /* floor noise is preserved after a wsigp boot */
-            if (STREAM_COLD_BOOT == RD(command, COMMDEXT_CMD))
+            if (COMMDEXT_COLD_BOOT == RD(command, COMMDEXT_CMD))
             {
                 /* here COLD reset */
                 pinstance->z1 = F2Q31(0.00001);

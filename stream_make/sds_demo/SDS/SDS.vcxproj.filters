@@ -1,0 +1,380 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="NODES">
+      <UniqueIdentifier>{8a2b5ee4-8c74-4373-ba91-56c3c180b3e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PLATFORM">
+      <UniqueIdentifier>{771575a7-a182-4b67-92ca-d5dd65154318}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SRC">
+      <UniqueIdentifier>{d0cadab7-b6f9-4482-8248-a077ba7de85d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PLATFORM\LIB">
+      <UniqueIdentifier>{87d52129-f4f2-4f84-b6d3-d3ea1b6b5110}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NODES\ARM">
+      <UniqueIdentifier>{6fafcbb2-cb9f-49e6-a0a2-6b54207c620e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NODES\BITBANK">
+      <UniqueIdentifier>{a4899a14-d6f4-4ca8-97ec-702fcbd80de3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NODES\JPGT">
+      <UniqueIdentifier>{12bb00de-739d-49c9-a99f-38038b6d5eea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NODES\SIGPROC">
+      <UniqueIdentifier>{680f2877-9756-4a0a-8534-5d6f48e061cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NODES\ARM\arm_anr">
+      <UniqueIdentifier>{ac421351-8673-4ae3-ac80-453717b24c8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SERVICES">
+      <UniqueIdentifier>{002e914d-32fe-44a6-80f2-8b1ecc565a8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SERVICES\LIBRARIES">
+      <UniqueIdentifier>{b32168e1-f8e6-4c0e-a760-fe15b499b52c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\stream_src\stream_graph_interpreter.c">
+      <Filter>SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_src\stream_io.c">
+      <Filter>SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_src\stream_scheduler.c">
+      <Filter>SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\main.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main_call_alif1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier_process.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\demodulator\arm_stream_demodulator.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\demodulator\arm_stream_demodulator_process.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\filter\arm_stream_filter.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\filter2D\arm_stream_filter2D.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\fixedbf\arm_stream_fixedbf.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator_process.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\router\arm_stream_router.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\router\arm_stream_router_process.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_script.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_script_process.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\bitbank\JPEGENC\bitbank_JPEGENC.c">
+      <Filter>NODES\BITBANK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\elm-lang\TJpgDec\TjpgDec.c">
+      <Filter>NODES\JPGT</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor.c">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor_imadpcm.c">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor_process.c">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor.c">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor_imadpcm.c">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector.c">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector_process.c">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector2D\sigp_stream_detector2D.c">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector2D\sigp_stream_detector2D_process.c">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler.c">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler_process.c">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\buffer.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\fftwrap.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\filterbank.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\mdf.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\preprocess.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\arm_rfft_fast_f32.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\arm_rfft_fast_init_f32.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\CommonTables\arm_common_tables.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_cfft_f32.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_cfft_radix2_init_f32.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_cfft_radix4_f32.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_cfft_radix8_f32.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_bitreversal.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_bitreversal2.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_cfft_init_f32.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\CommonTables\arm_const_structs.c">
+      <Filter>NODES\ARM\arm_anr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\arm_stream_anr.c">
+      <Filter>NODES\ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\alif1\alif1_io_services.c">
+      <Filter>PLATFORM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\alif1\top_manifest_alif1.c">
+      <Filter>PLATFORM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\kws\sigp_stream_kws.c">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\platform_services\all_services.c">
+      <Filter>SERVICES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\platform_services\platform_init.c">
+      <Filter>SERVICES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\platform_services\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\generic_biquad_cascade_df1_f32.c">
+      <Filter>SERVICES\LIBRARIES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\platform_services\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\generic_biquad_cascade_df1_fast_q15.c">
+      <Filter>SERVICES\LIBRARIES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\platform_services\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\generic_biquad_cascade_df1_init_f32.c">
+      <Filter>SERVICES\LIBRARIES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\platform_services\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\generic_biquad_cascade_df1_init_q15.c">
+      <Filter>SERVICES\LIBRARIES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\alif1\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\alif1_arm_biquad_cascade_df1_fast_q15.c">
+      <Filter>PLATFORM\LIB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\stream_platform\alif1\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\alif1_arm_biquad_cascade_df1_init_q15.c">
+      <Filter>PLATFORM\LIB</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\stream_src\stream_const.h">
+      <Filter>SRC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_extern.h">
+      <Filter>SRC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_src\stream_types.h">
+      <Filter>SRC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier.h">
+      <Filter>NODES\ARM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\demodulator\arm_stream_demodulator.h">
+      <Filter>NODES\ARM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\filter\arm_stream_filter.h">
+      <Filter>NODES\ARM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\filter2D\arm_stream_filter2D.h">
+      <Filter>NODES\ARM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\fixedbf\arm_stream_fixedbf.h">
+      <Filter>NODES\ARM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator.h">
+      <Filter>NODES\ARM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\router\arm_stream_router.h">
+      <Filter>NODES\ARM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_stream_script.h">
+      <Filter>NODES\ARM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_stream_script_instructions.h">
+      <Filter>NODES\ARM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\bitbank\JPEGENC\bitbank_JPEGENC.h">
+      <Filter>NODES\BITBANK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\elm-lang\TJpgDec\TjpgDec.h">
+      <Filter>NODES\JPGT</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor.h">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor_imadpcm.h">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor.h">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor_imadpcm.h">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector.h">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\detector2D\sigp_stream_detector2D.h">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler.h">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_platform\presets.h">
+      <Filter>PLATFORM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\stream_common_const.h">
+      <Filter>SRC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\arm\anr\arm_stream_anr.h">
+      <Filter>NODES\ARM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_platform\stream_includes.h">
+      <Filter>PLATFORM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_platform\alif1\platform_alif1.h">
+      <Filter>PLATFORM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_platform\alif1\top_manifest_alif1.h">
+      <Filter>PLATFORM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\kws\sigp_stream_kws.h">
+      <Filter>NODES\SIGPROC</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\stream_nodes\arm\amplifier\node_manifest_amplifier.txt">
+      <Filter>NODES\ARM</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\arm\anr\node_manifest_anr.txt">
+      <Filter>NODES\ARM</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\arm\demodulator\node_manifest_demodulator.txt">
+      <Filter>NODES\ARM</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\arm\filter\node_manifest_filter.txt">
+      <Filter>NODES\ARM</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\arm\filter2D\node_manifest_filter2D.txt">
+      <Filter>NODES\ARM</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\arm\fixedbf\node_manifest_fixedbf.txt">
+      <Filter>NODES\ARM</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\arm\kws\node_manifest_kws.txt">
+      <Filter>NODES\ARM</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\arm\modulator\node_manifest_modulator.txt">
+      <Filter>NODES\ARM</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\arm\router\node_manifest_router.txt">
+      <Filter>NODES\ARM</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\arm\script\node_manifest_script.txt">
+      <Filter>NODES\ARM</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\bitbank\JPEGENC\node_manifest_bitbank_JPEGENC.txt">
+      <Filter>NODES\BITBANK</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\elm-lang\TJpgDec\node_manifest_TjpgDec.txt">
+      <Filter>NODES\JPGT</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\signal-processingFR\compressor\node_manifest_compressor.txt">
+      <Filter>NODES\SIGPROC</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\signal-processingFR\decompressor\node_manifest_decompressor.txt">
+      <Filter>NODES\SIGPROC</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\signal-processingFR\detector\node_manifest_detector.txt">
+      <Filter>NODES\SIGPROC</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\signal-processingFR\detector2D\node_manifest_detector2D.txt">
+      <Filter>NODES\SIGPROC</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\signal-processingFR\resampler\node_manifest_resampler.txt">
+      <Filter>NODES\SIGPROC</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_platform\alif1\graphs\graph_alif_audio_bin.txt">
+      <Filter>PLATFORM</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_platform\alif1\top_manifest_alif1.txt">
+      <Filter>PLATFORM</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_platform\alif1\graphs\graph_alif_audio.txt">
+      <Filter>PLATFORM</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_nodes\signal-processingFR\kws\node_manifest_kws.txt">
+      <Filter>NODES\SIGPROC</Filter>
+    </Text>
+  </ItemGroup>
+</Project>

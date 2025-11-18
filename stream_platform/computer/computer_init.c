@@ -64,44 +64,48 @@ extern const uint8_t platform_audio_out_bit_fields[];
     Full node descriptions given in ./stream_tools/TEMPLATE_GRAPH.txt
 */
 
-
-extern p_stream_node arm_stream_null_task;       /*  0 */
+extern p_stream_node arm_stream_null_task;       /*  */
 extern p_stream_node arm_stream_script;          /*  1  #define arm_stream_script_index 1 */
 extern p_stream_node arm_stream_router;          /*  2 */
-extern p_stream_node arm_stream_amplifier;       /*  3 */
-extern p_stream_node arm_stream_filter;          /*  4 */
-extern p_stream_node arm_stream_modulator;       /*  5 */
-extern p_stream_node arm_stream_demodulator;     /*  6 */
-extern p_stream_node arm_stream_filter2D;        /*  7 */
-extern p_stream_node sigp_stream_detector;       /*  8 */
-extern p_stream_node sigp_stream_detector2D;     /*  9 */
-extern p_stream_node sigp_stream_resampler;      /* 10 */
+extern p_stream_node arm_stream_modulator;       /*  3 */
+extern p_stream_node arm_stream_kws;             /*  4 */
+extern p_stream_node arm_stream_fixedbf;         /*  5 */
+extern p_stream_node arm_stream_filter2D;        /*  6 */
+extern p_stream_node arm_stream_filter;          /*  7 */
+extern p_stream_node arm_stream_demodulator;     /*  8 */
+extern p_stream_node arm_stream_anr;             /*  9 */
+extern p_stream_node arm_stream_amplifier;       /* 10 */
 extern p_stream_node sigp_stream_compressor;     /* 11 */
 extern p_stream_node sigp_stream_decompressor;   /* 12 */
-extern p_stream_node bitbank_JPEGENC;            /* 13 */
-extern p_stream_node TjpgDec;                    /* 14 */
+extern p_stream_node sigp_stream_detector;       /* 13 */
+extern p_stream_node sigp_stream_detector2D;     /* 14 */
+extern p_stream_node sigp_stream_resampler;      /* 15 */
+extern p_stream_node bitbank_JPEGENC;            /* 16 */
+extern p_stream_node TjpgDec;                    /* 17 */
 
 #define TBD 0
 
 
 const p_stream_node node_entry_points[NB_NODE_ENTRY_POINTS] =
 {
-    /*  0 */ (p_stream_node)&arm_stream_null_task,      /* PROC ARCH |  ID   */
-    /*  1 */ (p_stream_node)&arm_stream_script,         /*   0   0   |   1   byte-code interpreter, index "arm_stream_script_INDEX" */
-    /*  2 */ (p_stream_node)&arm_stream_router,         /*   0   1   |   2   copy input arcs and subchannel and output arcs and subchannels   */     
-    /*  3 */ (p_stream_node)&arm_stream_amplifier,      /*   0   1   |   3   amplifier mute and un-mute with ramp and delay control */
-    /*  4 */ (p_stream_node)&arm_stream_filter,         /*   0   1   |   4   cascade of DF1 filters */
-    /*  5 */ (p_stream_node)&arm_stream_modulator,      /*   0   1   |   5   signal generator with modulation */
-    /*  6 */ (p_stream_node)&arm_stream_demodulator,    /*   0   1   |   6   signal demodulator, frequency estimator */
-    /*  7 */ (p_stream_node)&sigp_stream_detector,      /*   0   1   |   7   estimates peaks/floor of the mono input and triggers a flag on high SNR */
-    /*  8 */ (p_stream_node)&sigp_stream_resampler,     /*   0   1   |   8   asynchronous sample-rate converter */
-    /*  9 */ (p_stream_node)&sigp_stream_compressor,    /*   0   1   |   9   raw data compression with adaptive prediction */
-    /* 10 */ (p_stream_node)&sigp_stream_decompressor,  /*   0   1   |  10   raw data decompression */
-    /* 11 */ (p_stream_node)&bitbank_JPEGENC,           /*   0   1   |  11   bitbank_JPEGENC */
-    /* 12 */ (p_stream_node)&TjpgDec,                   /*   0   1   |  12   TjpgDec */
-                                                                             
-    /* 13 */ (p_stream_node)&arm_stream_filter2D,       /*   2   2   |  13   Filter, rescale, rotate, exposure compensation */
-    /* 14 */ (p_stream_node)&sigp_stream_detector2D,    /*   0   2   |  14   activity detection, pattern detection */
+    /*  0 */ (p_stream_node)&arm_stream_null_task,      /* ID | PROC ARCH    */
+    /*  1 */ (p_stream_node)&arm_stream_script,         /*  1 |   0   0      byte-code interpreter, index "arm_stream_script_INDEX" */
+    /*  2 */ (p_stream_node)&arm_stream_router,         /*  2 |   0   1      copy input arcs and subchannel and output arcs and subchannels   */
+    /*  3 */ (p_stream_node)&arm_stream_modulator,      /*  3 |   0   1      signal generator with modulation */
+    /*  4 */ (p_stream_node)&arm_stream_kws,            /*  4 |   0   1
+    /*  5 */ (p_stream_node)&arm_stream_fixedbf,        /*  5 |   0   1
+    /*  6 */ (p_stream_node)&arm_stream_filter2D,       /*  6 |   0   1
+    /*  7 */ (p_stream_node)&arm_stream_filter,         /*  7 |   0   1      cascade of DF1 filters */
+    /*  8 */ (p_stream_node)&arm_stream_demodulator,    /*  8 |   0   1      signal demodulator, frequency estimator */
+    /*  9 */ (p_stream_node)&arm_stream_anr,            /*  9 |   0   1
+    /* 10 */ (p_stream_node)&arm_stream_amplifier,      /* 10 |   0   1      amplifier mute and un-mute with ramp and delay control */
+    /* 11 */ (p_stream_node)&sigp_stream_compressor,    /* 11 |   0   1      raw data compression with adaptive prediction */
+    /* 12 */ (p_stream_node)&sigp_stream_decompressor,  /* 12 |   0   1      raw data decompression */
+    /* 13 */ (p_stream_node)&sigp_stream_detector,      /* 13 |   0   1      estimates peaks/floor of the mono input and triggers a flag on high SNR */
+    /* 14 */ (p_stream_node)&sigp_stream_detector2D,    /* 14 |   0   2      activity detection, pattern detection */
+    /* 15 */ (p_stream_node)&sigp_stream_resampler,     /* 15 |   0   1      asynchronous sample-rate converter */
+    /* 16 */ (p_stream_node)&bitbank_JPEGENC,           /* 16 |   0   1      bitbank_JPEGENC */
+    /* 17 */ (p_stream_node)&TjpgDec,                   /* 17 |   0   1      TjpgDec */
 };    
 
 
@@ -194,18 +198,17 @@ const p_io_function_ctrl platform_io [LAST_IO_FUNCTION_PLATFORM] =
 */
 const uint32_t graph_computer_router[] = 
 { 
-#include "graph_computer_router_bin.txt"
+#include "graphs/graph_computer_router_bin.txt"
 };
-
 
 const uint32_t graph_computer_filter[] =
 {
-#include "graph_computer_filter_bin.txt"
+#include "graphs/graph_computer_filter_bin.txt"
 };
 
 const uint32_t graph_computer_filter_detector[] =
 {
-#include "graph_computer_filter_detector_bin.txt"
+#include "graphs/graph_computer_filter_detector_bin.txt"
 };
 
 
@@ -286,10 +289,10 @@ uint32_t * get_graph_address(uint32_t graph_idx)
 
 void platform_init_specific(arm_stream_init_t *data)
 {
-#if GRAPH_FROM_APP1PLATFORM2 == 2
-    data->graph = get_graph_address(GRAPH_ROUTER);          
+#if GRAPH_FROM_PLATFORM == 2
+    //data->graph = get_graph_address(GRAPH_ROUTER);          
     //data->graph = get_graph_address(GRAPH_FILTER);  
-    //data->graph = get_graph_address(GRAPH_FILTER_DETECTOR);
+    data->graph = get_graph_address(GRAPH_FILTER_DETECTOR);
 #endif
 
     data->long_offset = (uint8_t **) long_offset;           // pointer to "long_offset[MAX_NB_MEMORY_OFFSET]"
@@ -302,6 +305,15 @@ void platform_init_specific(arm_stream_init_t *data)
     data->procID = PROC_ID;
     data->archID = ARCH_ID;
 }
+
+
+/* here: test the need for memory recovery/swap
+    does the application modified the memory banks used by the graph ? */
+void arm_memory_swap(arm_stream_instance_t* S)
+{
+    //uint8_t memBankBitFields[(7 + MAX_PROC_MEMBANK) / 8];
+}
+
 
 
 #endif

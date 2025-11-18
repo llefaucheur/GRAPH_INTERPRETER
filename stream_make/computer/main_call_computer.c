@@ -36,6 +36,7 @@
 #include "stream_const.h"      
 #include "stream_types.h"  
 #include "stream_extern.h"
+#include "presets.h"
 
 /*
     global variables : all the instances of the graph interpreter
@@ -61,7 +62,7 @@ void main_init(uint32_t *graph)
             STREAM_INSTANCE_LOWLATENCYTASKS,    // low-latency priority
             STREAM_MAIN_INSTANCE,               // this interpreter instance is the main one (multi-thread)
             STREAM_NB_INSTANCE,                 // total number of instances executing this graph
-            STREAM_COLD_BOOT,                   // is it a warm or cold boot
+            COMMDEXT_COLD_BOOT,                 // is it a warm or cold boot
             STREAM_SCHD_NO_SCRIPT,              // debugging scheme used during execution
             STREAM_SCHD_RET_END_ALL_PARSED      // interpreter returns after all nodes are parsed
             );
@@ -105,8 +106,21 @@ void main_set_parameters(void)
  */
 void main_run(void)
 {
+    /* here test the need for memory recovery/swap 
+        does the application modified the memory banks used by the graph ? */
+    if (0)
+    {   arm_memory_swap(&(instance[STREAM_CURRENT_INSTANCE]));
+    }
+
     arm_graph_interpreter (STREAM_RUN, &(instance[STREAM_CURRENT_INSTANCE]), 0, 0);
-}  
+
+    /* here test the need for memory recovery/swap
+        does the application intend to modify memory banks used by the graph ? */
+    if (0)
+    {   arm_memory_swap(&(instance[STREAM_CURRENT_INSTANCE]));
+    }
+
+}
 
 
 /**
@@ -120,7 +134,7 @@ void Push_Ping_Pong(uint32_t *data, uint32_t size)
 {
     extern void arm_stream_io_ack (uint8_t graph_io_idx, void *data, uint32_t size);
 
-    arm_stream_io_ack (IO_PLATFORM_ANALOG_SENSOR_0, (uint8_t *)data, size);
+    arm_stream_io_ack (IO_PLATFORM_SENSOR_0, (uint8_t *)data, size);
 }
 
 /**

@@ -35,8 +35,6 @@
 #ifndef cSTREAM_CONST_H
 #define cSTREAM_CONST_H
 
-#include "stream_common_const.h" 
-
 #define U(x) ((uint32_t)(x)) /* for MISRA-2012 compliance to Rule 10.4 */
 
 
@@ -50,24 +48,27 @@
 
     [0] header : size of the graph, compression used
     [1] interpreter version (TBD)
-    [2] memory consumption in bank 0-3 (0xFF = 100%, 0x3F = 25%)
+    [2] memory consumption in bank 0-3 (0xFF = +99%, 0x40 = 25%)
     [3] bank 4-7  (banks of long_offset[4-7])
     [4] bank 8-11 
     [5] bank 12-15  */
 
 #define GRAPH_HEADER_NBWORDS 6
 #define GRAPH_HEADER_POINTERS_NBWORDS 20
-    /* + 7 pairs of address + size :
+    /* + 7 pairs of {address + size} 
         [0] PIO HW decoding table
         [1] PIO Graph table, STREAM_IO_CONTROL (4 words per IO)
         [2] Scripts (when used with indexes)
         [3] Graph Linked-list of nodes
-        [4] "on going" flags
+        [4] "on going" flags    <-- start of RAM
         [5] stream formats
         [6] arc descriptors
-    if address[bits31-28] == 15 then the address is the offset in the graph
-    else the address is a 28bits packed address in RAM
-*/
+
+    if RD(table[SECTION_ADDR], COPY_IN_RAM_FMT0) == INPLACE_ACCESS_TAG
+    if address[bits30] == 1 then the address is an offset in the graph
+    else the address is a 29bits packed address in RAM and copy is made from graph data
+
+    */
 #define GRAPH_PIO_HW        0
 #define GRAPH_PIO_GRAPH     1
 #define GRAPH_SCRIPTS       2
@@ -77,14 +78,15 @@
 #define GRAPH_ARCS          6
 #define NB_HEADER_MEMORY_FIELDS (1+GRAPH_ARCS)
 
-#define COPY_IN_RAM_FMT0_MSB 31u
-#define COPY_IN_RAM_FMT0_LSB 28u /*  4  */
+#define COPY_IN_RAM_FMT0_MSB 30u
+#define COPY_IN_RAM_FMT0_LSB 30u /*  1  */
 
-#define SECTION_ADDR 0      /* first word pair */
+#define SECTION_ADDR 0          /* first word pair */
 #define SECTION_SIZE 1
-#define INPLACE_ACCESS 2
-#define SECTION_SIZE_BACK (SECTION_SIZE -INPLACE_ACCESS)
 #define INPLACE_ACCESS_TAG 1    /* COPY_IN_RAM_FMT0 field */
+    
+//#define INPLACE_ACCESS 2
+//#define SECTION_SIZE_BACK (SECTION_SIZE -INPLACE_ACCESS)
 
 
 
@@ -253,7 +255,7 @@
 #define          SCRIPT_SCRARCW1  U( 1) /* LENGTH use case UC0 */
 #define          RDFLOW_SCRARCW2  U( 2) /* READ use-case UC1 + ARCEXTEND_ARCW2  */
 #define        WRIOCOLL_SCRARCW3  U( 3) /* WRITE + STACK LENGTH + Flag logMaxCycles8b */
-#define          DBGFMT_SCRARCW4  U( 4) /*  */
+#define          DBGFMT_SCRARCW4  4 
 
           
 #define    unused____SCRARCW0_MSB U(31)    
@@ -295,12 +297,6 @@
 
 
 
-/*---------------- NODE STREAM_SET_PARAMETER -----------------------------
-    stream_scan_graph (STREAM_SET_PARAMETER, uint32_t *data) 
-        data -> list of [node idx; parameter address]..[0;0]
-*/
-#define MAX_NB_PENDING_PARAM_UPDATES 8  // size of the above list 
-
 /* ============================================================================================ */
 /* ======================================   NODES  ============================================ */ 
 /* ============================================================================================ */
@@ -331,7 +327,6 @@
 #define STREAM_INSTANCE_MIDLATENCYTASKS 2u
 #define STREAM_INSTANCE_BACKGROUNDTASKS 3u
 
-#define MAX_NB_STREAM_PER_NODE 8
 
                                /*   corresponds to "WHOAMI_PARCH_LSB" */ 
 #define   WHOAMI_LW0_MSB U(31) 
@@ -377,8 +372,8 @@
 #define ARC1D_LW1_MSB 27u
 #define  ARC1_LW1_LSB 16u /* 11  ARC1  11 usefull bits + 1 MSB to tell rx0tx1 */
                         
-#define un__0_LW1_MSB 15u 
-#define un__0_LW1_LSB 15u /*  1   */
+#define ALLOC_LW1_MSB 15u /*     graph compilation do not manage the memory allocation */  
+#define ALLOC_LW1_LSB 15u /*  1  the SWC dynamically returns the amount of memory it needs */
 #define   KEY_LW1_MSB 14u 
 #define   KEY_LW1_LSB 14u /*  1  two 64b KEYs are inserted after the memory pointers (word 2+2n)  */
 #define DBGB0_LW1_MSB 13u /*     debug register bank for ARC0 : debug-arc index of the debug data */
@@ -388,21 +383,23 @@
 #define ARC0D_LW1_MSB 11u
 #define  ARC0_LW1_LSB  0u /* 11  ARC0, (10 + 1 rx0tx1) up to 2K ARCs */
 
-        /* word 2+2n - FIRST WORD : memory banks address + SECOND WORD = size */
+
+
+        /* word2 pair - FIRST WORD : memory banks address + SECOND WORD = size */
 #define NBW32_MEMREQ_LW2  2u    /* there are two words per memory segments, to help programing the memory protection unit (MPU) */
 #define ADDR_LW2 0u             /*      one for the address */ 
 #define SIZE_LW2 1u             /*      one for the size of the segment */ 
 
-            /* base address of the memory segment */
-#define MEMSEGMENT_LW2_MSB SIZE_EXT_OFF_FMT0_MSB /* 28 = offsets(4) + EXT(3) + sign(1) + size(20) */
+        /* base address of the memory segment */
+#define MEMSEGMENT_LW2_MSB SIZE_EXT_OFF_FMT0_MSB /* 29 = offsets(5) + EXT(3) + sign(1) + size(20) */
 #define MEMSEGMENT_LW2_LSB SIZE_EXT_OFF_FMT0_LSB
 
-    /*  Memory Protection Unit (MPU)  has 8 memory segments : 4 memory segments per NODE (1 instance + 
-            3 segments) + 1 code + 1 stack + 1 IRQ + 1 Stream/services/script
-    */
+        /*  Memory Protection Unit (MPU)  has 8 memory segments : 4 memory segments per NODE (1 instance + 
+                3 segments) + 1 code + 1 stack + 1 IRQ + 1 Stream/services/script
+        */
 #define MAX_NB_MEM_REQ_PER_NODE U(6)    /* TO_SWAP_LW2S limits to 6 MAX and 4 MAX if memory protection is used */
 
-            /* word 2 SECOND WORD = size of the memory segment  + control on the first segment 
+        /* word2 pair - SECOND WORD = size of the memory segment  + control on the first segment 
                             if the segment is swapped, the 12-LSB bits give the ARC ID of the buffer 
                             and the memory size is given by the FIFO descriptor (BUFF_SIZE_ARCW1) */
 #define LW2S_NOSWAP 0u
@@ -418,7 +415,7 @@
 #define      SWAP_LW2S_LSB U(22) /*  1    */
 #define  EXT_SIZE_LW2S_MSB U(21) /*      extend SizeMax = 1M / 16M / 256M / 4G with EXT=0/1/2/3 */
 #define  EXT_SIZE_LW2S_LSB U(20) /*  2    */
-#define BUFF_SIZE_LW2S_MSB U(19) /* ###  overlaid with SWAPBUFID_LW2S in case of COPY / SWAP */
+#define BUFF_SIZE_LW2S_MSB U(19) /*      overlaid with SWAPBUFID_LW2S in case of COPY / SWAP */
 #define BUFF_SIZE_LW2S_LSB U( 0) /* 20   Wrd32-acurate up to 1MBwords x (1 << (4 * EXT_SIZE)) */
 
 #define SWAPBUFID_LW2S_MSB ARC0_LW1_MSB /*     ARC => swap source address in slow memory + swap length */
@@ -668,7 +665,7 @@
 #define     WRITE_ARCW3_LSB SIZE_EXT_FMT0_LSB /* 24 write read index  Byte-acurate up to 4MBytes starting from base address */
 
 
-#define        DBGFMT_ARCW4    U( 4) 
+#define        DBGFMT_ARCW4   4
 #define  TRACECMD_ARCW4_MSB U(31) /*  1 default tracing data estimation = data-rate (see Margo observability reports) */ 
 #define  TRACECMD_ARCW4_LSB U(31) /*      Margo (Latin word for ‘edge’) open standard for industrial automation */
 #define COMPUTCMD_ARCW4_MSB U(31)       
@@ -698,40 +695,44 @@
 #define LOGTMESTP_ARCW7_LSB U( 0) 
 
 //#define PLATFORM_IO 0                   /* 3 bits offets code for arcs external to the graph */
+#if DBGFMT_SCRARCW4 != DBGFMT_ARCW4
+#error "script descript size ERROR"
+#endif
 
 
 /* ============================================================================================ */
 /*================================= STREAM_IO_CONTROL (FLASH) ================================= */
-/* ============================================================================================ 
-    NBHWIOIDX_GR0_LSB/MSB = size of platform_io_al_idx_to_stream[] in W32 used for the translatin to IO graph indexes
+/* ======================================== pio_control ======================================= 
+    NBHWIOIDX_GR0_LSB/MSB = size of platform_io_al_idx_to_stream[] in W32 used for the translation to 
+        IO graph indexes
 
     4 bytes for the translation table HW->graph (platform_io_al_idx_to_stream)
      LSB 16b is a word index to STREAM_IO_CONTROL[]
      MSB byte is the IO affinity selection, used to make the "iomask" of the interpreter instance
 
-    This 2 steps schemes allows a 64bits iomas per graph intrerpreter instance (instead of 64kbits HW IOs)
-
 */
-#define TRANSLATE_PLATFORM_IO_AL_IDX_SIZE_W32 1 
-#define   WHOAMI_IO_CONTROL_MSB   WHOAMI_LW0_MSB
-#define PRIORITY_IO_CONTROL_MSB PRIORITY_LW0_MSB
-#define PRIORITY_IO_CONTROL_LSB PRIORITY_LW0_LSB
-#define   PROCID_IO_CONTROL_MSB   PROCID_LW0_MSB
-#define   PROCID_IO_CONTROL_LSB   PROCID_LW0_LSB
-#define   ARCHID_IO_CONTROL_MSB   ARCHID_LW0_MSB
-#define   ARCHID_IO_CONTROL_LSB   ARCHID_LW0_LSB
-#define   WHOAMI_IO_CONTROL_LSB   WHOAMI_LW0_LSB    /*  8 "who am I" which processor can activate this IO */
-        /* ... */
-#define IDX_TO_STREAM_IO_CONTROL_MSB U(15)  
-#define IDX_TO_STREAM_IO_CONTROL_LSB U( 0)          /* 16 INDEX to the graph STREAM_IO_CONTROL[] */  
+#define      TRANSLATE_PLATFORM_IO_AL_IDX_SIZE_W32 1 
+#define        WHOAMI_IO_CONTROL_MSB   WHOAMI_LW0_MSB
+#define      PRIORITY_IO_CONTROL_MSB PRIORITY_LW0_MSB
+#define      PRIORITY_IO_CONTROL_LSB PRIORITY_LW0_LSB
+#define        PROCID_IO_CONTROL_MSB   PROCID_LW0_MSB
+#define        PROCID_IO_CONTROL_LSB   PROCID_LW0_LSB
+#define        ARCHID_IO_CONTROL_MSB   ARCHID_LW0_MSB
+#define        ARCHID_IO_CONTROL_LSB   ARCHID_LW0_LSB
+#define        WHOAMI_IO_CONTROL_LSB   WHOAMI_LW0_LSB    /*  8 "who am I" which processor can activate this IO */
+#define        unused_IO_CONTROL_MSB      U(23)  
+#define        unused_IO_CONTROL_LSB      U(16)          /*  8 unused pio_control  */
+#define IDX_TO_STREAM_IO_CONTROL_MSB      U(15)  
+#define IDX_TO_STREAM_IO_CONTROL_LSB      U( 0)          /* 16 INDEX to the graph STREAM_IO_CONTROL[] */  
 #define NOT_CONNECTED_TO_GRAPH ((1<<(IDX_TO_STREAM_IO_CONTROL_MSB-IDX_TO_STREAM_IO_CONTROL_LSB+1))-1)
+
     /*
     The graph hold a table of uint32_t "stream_io_control" 
       arcID, direction, servant/commander, 
       set pointer/copy, buffer allocation, Domain, index to the AL
     
       example with a platform using maximum 10 IOs and a graph using "SENSOR_0" and "_DATA_OUT_0"
-          #define IO_PLATFORM_DATA_IN_0        0 
+          #define IO_PLATFORM_data_sink        0 
           #define IO_PLATFORM_DATA_IN_1        1 
           #define IO_PLATFORM_ANALOG_SENSOR_0  2   X
           #define IO_PLATFORM_MOTION_IN_0      3 
@@ -748,8 +749,8 @@
 
 #define MAX_IO_FUNCTION_PLATFORM 127u /* table of functions : platform_io[MAX_IO_FUNCTION_PLATFORM] */
                               
-#define IO_COMMAND_SET_BUFFER 0u    /* arc buffer used ping-pong, big buffer */
-#define IO_COMMAND_DATA_COPY  1u    /* copy : the IO has its own buffer */
+#define IO_COMMAND_SET_BUFFER 0u    /* graph arc base address is set by the IO driver's buffer address */
+#define IO_COMMAND_DATA_COPY  1u    /* copy to graph arc */
                               
 #define RX0_TO_GRAPH          0u
 #define TX1_FROM_GRAPH        1u
@@ -761,8 +762,10 @@
 
 #define    FWIOIDX_IOFMT0_MSB 31u   /*                    tmpi = RD(*pio_control, FWIOIDX_IOFMT0) */
 #define    FWIOIDX_IOFMT0_LSB 16u   /* 16 HW FW IDX  */
-#define     unused_IOFMT0_MSB 15u   
-#define     unused_IOFMT0_LSB 14u   /* 2  */
+#define  BUFFALLOC_IOFMT0_MSB 15u   
+#define  BUFFALLOC_IOFMT0_LSB 15u   /* 1  declare buffer in graph memory space */
+#define     unused_IOFMT0_MSB 14u   
+#define     unused_IOFMT0_LSB 14u   /* 1  */
 #define  SET0COPY1_IOFMT0_MSB 13u   
 #define  SET0COPY1_IOFMT0_LSB 13u   /* 1  command_id IO_COMMAND_SET_BUFFER / IO_COMMAND_DATA_COPY */
 #define   SERVANT1_IOFMT0_MSB 12u   

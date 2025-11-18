@@ -103,7 +103,7 @@ void arm_stream_amplifier (uint32_t command, void *instance, void *data, uint32_
 
             /* here reset */
             arm_amplitude_instance *pinstance = (arm_amplitude_instance *) *memresults;
-            pinstance->services = (stream_services *)data;
+            //pinstance->services = (stream_services *)data;
 
             memresults++;   /* memresult points to the */
 

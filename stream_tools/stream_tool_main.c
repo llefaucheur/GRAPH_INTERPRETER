@@ -28,36 +28,49 @@
 #include "stream_tool_include.h"
 #include "presets.h"
 
+#ifdef PLATFORM_ALIF1 
+#define GRAPH_TXT           "../../../stream_platform/alif1/graphs/graph_alif_audio.txt"     
+#define GRAPH_BIN           "../../../stream_platform/alif1/graphs/graph_alif_audio_bin.txt" 
+//#define GRAPH_TXT           "../../../stream_platform/alif1/graphs/graph_alif_1node.txt"       
+//#define GRAPH_BIN           "../../../stream_platform/alif1/graphs/graph_alif_1node_bin.txt"   
+
+#define GRAPH_TOP_MANIFEST  "../../../stream_platform/alif1/top_manifest_alif1.txt"
+#define GRAPH_HEADER        "../../../stream_platform/alif1/graphs/graph_alif_header.h"         /* list of labels to do "set_parameter" from scripts */
+#define GRAPH_DEBUG         "../../../stream_platform/alif1/graphs/graph_alif_debug.txt"        /* comments made during graph conversion  */
+#endif //PLATFORM_ALIF1
+
 #ifdef PLATFORM_COMPUTER 
+#define GRAPH_TXT           "../../../stream_platform/computer/graphs/graph_computer_router.txt"       /* graph */
+#define GRAPH_BIN           "../../../stream_platform/computer/graphs/graph_computer_router_bin.txt"   /* binary graph file */
 
-//#define GRAPH_TXT           "../../../stream_platform/computer/graph_computer_router.txt"     /* graph */
-//#define GRAPH_BIN           "../../../stream_platform/computer/graph_computer_router_bin.txt" /* binary graph file */
-#define GRAPH_TXT           "../../../stream_platform/computer/graph_computer.txt"     /* graph */
-#define GRAPH_BIN           "../../../stream_platform/computer/graph_computer_bin.txt" /* binary graph file */
- //#define GRAPH_TXT           "../../../stream_platform/computer/graph_computer_filter.txt"     /* graph */
-//#define GRAPH_BIN           "../../../stream_platform/computer/graph_computer_filter_bin.txt" /* binary graph file */
-//#define GRAPH_TXT           "../../../stream_platform/computer/graph_computer_filter_detector.txt"     /* graph */
-//#define GRAPH_BIN           "../../../stream_platform/computer/graph_computer_filter_detector_bin.txt" /* binary graph file */
+//#define GRAPH_TXT           "../../../stream_platform/computer/graphs/graph_computer_filter.txt"     /* graph */
+//#define GRAPH_BIN           "../../../stream_platform/computer/graphs/graph_computer_filter_bin.txt" /* binary graph file */
 
-#define GRAPH_TOP_MANIFEST  "../../../stream_platform/computer/manifest/top_manifest_computer.txt"
-#define GRAPH_HEADER        "../../../stream_platform/computer/graph_computer_header.h"  /* list of labels to do "set_parameter" from scripts */
-#define GRAPH_DEBUG         "../../../stream_platform/computer/graph_computer_debug.txt" /* comments made during graph conversion  */
+//#define GRAPH_TXT           "../../../stream_platform/computer/graphs/graph_computer_filter_detector.txt"     /* graph */
+//#define GRAPH_BIN           "../../../stream_platform/computer/graphs/graph_computer_filter_detector_bin.txt" /* binary graph file */
+
+//#define GRAPH_TXT           "../../../stream_platform/computer/graphs/graph_computer.txt"     /* graph */
+//#define GRAPH_BIN           "../../../stream_platform/computer/graphs/graph_computer_bin.txt" /* binary graph file */
+
+#define GRAPH_TOP_MANIFEST  "../../../stream_platform/computer/top_manifest_computer.txt"
+#define GRAPH_HEADER        "../../../stream_platform/computer/graphs/graph_computer_header.h"  /* list of labels to do "set_parameter" from scripts */
+#define GRAPH_DEBUG         "../../../stream_platform/computer/graphs/graph_computer_debug.txt" /* comments made during graph conversion  */
 #endif
 
 #ifdef PLATFORM_LPC55S69EVK 
 #define GRAPH_ALL_MANIFESTS "../../../stream_platform/lpc55s69evk/manifest/top_manifest_lpc55s69evk.txt"
-#define GRAPH_TXT           "../../../stream_platform/lpc55s69evk/graph_lpc55s69evk.txt"     /* graph */
-#define GRAPH_BIN           "../../../stream_platform/lpc55s69evk/graph_lpc55s69evk_bin.txt" /* binary graph file */
-#define GRAPH_HEADER        "../../../stream_platform/lpc55s69evk/graph_lpc55s69evk_header.h"  /* list of labels to do "set_parameter" from scripts */
-#define GRAPH_DEBUG         "../../../stream_platform/lpc55s69evk/graph_lpc55s69evk_debug.txt" /* comments made during graph conversion  */
+#define GRAPH_TXT           "../../../stream_platform/lpc55s69evk/graphs/graph_lpc55s69evk.txt"     /* graph */
+#define GRAPH_BIN           "../../../stream_platform/lpc55s69evk/graphs/graph_lpc55s69evk_bin.txt" /* binary graph file */
+#define GRAPH_HEADER        "../../../stream_platform/lpc55s69evk/graphs/graph_lpc55s69evk_header.h"  /* list of labels to do "set_parameter" from scripts */
+#define GRAPH_DEBUG         "../../../stream_platform/lpc55s69evk/graphs/graph_lpc55s69evk_debug.txt" /* comments made during graph conversion  */
 #endif
 
 #ifdef PLATFORM_MSPM0L1306 
 #define GRAPH_ALL_MANIFESTS "../../../stream_platform/lp-mspm0l1306/manifest/top_manifest_lp-mspm0l1306.txt"
-#define GRAPH_TXT           "../../../stream_platform/lp-mspm0l1306/graph_lp-mspm0l1306.txt"     /* graph */
-#define GRAPH_BIN           "../../../stream_platform/lp-mspm0l1306/graph_lp-mspm0l1306_bin.txt" /* binary graph file */
-#define GRAPH_HEADER        "../../../stream_platform/lp-mspm0l1306/graph_lp-mspm0l1306_header.h"  /* list of labels to do "set_parameter" from scripts */
-#define GRAPH_DEBUG         "../../../stream_platform/lp-mspm0l1306/graph_lp-mspm0l1306_debug.txt" /* comments made during graph conversion  */
+#define GRAPH_TXT           "../../../stream_platform/lp-mspm0l1306/graphs/graph_lp-mspm0l1306.txt"     /* graph */
+#define GRAPH_BIN           "../../../stream_platform/lp-mspm0l1306/graphs/graph_lp-mspm0l1306_bin.txt" /* binary graph file */
+#define GRAPH_HEADER        "../../../stream_platform/lp-mspm0l1306/graphs/graph_lp-mspm0l1306_header.h"  /* list of labels to do "set_parameter" from scripts */
+#define GRAPH_DEBUG         "../../../stream_platform/lp-mspm0l1306/graphs/graph_lp-mspm0l1306_debug.txt" /* comments made during graph conversion  */
 #endif
 
 extern void arm_stream_read_manifests (struct stream_platform_manifest *platform, char *all_files);

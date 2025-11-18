@@ -68,9 +68,9 @@ void arm_stream_null_task (int32_t c, stream_handle_t i, void *d, uint32_t *s)  
 
     const p_io_function_ctrl platform_io [LAST_IO_FUNCTION_PLATFORM] =
     {
-        (void *)&data_in_0,        // 0
+        (void *)&data_sink,        // 0
         (void *)&data_in_1,        // 1
-        (void *)&analog_sensor_0,  // 2
+        (void *)&sensor_0,         // 2
         (void *)&motion_in_0,      // 3
         (void *)&audio_in_0,       // 4
         (void *)&d2_in_0,          // 5
@@ -82,15 +82,15 @@ void arm_stream_null_task (int32_t c, stream_handle_t i, void *d, uint32_t *s)  
 */
 
 
-FILE* ptf_data_in_0;
+FILE* ptf_data_sink;
 FILE* ptf_data_in_1;
-FILE *ptf_analog_sensor_0;
+FILE *ptf_sensor_0;
 FILE *ptf_gpio_out_0;
 FILE *ptf_data_out_0;
 
 
-#define size_data_in_0 16
-static int16_t buffer_data_in_0[size_data_in_0 / sizeof(int16_t)];
+#define size_data_sink 16
+static int16_t buffer_data_sink[size_data_sink / sizeof(int16_t)];
 
 #define size_data_in_1 2
 static int16_t buffer_data_in_1[size_data_in_1 / sizeof(int16_t)];
@@ -102,16 +102,16 @@ static int16_t buffer_data_out_0[size_data_out_0/ sizeof(int16_t)];
 static uint32_t buffer_gpio_out_0[size_gpio_out_0/ sizeof(int32_t)];    // 96 Bytes = 24 samples_32b (=3 samples x 8 channels)
 
 /* 
-    multichannel tests 
+    multichannel tests          IO_AL_idx = 0
 */
-void data_in_0 (uint32_t command, stream_xdmbuffer_t *data) 
+void data_sink (uint32_t command, stream_xdmbuffer_t *data) 
 {
     int32_t tmp, stream_format_io_setting, count;
 
     switch (command)
     {
     case STREAM_RESET:
-        if (NULL == (ptf_data_in_0 = fopen("..\\stream_test\\data_in_0.wav", "rb"))) 
+        if (NULL == (ptf_data_sink = fopen("..\\stream_test\\data_sink.wav", "rb"))) 
         {
             exit(1);
         }
@@ -120,7 +120,7 @@ void data_in_0 (uint32_t command, stream_xdmbuffer_t *data)
             int i, c;
             for (i = 0; i < 64; i++)
             {
-                fread(&c, 1, 1, ptf_data_in_0); // skip WAV header
+                fread(&c, 1, 1, ptf_data_sink); // skip WAV header
             }
         }
         stream_format_io_setting = *(uint32_t*)(data->address);
@@ -131,25 +131,25 @@ void data_in_0 (uint32_t command, stream_xdmbuffer_t *data)
     {
         stream_xdmbuffer_t* pt_pt;
         pt_pt = (stream_xdmbuffer_t*)data;
-        pt_pt->address = (intptr_t)buffer_data_in_0;
-        pt_pt->size = size_data_in_0;
+        pt_pt->address = (intptr_t)buffer_data_sink;
+        pt_pt->size = size_data_sink;
     }
     break;
     case STREAM_RUN:
-        count = size_data_in_0 / sizeof(int16_t);
-        tmp = (int32_t)fread(buffer_data_in_0, sizeof(int16_t), count, ptf_data_in_0);
+        count = size_data_sink / sizeof(int16_t);
+        tmp = (int32_t)fread(buffer_data_sink, sizeof(int16_t), count, ptf_data_sink);
         if (tmp != count)
         {
-            arm_stream_io_ack(IO_PLATFORM_DATA_IN_0, buffer_data_in_0, 0);
-            fclose(ptf_data_in_0);
+            arm_stream_io_ack(IO_PLATFORM_data_sink, buffer_data_sink, 0);
+            fclose(ptf_data_sink);
         }
         else
         {
-            arm_stream_io_ack(IO_PLATFORM_DATA_IN_0, buffer_data_in_0, size_data_in_0);
+            arm_stream_io_ack(IO_PLATFORM_data_sink, buffer_data_sink, size_data_sink);
         }
         break;
     case STREAM_STOP:
-        fclose(ptf_data_in_0);
+        fclose(ptf_data_sink);
         break;
     default:
         break;
@@ -157,7 +157,7 @@ void data_in_0 (uint32_t command, stream_xdmbuffer_t *data)
 }
 
 /*
-*  Manifest declaration : io_set0copy1 0
+*  Graph declaration : set0copy1 0          IO_AL_idx = 1
 */
 void data_in_1 (uint32_t command, stream_xdmbuffer_t *data) 
 {   int32_t tmp, stream_format_io_setting, count;
@@ -205,9 +205,9 @@ void data_in_1 (uint32_t command, stream_xdmbuffer_t *data)
 }
 
 /*
-*  Manifest declaration : io_set0copy1 1
+*  Graph declaration : set0copy1 1       IO_AL_idx = 2  
 */
-void analog_sensor_0 (uint32_t command, stream_xdmbuffer_t *data) 
+void sensor_in_0 (uint32_t command, stream_xdmbuffer_t *data) 
 {   int32_t tmp, stream_format_io_setting;
 #define FORMAT_PRODUCER_FRAME_SIZE 8
 
@@ -215,13 +215,13 @@ void analog_sensor_0 (uint32_t command, stream_xdmbuffer_t *data)
     {
     case STREAM_RESET:
         //if (NULL == (ptf_in_stream_in_0_data = fopen("..\\stream_test\\sine_noise_offset.wav", "rb"))) 
-        if (NULL == (ptf_analog_sensor_0 = fopen("..\\stream_test\\chirp_M6dB.wav", "rb")))
+        if (NULL == (ptf_sensor_0 = fopen("..\\stream_test\\chirp_M6dB.wav", "rb")))
         {   exit ( 1); 
         }
         else 
         {   int i, c; 
             for(i=0;i<48;i++) 
-            { fread(&c,1,1,ptf_analog_sensor_0); // skip WAV header
+            { fread(&c,1,1,ptf_sensor_0); // skip WAV header
             }
         }
         stream_format_io_setting = *(uint32_t *)(data->address);          
@@ -232,25 +232,25 @@ void analog_sensor_0 (uint32_t command, stream_xdmbuffer_t *data)
         break;
     case STREAM_RUN:
         /* "io_platform_stream_in_0," frame_size option in samples + FORMAT-0 in the example graph */
-        tmp = (int32_t) fread(data, 1, FORMAT_PRODUCER_FRAME_SIZE, ptf_analog_sensor_0);
+        tmp = (int32_t) fread(data, 1, FORMAT_PRODUCER_FRAME_SIZE, ptf_sensor_0);
 
         if (FORMAT_PRODUCER_FRAME_SIZE != tmp)
-        {   arm_stream_io_ack (IO_PLATFORM_ANALOG_SENSOR_0, data, 0);
-            fclose (ptf_analog_sensor_0);
+        {   arm_stream_io_ack (IO_PLATFORM_SENSOR_0, data, 0);
+            fclose (ptf_sensor_0);
         }
         else
-        {   arm_stream_io_ack (IO_PLATFORM_ANALOG_SENSOR_0, (uint8_t *)data, FORMAT_PRODUCER_FRAME_SIZE);
+        {   arm_stream_io_ack (IO_PLATFORM_SENSOR_0, (uint8_t *)data, FORMAT_PRODUCER_FRAME_SIZE);
         }
         break;
     case STREAM_STOP:
-            fclose (ptf_analog_sensor_0);
+            fclose (ptf_sensor_0);
         break;
     default:
         break;        
     }
 }
 
-
+/*          IO_AL_idx = 3           */
 void motion_in_0 (uint32_t command, stream_xdmbuffer_t *data) 
 {
     switch (command)
@@ -272,6 +272,8 @@ void motion_in_0 (uint32_t command, stream_xdmbuffer_t *data)
         break;       
     }
 }
+
+/*          IO_AL_idx = 4          */
 void audio_in_0 (uint32_t command, stream_xdmbuffer_t *data) 
 {
     switch (command)
@@ -293,6 +295,9 @@ void audio_in_0 (uint32_t command, stream_xdmbuffer_t *data)
         break;      
     }
 }
+
+/*          IO_AL_idx = 5          */
+
 void d2_in_0 (uint32_t command, stream_xdmbuffer_t *data) 
 {
     switch (command)
@@ -314,6 +319,11 @@ void d2_in_0 (uint32_t command, stream_xdmbuffer_t *data)
         break;        
     }
 }
+
+
+
+/*          IO_AL_idx = 6          */
+
 void line_out_0 (uint32_t command, stream_xdmbuffer_t *data) 
 {
     switch (command)
@@ -337,7 +347,7 @@ void line_out_0 (uint32_t command, stream_xdmbuffer_t *data)
 }
 
 /*
-*  Manifest declaration : io_set0copy1 0
+*  Graph declaration : set0copy1 0          IO_AL_idx = 7
 */
 void gpio_out_0 (uint32_t command, stream_xdmbuffer_t *data) 
 {   
@@ -375,6 +385,9 @@ void gpio_out_0 (uint32_t command, stream_xdmbuffer_t *data)
     }
 }
 
+
+/*          IO_AL_idx = 8       */
+
 void gpio_out_1 (uint32_t command, stream_xdmbuffer_t *data) 
 {
     switch (command)
@@ -396,6 +409,9 @@ void gpio_out_1 (uint32_t command, stream_xdmbuffer_t *data)
         break;
     }
 }
+
+
+/*          IO_AL_idx = 9       */
 
 void data_out_0 (uint32_t command, stream_xdmbuffer_t *data) 
 {

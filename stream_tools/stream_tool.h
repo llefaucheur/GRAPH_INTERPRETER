@@ -229,7 +229,8 @@ struct processor_memory_bank
     uint32_t private_ram;       /* P    is it a private (processor ID) or shareable memory bank (= 0) */
     uint32_t access;            /* A    0 data/prog R/W, 1 data R, 2 R/W, 3 Prog, 4 R/W */
     uint32_t speed;             /* S    mem_speed_type 0:best effort, 1:normal, 2:fast, 3:critical fast */
-    uint32_t stat0work1ret2;    /* T    0 Static, 1 Retention, 2 scratch mem */
+    uint32_t stat0work1ret2;    /* T    0 Static, -1 Retention, ID of the mem used for swap */
+    int32_t  swapID;            /* W    offsetID of the bank used for swap.  -1:no swap */
 
 
     uint64_t ptalloc_static;        /* starting from 0 to size, working area follows */
@@ -298,7 +299,8 @@ struct arcStruct
     char IO_name[MAXCHAR_NAME];         // IO stream name used in the GUI
     char domainName[MAXCHAR_NAME];      // arc name used in the GUI 
 
-    uint32_t set0copy1;                // SET0COPY1_IOFMT data move through pointer setting of data copy 
+    uint32_t set0copy1;                 // SET0COPY1_IOFMT data move through pointer setting or data copy, defined by graph "arc_input" / "arc_output"
+    uint32_t buffalloc;                 // BUFFALLOC_IOFMT0 IO needs a buffer declared in the graph
     uint32_t commander0_servant1;       // SERVANT1_IOFMT selection for polling protocol 
     uint32_t sram0_hwdmaram1;           // buffer in standard RAM=0, in HW IO RAM=1 
     uint32_t processorBitFieldAffinity; // indexes of the processor in charge of this stream 
@@ -491,12 +493,11 @@ struct stream_platform_manifest
                                             static uint32_t TCM1[SIZE_MBANK_DMEMFAST]; 
                                             const int64_t long_offset[MAX_NB_MEMORY_OFFSET] = 
                                             {   (const int64_t) &(MEXT[0]),
-                                                (const int64_t) &(TCM1[0]),
-            */
+                                                (const int64_t) &(TCM1[0]), */
     uint32_t nbMemoryBank_shared_and_private;
     processor_memory_bank_t membank[MAX_PROC_MEMBANK];
 
-    uint32_t nb_hwio_stream;
+    //uint32_t nb_hwio_stream;
     struct arcStruct IO_arc[MAX_GRAPH_NB_HW_IO];   /* format of HW IO arcs */
 
     /* desired platform domains mapping to platform capabilities (fw_io_idx) TODO @@@@*/

@@ -1,0 +1,39 @@
+/* ----------------------------------------------------------------------
+ * top_manifest_computer.h
+ * -------------------------------------------------------------------- */
+
+
+ /*----------------------------------------PLATFORM MANIFEST--------------------------------------------
+                   +-----------------+
+                   | static |working |
+    +--------------------------------+
+    |external RAM  |        |        |
+    +--------------------------------+
+    |internal RAM  |        |        |
+    +--------------------------------+
+    |fast TCM      |  N/A   |        |
+    +--------------+--------+--------+
+ */
+ // MEMORY BANKS
+
+#define MBANK_GRAPH     0               /* share graph base address */
+#define MBANK_DMEMFAST  1               /* not shared DTCM Cortex-M/LLRAM Cortex-R, swapped between NODE calls if static */
+
+#define SIZE_MBANK_DMEM_EXT    500000   /* general purpose          */
+#define SIZE_MBANK_DTCM         1000    /* simulates DTCM           */
+#define SIZE_MBANK_ITCM         1000    /* simulates ITCM           */
+#define SIZE_MBANK_RETENTION     100    /* simulates retention      */
+
+
+
+/* warning : changing the indexes impacts all the graphs */
+#define IO_PLATFORM_DATA_SINK        0 
+#define IO_PLATFORM_DATA_IN_1        1 
+#define IO_PLATFORM_ANALOG_SENSOR_0  2 
+#define IO_PLATFORM_MOTION_IN_0      3 
+#define IO_PLATFORM_AUDIO_IN_0       4 
+#define IO_PLATFORM_2D_IN_0          5 
+#define IO_PLATFORM_LINE_OUT_0       6 
+#define IO_PLATFORM_GPIO_OUT_0       7 
+#define IO_PLATFORM_GPIO_OUT_1       8 
+#define IO_PLATFORM_DATA_OUT_0       9

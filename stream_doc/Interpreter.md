@@ -249,8 +249,6 @@ The "Top" platform manifest has four sections :
     ;       or other ones. The system integrator decides with this field to 
     ;       manage the flow errors with buffer interpolation (0) or ASRC (other clock domain index)
     ;       The clock domain index is just helping to group and synchronize the data flow per domain.
-  - 
-
 - the list of the nodes already installed in the device. This is also a list of manifest files giving a formal way to describe how to connect the nodes each others
 
 ```
@@ -470,12 +468,12 @@ The "command" parameter can be : STREAM_SET_PARAMETER, STREAM_DATA_START, STREAM
 When the IO is "Commander" it calls arm_graph_interpreter_io_ack() when data is read
 When the IO is "Servant" the scheduler call p_io_function_ctrl(STREAM_RUN, ..) to ask for data move. Once the move is done the IO driver calls arm_graph_interpreter_io_ack()
 
-### io_set0copy1 "0/1"
+### io_buffer_alloc_in_graph "0/1"
 
-Declares if the IO stream is using a pointer provided by the scheduler (the pointer is **set** value 0), or if the data needs to be copied from the IO internal buffer to the graph arc buffer (**copy** value 1). 
+Declares if the IO stream is using a memory area provided by the scheduler (default 0).
 
 ```
-io_set0copy1      1     ; data will be copied from/to the IO pointer to/from the arc buffer (rx/tx IO)
+io_buffer_alloc_in_graph  1  ; data buffer is allocated in the graph
 ```
 
 ### io_direction_rx0tx1 "0/1"
@@ -536,7 +534,7 @@ io_setup_time  12.5 ; wait 12.5ms before receiving valid data
 
 Syntax : "physical unit name" "coefficient a" "coefficient b" "maximum value". Rescaling information between normalized (1.0  or 0x7FFF) digital ("D") and physical ("P") units with the formulae P = a x (D - b).
 
-See file "Table.md" for the list of available Units from RFC8798 and RFC8428.
+See file [Units](#Units) for the list of available Units from RFC8798 and RFC8428.  
 
 ```
 io_units_rescale  vrms  0.0135  -10.1  0.15
@@ -596,7 +594,7 @@ io_sampling_rate_accuracy  0.01   ; in percentage, or 100ppm
 
 ### io_time_stamp_format "option"
 
-See file "Table.md" for the definition of time-stamp format inserted before each frame :
+See file [Units](#Units) for the definition of time-stamp format inserted before each frame :
 
 - 0: no time stamp
 - 1: simple counter
@@ -612,17 +610,11 @@ io_time_stamp_format {1 39 41 } ; time-stamp format options
 
 ## IO Controls Bit-fields per domain
 
-The graph starts with a table of 4 words per IO. The first word is used to connect the IO with the graph (arc index, direction, index of the AL function associated to). Three 32bits words are reserved for specific tuning items of their domains, they are named W1, W2 and W3 below.
-
-
-
-### All domain : sampling-rate (W1)
-
-Word1 bits 0..5 : selection of one of the 63 possible sampling-rates as defined in the IO manifest (see io_sampling_rate).
+The graph starts with a table of 4 words per IO. The first word is used to connect the IO with the graph (arc index, direction, index of the AL function associated to). Three 32bits words are reserved for specific tuning items of their domains, named W1 and W2 below.
 
 ### Domain audio_in and audio_out
 
-#### Domain audio_in setting word 1
+#### Domain audio_in setting W1
 
 Channel mapping with a bit-field (20 channels description see [audio channels](#Audio-stream-format)) :
 
@@ -653,10 +645,10 @@ Rear Right Height     TBR        17
 Graph syntax example :
 
 ```
-stream_io_setting 15 ; selection of the four first channels 
+stream_io_setting 15 ; selection four channels 
 ```
 
-#### Domain audio_in setting word 2
+#### Domain audio_in setting W2
 
 Control of the gains and filters
 
@@ -688,22 +680,19 @@ io_audio_fhigh_filter    {1  4000 8000     }   ; options for frequencies
 | io_ghigh_filter | 3  | high frequency gain in dB                     |
 | io_fhigh_filter | 2  | filter frequencies                            |
 
-#### Domain audio_in setting word 3
-
-Not used
 
 
+### Domain GPIO
 
-### Domain gpio_in and gpio_out
-
-#### Domain gpio_in setting word 1
+#### Domain GPIO setting word 1
 
 | Field name | nb bits | comments |
 | --------- | ------- | -------- |
-|   State        |      3   |      High-Z, low, high    |
+|   State        |      3   |    High-Z, low, high, detection (in/out).    |
 |  type     |    3   |  PWM, motor control, GPIO   |
 |  control         |     3    |   PWM duty, duration, frequency (buzzer)       |
-|           |         |          |
+| debouncing | 1 | pin debouncing control |
+| edge | 2 | interrupt edge and polarity control (rising, falling, both, disabled) |
 
  Domain gpio_in/out setting word 2 and word 3 are not used.
 
@@ -733,10 +722,7 @@ Metadata pattern detection activation and sensitivity
 
 ### Domain 2d_in and 2d_out
 
-#### Domain 2d setting word 1
-#### Domain 2d setting word 2
-#### Domain 2d setting word 3
-
+#### Domain 2d setting word 1 & word 2
 | Feature name                         | bits | Description                                                  |
 | -------------------------------------| -- | ------------------------------------------------------------ |
 | io_raw_format_2d                     | 3  | (U16 + RGB16) (U8 + Grey) (U8 + YUV422)  https://gstreamer.freedesktop.org/documentation/additional/design/mediatype-video-raw.html?gi-language=c  <br/> YCbCr 4:2:2 (16b/pixel), RGB 8:8:8 (24b/pixel) |
@@ -894,15 +880,17 @@ Example
 
 ### node_mask_library    "n" 
 
-The graph interpreter offers a short list of optimized DSP/ML and Math functions optimized for the platform using dedicated vector insttructions and coprocessors. 
-Some platform may not incorporate all the libraries, the "node_mask_library" is a bit-field associate to one of the librarry service. 
+The graph interpreter offers a short list of optimized DSP/ML and Math functions optimized for the platform using dedicated vector instructions and coprocessors. 
+Some platform may not incorporate all the libraries, the "node_mask_library" is a bit-field associate to one of the library service. 
 This list of service is specially useful when the node is delivered in binary format.
 
-bit 4 for the STDLIB library (string.h, malloc)
-bit 5 for MATH (trigonometry, random generator, time processing)
-bit 6 for DSP_ML (filtering, FFT, 2D convolution-8bits)
-bit 7 for audio codecs
-bit 8 for image and video codec
+bit 2 for the STDLIB library (string.h, malloc)
+bit 3 for MATH (trigonometry, random generator, time processing)
+bit 4 for DSP_ML (filtering, FFT, 2D convolution-8bits)
+
+bit 5 for 8bits linear algebra for neural networks
+bit 6 for audio codecs
+bit 7 for image and video codec
 
 Example :
 
@@ -948,20 +936,18 @@ Example :
  node_complexity_index 1e5 1e6 ; maximum number of cycles at initialization time and execution of a frame
 ```
 
-### node_complexity_index    "n"
+### node_dynamic_malloc
 
-For information and debug to set a watchdog timer: the parameters give the maximum amount of cycles for the initialization of the node and the processing of a frame.
+The node memory allocation is not pre-computer a graph compilation stages, but dynamically during the RESET sequence of the node. The scheduler starts the reset sequence asking for the number of bytes per memory segment (see node_mem "index"  below). It allocates the memory and restart the reset sequence with the pointers to physical memory.
 Example :
 
 ```
- node_complexity_index 1e5 1e6 ; maximum number of cycles at initialization time and execution of a frame
+ node_dynamic_malloc ; the node returns at reset time the amount of bytes per memory segment
 ```
-
-node_not_reentrant
 
 ### node_not_reentrant  
 
-Information of reentrancy :  the function cannot be called again before it completes its previous execution. Default nodes are reentrant.
+Information of reentrancy :  the node cannot be called again before it completes its previous execution. Default nodes are reentrant.
 Example :
 
 ```
@@ -999,15 +985,15 @@ The size can be a simple number of bytes or a computed number coupled to a funct
 The total memory allocation size in bytes = 
 
 ```
-   A + 							   fixed memory allocation in Bytes (default 0) 
-   B x frame_size(mono) of arc(i) or max(input/output arcs) or their sum +
-   C x frame_size(mono) x nb_channel of arc(j) + 
-   D x nb_channels of arc(k) +     
+   A + 							   fixed memory allocation in Bytes  
+   B x frame_size(mono) of arc(i) or max(input/output arcs) or their sum   +
+   C x frame_size(mono) x nb_channel of arc(j)   + 
+   D x nb_channels of arc(k)   +     
    parameter from the graph        optional field "node_malloc_add" 
 
 ```
 
-**The first memory block** **is the** **node instance**, followed by other blocks. This block has the index #0.
+The first memory block is the node instance, followed by other blocks. This first block has the index #0.
 
 ### node_mem "index"           
 
@@ -1015,7 +1001,7 @@ The command is used to start a memory block declaration with the index in the pa
 Example :
 
 ```
- node_mem 0    ; starts the declaration section of memory block #0 
+ node_mem 0    ; starts the declaration section of memory block #0 (its instance)
 ```
 
 ### node_mem_alloc  "A"
@@ -1059,7 +1045,7 @@ node_mem_frame_size 2 arc 0 ; declare the 2x multichannel frame size of arc #0
 Declaration of extra memory in proportion to the number of channel of arcs 
 
 ```
-node_mem_nbchan 44 arc 1 ; add 44 x nb of channels of arc 1 bytes
+node_mem_nbchan 44 maxin ; add 44 x maximum nb of channels of input arcs
 ```
 
 ### node_mem_alignment "n"
@@ -1149,7 +1135,7 @@ The absolute index value selects the default value in this range.
 Example of is an option list of values (1, 1.2, 1.4, 1.6, 1.8, .. , 4.2), the index is -3 meaning the default value is the third in the list (value = 1.4).
 
 ```
-  { -3  1 0.2 4.2 } 
+  { -3  1  0.2  4.2 } 
 ```
 
 ### node_arc "n"
@@ -1200,7 +1186,7 @@ Example :
 
 ### node_arc_units_scale "unit" "scale"
 
-Command used when the node needs the streams to be rescaled to absolute scaled units (See paragraph "Units" of [Tables.md](Tables.md)).
+Command used when the node needs the streams to be rescaled to absolute scaled units (See paragraph "Units" of [Units](#Units)).
 
 ```
     node_arc_units_scale VRMS  0.15  ; full-scale is equivalent to 0.15 VRMS
@@ -1208,7 +1194,7 @@ Command used when the node needs the streams to be rescaled to absolute scaled u
 
 ### node_arc_units_scale_multiple "unit" "scale"
 
-Command used when the node needs the streams to be rescaled to absolute scaled units and there are multiple units in sequence (See paragraph "Units" of [Tables.md](Tables.md)).
+Command used when the node needs the streams to be rescaled to absolute scaled units and there are multiple units in sequence (See paragraph "Units" of [Units](#Units)).
 
 ```
     node_arc_units_scale_multiple DPS 360 GAUSS 0.002 
@@ -1239,7 +1225,7 @@ A value "0" means "any duration" which is the default.
 Example :
 
 ```
-    node_arc_frame_duration {1 10 22.5}  frame of 10ms (default) or 22.5ms
+node_arc_frame_duration {1 10 22.5}  frame of 10ms (default) or 22.5ms
 ```
 
 ### node_arc_sampling_rate "fs"
@@ -1248,7 +1234,7 @@ Declaration of the allowed options for the node_arc_sampling_rate in Hertz.
 Example :
 
 ```
-    node_arc_sampling_rate {1 16000 44100} ; sampling rate options, 16kHz is the default value if not specified 
+node_arc_sampling_rate {1 16000 44100} ; sampling rate options, 16kHz is the default value if not specified 
 ```
 
 ### node_arc_sampling_period_s  "T"
@@ -1258,7 +1244,7 @@ A value "0" means "any duration" which is the default.
 Example :
 
 ```
-    node_arc_sampling_period_s {-2 0.1 0.1 1}  frame sampling going from 100ms to 1000ms, with default 200ms
+node_arc_sampling_period_s {-2 0.1 0.1 1}  frame sampling going from 100ms to 1000ms, with default 200ms
 ```
 
 ### node_arc_sampling_period_day "D"
@@ -1268,7 +1254,7 @@ A value "0" means "any duration" which is the default.
 Example :
 
 ```
-    node_arc_sampling_period_day {-2 1 1 30}  frame sampling going from 1 day to 1 month with steps of 1 day.
+node_arc_sampling_period_day {-2 1 1 30}  frame sampling going from 1 day to 1 month with steps of 1 day.
 ```
 
 ### node_arc_sampling_accuracy  "p"
@@ -1278,7 +1264,7 @@ The command parameter is in percent.
 Example :
 
 ```
-    node_arc_sampling_accuracy  0.1  ; sampling rate accuracy is 0.1%
+node_arc_sampling_accuracy  0.1  ; sampling rate accuracy is 0.1%
 ```
 
 
@@ -1289,7 +1275,7 @@ The arc descriptors are different but the base address of the buffers are identi
 Example :
 
 ```
- node_arc_inPlaceProcessing  1 2   ; in-place processing can be made between arc 1 and 2
+node_arc_inPlaceProcessing  1 2   ; in-place processing can be made between arc 1 and 2
 ```
 
 --------------------------------------
@@ -1312,8 +1298,8 @@ During "reset" sequence of the graph the node are initialized. Nothing prevents 
 
 General programming guidelines of Node : 
 
-- Nodes must be C callable, or respecting the EABI.
-- Nodes are reentrant, or this must be mentioned in the manifest.
+- Nodes must be C callable, or any other language respecting the EABI.
+- Nodes are reentrant, or if not this must be mentioned in the manifest.
 - Data are treated as little endian by default.
 - Data references are relocatable, there is no “hard-coded” data memory locations.
 - All Node code must be fully relocatable: there cannot be hard coded program memory locations.
@@ -1583,7 +1569,7 @@ Service command bit-fields :
 | 31-28      | control  | set/init/run w/wo wait completion, in case of coprocessor usag |
 | 27-24      | options  | compute accuracy, in-place processing, frame size            |
 | 23-4       | function | Operation/function within the Group                          |
-| 3-0 (LSB)  | Group    | index to the groups of services : <br/>SERV_INTERNAL     1 <br/>SERV_SCRIPT       2 <br/>SERV_CONVERSION   3  : raw data format conversion (fp32 to int16, etc..)<br/>SERV_STDLIB       4 : extract of string and stdlib.h (atof, memset, strstr, malloc..)<br/>SERV_MATH         5 : extract of math.h (srand, sin, tan, sqrt, log..)<br/>SERV_DSP_ML       6 : filtering, spectrum fixed point and integer<br/>SERV_DEEPL        7 : fully-connected and convolutional network <br/>SERV_MM_AUDIO     8 : audio codecs (TBD)<br/>SERV_MM_IMAGE     9 : image processing (TBD) |
+| 3-0 (LSB)  | Group    | index to the groups of services : <br/SERV_INTERNAL     1 <br/>SERV_STDLIB       2 : extract of string and stdlib.h (atof, memset, strstr, malloc..)<br/>SERV_MATH         3 : extract of math.h (srand, sin, tan, sqrt, log..)<br/>SERV_DSP_ML       4 : filtering, spectrum fixed point and integer<br/>SERV_DEEPL        5 : fully-connected and convolutional network <br/>SERV_MM_AUDIO     6 : audio codecs (TBD)<br/>SERV_MM_IMAGE     7 : image processing (TBD) |
 
 TODO : application_callbacks (or scripts)
 
@@ -1886,64 +1872,19 @@ time-stamp format :
 Usage context of this command is for the section "B" of above chapter "IO control and stream data formats".
 Example `format_domain 2   ; this format uses specific details of audio out domain `
 
-| DOMAIN    | CODE | COMMENTS                                                     |
-| --------- | ---- | ------------------------------------------------------------ |
-| GENERAL   | 0    | (a)synchronous sensor, electrical, chemical, color, remote data, compressed streams, JSON, SensorThings, application processor |
-| AUDIO_IN  | 1    | microphone, line-in, I2S, PDM RX                             |
-| AUDIO_OUT | 2    | line-out, earphone / speaker, PDM TX, I2S,                   |
-| MOTION    | 4    | accelerometer, combined or not with pressure and gyroscope audio_in microphone, line-in, I2S, PDM RX |
-| 2D_IN     | 5    | camera sensor audio_out line-out, earphone / speaker, PDM TX, I2S, |
-| 2D_OUT    | 6    | display, led matrix, gpio_in generic digital IO              |
-
-
-### Information specific of domains 
-
-Word 3 of "Formats" holds specific information of each domain.
-
-#### Audio
-
-Audio channel mapping is encoded on 20 bits. For example a stereo channel holding "Back Left" and "Back Right" will be encoded as 0x0030.
-
-| Channel name          | Name | Bit  |
-| --------------------- | ---- | ---- |
-| Front Left            | FL   | 0    |
-| Front Right           | FR   | 1    |
-| Front Center          | FC   | 2    |
-| Low Frequency         | LFE  | 3    |
-| Back Left             | BL   | 4    |
-| Back Right            | BR   | 5    |
-| Front Left of Center  | FLC  | 6    |
-| Front Right of Center | FRC  | 7    |
-| Back Center           | BC   | 8    |
-| Side Left             | SL   | 9    |
-| Side Right            | SR   | 10   |
-| Top Center            | TC   | 11   |
-| Front Left Height     | TFL  | 12   |
-| Front Center Height   | TFC  | 13   |
-| Front Right Height    | TFR  | 14   |
-| Rear Left Height      | TBL  | 15   |
-| Rear Center Height    | TBC  | 16   |
-| Rear Right Height     | TBR  | 17   |
-| Channel 19            | C19  | 18   |
-| Channel 20            | C20  | 19   |
-
-#### Motion
-
-Motion sensor channel mapping (w/wo the temperature)
-
-| Motion sensor data | Code |
-| ------------------ | ---- |
-| only acceleromete  | 1    |
-| only gyroscope     | 2    |
-| only magnetometer  | 3    |
-| A + G              | 4    |
-| A + M              | 5    |
-| G + M              | 6    |
-| A + G + M          | 7    |
-
-#### 2D
-
-Format of the images in pixels: height, width, border.
+| DOMAIN            | CODE   | COMMENTS                                                     |
+| ----------------- | ------ | ------------------------------------------------------------ |
+| GENERAL           | 0      | (a)synchronous sensor, electrical, chemical, color, remote data, compressed streams, JSON, SensorThings, application processor |
+| AUDIO_IN          | 1      | microphone, line-in, I2S, PDM RX                             |
+| AUDIO_OUT         | 2      | line-out, earphone / speaker, PDM TX, I2S,                   |
+| GPIO              | 3      | generic digital IO, control of relay, timer ticks            |
+| MOTION            | 4      | accelerometer, combined or not with pressure and gyroscope   |
+| 2D_IN             | 5      | camera sensor                                                |
+| 2D_OUT            | 6      | display, led matrix                                          |
+| ANALOG_IN         | 7      | analog sensor with aging/sensitivity/THR control, example : light, pressure, proximity, humidity, color, voltage |
+| ANALOG_OUT        | 8      | D/A, position piezo, PWM converter                           |
+| USER_INTERFACE    | 9      | button, slider, rotary button, LED, digits, display control  |
+| PLATFORM SPECIFIC | 10..15 | platform-specific #1..6, used with platform callbacks        |
 
 -----------------------------------------
 
@@ -1976,24 +1917,24 @@ See also [IO Controls Bit-fields per domain](#IO-Controls-Bit-fields-per-domain)
 Example
 
 ```
-stream_io_setting 7812440 0 0 ; 0=default restting at reset
+stream_io_setting 7812440 0 ; 0=default restting at reset
 ```
 
-### stream_io_setting_callback "cb" "X" 
+### stream_io_setting_callback "X" "Y" 
 
-The function "platform_init_stream_instance()" initializes the interpreter pointers to the callbacks proposed by the platform. 
-Example 
+Initializes the IO using a platform callback.  Example 
 
 ```
-    stream_io_setting_callback 6 7812440 ; Use callback 6 for the setting of the  
-                    ; current stream_io_graph using parameter 7812440 
+ stream_io_setting_callback 6 7812440 ; Use the platform io_setting callback for the 
+;	current stream_io_graph using parameters 6 7812440 
 ```
 
 -----------------------------------------
 
 ## Graph: memory mapping 
 
-Split the memory mapping to ease memory overlays between nodes and arcs by defining new memory-offset index ("ID").
+Split the memory mapping to ease memory overlays between nodes and arcs by defining new memory-offset index ("ID"). Other use-case: split the TCM memory between the LOWLATENCYTASKS and the others.
+
 Format : ID, new ID to use in the node/arc declarations, byte offset within the original ID, length of the new memory offset.
 
 ```
@@ -2090,12 +2031,16 @@ Example :
     node_trace_id  0      ; IO port 0 is used to send the trace 
 ```
 
-### node_map_proc, node_map_arch, node_map_rtos
+### node_map_proc, node_map_arch, node_map_thread
 
 The graph can be executed in a multiprocessor and multi tasks platform. Those commands allow the graph interpreter scheduler to skip the nodes not associated to the current processor / architecture and task.
 The platform can define 7 architectures and 7 processors. When the parameter is not defined (or with value 0) the scheduler interprets it as "any processor" or "any architecture" can execute this node.
 Several OS threads can interpret the graph at the same time. A parameter "0" means any thread can execute this node, and the value "1" is associated to low-latency tasks, "3" to background tasks. 
 Examples :
+
+```
+node_map_proc 2 	; the node will only be executed on processor 2
+```
 
 ### node_memory_isolation  "0/1"
 
@@ -2108,16 +2053,16 @@ Example :
 
 ### node_memory_clear "m"
 
-Debug and security feature: Clear the memory bank "m" before and after the execution of the node.  
+Debug feature: clear the memory bank "m" before and after the execution of the node.  
 Example : 
 
 ```
-   node_memory_clear 2 ; clear the memory bank 2 as seen in the manifest before and after execution 
+   node_memory_clear 2 ; clear the bank 2 from manifest before and after execution 
 ```
 
-### node_script "index"
+### node_script "index" 
 
-The indexed script is executed before and after the node execution. The conditional is set on the first call and cleared on the second call.
+The indexed script is executed before and after the node execution. The conditional flag is set on the first call and cleared before calling the following calls.
 Example :
 
 ```
@@ -2311,6 +2256,11 @@ syscall index command param1 param2 param3
 | 7 (low-level functions)          | TBD, peek/poke directly to memory, direct access to IOs (I2C driver, GPIO setting, interrupts generation and settings) |
 | 8 (idle controls)                | TBD, Share to the application the recommended Idle strategy to apply (small or deep-sleep). |
 | 9 (time)                         | R1: command and time format <br/>R2: parameter1 (depends on CB)<br/>R3: parameter2 (depends on CB)<br/>R4: parameter3 (depends on CB) |
+| 10 (Script)                      | R1: command  (call before/after node execution)<br/>R2: infomation1 (node offset) |
+|                                  |                                                              |
+|                                  |                                                              |
+
+
 
 ------
 
@@ -2534,7 +2484,7 @@ Words 0, 1 and 2 are common to all domains :
 | 2    | 0..7   | reserved                                                     |
 | 2    | 8..31  | IEEE-754 FP32 truncated to 24bits (S-E8-M15), 0 means "asynchronous" |
 
-## Stream format Word 3
+## Stream format Word 1
 
 Word 3 of "Formats" holds specific information of each domain.
 
@@ -2596,13 +2546,7 @@ Format of the images in pixels: height, width, border. The "extension" bit-field
 | brightness          | 4          | display control                                              |
 | contrast            | 4          | display control                                              |
 
-## Stream format Word 4
 
-Domain-specific, TBD
-
-## Stream format Word 5
-
-Domain-specific, TBD
 
 ------
 
@@ -2829,11 +2773,12 @@ The default memory configuration is "shared" meaning the buffers associated with
 To have individual static memory associated to a script the "script_mem_shared" must be 0.
 
 Special functions activated with Syscall and conditional instructions:
-      - lock   : a block of nodes to a processor to have good cache performance, 
-            - if-then: a block of nodes based on script decision (FIFO content/debug registers, ..)
 
-   - loop   : repeat a list of node several time for cache efficiency and small frame size
-   - Checks if the data it needs is available and returns to the scheduler
+- if-then: a block of nodes based on script decision (FIFO content/debug registers, ..)
+- loop : repeat a list of node several time for cache efficiency and small frame size
+- end thread : the script is the last one before a list of low-priority nodes (see "node_map_thread") and we can flush the on going IO (check_graph_boundaries()) and/or return to the application.
+
+
 
 ```
 node arm_stream_script 1  ; script (instance) index           
@@ -2933,7 +2878,8 @@ Example with the router with two stereo input arcs and two output arcs. The firs
             1  u8;  3                   ; nb output channels
             1  u8;  255                 ; arc used with HQOS: none
             1  u8;  1                   ; accuracy level (1..4)
-            1 f32;  0.0004              ; 0.4ms processing granularity (6.4 @16k, 12.8 @32k, 19.2 @48kHz)
+            1 f32;  0.0004              ; 0.4ms processing granularity (6.4 samples @16kHz
+            							;   12.8 samples @32kHz, 19.2 @48kHz)
     ;
             3  u8;  0 0  2              ; FIFO 0  Left arc0 to arc 2 (for Mixer 0)
             3  u8;  0 0  3              ; FIFO 1  Left arc0 to arc 3
@@ -2981,7 +2927,7 @@ TAG_CMD = 3, uint8_t, set/reset mute state
 TAG_CMD = 4, uint16_t, delay before applying unmute, in samples
 TAG_CMD = 5, uint16_t, delay before applying mute, in samples
 
-lopes of rising and falling gains, identical to all channels
+Slopes of rising and falling gains, identical to all channels
 slope coefficient = 0..15 (iir_coef = 1-1/2^coef = 0 .. 0.99)
 Convergence time to 90% of the target in samples:
  slope   nb of samples to converge
@@ -3003,10 +2949,10 @@ Convergence time to 90% of the target in samples:
     15       75450
     convergence in samples = abs(round(1./abs(log10(1-1./2.^[0:15])'))
 
- Operation : applies vq = interp1(x,v,xq) 
+ Operation : applies vq = **interp1**(x,v,xq) 
  Following https://fr.mathworks.com/help/matlab/ref/interp1.html
    linear of polynomial interpolation (implementation)
- Parameters : X,V vectors, size max = 32 points
+ **Parameters : X,V vectors, size max = 32 points**
 
 no preset ('0')
 
@@ -3078,17 +3024,12 @@ Default gain = 4  (12dB)
 ```
 node arm_stream_filter 0         node subroutine name + instance ID
     node_preset         1        ; parameter preset used at boot time, default = #0
-    node_map_hwblock    0  0     ; list of "nb_mem_block" VID indexes of
-    							 ; "procmap_manifest_xxxx.txt" where to map
-                                 ; the allocated memory
-                                 ;  default = #0
-
-    parameters     0             ; TAG   "load all parameters"
+    parameters          0        ; TAG   "load all parameters"
         1  u8;  2       Two biquads
-        1  i8;  0       postShift
+        1  i8;  0       unused
         5 f32; 0.284277f 0.455582f 0.284277f 0.780535f -0.340176f  
         5 f32; 0.284277f 0.175059f 0.284277f 0.284669f -0.811514f 
-        ; or  _include    1   arm_stream_filter_parameters_x.txt      (path + file-name)
+        ; or  include    1 arm_stream_filter_parameters_x.txt      (path + file-name)
     end
 end
 ```
@@ -3141,7 +3082,7 @@ end
 ## arm_stream_demodulator (TBD)
 
  Operation : decode a bit-stream from analog data. Use-case: IR decoder, CAN/UART on SPI/I2S audio.
- Parameters : clock and parity setting or let the algorithm discover the frame setting after some time. https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter
+ Parameters : clock and parity setting or let the algorithm discover the frame setting after some time. https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter and https://github.com/Arduino-IRremote/Arduino-IRremote https://www.arduinolibraries.info/categories/display https://www.arduinolibraries.info/categories/display
 
 presets control :
 #1 .. 10: provision for  demodulators
@@ -3166,7 +3107,9 @@ end
 
 ## arm_stream_filter2D (TBD)
 
-Filter, rescale/zoom/extract, rotate, exposure compensation. Channel mixer : insert a portion of the processed image in a larger frame buffer.
+Filter, rescale/zoom/extract, rotate, exposure compensation, background removal. 
+
+Channel mixer : insert a portion of the processed image in a larger frame buffer.
 
 Operation : 2D filters 
 Parameters : spatial and temporal filtering, decimation, distortion, color mapping/log-effect
@@ -3220,13 +3163,11 @@ end
 
 ## sigp_stream_detector2D (TBD)
 
-Motion and pattern detector (lines)
+Motion and pattern detector. Counting moving object and build a text report (object sizes, shape, speed, color, ..) to be later processed by SLM on the application processor.
 
 Operation : detection of movement(s) and computation of the movement map
 Parameters : sensitivity, floor-noise smoothing factors
 Metadata : decimated map of movement detection
-
-
 
 ```
 node arm_stream_detector2D (i)

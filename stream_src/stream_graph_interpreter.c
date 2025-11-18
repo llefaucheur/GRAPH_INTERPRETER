@@ -31,14 +31,9 @@
 
 
 #include <stdint.h>
+#include "../stream_platform/stream_includes.h"  
 
-#include <stdint.h>
-#include "stream_common_const.h"
-#include "stream_common_types.h"
-#include "stream_const.h"
-#include "stream_types.h"
-#include "stream_extern.h"
-#include <string.h>       
+
 
 /*
    Main entry point, used by the application s
@@ -66,16 +61,15 @@ void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uintptr
     {
         /* usage: arm_stream(STREAM_RESET, &instance,graph_input, 0); */
 	    case STREAM_RESET: 
-	    {   extern void platform_init_stream_instance(arm_stream_instance_t *S);
-            platform_init_stream_instance (S);
-            stream_scan_graph (S, STREAM_RESET, 0);
+	    {   platform_init_stream_instance (S);
+            graph_interpreter_process (S, STREAM_RESET, 0);
             break;
         }
 
 
         /* usage: arm_stream(STREAM_RUN, &instance,0, 0); */
 	    case STREAM_RUN:   
-	    {   stream_scan_graph (S, STREAM_RUN, 0);
+	    {   graph_interpreter_process (S, STREAM_RUN, 0);
             break;
         }   
 
@@ -86,14 +80,14 @@ void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uintptr
                 2) call arm_graph_interpreter (STREAM_SET_PARAMETER, &instance, node offset, 0); 
          */
         case STREAM_SET_PARAMETER:
-	    {   stream_scan_graph (S, STREAM_SET_PARAMETER, ptr1);
+	    {   graph_interpreter_process (S, STREAM_SET_PARAMETER, ptr1);
             break;
         }
 
 
         /* usage: arm_graph_interpreter (STREAM_STOP, &instance, 0, 0); */
         case STREAM_STOP:
-	    {   stream_scan_graph (S, STREAM_STOP, 0);
+	    {   graph_interpreter_process (S, STREAM_STOP, 0);
             break;
         }
 

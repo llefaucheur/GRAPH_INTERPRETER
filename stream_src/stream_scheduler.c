@@ -30,12 +30,7 @@
 #endif
     
 #include <stdint.h>
-#include "presets.h"
-#include "stream_common_const.h"
-#include "stream_common_types.h"
-#include "stream_const.h"      /* graph list */
-#include "stream_types.h"
-#include "stream_extern.h"
+#include "stream_includes.h"
 
 
 static void read_header (arm_stream_instance_t *S);
@@ -91,44 +86,6 @@ static void stream_calls_node (arm_stream_instance_t *S,
     ST(S->scheduler_control, NODEEXEC_SCTRL, 0);
 }
 
-
-/**
-  @brief        unpack a 27-bits address to physical address
-  @param[in]    offset     table of long offsets of idx_memory_base_offset
-  @param[in]    data       packed address
-  @return       inPtr_t    address in the format of the processor
-
-  @par          A graph gives the address of buffers as indexes ("packed address") in a 
-                way independent of the memory mapping of the processor interpreting the graph.
-                The scheduler of each Stream instance sends a physical address to the Nodes
-                and translates here the indexes to physical address using a table of offsets.
- */
-static intptr_t pack2linaddr_int(uint32_t x, uint8_t ** LL)
-{
-    intptr_t R;
-#if 0
-    {   uint8_t *long_base;                                     
-        uint8_t extend;                                         
-        int32_t signed_base;                                    
-                                                            
-        long_base = LL[x];                                       
-        signed_base = RD(x, SIGNED_SIZE_FMT0);                  
-        signed_base = signed_base << (32-SIGNED_SIZE_FMT0_MSB); 
-        signed_base = signed_base >> (32-SIGNED_SIZE_FMT0_MSB); 
-        extend = (uint8_t)RD(x, EXTENSION_FMT0);                
-        signed_base <<= (extend << 1);                          
-        R = (intptr_t)(&(long_base[signed_base]));              
-    }
-#else
-    PACK2LIN(R,LL,x);
-#endif
-    return R;  
-}
-
-static void * pack2linaddr_ptr(uint32_t data, uint8_t ** long_offset)
-{
-    return (void *) (pack2linaddr_int(data, long_offset));
-}
 
 /**
   @brief        debug script 
@@ -206,20 +163,20 @@ static uint8_t * arc_extract_info_pt (arm_stream_instance_t *S, uint32_t *arc, u
 {
     uintptr_t read;
     uintptr_t write;
-    uint8_t *long_base;
-    uint8_t *ret;
+    uintptr_t long_base;
+    uint8_t *ret, *base;
 
-    PACK2LIN(read, (S->long_offset), arc[0]);
-    long_base = (uint8_t *) read;
-
-    read =  RD(arc[2], READ_ARCW2);
-    write = RD(arc[3], WRITE_ARCW3);
+    /* read the base address of the FIFO buffer */
+    pack2lin(&long_base, arc[BUF_PTR_ARCW0], (S->long_offset));
+    base = (uint8_t *)long_base;
+    read =  RD(arc[RDFLOW_ARCW2], READ_ARCW2);
+    write = RD(arc[WRIOCOLL_ARCW3], WRITE_ARCW3);
 
     switch (tag)
     {
-    case arc_read_address : ret = &(long_base[read]); 
+    case arc_read_address : ret = base + read; 
         break;
-    case arc_write_address: ret = &(long_base[write]); 
+    case arc_write_address: ret = base + write;
         break;
     default : ret = 0u; 
     }
@@ -374,12 +331,12 @@ static void arc_data_operations (
     uintptr_t read;
     uintptr_t write;
     uintptr_t size;
-    uint8_t *long_base;
+    uintptr_t long_base;
     uint8_t *src;
-    uint8_t* dst;
+    uint8_t* dst, *base;
 
-    PACK2LIN(read, (S->long_offset), arc[0]);
-    long_base = (uint8_t *) read;
+    pack2lin(&long_base, arc[0], S->long_offset);
+    base = (uint8_t *)long_base;
 
     switch (tag)
     {
@@ -387,14 +344,14 @@ static void arc_data_operations (
     /*   or, buffer is empty but R/W are at the end of the buffer => reset/loop the indexes */ 
 
     case arc_data_realignment_to_base:
-        read =  RD(arc[2], READ_ARCW2);
+        read = RD(arc[2], READ_ARCW2);
         if (read == 0u)
         {   break;      /* buffer is full there is nothing to realign */
         }
         write = RD(arc[3], WRITE_ARCW3);
         size = U(write - read);
-        src = &(long_base[read]);
-        dst =  long_base;
+        src = base + read;
+        dst =  base;
         MEMCPY (dst, src, (uint32_t)size);
 
         /* update the indexes Read=0, Write=dataLength */
@@ -410,7 +367,7 @@ static void arc_data_operations (
         /* only one node can read the write-index at a time : no collision is possible */
         write = RD(arc[3], WRITE_ARCW3);
         src = buffer;
-        dst = &(long_base[write]);
+        dst = base + write;
         MEMCPY (dst, src, (uint32_t)datasize);
         write = write + datasize;
         ST(arc[3], WRITE_ARCW3, write);
@@ -422,14 +379,14 @@ static void arc_data_operations (
     case data_moved_from_arc  : 
         /* only one node can update the read-index at a time : no collision is possible */
         read = RD(arc[2], READ_ARCW2);
-        src = &(long_base[read]);
+        src = base + read;
         dst = buffer;
         MEMCPY (dst, src, (uint32_t)datasize);
         break;
 
     case data_swapped_with_arc:
         read = RD(arc[2], READ_ARCW2);
-        src = &(long_base[read]);
+        src = base + read;
         dst = buffer;
         {   uint32_t loop;
             uint8_t x;
@@ -509,45 +466,30 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
 
     narc = (uint8_t) RD((S->node_header)[0], NBARCW_LW0);
 
-    for (iarc = 0; iarc < narc; iarc++)
-    {   uint8_t arc_ready, hqos;
-
-        arcID = S->arcID[iarc];
-        arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
-        hqos = RD(arc[3], HIGH_QOS_ARCW2);
-
-        if (ARC_RX0TX1_TEST & arcID)
-        {   arc_ready = arc_ready_for_write(S, arc, &tmp);  /* TX arc */
-        }
-        else
-        {   arc_ready = arc_ready_for_read(S, arc, &tmp);   /* RX arc */
-        } 
-
-        if (arc_ready != 0 && hqos != 0)    /* if high QoS arc with data     */
-        {   ret = 1;                        /* then force a call to the node */
-            break;
-        } 
-        else
-        {   ret = ret & arc_ready;  /* else consolidate decision on all arcs */
-        }
-    }   
-
-    if ((0u == pre0post1) && (0u == ret))
-    {   return (ret);     /* arcs are not ready, stop execution */
-    }
-
-
     for (iarc = 0u; iarc < narc; iarc++)
     {   
+        uint8_t arc_ready, hqos;
+
         arcID = (S->arcID[iarc]);
         arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
         read = RD(arc[2], READ_ARCW2);
         write = RD(arc[3], WRITE_ARCW3);
         fifosize =  RD(arc[1], BUFF_SIZE_ARCW1);
+        hqos = RD(arc[3], HIGH_QOS_ARCW2);
 
         if (ARC_RX0TX1_TEST & arcID)        /* is it a TX arc ? */
         {   if (0u == pre0post1)
-            {   xdm_data[iarc].address = (intptr_t)(arc_extract_info_pt (S, arc, arc_write_address));
+            {   
+                arc_ready = arc_ready_for_write(S, arc, &tmp);  
+                if (arc_ready != 0 && hqos != 0)    /* if high QoS arc with data     */
+                {   ret = 1;                        /* then force a call to the node */
+                    break;
+                } 
+                else
+                {   ret = ret & arc_ready;  /* else consolidate decision on all arcs */
+                }
+
+                xdm_data[iarc].address = (intptr_t)(arc_extract_info_pt (S, arc, arc_write_address));
                 xdm_data[iarc].size    = arc_extract_info_int (arc, arc_free_area);
             }
             else /* TX - post-processing */
@@ -574,6 +516,14 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
         else                                /* RX arc case */
         {   if (0u == pre0post1)
             {   
+                arc_ready = arc_ready_for_read(S, arc, &tmp);
+                if (arc_ready != 0 && hqos != 0)    /* if high QoS arc with data     */
+                {   ret = 1;                        /* then force a call to the node */
+                    break;
+                } 
+                else
+                {   ret = ret & arc_ready;  /* else consolidate decision on all arcs */
+                }
                 /* if the NODE generating the input data was blocked (ALIGNBLCK_ARCW3=1) 
                     then it is the responsibility of the consumer node (current SWC) to realign the 
                     data, and clear the flag. 
@@ -619,6 +569,10 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
         }
     }
 
+    if ((0u == pre0post1) && (0u == ret))
+    {   return (ret);     /* arcs are not ready, stop execution */
+    }
+
 
     /* if critical fast memory is relocatable => use STREAM_UPDATE_RELOCATABLE  
     *  from external script
@@ -647,7 +601,8 @@ static uint8_t arc_index_update (arm_stream_instance_t *S, stream_xdmbuffer_t *x
 void load_clear_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1)
 {
     uint8_t imem;
-    intptr_t *memaddr;
+    uint8_t *lw2s;
+    uintptr_t memaddr;
     uint32_t *memreq, memReqWord2;
     uintptr_t memlen;
     
@@ -657,25 +612,26 @@ void load_clear_memory_segments (arm_stream_instance_t *S, uint8_t pre0post1)
     
     for (imem = 0; imem < MAX_NB_MEM_REQ_PER_NODE; imem++)
     {   
-        memaddr = (intptr_t *)pack2linaddr_ptr (memreq[NBW32_MEMREQ_LW2 * imem + ADDR_LW2], (uint8_t **)S->long_offset);
+        pack2lin(&memaddr, memreq[NBW32_MEMREQ_LW2 * imem + ADDR_LW2], S->long_offset);
+        lw2s = (uint8_t *)memaddr;
         memReqWord2 = memreq[NBW32_MEMREQ_LW2 * imem + SIZE_LW2];
 
         /* swap memory with the arc buffer "SWAPBUFID" */ 
         if (TEST_BIT(memReqWord2, SWAP_LW2S_LSB))
-        {   uint8_t arcID;
+        {   uint16_t arcID;
             uint32_t *arc;
 
-            arcID = (uint8_t) RD(*memaddr, SWAPBUFID_LW2S);
+            arcID = RD(memReqWord2, SWAPBUFID_LW2S);
             arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
             memlen = RD(arc[1], BUFF_SIZE_ARCW1);
 
-            arc_data_operations (S, arc, data_swapped_with_arc, (uint8_t *)memaddr, memlen);
+            arc_data_operations (S, arc, data_swapped_with_arc, lw2s, memlen);
         }
 
         /* clear memory */
         if (TEST_BIT(memreq[NBW32_MEMREQ_LW2 * imem + SIZE_LW2], CLEAR_LW2S_LSB))
         {   memlen = RD(memreq[NBW32_MEMREQ_LW2 * imem + SIZE_LW2], BUFF_SIZE_LW2S);
-            MEMSET(memaddr, 0, memlen);
+            MEMSET(lw2s, 0, memlen);
         }
     }      
 }
@@ -726,8 +682,11 @@ static int dbgc;
         
         /* a previous request is in process or if the IO is commander on the interface, then no 
             need to ask again */
-        if ((TEST_BIT(*ongoing, ONGOING_IO_LSB)) ||
-            (IO_IS_COMMANDER0 == TEST_BIT(*pio_control, SERVANT1_IOFMT0_LSB)))
+        if ((TEST_BIT(*ongoing, ONGOING_IO_LSB)) 
+            #ifndef _MSC_VER // no IO with master protocol on a PC
+            || (IO_IS_COMMANDER0 == TEST_BIT(*pio_control, SERVANT1_IOFMT0_LSB))
+            #endif      
+            )
         {   continue;
         }
 
@@ -854,10 +813,8 @@ static uint32_t check_hwsw_compatibility(arm_stream_instance_t *S)
  */
 
 
-void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uintptr_t data) 
+void graph_interpreter_process (arm_stream_instance_t *S, int8_t command, uintptr_t data) 
 {   
-    static long DEBUG_CNT;
-
     /* parameter change : call from a script or from  arm_graph_interpreter(STREAM_SET_PARAMETER...) 
         data -> line index of the node in the graph
         parameters are in the global list (in RAM) of [node idx; parameter address]..[0;0] 
@@ -890,8 +847,8 @@ void stream_scan_graph (arm_stream_instance_t *S, int8_t command, uintptr_t data
 
         /* read the linked-list until finding the NODE index "LAST_WORD" */
 	    do 
-        {   DEBUG_CNT++; if (DEBUG_CNT == 3)
-                DEBUG_CNT = DEBUG_CNT;
+        {   /*  static long DEBUG_CNT; DEBUG_CNT++; if (DEBUG_CNT == 3)
+                DEBUG_CNT = DEBUG_CNT; //for break points */
             
             /* check the boundaries of the graph, not during end/stop periods */
             if (command == STREAM_RUN) 
@@ -1003,7 +960,10 @@ static void read_header (arm_stream_instance_t *S)
         0);     /* command */
 
     /* physical address of the instance (descriptor address for scripts) */
-    S->node_instance_addr = (stream_handle_t)pack2linaddr_int(S->node_header[S->node_memory_banks_offset], (uint8_t **)S->long_offset);
+    {   uintptr_t tmp;
+        pack2lin(&tmp, S->node_header[S->node_memory_banks_offset], S->long_offset);
+        S->node_instance_addr = (void *)tmp;
+    }
 
     /* read the arc indexes */
     TX_found = 0;
@@ -1147,6 +1107,11 @@ static uint8_t unlock_this_component (arm_stream_instance_t *S)
                  graph, close to the component index. The temporary buffer holds the data format
                  of the input and output arcs
 
+                 memreq_physical [] prepared for the Node :
+                 index                      comment
+                 [0 .. NALLOCM1_LW0]        one word addres per memomry segment
+                 [NALLOCM1_LW0+1 ..+4]      optional user key + platform key (2 x 64b)
+                 last key .. +4             4 words of Rx or Tx Formats of each arc
   @remark
  */
 
@@ -1159,57 +1124,93 @@ static void reset_component (arm_stream_instance_t *S)
     #define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (STREAM_FORMAT_SIZE_W32*MAX_NB_STREAM_PER_NODE))
     intptr_t memreq_physical[MEMRESET];
     
-    nbmem = (uint8_t)RD(S->node_header[0], NALLOCM1_LW0);
-    nbmem ++;
-    memreq_physical[0] = (intptr_t)(S->node_instance_addr);
 
-    /* start the loop with the second memory bank */
+    /* reset the component with the parameter TraceID (6bits) */
+    ST(S->pack_command, COMMAND_CMD, STREAM_RESET);
+    ST(S->pack_command, NODE_TAG_CMD, RD((S->node_header)[S->node_parameters_offset], TRACEID_LW4));
+
+    /* number of memory segment used by the SWC */
+    imem = (uint8_t)RD(S->node_header[0], NALLOCM1_LW0) +1;
+    imem_graph = NBW32_MEMREQ_LW2;
     memreq = &(S->node_header[S->node_memory_banks_offset]);
-    imem_graph = NBW32_MEMREQ_LW2;          
-    for (imem = 1; imem < nbmem; imem++)
-    {   /* create pointers to the right memory bank */
-        memreq_physical[imem] = pack2linaddr_int(memreq[imem_graph], (uint8_t **)S->long_offset);
-        imem_graph += NBW32_MEMREQ_LW2;
-    }
-    
-    /* are there keys to share */
+
+    /* are there keys to share, if yes insert the graph/user key and the platform key */
     if (RD(S->arcID[0], KEY_LW1))
-    {   
-        memreq_physical[imem] = memreq[imem_graph];    imem ++; /* user key */
-        memreq_physical[imem] = memreq[imem_graph +1]; imem ++;
-        
-        arm_stream_services (PACK_SERVICE(NOCOMMAND_SSRV,NOOPTION_SSRV,NOTAG_SSRV, SERV_INTERNAL_KEYEXCHANGE, SERV_GROUP_INTERNAL), (uintptr_t)&key, 0, 0, 0);
-        memreq_physical[imem] = key[0]; imem ++;    /* platform key */
-        memreq_physical[imem] = key[1]; imem ++;
+    {   memreq_physical[imem] = memreq[imem_graph];     imem++; /* user key */
+        memreq_physical[imem] = memreq[imem_graph + 1]; imem++;
+
+        arm_stream_services(PACK_SERVICE(NOCOMMAND_SSRV, NOOPTION_SSRV, NOTAG_SSRV, SERV_INTERNAL_KEYEXCHANGE, SERV_GROUP_INTERNAL), (uintptr_t)&key, 0, 0, 0);
+        memreq_physical[imem] = key[0]; imem++;                 /* platform key */
+        memreq_physical[imem] = key[1]; imem++;
     }
 
     /* push the FORMAT of the arcs */
-    narc = (uint8_t) (MIN(MAX_NB_STREAM_PER_NODE, RD(S->node_header[0], NBARCW_LW0)));
+    narc = (uint8_t)(MIN(MAX_NB_STREAM_PER_NODE, RD(S->node_header[0], NBARCW_LW0)));
 
     for (j = 0; j < narc; j++)
-    {   uint32_t *F, ifmt, arcID, *arc, tmp;
+    {   uint32_t* F, ifmt, arcID, * arc, tmp;
 
         arcID = (S->arcID)[j];
         arc = &(S->all_arcs[SIZEOF_ARCDESC_W32 * (ARC_RX0TX1_CLEAR & arcID)]);
         if (ARC_RX0TX1_TEST & arcID)        // is it a TX arc ? push the "producer" format 
-        {   tmp =  RD(arc[4],PRODUCFMT_ARCW4);
+        {   tmp = RD(arc[4], PRODUCFMT_ARCW4);
         }
         else
-        {   tmp =  RD(arc[4],CONSUMFMT_ARCW4); // is it a RX arc ? push the "consumer" format 
+        {   tmp = RD(arc[4], CONSUMFMT_ARCW4); // is it a RX arc ? push the "consumer" format 
         }
 
         ifmt = STREAM_FORMAT_SIZE_W32 * tmp;
         F = &(S->all_formats[ifmt]);
         for (iformat = 0; iformat < STREAM_FORMAT_SIZE_W32; iformat++)
-        {   memreq_physical[imem++] = F[iformat]; 
+        {   memreq_physical[imem++] = F[iformat];
         }
-    }      
-    
+    }
 
-    /* reset the component with the parameter TraceID (6bits) */
-    ST(S->pack_command, COMMAND_CMD, STREAM_RESET);  
+    nbmem = (uint8_t)RD(S->node_header[0], NALLOCM1_LW0) +1;
+
+    /* the SWC is asking for dynamic allocation of memory instead of preallocated */
+    if (0 != RD(S->node_header[1], ALLOC_LW1))
+    {   
+        /* ask memory size per segment, returned in memreq_physical[] */
+        ST(S->pack_command, COMMDEXT_CMD, COMMDEXT_DYN_MALLOC);
+
+        stream_calls_node(S,
+            (void*)memreq_physical,
+            (void*)arm_stream_services,
+            &check);
+
+        /* start the loop with the second memory bank */
+        for (imem = 0; imem < nbmem; imem++)
+        {   uint32_t command = ST(command, FUNCTION_SSRV, STREAM_MALLOC);
+            uintptr_t segment_address = 0;
+
+            command = PACK_SERVICE(0, 0, 0, STREAM_MALLOC, SERV_GROUP_STDLIB);
+            arm_stream_services(                                        
+                command, segment_address, 0 /* static/w/retention, speed TODO */, 0, 
+                (uint32_t)memreq_physical[imem]
+            );
+
+            memreq_physical[imem] = segment_address;
+        }
+    }
+    /* memory was pre-allocated at graph compilation steps */
+    else
+    {
+        uintptr_t tmp;
+        memreq_physical[0] = (intptr_t)(S->node_instance_addr);
+
+        /* start the loop with the second memory bank */
+        memreq = &(S->node_header[S->node_memory_banks_offset]);
+        for (imem = 1; imem < nbmem; imem++)
+        {   /* create pointers to the right memory bank */
+            pack2lin(&tmp, memreq[imem_graph], (uint8_t **)S->long_offset);
+            memreq_physical[imem] = tmp;
+            imem_graph += NBW32_MEMREQ_LW2;
+        }
+    }
+    
+    /* reset the component with the allocated memory */
     ST(S->pack_command, COMMDEXT_CMD, RD(S->scheduler_control, BOOT_SCTRL));   // warm / cold boot selection   
-    ST(S->pack_command, NODE_TAG_CMD, RD((S->node_header)[S->node_parameters_offset], TRACEID_LW4));
 
     stream_calls_node (S,
         (void *) memreq_physical, 

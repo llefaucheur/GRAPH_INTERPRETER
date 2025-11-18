@@ -86,6 +86,7 @@ void arm_stream_script (uint32_t command, void *instance, void *data, uint32_t *
 
             /* "data" is the Stream interpreter instance, for access to the services */
             pinstance->services = (stream_services *)data;
+
             break;
         }
 

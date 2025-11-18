@@ -41,16 +41,20 @@ extern void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, 
 extern void arm_stream_io_ack (uint8_t io_al_idx, void *data,  uint32_t size);
 
 /* entry point from the computing nodes */
-extern void arm_stream_services (uint32_t service_command, uintptr_t ptr1, uintptr_t ptr2, uintptr_t ptr3, uintptr_t n);
+extern void arm_stream_services(uint32_t command, intptr_t ptr1, intptr_t ptr2, intptr_t ptr3, intptr_t n);
 
+/* check the need for memory swaps, to let the graph memory being overlaid by the application data */
+void arm_memory_swap(arm_stream_instance_t* S);
+
+extern void platform_init_stream_instance(arm_stream_instance_t* S);
+
+extern void pack2lin(uintptr_t* R, uint32_t x, uint8_t** LL);
 
 /* ---- REFERENCES --------------------------------------------*/
 
 extern int32_t stream_bitsize_of_raw(uint8_t raw);
 
-extern void stream_scan_graph (arm_stream_instance_t *stream_instance, int8_t command, uintptr_t data);
-
-extern void * pack2linaddr_ptr(uint32_t data, uint8_t **long_offset);
+extern void graph_interpreter_process (arm_stream_instance_t *stream_instance, int8_t command, uintptr_t data);
 
 #ifdef __cplusplus
 }

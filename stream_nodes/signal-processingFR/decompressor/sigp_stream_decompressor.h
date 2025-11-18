@@ -51,7 +51,7 @@
 #define DECODER_JPEG             12 
 
 
-#define STATE_DEFAULT_SIZE 4                    /* node_malloc_add  defines the effective size, depending on presets/Codec selection  */
+#define STATE_generic_SIZE 4                    /* node_malloc_add  defines the effective size, depending on presets/Codec selection  */
 
 typedef struct
 {
@@ -67,7 +67,7 @@ typedef struct
             pause
     */
     uint8_t decoder_state; 
-    uint32_t memory_state[STATE_DEFAULT_SIZE];      
+    uint32_t memory_state[STATE_generic_SIZE];      
 
 } sigp_stream_decompressor_instance;
 

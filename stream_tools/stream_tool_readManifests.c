@@ -30,7 +30,6 @@
 #endif
     
 
-#define _CRT_SECURE_NO_DEPRECATE
 #include <stdio.h>    
 #include <string.h>
 #include <stdint.h>
@@ -215,6 +214,9 @@ void read_platform_io_stream_manifest(char* inputFile, struct arcStruct *IO_arc)
     {
         if (COMPARE(io_commander0_servant1))
         {   fields_extract(&pt_line, "ci", cstring, &(IO_arc->commander0_servant1)); 
+        }
+        if (COMPARE(io_buffer_alloc_in_graph))
+        {   fields_extract(&pt_line, "ci", cstring, &(IO_arc->buffalloc));
         }
         if (COMPARE(io_direction_rx0tx1))
         {   fields_extract(&pt_line, "ci", cstring, &(IO_arc->rx0tx1));
@@ -508,6 +510,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     uint32_t istream, imem;
     uint32_t nb_paths, ipath, io_al_idx, iproc, i;
     extern uint8_t globalEndFile;
+    uint32_t index_mem;
     char *inputFile;
 
     strcpy(graph_platform_manifest_name, "");
@@ -535,46 +538,53 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
 
     for (imem = 0; imem < platform->nb_shared_memory_banks; imem++)
     {        
-        fields_extract(&pt_line, "iiiii", 
+        fields_extract(&pt_line, "iiiiii", 
             &(platform->membank[imem].offsetID),        /* MEMID long_offset64 index addressing the range of the memory bank */
             &(platform->membank[imem].size),            /* SIZE which size is guaranteed for graph operations */
             &(platform->membank[imem].access),          /* A    0 data/prog R/W, 1 data R, 2 R/W, 3 Prog, 4 R/W */
             &(platform->membank[imem].speed),           /* S    mem_speed_type 0:best effort, 1:normal, 2:fast, 3:critical fast */
-            &(platform->membank[imem].stat0work1ret2)   /* T    0 Static, 1 Retention, 2 scratch mem */
+            &(platform->membank[imem].stat0work1ret2),  /* T    0 Static, 1 working/scratch , 2 Retention */
+            &(platform->membank[imem].swapID)           /* W    offsetID of the bank used for swap.  -1:no swap */
         );
         platform->membank[imem].private_ram = 0;
     }
 
+    /* index_mem = 0 means "any mememory bank", so we start here at >0 */
+    index_mem = platform->nb_shared_memory_banks;
 
 
     /*
         STEP 3 : list of processors and their private memories and IOs
         proc ID, arch ID, main proc, nb mem, service mask, I/O
         1        1        1          2       15            7  
-    */
-    for (iproc = 0; iproc < platform->nb_processors; iproc++)
-    {   uint32_t index_mem;
 
-        fields_extract(&pt_line, "iiiiii", 
-            &(platform->processor[platform->nb_processors].processorID),             /* proc ID */     
-            &(platform->processor[platform->nb_processors].architectureID),          /* arch ID */
-            &(platform->processor[platform->nb_processors].IamTheMainProcessor),     /* main proc flag */
-            &(platform->processor[platform->nb_processors].nb_private_memory_banks), /* nb private memory bank */
-            &(platform->processor[platform->nb_processors].libraries_b),             /* service bit field */
-            &(platform->processor[platform->nb_processors].nb_hwio_processor)        /* nb of IOs in affinity with this processor */
+        TODO : allow VID to be identical on different processors
+    */
+
+    for (iproc = 0; iproc < platform->nb_processors; iproc++)
+    {   fields_extract(&pt_line, "iiiiii", 
+            &(platform->processor[iproc].processorID),             /* proc ID */     
+            &(platform->processor[iproc].architectureID),          /* arch ID */
+            &(platform->processor[iproc].IamTheMainProcessor),     /* main proc flag */
+            &(platform->processor[iproc].nb_private_memory_banks), /* nb private memory bank */
+            &(platform->processor[iproc].libraries_b),             /* service bit field */
+            &(platform->processor[iproc].nb_hwio_processor)        /* nb of IOs in affinity with this processor */
         );
 
-        index_mem = platform->nbMemoryBank_shared_and_private;
-        for (imem = 0; imem < platform->processor[platform->nb_processors].nb_private_memory_banks; imem++, index_mem++)
+        
+
+        for (imem = 0; imem < platform->processor[iproc].nb_private_memory_banks; imem++)
         {        
-            fields_extract(&pt_line, "iiiii", 
-                &(platform->membank[index_mem].offsetID),        /* MEMID long_offset64 index addressing the range of the memory bank */
-                &(platform->membank[index_mem].size),            /* SIZE which size is guaranteed for graph operations */
-                &(platform->membank[index_mem].access),          /* A    0 data/prog R/W, 1 data R, 2 R/W, 3 Prog, 4 R/W */
-                &(platform->membank[index_mem].speed),           /* S    mem_speed_type 0:best effort, 1:normal, 2:fast, 3:critical fast */
-                &(platform->membank[index_mem].stat0work1ret2)   /* T    0 Static, 1 Retention, 2 scratch mem */
+            fields_extract(&pt_line, "iiiiii", 
+                &(platform->membank[index_mem].offsetID),       /* MEMID long_offset64 index addressing the range of the memory bank */
+                &(platform->membank[index_mem].size),           /* SIZE which size is guaranteed for graph operations */
+                &(platform->membank[index_mem].access),         /* A    0 data/prog R/W, 1 data R, 2 R/W, 3 Prog, 4 R/W */
+                &(platform->membank[index_mem].speed),          /* S    mem_speed_type 0:best effort, 1:normal, 2:fast, 3:critical fast */
+                &(platform->membank[index_mem].stat0work1ret2), /* T    0 Static, 1 working/scratch , 2 Retention */
+                &(platform->membank[index_mem].swapID)          /* W    offsetID of the bank used for swap.  -1:no swap */
             );
             platform->membank[imem].private_ram = 1;
+            index_mem++;
         } 
         platform->nbMemoryBank_shared_and_private = index_mem;
 
@@ -583,7 +593,7 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
             1 io_platform_2d_in_0.txt          5    camera                 
             1 io_platform_gpio_out_1.txt       8    GPIO/PWM               
         */
-        for (istream = 0; istream < platform->processor[platform->nb_processors].nb_hwio_processor; istream++)
+        for (istream = 0; istream < platform->processor[iproc].nb_hwio_processor; istream++)
         {        
             char tmpchar[NBCHAR_LINE];  /* file name of the HW IO */ 
 
@@ -600,12 +610,12 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
             /* read all the parameters of the IO arc from this IO manifest */
             read_platform_io_stream_manifest(inputFile, &(platform->IO_arc[io_al_idx]));
             platform->IO_arc[io_al_idx].fw_io_idx = io_al_idx;
-            platform->IO_arc[io_al_idx].procID = platform->processor[platform->nb_processors].processorID;
-            platform->IO_arc[io_al_idx].archID = platform->processor[platform->nb_processors].architectureID;
+            platform->IO_arc[io_al_idx].procID = platform->processor[iproc].processorID;
+            platform->IO_arc[io_al_idx].archID = platform->processor[iproc].architectureID;
             platform->IO_arc[io_al_idx].arc_graph_ID = NOT_CONNECTED_TO_GRAPH;
         } 
 
-        platform->nb_hwio_stream += platform->processor[iproc].nb_hwio_processor; /* sum of all IO, one per processor */
+        //platform->nb_hwio_stream += platform->processor[iproc].nb_hwio_processor; /* sum of all IO, one per processor */
     } // iproc < platform->nb_processors
 
 
@@ -618,13 +628,13 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
     platform->nb_nodes = 1;     // reserve the Node 0 for "no tasks"
 
     do
-    {   uint32_t procID, archID, foundEndOfNodeList;
+    {   uint32_t procID, archID, nodeID, foundEndOfNodeList;
         char tmpchar[NBCHAR_LINE] = "";
     
         if (platform->nb_nodes > MAX_NB_NODES)
         {   printf("too much nodes !"); exit( 4);
         }
-        fields_extract(&pt_line, "icii", &ipath, tmpchar, &procID, &archID);
+        fields_extract(&pt_line, "iciii", &ipath, tmpchar, &procID, &archID, &nodeID);
         foundEndOfNodeList = (globalEndFile == FOUND_END_OF_FILE);
 
         for (i = 0; i < nb_paths; i++) {  if (ipath == indexpaths[i]) 
@@ -635,7 +645,8 @@ void arm_stream_read_manifests (struct stream_platform_manifest *platform, char 
         read_input_file(file_name, inputFile);
 
         read_node_manifest(inputFile, &(platform->all_nodes[platform->nb_nodes]));
-        platform->all_nodes[platform->nb_nodes].platform_node_idx = platform->nb_nodes;
+        platform->all_nodes[platform->nb_nodes].platform_node_idx = nodeID;
+
         platform->nb_nodes ++;
 
         if (foundEndOfNodeList)

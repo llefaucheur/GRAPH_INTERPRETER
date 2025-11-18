@@ -33,9 +33,6 @@
 #ifndef cSTREAM_TOOL_INCLUDE_H
 #define cSTREAM_TOOL_INCLUDE_H
 
-#ifdef _MSC_VER 
-#define _CRT_SECURE_NO_DEPRECATE
-#endif
 #include <ctype.h>
 #include <stdio.h>    
 #include <string.h>
@@ -43,16 +40,16 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
-#include <stdarg.h>  /* for void fields_extract(char **pt_line, char *types,  ...) */
+#include <stdarg.h> 
 
-#include "../stream_src/stream_const.h"
+
 #include "../stream_platform/presets.h"
-#include "../stream_src/stream_types.h"
-#include "stream_tool_define.h"
-#include "stream_tool.h"
 #include "../stream_nodes/stream_common_const.h"
 #include "../stream_nodes/stream_common_types.h"
 #include "../stream_src/stream_const.h"
+#include "../stream_src/stream_types.h"
+#include "stream_tool_define.h"
+#include "stream_tool.h"
 
 
 extern uint8_t globalEndFile, FoundEndSection;

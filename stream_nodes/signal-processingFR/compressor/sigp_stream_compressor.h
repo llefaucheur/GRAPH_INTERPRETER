@@ -53,7 +53,7 @@
 #define ENCODER_JPEG             12 
 
 
-#define STATE_DEFAULT_SIZE 4                    /* node_malloc_E defines the effective size, depending on presets/Codec selection  */
+#define STATE_generic_SIZE 4                    /* node_malloc_E defines the effective size, depending on presets/Codec selection  */
 
 typedef struct
 {
@@ -63,7 +63,7 @@ typedef struct
     stream_services *stream_service_entry;
     uint32_t output_format[STREAM_FORMAT_SIZE_W32];
 
-    uint32_t state[STATE_DEFAULT_SIZE];      /* LAST FIELD OF THE DECLARATION !! */
+    uint32_t state[STATE_generic_SIZE];      /* LAST FIELD OF THE DECLARATION !! */
 } sigp_stream_compressor_instance;
 
 

@@ -1,0 +1,99 @@
+;=================================================================
+; TOP MANIFEST :
+;   - paths to the files
+;   - shared memories
+;   - list of processors and their private memories and IOs
+;   - list of the nodes installed in each processor and/or architectures
+;=================================================================
+    6                      six file paths
+
+    0 ../../../stream_platform/                   
+    1 ../../../stream_platform/alif1/manifest/ 
+
+    2 ../../../stream_nodes/arm/                  
+    3 ../../../stream_nodes/signal-processingFR/  
+    4 ../../../stream_nodes/bitbank/              
+    5 ../../../stream_nodes/elm-lang/  
+
+;=================================================================
+    2           number of processors
+    1           number of shared memory 
+
+;   processor and architecture ID are in the range [1..15]
+; 
+;   Access    0 data/prog R/W, 1 data R, 2 R/W, 3 Prog, 4 R/W
+;   Speed     0 slow/best effort, 1 fast/internal, 2 TCM
+;   Type      0 Static, 1 Retention, 2 scratch, 
+;   swap      mem ID to use for the memory swaps (-1 none)
+
+;---MEMID SIZE  A S T SWAP  Comments 
+    0  500000   1 0 1 -1    shared memory to all processors
+
+
+;=================================================================
+;   Processor #1 - architecture #1  
+;   proc ID, arch ID, main proc, nb mem, service mask, I/O
+    1        1        1          0       15            8  
+
+;---MEMID SIZE  A S T SWAP  Comments 
+;    0       0  1 0 1 -1    No private memory (nb mem = 0)
+
+;-----IO AFFINITY WITH PROCESSOR 1-------------------------------
+    ;Path      Manifest       IO_AL_idx    Comments  (frame size in Bytes)  
+    ; aligned with ..\stream_platform\alif1\alif1_init.c 
+    ;   const p_io_function_ctrl platform_io [10]
+    ;IO_AL_idx=0 is used for sinking (+rewinding script) without consumer node
+
+    1 io_alif1_data_in_1.txt       1    data in 1          16          
+    1 io_alif1_analog_in_0.txt     2    size_sensor_0      16          
+    1 io_alif1_motion_in_0.txt     3    IMUs               16
+    1 io_alif1_audio_in_0.txt      4    two microphones    640  10ms stereo buffer    
+    ;                             (5)   Camera on HP processor
+    1 io_alif1_line_out_0.txt      6    audio out stereo   160    
+    1 io_alif1_gpio_out_0.txt      7    App files           4      
+    1 io_alif1_gpio_out_1.txt      8    LED/detection       4   one word to trigger the LED
+    1 io_alif1_data_out_0.txt      9    debug trace        1024   
+
+
+;=================================================================
+;   Processor #2 - architecture #1 
+;   proc ID, arch ID, main proc, nb mem, service mask, I/O
+    2        1        1          0       15            1
+
+;---MEMID SIZE  A S T SWAP  Comments 
+;    0       0  1 0 1 -1    No private memory (nb mem = 0)
+
+;-----IO AFFINITY WITH PROCESSOR 2-------------------------------
+    ;Path      Manifest       IO_AL_idx    Comments  (frame size in Bytes)  
+
+    1 io_alif1_2d_in_0.txt         5    camera on HP processor
+
+
+
+;======== ALL NODES ==============================================
+; scheduler algorithm :
+; if the node archID > 0 then check compatibility with processor archID and exit
+; if the node procID > 0 then check compatibility with processor procID and exit
+;
+;   Path                 Node Manifest                PROC ARCH ID    COMMENTS
+    2       script/node_manifest_script.txt             0   0    1    runs everywhere
+    2       router/node_manifest_router.txt             0   1    2    SMP on archID-1
+    2    modulator/node_manifest_modulator.txt          0   1    3    
+    2      fixedbf/node_manifest_fixedbf.txt            0   1    4    
+    2     filter2D/node_manifest_filter2D.txt           2   1    5    dedicated to HP proc-2
+    2       filter/node_manifest_filter.txt             0   1    6    
+    2  demodulator/node_manifest_demodulator.txt        0   1    7    
+    2          anr/node_manifest_anr.txt                0   1    8    
+    2    amplifier/node_manifest_amplifier.txt          0   1    9    
+   3           kws/node_manifest_kws.txt                0   1   10    yes/no KWS
+   3    compressor/node_manifest_compressor.txt         0   1   11    
+   3  decompressor/node_manifest_decompressor.txt       0   1   12    
+   3      detector/node_manifest_detector.txt           0   1   13    
+   3    detector2D/node_manifest_detector2D.txt         2   1   14    dedicated to HP proc-2
+   3     resampler/node_manifest_resampler.txt          0   1   15    
+    4      JPEGENC/node_manifest_bitbank_JPEGENC.txt    2   1   16    dedicated to HP proc-2
+   5       TJpgDec/node_manifest_TjpgDec.txt            2   1   17    dedicated to HP proc-2
+;
+;
+end ; the platform manifest ends here
+;=================================================================

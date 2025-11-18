@@ -34,24 +34,24 @@
 #define cARM_STREAM_DEMODULATOR_H
 
 
-#include "stream_const.h"      
-#include "stream_types.h"  
+#include "stream_common_const.h"      
+#include "stream_common_types.h"  
 
 
 typedef struct
 {
-    stream_al_services *stream_entry;
+    int *stream_entry;
 
 } arm_stream_demodulator_instance;
 
 
 
 extern void arm_stream_demodulator_process1 (arm_stream_demodulator_instance *instance, 
-    void *input, void *output, intPtr_t *nsamp);
+    void *input, void *output, intptr_t*nsamp);
 extern void arm_stream_demodulator_process2 (arm_stream_demodulator_instance *instance, 
-    void *input, void *output, intPtr_t *nsamp);
+    void *input, void *output, intptr_t*nsamp);
 extern void arm_stream_demodulator_process3 (arm_stream_demodulator_instance *instance, 
-    void *input, void *output, intPtr_t *nsamp);
+    void *input, void *output, intptr_t *nsamp);
 
 
 

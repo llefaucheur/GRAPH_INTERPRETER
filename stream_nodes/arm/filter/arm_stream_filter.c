@@ -111,26 +111,28 @@ node
  */
 void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *status)
 {
-#if 1
+#ifdef CODE_ARM_STREAM_FILTER
     *status = NODE_TASKS_COMPLETED;    /* default return status, unless processing is not finished */
 
     switch (RD(command,COMMAND_CMD))
     { 
-        /* func(command = (STREAM_RESET, COLD, PRESET, TRACEID tag, NB ARCS IN/OUT)
-                instance = memory_results and all memory banks following
+        /* func(command = (STREAM_RESET, COLD, PRESET, TRACEID/tag, NB ARCS IN/OUT)
+                instance = memory banks 
                 data = address of Stream function
                 
-                memresults are followed by 4 words of STREAM_FORMAT_SIZE_W32 of all the arcs 
-                memory pointers are in the same order as described in the NODE manifest
+                memresults addresses ("intptr_t") in the same order as described in the NODE manifest followed by 
+                    the optional user KEY and platform Key 
+                    the 4 words of Rx/Tx formats all the arcss 
 
-                memresult[0] : instance of the component
-                memresult[1] : pointer to the allocated memory (biquad states and coefs)
+                in the case of arm_filter : 
+                    memresult[0] : instance of the component
+                    memresult[1] : pointer to the allocated memory (biquad states and coefs)
 
-                memresult[2] : input arc Word 0 SIZSFTRAW_FMT0 (frame size..)
-                memresult[ ] : input arc Word 1 SAMPINGNCHANM1_FMT1 
-                ..
-                memresult[ ] : output arc Word 0 SIZSFTRAW_FMT0 
-                memresult[ ] : output arc Word 1 SAMPINGNCHANM1_FMT1 
+                    memresult[2] : input arc Word 0 FRAMESZ_FMT0 (frame size..)
+                    memresult[ ] : input arc Word 3 DOMAINSPECIFIC_FMT3 
+                    ..
+                    memresult[6] : output arc Word 0 FRAMESZ_FMT0 
+                    memresult[ ] : output arc Word 1 DOMAINSPECIFIC_FMT3 
 
                 preset (8bits) : number of biquads in cascade, max = 4, from NODE manifest 
                 tag (8bits)  : unused
@@ -140,18 +142,21 @@ void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *
             uint8_t *pt8b;
             uint8_t i;
             uint8_t n;
-            arm_filter_memory **memreq;
             arm_filter_instance *pinstance;
             uint8_t preset;
             uint16_t *pt16dst;
+            intptr_t * memresult;
 
             preset = (uint8_t) RD(command, PRESET_CMD);
+            memresult = (intptr_t * )instance;
+            pinstance = (arm_filter_instance *)(memresult[0]);    /* first bank = node instance */
+            pinstance->TCM = (arm_filter_memory *)(memresult[1]); /* second bank = fast memory allocation */
 
-            /* read memory banks */
-            pinstance = *((arm_filter_instance **) instance);           /* main instance */
-            memreq = (arm_filter_memory **) instance;
-            memreq = &(memreq[1]);
-            pinstance->TCM = (*memreq);       /* second bank = fast memory */
+            // DYNAMIC ALLOCATION EXAMPLE, CAN DEPEND ON ARCS FORMAT
+            // if (STREAM_DYN_MALLOC == RD(command, COMMDEXT_CMD))
+            // {   memreq[0] = sizeof(arm_filter_instance);    // memory allocation segment 0
+            //     memreq[1] = 2* sizeof(arm_filter_memory);   // malloc of segment 1 for 2 biquads
+            // }
 
             /* here reset */
             pt8b = (uint8_t *) (pinstance->TCM->state);
@@ -284,7 +289,7 @@ void arm_stream_filter (uint32_t command, void *instance, void *data, uint32_t *
         case STREAM_UPDATE_RELOCATABLE:
         default : break;
     }
-#endif
+#endif  //CODE_ARM_STREAM_FILTER
 }
 
 #ifdef __cplusplus

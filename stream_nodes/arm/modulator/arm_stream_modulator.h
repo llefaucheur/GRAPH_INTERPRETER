@@ -41,7 +41,7 @@
 
 typedef struct
 {
-   sfloat f0;            //;f32 wave frequency [Hz], 0Hz translates to DC level.
+   float_t f0;          //;f32 wave frequency [Hz], 0Hz translates to DC level.
                         //;f32 modulation frequency [Hz] separating two data bits/samples from the arc
                         //;u16 wave type : 1=sine 2=square 3=white noise 4=pink noise 
                         //;            5=sawtooth 6=triangle 7=pulse
@@ -59,13 +59,13 @@ typedef struct
 
 typedef struct
 {
-    stream_al_services *stream_entry;
+    stream_services *stream_entry;
     stream_modulator_parameters param;
 } arm_stream_modulator_instance;
 
 
 
-extern void arm_stream_modulator_process (arm_stream_modulator_instance *instance, void *input, void *output, intPtr_t *nsamp);
+extern void arm_stream_modulator_process (arm_stream_modulator_instance *instance, void *input, void *output, intptr_t *nsamp);
 
 
 #endif

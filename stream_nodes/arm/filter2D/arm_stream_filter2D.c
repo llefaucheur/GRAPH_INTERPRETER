@@ -41,7 +41,6 @@
 #include <stdint.h>
 #include "stream_common_const.h"
 #include "stream_common_types.h"
-//#include "dsp\filtering_functions.h"
 #include "arm_stream_filter2D.h"
 
 /*
@@ -138,7 +137,7 @@ void arm_stream_filter2D (int32_t command, stream_handle_t instance, stream_xdmb
             uint8_t *pt8b, i, n;
             intptr_t *memreq;
             arm_filter2D_instance *pinstance;
-            uint8_t preset = RD(command, PRESET_CMD);
+            uint32_t preset = RD(command, PRESET_CMD);
             uint16_t *pt16dst;
 
             memreq = (intptr_t *)instance;
@@ -220,7 +219,7 @@ void arm_stream_filter2D (int32_t command, stream_handle_t instance, stream_xdmb
             pt_pt++;        outBuf = (int16_t *)(pt_pt->address); 
 
             nb_data = stream_xdmbuffer_size / sizeof(int16_t);
-            ST(pinstance->iir_service, FUNCTION_SSRV, SERV_CASCADE_DF1_Q15);
+            ST(pinstance->iir_service, FUNCTION_SSRV, SERV_DSP_CASCADE_DF1_Q15);
 
             break;
         }

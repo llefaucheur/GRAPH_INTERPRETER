@@ -38,6 +38,27 @@
 
 
 /* ------------------------------------------------------------------------------------------
+    opaque access to the static area of the node
+*/
+typedef void* stream_handle_t;
+
+
+
+/* ------------------------------------------------------------------------------------------
+    stream buffers
+*/
+struct stream_xdmbuffer
+{   intptr_t address;
+    intptr_t size;
+};
+
+typedef struct stream_xdmbuffer stream_xdmbuffer_t;
+
+typedef void    (stream_services)(uint32_t service_command, intptr_t ptr1, intptr_t ptr2, intptr_t ptr3, intptr_t n);
+typedef void (*p_stream_services) (uint32_t service_command, intptr_t ptr1, intptr_t ptr2, intptr_t ptr3, intptr_t n);
+
+
+/* ------------------------------------------------------------------------------------------
     floating-point emulation
 */
 
@@ -81,44 +102,6 @@ struct {
 typedef uint32_t float_t;
 typedef uint64_t double_t;
 #endif
-
-
-/* ------------------------------------------------------------------------------------------
-    opaque access to the static area of the node 
-*/
-typedef void *stream_handle_t;  
-
-///* 
-//    if 64 bits architectures are reading the graph:
-//    #define intptr_t uint64_t
-//    #define MAX_ADD_OFFSET 0x7FFFFFFFFFFFFFFFL
-//*/
-//#ifdef PLATFORM_ARCH_64BIT
-//#define NBBITS_PER_INT 64
-//typedef uint64_t  intptr_t;
-//typedef  int64_t sintptr_t;
-//#endif
-//
-//#ifdef PLATFORM_ARCH_32BIT
-//#define NBBITS_PER_INT 32
-//typedef uint32_t  intptr_t;
-//typedef  int32_t sintptr_t;
-//#endif
-
-/* ------------------------------------------------------------------------------------------
-    stream buffers
-*/
-
-struct stream_xdmbuffer
-{   
-    intptr_t address; 
-    intptr_t size;
-};
-
-typedef struct stream_xdmbuffer stream_xdmbuffer_t;
-
-typedef void    (stream_services) (uint32_t service_command, intptr_t ptr1, intptr_t ptr2, intptr_t ptr3, intptr_t n); 
-typedef void (*p_stream_services) (uint32_t service_command, intptr_t ptr1, intptr_t ptr2, intptr_t ptr3, intptr_t n); 
 
 
 #endif /* cSTREAM_COMMON_TYPES_H */

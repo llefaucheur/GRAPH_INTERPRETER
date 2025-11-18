@@ -29,8 +29,14 @@
  extern "C" {
 #endif
 
+
+#include <stdint.h>
+#include <time.h>
+
+#include "../stream_src/stream_types.h"
 #include "stream_tool_include.h"
 #include "../stream_nodes/arm/script/arm_stream_script_instructions.h"
+
 
 /**
   @brief            (main) 
@@ -72,6 +78,8 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 #define HCNEWLINE() fprintf(graph->ptf_header,"\n");
 #define HCTEXT(T) fprintf(graph->ptf_header,"// %s \n",T);// fprintf(graph->ptf_header,"\n");
 
+#define MAP_TO_SPECIFIC_VID_BANK(VID) ((unsigned)(graph->option_graph_locations[VID]) < MAX_VID_FOR_MALLOC)
+
     fprintf(graph->ptf_graph_bin, "//--------------------------------------\n"); 
     time ( &rawtime );
     timeinfo = localtime ( &rawtime );
@@ -99,12 +107,12 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     LKalloc = addrW32s + 2;      // graph memory consumption computed at the end 
     
     sprintf(tmpstring, "header : size of the graph, compression used");             GTEXT(tmpstring); GWORDINC(0);
-    sprintf(tmpstring, "interpreter version (TBD)");                                GTEXT(tmpstring); GWORDINC(0);
+    sprintf(tmpstring, "interpreter version");                                      GTEXT(tmpstring); GWORDINC(GRAPH_INTERPRETER_VERSION);
     sprintf(tmpstring, "memory consumption in bank 0-3 (0xFF = 100%%, 0x3F = 25%%)"); GTEXT(tmpstring); GWORDINC(0);
     sprintf(tmpstring, "bank 4-7  (banks of long_offset[4-7])");                    GTEXT(tmpstring); GWORDINC(0);
     sprintf(tmpstring, "bank 8-11 ");                                               GTEXT(tmpstring); GWORDINC(0);
     sprintf(tmpstring, "bank 12-15");                                               GTEXT(tmpstring); GWORDINC(0);
-    addrW32s = GRAPH_HEADER_POINTERS_NBWORDS;
+    addrW32s = GRAPH_HEADER_POINTERS_NBWORDS;   // 20
     /*  ----------------------------------------------------------------------------------------------------------------------------------   
         [0] PIO HW decoding table
             [1] PIO Graph table, STREAM_IO_CONTROL (4 words per IO)
@@ -119,14 +127,15 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         ----------------------------------------------------------------------------------------------------------------------------------
     */
     m = platform->max_io_al_idx;
-    if (graph->option_graph_locations[GRAPH_PIO_HW] < MAX_VID_FOR_MALLOC)
+    if (MAP_TO_SPECIFIC_VID_BANK(GRAPH_PIO_HW))
     {   sprintf(tmpstring3, "GRAPH_PIO_HW to MEMID %d", graph->option_graph_locations[GRAPH_PIO_HW]);
         vid_malloc(graph->option_graph_locations[GRAPH_PIO_HW],     // MEMID
                    4 * m,                                           // one word per HW IO
                    MEM_REQ_4BYTES_ALIGNMENT, 
                    &packxxb, MEM_TYPE_STATIC, 
                    tmpstring3, platform, graph);
-        sprintf(tmpstring2, " position %08X", packxxb);
+        #define AFTER_INDEXES 0
+        sprintf(tmpstring2, " position %08X", packxxb + AFTER_INDEXES);
         strcat(tmpstring3, tmpstring2);
     }
     else
@@ -140,6 +149,10 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
     for (j = 0; j < platform->max_io_al_idx; j++)
     {   
+        // ;IO_AL_idx=0 is used for sinking (+rewinding script) without consumer node 
+        if (j == 0)
+        {   platform->IO_arc[j].arc_graph_ID = NOT_CONNECTED_TO_GRAPH;
+        }
         FMT0 = 0;
         ST(FMT0,      PRIORITY_IO_CONTROL, 0);
         ST(FMT0,        PROCID_IO_CONTROL, platform->IO_arc[j].procID);
@@ -174,7 +187,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     }
 
     m = STREAM_IOFMT_SIZE_W32 * NBarc;
-    if (graph->option_graph_locations[GRAPH_PIO_GRAPH] < MAX_VID_FOR_MALLOC)
+    if (MAP_TO_SPECIFIC_VID_BANK(GRAPH_PIO_GRAPH))
     {   sprintf(tmpstring3, "GRAPH_PIO_GRAPH to MEMID %d", graph->option_graph_locations[GRAPH_PIO_GRAPH]);
         vid_malloc(graph->option_graph_locations[GRAPH_PIO_GRAPH],     // MEMID
                    4 * m,                  // four W32 per graph IO
@@ -201,14 +214,14 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             FMT0 = FMT1 = FMT2 = FMT3 = 0;
 
             ST(FMT0,   FWIOIDX_IOFMT0, arc->fw_io_idx);
-            //ST(FMT0, IO_DOMAIN_IOFMT0, arc->domain);
             ST(FMT0, SET0COPY1_IOFMT0, arc->set0copy1);
+            ST(FMT0, BUFFALLOC_IOFMT0, arc->buffalloc);
             ST(FMT0,  SERVANT1_IOFMT0, arc->commander0_servant1);
             ST(FMT0,    RX0TX1_IOFMT0, arc->rx0tx1);
             ST(FMT0,   IOARCID_IOFMT0, arc->idx_arc_in_graph);
 
-            sprintf(tmpstring, "IO(graph%d) %d arc %d set0copy1=%d rx0tx1=%d servant1 %d domain %d", 
-                j++, arc->fw_io_idx,arc->idx_arc_in_graph, arc->set0copy1, arc->rx0tx1, arc->commander0_servant1, arc->domain); 
+            sprintf(tmpstring, "IO(graph%d) %d arc %d set0copy1=%d rx0tx1=%d servant1 %d buffer allocation %d", 
+                j++, arc->fw_io_idx,arc->idx_arc_in_graph, arc->set0copy1, arc->rx0tx1, arc->commander0_servant1, arc->buffalloc);
             GTEXT(tmpstring); GWORDINC(FMT0);
 
             sprintf(tmpstring, "IO(settings %d, fmtProd %d (L=%d) fmtCons %d (L=%d)", FMT1, graph->arc[iarc].fmtProd, (int)(graph->arcFormat[graph->arc[iarc].fmtProd].frame_length_bytes), 
@@ -255,7 +268,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     {   m = m + graph->all_scripts[iscript].script_nb_instruction;
     }
 
-    if (graph->option_graph_locations[GRAPH_SCRIPTS] < MAX_VID_FOR_MALLOC)
+    if (MAP_TO_SPECIFIC_VID_BANK(GRAPH_SCRIPTS))
     {   sprintf(tmpstring3, "GRAPH_SCRIPTS to MEMID %d", graph->option_graph_locations[GRAPH_SCRIPTS]);
         vid_malloc(graph->option_graph_locations[GRAPH_SCRIPTS],    // MEMID
                    4 * m,                                           // script cumulated size
@@ -317,15 +330,15 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
             for (j = 0; j < graph->all_scripts[iscript].script_nb_instruction; j++)
             {   int32_t  cond, opcode, opar, dst, src1, src2, K;
-                FMT0 = graph->all_scripts[iscript].script_program[j];
-                cond =  RD(FMT0, OP_COND_INST);   dst  =  RD(FMT0, OP_DST_INST);
-                opcode= RD(FMT0, OP_INST);        src1 =  RD(FMT0, OP_SRC1_INST);
-                opar =  RD(FMT0, OP_OPAR_INST);   src2 =  RD(FMT0, OP_SRC2_INST);
-                K    =  RD(FMT0, OP_K_INST); K = K - UNSIGNED_K_OFFSET; 
+                //FMT0 = graph->all_scripts[iscript].script_program[j];
+                //cond =  RD(FMT0, OP_COND_INST);   dst  =  RD(FMT0, OP_DST_INST);
+                //opcode= RD(FMT0, OP_INST);        src1 =  RD(FMT0, OP_SRC1_INST);
+                //opar =  RD(FMT0, OP_OPAR_INST);   src2 =  RD(FMT0, OP_SRC2_INST);
+                //K    =  RD(FMT0, OP_K_INST); K = K - UNSIGNED_K_OFFSET; 
 
-                sprintf(tmpstring, "IF%d %1d_%2d D%2d S1 %2d S2 %2d K %5d ", 
-                    cond, opcode, opar, dst, src1, src2, K);
-                strcat(tmpstring, graph->all_scripts[iscript].script_comments[j]); /* comments extracted from the code */
+                //sprintf(tmpstring, "IF%d %1d_%2d D%2d S1 %2d S2 %2d K %5d ", 
+                //    cond, opcode, opar, dst, src1, src2, K);
+                //strcat(tmpstring, graph->all_scripts[iscript].script_comments[j]); /* comments extracted from the code */
 
                 GTEXT(tmpstring); GWORDINC(FMT0);
             }
@@ -357,7 +370,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     */
     LK0 = addrW32s;                                                 // linked-list header position
     m = 0;
-    if (graph->option_graph_locations[GRAPH_LINKED_LIST] < MAX_VID_FOR_MALLOC)
+    if (MAP_TO_SPECIFIC_VID_BANK(GRAPH_LINKED_LIST))
     {   sprintf(tmpstring3, "GRAPH_LINKED_LIST to MEMID %d", graph->option_graph_locations[GRAPH_LINKED_LIST]);
     }
     else
@@ -471,16 +484,16 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             {   int32_t  cond, opcode, opar, dst, src1, src2, K;
             
                 FMT0 = pscript->script_program[j];
-                
-                cond =  RD(FMT0, OP_COND_INST);  dst  =  RD(FMT0, OP_DST_INST);
-                opcode= RD(FMT0, OP_INST);       src1 =  RD(FMT0, OP_SRC1_INST);
-                opar =  RD(FMT0, OP_OPAR_INST);  src2 =  RD(FMT0, OP_SRC2_INST);
-                K    =  RD(FMT0, OP_K_INST); K = K - UNSIGNED_K_OFFSET; 
+                //
+                //cond =  RD(FMT0, OP_COND_INST);  dst  =  RD(FMT0, OP_DST_INST);
+                //opcode= RD(FMT0, OP_INST);       src1 =  RD(FMT0, OP_SRC1_INST);
+                //opar =  RD(FMT0, OP_OPAR_INST);  src2 =  RD(FMT0, OP_SRC2_INST);
+                //K    =  RD(FMT0, OP_K_INST); K = K - UNSIGNED_K_OFFSET; 
 
-                sprintf(tmpstring, "IF%d %1d_%2d D%2d S1 %2d S2 %2d K %5d ", 
-                    cond, opcode, opar, dst, src1, src2, K);
-                strcat(tmpstring,  pscript->script_comments[j]);
-                GTEXT(tmpstring); GWORDINC(FMT0);
+                //sprintf(tmpstring, "IF%d %1d_%2d D%2d S1 %2d S2 %2d K %5d ", 
+                //    cond, opcode, opar, dst, src1, src2, K);
+                //strcat(tmpstring,  pscript->script_comments[j]);
+                //GTEXT(tmpstring); GWORDINC(FMT0);
             }
             strcpy(tmpstring, "");
         }
@@ -511,7 +524,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
 
 
     m = addrW32s - LK1;                                             // all the linked-list words
-    if (graph->option_graph_locations[GRAPH_LINKED_LIST] < MAX_VID_FOR_MALLOC)
+    if (MAP_TO_SPECIFIC_VID_BANK(GRAPH_LINKED_LIST))
     {   vid_malloc(graph->option_graph_locations[GRAPH_LINKED_LIST], // MEMID
                    4 * m,                                           // LinkedList cumulated size
                    MEM_REQ_4BYTES_ALIGNMENT, 
@@ -557,7 +570,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     sprintf(tmpstring, "->ongoing iomask bytes"); 
     m = (NBarc + 3) >> 2;                               // on going flag bytes, rounding go W32
 
-    if (graph->option_graph_locations[GRAPH_ONGOING] < MAX_VID_FOR_MALLOC)
+    if (MAP_TO_SPECIFIC_VID_BANK(GRAPH_ONGOING))
     {   sprintf(tmpstring3, "GRAPH_ONGOING to MEMID %d", graph->option_graph_locations[GRAPH_ONGOING]);
         vid_malloc(graph->option_graph_locations[GRAPH_ONGOING],    // MEMID
                    4 * m,                                           // on going flag bytes cumulated size
@@ -636,7 +649,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     graph->nb_formats ++;
     m = graph->nb_formats * STREAM_FORMAT_SIZE_W32;                 // number of Formats (nb_formats is an index => +1)
 
-    if (graph->option_graph_locations[GRAPH_FORMATS] < MAX_VID_FOR_MALLOC)
+    if (MAP_TO_SPECIFIC_VID_BANK(GRAPH_FORMATS))
     {   sprintf(tmpstring3, "GRAPH_FORMATS to MEMID %d", graph->option_graph_locations[GRAPH_FORMATS]);
         vid_malloc(graph->option_graph_locations[GRAPH_FORMATS],    // MEMID
                    4 * m,                                           // Formats bytes  size
@@ -704,7 +717,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     */
     m = graph->nb_arcs* SIZEOF_ARCDESC_W32;                     // number of arcs
 
-    if (graph->option_graph_locations[GRAPH_ARCS] < MAX_VID_FOR_MALLOC)
+    if (MAP_TO_SPECIFIC_VID_BANK(GRAPH_ARCS))
     {   sprintf(tmpstring3, "GRAPH_ARCS to MEMID %d", graph->option_graph_locations[GRAPH_ARCS]);
         vid_malloc(graph->option_graph_locations[GRAPH_ARCS],   // MEMID
                    4 * m,                                       // arcs descriptors  size
@@ -730,7 +743,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
         struct stream_script *pscript;
 
         arc = &(graph->arc[iarc]);
-        memset(ARCW, 0, 4*SIZEOF_ARCDESC_W32);
+        memset(ARCW, 0, sizeof(ARCW));
  
         /*-------------------------------- ARC FOR SCRIPTS-------------------------------------------------------------*/
         /* is it the arc from a script ? */
@@ -743,7 +756,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
                 break;
             }
         }
-        /* is it from arm_stream_script ? */
+        /* or is it from arm_stream_script ? */
         for (inode = 0; inode < graph->nb_nodes; inode++)
         {   
             if (graph->all_nodes[inode].platform_node_idx == arm_stream_script_index
@@ -1316,7 +1329,6 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             data (binary_graph)   
             comments (binary_graph_comments)
     */
-
     for (j = 0; j < FMT1; j ++)
     {
         if (j < LK_PIO)
@@ -1331,8 +1343,8 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     }
 
 
-    {   uint32_t ibank, a, b, c, d; 
-        sprintf(tmpstring,    "// bank      size          consumed      static   +  working");
+    {   uint32_t ibank, a, b, c, d, sumAlloc = 0; 
+        sprintf(tmpstring,    "// bank       size            consumed        static   +    working");
         fprintf (graph->ptf_graph_bin, "%s\n", tmpstring);
         for (ibank = 0; ibank < platform->nb_shared_memory_banks; ibank++)
         {   
@@ -1340,8 +1352,15 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             b = (uint32_t)(platform->membank[ibank].ptalloc_static + platform->membank[ibank].max_working_booking); 
             c = (uint32_t)(platform->membank[ibank].ptalloc_static);
             d = (uint32_t)(platform->membank[ibank].max_working_booking);
-            sprintf(tmpstring, "// %2d   %7d (%6X) %5d (%4X) %5d (%4X) %5d (%4X)", ibank, a,a, b,b, c,c, d,d);
+            sprintf(tmpstring, "// %2d   %7d (%6X) %6d (%5X) %6d (%5X) %6d (%5X)", ibank, a,a, b,b, c,c, d,d);
             fprintf (graph->ptf_graph_bin, "%s\n", tmpstring);
+
+            sumAlloc += b;
+
+            if (sumAlloc > MAXBINARYGRAPHW32)
+            {   fprintf(stderr, "\n\n graph overflow %d > %d  \n\n", sumAlloc, MAXBINARYGRAPHW32);
+                exit(6);
+            }
         }
     }
 

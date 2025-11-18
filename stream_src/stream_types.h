@@ -34,10 +34,7 @@
 
 
 #include <stdint.h>
-//#include "presets.h"
-#include "stream_common_const.h"
 #include "stream_common_types.h"
-#include "stream_const.h"
 
 
 typedef uint32_t stream_service_command;

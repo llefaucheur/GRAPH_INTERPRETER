@@ -29,7 +29,6 @@
  extern "C" {
 #endif
 
-
 #ifndef cSTREAM_TOOL_DEFINE_H
 #define cSTREAM_TOOL_DEFINE_H
 
@@ -39,7 +38,7 @@
 
 #define MAXINPUT 100000
 #define MAXOUTPUT 100000
-#define MAXBINARYGRAPHW32 10000
+#define MAXBINARYGRAPHW32 200000
 #define MAXDBGTRACEGRAPH 10000
 
 #define SUBGMAXDEPTH 5          /* subgraphs calling subgraphs */
@@ -59,7 +58,8 @@
 
 #define MAX_NBOPTIONS 256 
 
-#define MAX_PROC_MEMBANK 63     /* number of physical memory banks of the processor, for the graph processing */
+	 /* number of physical memory banks of the processor, for the graph processing */
+#define MAX_PROC_MEMBANK ((1<< (ADDR_OFFSET_FMT0_MSB - ADDR_OFFSET_FMT0_LSB +1))-1)
 
 #define MAXNB_WORD32_PLAFORM_KEY 32    /* 1024 bits boot key */
 #define MAXNB_WORD32_USER_KEY 32    /* 32x32 = 1024 bits user key */
@@ -73,6 +73,7 @@
 #define MAX_VID_FOR_MALLOC 254
 /*----------------------------------------------------------------------- IO MANIFESTS ------------- */
 #define io_commander0_servant1      "io_commander0_servant1"
+#define io_buffer_alloc_in_graph    "io_buffer_alloc_in_graph"
 #define io_direction_rx0tx1         "io_direction_rx0tx1"
 #define io_raw_format               "io_raw_format"
 #define io_nb_channels              "io_nb_channels"
@@ -200,7 +201,6 @@
 #define subgraph                        "subgraph"
 #define graph_file_path                 "graph_file_path"
 #define graph_locations                 "graph_locations"
-//#define graph_location_offset           "graph_location_offset"
 #define graph_memory_bank               "graph_memory_bank"
 #define debug_script_fields             "debug_script_fields"
 #define scheduler_return                "scheduler_return"
@@ -244,7 +244,7 @@
 #define node_trace_id                   "node_trace_id"
 #define node_map_proc                   "node_map_proc"
 #define node_map_arch                   "node_map_arch"
-#define node_map_rtos                   "node_map_rtos"
+#define node_map_thread                 "node_map_thread"
 #define node_map_verbose                "node_map_verbose"
 #define node_memory_isolation           "node_memory_isolation"
 #define node_memory_clear               "node_memory_clear"

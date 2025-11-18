@@ -1,0 +1,15 @@
+; ------------------------------------------------------------------------------------------------------------
+; Manifest of generic data_out (to the application) used to report the KWS detection 
+; ------------------------------------------------------------------------------------------------------------
+                                                                       
+    io_alif1_data_out_0                     ; name for the tools                            
+    general                                 ; domain name,   no specific field
+    
+    io_direction_rx0tx1     1
+    
+    io_frame_length     {1 4}               ; default = 4Bytes 
+    io_nb_channels      {1 1}               ; mono default
+    io_raw_format       {1 i16}             ; int16
+   
+    
+    end

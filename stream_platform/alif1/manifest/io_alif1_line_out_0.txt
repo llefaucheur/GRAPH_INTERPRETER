@@ -1,0 +1,16 @@
+; ------------------------------------------------------------------------------------------------------------
+; Manifest of audio line-out 
+; ------------------------------------------------------------------------------------------------------------
+                                                                       
+    io_alif1_line_out_0              ; name for the tools                            
+    audio_out                           ; domain name,   unit: dB, Vrms
+
+    io_direction_rx0tx1 1               ; transmit (from graph point of view)
+
+    io_frame_length     {1 160}         ; 16kHz x 5ms x mono x int16
+    io_nb_channels      {1 1}           ; mono default
+    io_raw_format       {1 i16}         ; int16
+    io_frame_length     {1 4}           ; default = 4Bytes 
+    io_sampling_rate Hz {1 16e3}        ; 16kHz    
+    
+end

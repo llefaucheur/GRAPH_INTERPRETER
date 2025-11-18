@@ -1,0 +1,16 @@
+﻿  stream_tool_graph2Bin.c
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(332,46): warning C4101: 'dst': unreferenced local variable
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(332,26): warning C4101: 'cond': unreferenced local variable
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(332,32): warning C4101: 'opcode': unreferenced local variable
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(332,57): warning C4101: 'src2': unreferenced local variable
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(332,40): warning C4101: 'opar': unreferenced local variable
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(332,63): warning C4101: 'K': unreferenced local variable
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(332,51): warning C4101: 'src1': unreferenced local variable
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(484,46): warning C4101: 'dst': unreferenced local variable
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(484,26): warning C4101: 'cond': unreferenced local variable
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(484,32): warning C4101: 'opcode': unreferenced local variable
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(484,57): warning C4101: 'src2': unreferenced local variable
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(484,40): warning C4101: 'opar': unreferenced local variable
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(484,63): warning C4101: 'K': unreferenced local variable
+C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\stream_tool_graph2Bin.c(484,51): warning C4101: 'src1': unreferenced local variable
+  graphTxt2Bin.vcxproj -> C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_tools\graphTxt2Bin\graphTxt2Bin\Debug\graphTxt2Bin.exe

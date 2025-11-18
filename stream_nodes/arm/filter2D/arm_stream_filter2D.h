@@ -70,7 +70,7 @@ typedef struct
 typedef struct
 {
     uint32_t iir_service;
-    stream_al_services *services;
+    stream_services *services;
     arm_filter2D_memory *TCM;
 
 } arm_filter2D_instance;

@@ -1,0 +1,35 @@
+; ------------------------------------------------------------------------------------------------------------
+; SOFTWARE COMPONENT MANIFEST - "arm_stream_filter"
+; ------------------------------------------------------------------------------------------------------------
+;
+node_developer_name         ARM                 ; developer name
+node_name                   arm_anr             ; node name
+
+node_mask_library            16                 ; dependency with DSP services
+
+;----------------------------------------------------------------------------------------
+;   MEMORY ALLOCATIONS
+
+node_mem                     0		            ; first memory bank (node instance)
+node_mem_alloc           45300			        ; 45kB
+node_mem_type                0                  ; static memory
+
+
+;---------------------                          ; just for example:
+; node_dynamic_malloc                           ; let the scheduler manage dynamically the memory allocation
+;---------------------
+
+
+;
+;--------------------------------------------------------------------------------------------
+;    ARCS CONFIGURATION
+node_arc            0
+node_arc_nb_channels      {1 1 2}               ; arc intleaved,  options for the number of channels
+node_arc_raw_format       {1 3 1}               ; options for the raw arithmetics STREAM_S16, STREAM_FP32
+node_arc_frame_samples    {-1 1 1 512}          ; all the integer values from 1 to 512
+
+node_arc            1
+node_arc_nb_channels      {1 1 2}               ; options for the number of channels
+node_arc_raw_format       {1 3 1}               ; options for the raw arithmetics STREAM_S16, STREAM_FP32
+
+end

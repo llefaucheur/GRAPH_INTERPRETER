@@ -33,8 +33,10 @@
 #ifndef cSTREAM_COMMON_CONST_H
 #define cSTREAM_COMMON_CONST_H
 
+/* ----------------------------------------------------------------------------------------------------------------
+    STREAM NODES 
 
-/*  nbparam = 0 means any or "full set of parameters loaded from binary format" 
+    nbparam = 0 means any or "full set of parameters loaded from binary format" 
     W32LENGTH_LW4 == 0 means no parameter to read
 */
 #define NODE_ALL_PARAM 0u 
@@ -42,6 +44,18 @@
 
 #define NODE_TASKS_COMPLETED 0u
 #define NODE_TASKS_NOT_COMPLETED 1u
+
+
+#define MAX_NB_STREAM_PER_NODE 8
+
+
+/*---------------- NODE STREAM_SET_PARAMETER -----------------------------
+    graph_interpreter_process (STREAM_SET_PARAMETER, uint32_t *data)
+        data -> list of [node idx; parameter address]..[0;0]
+*/
+#define MAX_NB_PENDING_PARAM_UPDATES 8  // size of the above list 
+
+
 
 
 #define U(x) ((uint32_t)(x)) /* for MISRA-2012 compliance to Rule 10.4 */
@@ -352,30 +366,32 @@ enum stream_processor_sub_arch_fpu
     1_987654321_987654321_987654321_
     cccccccc________________________  collision byte in the WRITE word32, IO affinity ARCHID_LW0
     R_______________________________  flag: relocatable memory segment
-    ____OOOO________________________  long offset of the buffer base address
+    _X______________________________  Flag telling the graph section is accessed "in-place" (COPY_IN_RAM_FMT0)
+    ___<-5->________________________  long offset of the buffer base address: virtual MMU to platform "VID"
     ________EXT_____________________  extension 3bits shifter
     ___________s44443333222211110000  5 hex signed digits[1+20b] = FrameSize and Arc-R/W
             <--SIZE_EXT_FMT0_MSB--->  R/W arc index (with EXT) leaves one byte
-        <---SIZE_EXT_OFF_FMT0_MSB-->  base addresses on 28bits 
+       <----SIZE_EXT_OFF_FMT0_MSB-->  base addresses on 29bits 
     <-->                              tells the loader to copy a graph section in RAM
     
    max = +/- 0x000FFFFF << (EXT x 2) 
 
-   EXT  Shift   Granul  range   
-   0    0       1       1MB     
-   1    2       4       4MB     
-   2    4       16      16MB
-   3    6       64      64MB
-   4    8       256     256MB
-   5    10      1K      1GB
-   6    14      16K     16GB    (TBD)
-   7    18      256K    256GB   (TBD)
+   There are 32 OFFsets of 64bits, 
+   EXT  Shift   Granul  range(+/- 20bits)
+   0    0       1       +/- 1MB     
+   1    2       4       +/- 4MB     
+   2    4       16      +/- 16MB
+   3    6       64      +/- 64MB
+   4    8       256     +/- 256MB
+   5    10      1K      +/- 1GB
+   6    14      16K     +/- 16GB    (TBD)
+   7    18      256K    +/- 256GB   (TBD)
 
-   max = (+/-)0x000FFFFF << (2xEXT) = +/-1M x (2<<EXT) 
+   max = (+/-)0x000FFFFF << (2xEXT) = +/-1M x (2<<EXT) for EXT=[0..5]
 */
-#define SIZE_EXT_OFF_FMT0_MSB 27u /*       28 = offsets(4) + EXT(3) + sign(1) + size(20) */
-#define  ADDR_OFFSET_FMT0_MSB 27u
-#define  ADDR_OFFSET_FMT0_LSB 24u /*  4    offsets */
+#define SIZE_EXT_OFF_FMT0_MSB 28u /*       29 = offsets(5) + EXT(3) + sign(1) + size(20) */
+#define  ADDR_OFFSET_FMT0_MSB 28u
+#define  ADDR_OFFSET_FMT0_LSB 24u /*  5    offsets */
 #define     SIZE_EXT_FMT0_MSB 23u /*       24 = EXT(3) + sign(1) + size(20) */
          
 #define    EXTENSION_FMT0_MSB 23u /*    */
@@ -391,20 +407,6 @@ enum stream_processor_sub_arch_fpu
 #define SIZE_EXT_OFF_FMT0_LSB  0u /*    */
 
 #define MAX_NB_MEMORY_OFFSET ((-1) + (1<<(ADDR_OFFSET_FMT0_MSB-ADDR_OFFSET_FMT0_LSB+1)))
-
-#define PACK2LIN(R,LL,I)                                            \
-    {   uint8_t *base;                                              \
-        uint8_t extend;                                             \
-        int32_t signed_base;                                        \
-                                                                    \
-        base = LL[RD(I,ADDR_OFFSET_FMT0)];                          \
-        signed_base = RD(I, SIGNED_SIZE_FMT0);                      \
-        signed_base = signed_base << (32-SIGNED_SIZE_FMT0_MSB);     \
-        signed_base = signed_base >> (32-SIGNED_SIZE_FMT0_MSB);     \
-        extend = (uint8_t)RD(I, EXTENSION_FMT0);                    \
-        signed_base <<= (extend << 1);                              \
-        R = (intptr_t)(&(base[signed_base]));                       \
-    }
 
 
 /*  WORD 0 - frame size --------------- */
@@ -446,7 +448,7 @@ enum stream_processor_sub_arch_fpu
     /*--------------- WORD 2 -------------*/
     #define      FS1D_FMT2_MSB  31u /* 32 IEEE-754, 0 means "asynchronous" or "any" */
     #define      FS1D_FMT2_LSB   0u /*    [Hz]   */
-    //#define  LEVEL_1D_FMT2_MSB   7u
+    //#define  LEVEL_1D_FMT2_MSB   7u /*    24bits accuracy is more than enough for Fs */
     //#define  LEVEL_1D_FMT2_LSB   0u /* 8  Maximum level from SUBTYPE_FMT1-unit */
 
 
@@ -542,15 +544,23 @@ enum stream_processor_sub_arch_fpu
         -  (STREAM_STOP, ptr1, ptr2, ptr3); 
     */
     #define STREAM_RESET            1u  /* arm_graph_interpreter(STREAM_RESET, *instance, * memory_results) */
-        #define STREAM_COLD_BOOT    0u  /* if (STREAM_COLD_BOOT == RD(command, COMMDEXT_CMD)) */
-        #define STREAM_WARM_BOOT    1u  /* Reset + restore memory banks from retention */
+        #define COMMDEXT_COLD_BOOT    0u  /* if (STREAM_COLD_BOOT == RD(command, COMMDEXT_CMD)) */
+        #define COMMDEXT_WARM_BOOT    1u  /* Reset + restore memory banks from retention */
+        #define COMMDEXT_DYN_MALLOC   2u  /* pre-reset phase : ask for the amount of memory to allocate */
 
     #define STREAM_SET_PARAMETER    2u  /* APP sets NODE parameters node instances are protected by multithread effects when 
                                           changing parmeters on the fly, used to exchange the unlock key */
             
+
+
+/* number of physical memory banks of the processor, for the graph processing */
+#define MAX_PROC_MEMBANK ((1<< (ADDR_OFFSET_FMT0_MSB - ADDR_OFFSET_FMT0_LSB +1))-1)
+
+
     //#define STREAM_SET_IO_CONFIG STREAM_SET_PARAMETER 
     /*  @@@ TODO
-            reconfigure the IO : p_io_function_ctrl(STREAM_SET_IO_CONFIG + (FIFO_ID<<NODE_TAG_CMD), 0, new_configuration_index) 
+            reconfigure the IO : p_io_function_ctrl(
+            + (FIFO_ID<<NODE_TAG_CMD), 0, new_configuration_index) 
 
             io_power_mode     0             ; to set the device at boot time in stop / off (0)
                                             ; running mode(1) : digital conversion (BIAS always powered for analog peripherals )
@@ -584,9 +594,9 @@ enum stream_processor_sub_arch_fpu
     #define  NODE_TAG_CMD_MSB U(15) /*    parameter, function selection / debug arc index / .. */      
     #define  NODE_TAG_CMD_LSB U( 8) /* 8  instanceID for the trace / FIFO_ID for status checks */
     #define   UNUSED1_CMD_MSB U( 7)       
-    #define   UNUSED1_CMD_LSB U( 5) /* 3 _______ */
-    #define  COMMDEXT_CMD_MSB U( 4)       
-    #define  COMMDEXT_CMD_LSB U( 4) /* 1 command option (RESET + warmboot, (SET_PARAM + wait)  */
+    #define   UNUSED1_CMD_LSB U( 6) /* 2 _______ */
+    #define  COMMDEXT_CMD_MSB U( 5)       
+    #define  COMMDEXT_CMD_LSB U( 4) /* 2 command option (MALLOC, RESET + warmboot, (SET_PARAM + wait)  */
     #define   COMMAND_CMD_MSB U( 3)       
     #define   COMMAND_CMD_LSB U( 0) /* 4 command */
 
@@ -652,15 +662,14 @@ enum stream_processor_sub_arch_fpu
      ((GROUP)  <<GROUP_SSRV_LSB)     )))
 
 /* mask for node_mask_library, is there a need for a registered return address (Y/N)  */
-#define SERV_GROUP_INTERNAL     1u  /* 1   N internal : Semaphores, DMA, Clocks */
-#define SERV_GROUP_SCRIPT       2u  /* 2   N script : Node parameters  */
-#define SERV_GROUP_CONVERSION   3u  /* 4   N Compute : raw conversions */
-#define SERV_GROUP_STDLIB       4u  /* 8   Y Compute : malloc, string */
-#define SERV_GROUP_MATH         5u  /* 16  N math.h */
-#define SERV_GROUP_DSP_ML       6u  /* 32  N cmsis-dsp */
-#define SERV_GROUP_DEEPL        7u  /* 64  N cmsis-nn */
-#define SERV_GROUP_MM_AUDIO     8u  /* 128 Y speech/audio processing */
-#define SERV_GROUP_MM_IMAGE     9u  /* 256 Y image processing */
+#define SERV_GROUP_INTERNAL     0u  /* 1   N internal : Semaphores, DMA, Clocks */
+#define SERV_GROUP_SCRIPT       1u  /* 2   N script : Node parameters  */
+#define SERV_GROUP_STDLIB       2u  /* 4   Y Compute : malloc, string */
+#define SERV_GROUP_MATH         3u  /* 8   N math.h */
+#define SERV_GROUP_DSP_ML       4u  /* 16  N cmsis-dsp */
+#define SERV_GROUP_DEEPL        5u  /* 32  N cmsis-nn */
+#define SERV_GROUP_MM_AUDIO     6u  /* 64  Y speech/audio processing */
+#define SERV_GROUP_MM_IMAGE     7u  /* 128 Y image processing */
 
 
 
@@ -668,12 +677,12 @@ enum stream_processor_sub_arch_fpu
 /* GROUP_SSRV = 2/SERV_SCRIPT ------------------------------------------------ */
 /* --------------------------------------------------------------------------- */
 
-/*     List of                      FUNCTION_SSRV  (12bits) */
-#define SERV_SCRIPT_RESET               0x001
-#define SERV_SCRIPT_NODE                0x002
-#define SERV_SCRIPT_SCRIPT              0x003  /* node control from scripts */
+/*     List of                      COMMAND_SSRV  (4bits) */
+#define SERV_SCRIPT_RESET               0x1
+#define SERV_SCRIPT_NODE                0x2
+#define SERV_SCRIPT_SCRIPT              0x3  /* node control from scripts */
                                        
-#define SERV_SCRIPT_FORMAT_UPDATE       0x004  /* change stream format from NODE media decoder, script applying change of 
+#define SERV_SCRIPT_FORMAT_UPDATE       0x4  /* change stream format from NODE media decoder, script applying change of 
                                                 use-case (IO_format, vocoder frame-size..): sampling, nb of channel, 2D frame size */
     /* SYSCALL_NODE (CMD=set/read_param + TAG, Node offset, Pointer, Nbytes) */
     #define SYSCALL_FUNCTION_SSRV_NODE      1u       
@@ -686,19 +695,19 @@ enum stream_processor_sub_arch_fpu
         #define STREAM_UPDATE_RELOCATABLE   6
         #define STREAM_SET_BUFFER           7
         #define STREAM_READ_DATA            8
-        #define STREAM_WRITE_DATA           9
+        #define STREAM_WRITE_DATA           9 */
+
+/*#define SERV_SCRIPT_FORMAT_UPDATE_FS 3u         NODE information for a change of stream format, sampling, nb of channel */
+/*#define SERV_SCRIPT_FORMAT_UPDATE_NCHAN 4u      raw data sample, mapping of channels, (web radio use-case) */
+/*#define SERV_SCRIPT_FORMAT_UPDATE_RAW 5u          */
 
 
-//#define SERV_SCRIPT_FORMAT_UPDATE_FS 3u /* NODE information for a change of stream format, sampling, nb of channel */
-//#define SERV_SCRIPT_FORMAT_UPDATE_NCHAN 4u     /* raw data sample, mapping of channels, (web radio use-case) */
-//#define SERV_SCRIPT_FORMAT_UPDATE_RAW 5u
-
-#define SERV_SCRIPT_SECURE_ADDRESS      0x106   /* this call is made from the secured address */
-#define SERV_SCRIPT_AUDIO_ERROR         0x107   /* PLC applied, Bad frame (no header, no synchro, bad data format), bad parameter */
-#define SERV_SCRIPT_DEBUG_TRACE         0x108   /* 1b, 1B, 16char */
-#define SERV_SCRIPT_DEBUG_TRACE_STAMP   0x109   
-#define SERV_SCRIPT_AVAILABLE           0x10A   
-#define SERV_SCRIPT_SETARCDESC          0x10B   /* buffers holding MP3 songs.. rewind from script, 
+#define SERV_SCRIPT_SECURE_ADDRESS      0x6   /* this call is made from the secured address */
+#define SERV_SCRIPT_AUDIO_ERROR         0x7   /* PLC applied, Bad frame (no header, no synchro, bad data format), bad parameter */
+#define SERV_SCRIPT_DEBUG_TRACE         0x8   /* 1b, 1B, 16char */
+#define SERV_SCRIPT_DEBUG_TRACE_STAMP   0x9   
+#define SERV_SCRIPT_AVAILABLE           0xA   
+#define SERV_SCRIPT_SETARCDESC          0xB   /* buffers holding MP3 songs.. rewind from script, 
                                                    switch a NN model to another, change a parameter-set using arcs */
 
 
@@ -1147,6 +1156,7 @@ enum stream_processor_sub_arch_fpu
 #define SET_BIT(arg, bit)   ((arg) |= (U(1) << U(bit)))
 #define CLEAR_BIT(arg, bit) ((arg) = U(arg) & U(~(U(1) << U(bit))))
 #define TEST_BIT(arg, bit)  (U(0) != (U(arg) & (U(1) << U(bit))))
+#define READ_BIT(arg, bit)  (U(arg) & (U(1) << U(bit)))
 
 #define FLOAT_TO_INT(x) ((x)>=0.0f?(int)((x)+0.5f):(int)((x)-0.5f))
 
