@@ -60,7 +60,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     char tmpstring[NBCHAR_LINE], tmpstring2[NBCHAR_LINE], tmpstring3[NBCHAR_LINE];
     struct arcStruct *arc;
     struct stream_node_manifest *node;
-    uint32_t addrW32s;
+    uint32_t addrW32s, last_addrW32s;
     uint32_t packxxb;
     time_t rawtime;
     struct tm * timeinfo;
@@ -886,8 +886,10 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
             strcpy(tmpstring4, "S "); strcat(tmpstring4, tmpstring);
             
             for (imem = 0; imem < size/4; imem++)
-            {   strcpy (graph->binary_graph_comments[memstart], tmpstring4);
+            {   strcpy (graph->binary_graph_comments[memstart + imem], tmpstring4);
             }
+
+            last_addrW32s = memstart + imem;
         } 
 
 
@@ -1110,8 +1112,10 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
                     strcpy(tmpstring4, "S "); strcat(tmpstring4, tmpstring3);
                     
                     for (imem = 0; imem < size/4; imem++)
-                    {   strcpy (graph->binary_graph_comments[memstart], tmpstring4);
+                    {   strcpy (graph->binary_graph_comments[memstart+imem], tmpstring4);
                     }
+
+                    last_addrW32s = memstart + imem;
                 }     
 
                 vid_malloc (membank->mem_VID, membank->graph_memreq_size, membank->alignmentBytes,
@@ -1220,8 +1224,10 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
                     strcpy(tmpstring4, "W "); strcat(tmpstring4, tmpstring3);
                     
                     for (imem = 0; imem < size/4; imem++)
-                    {   strcpy (graph->binary_graph_comments[memstart], tmpstring4);
+                    {   strcpy (graph->binary_graph_comments[memstart + imem], tmpstring4);
                     }
+
+                    last_addrW32s = memstart + imem;
                 }   
 
                 vid_malloc(membank->mem_VID, (uint32_t)(membank->graph_memreq_size), membank->alignmentBytes, 
@@ -1320,7 +1326,7 @@ void arm_stream_graphTxt2Bin (struct stream_platform_manifest *platform, struct 
     sprintf(graph->binary_graph_comments[0], "%s", tmpstring);
     FMT0 = 0;
     ST(FMT0,  COMPRESSION_HW0, 0);              // no compression
-    ST(FMT0,  GRAPH_SIZE_HW0, addrW32s);        // graph size (last word)
+    ST(FMT0,  GRAPH_SIZE_HW0, last_addrW32s);   // graph size (last word)
     graph->binary_graph[0] = FMT0;              // address 0 gives the size
 
 

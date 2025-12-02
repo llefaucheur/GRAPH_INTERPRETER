@@ -5,7 +5,7 @@
 
 #ifndef cPLATFORM_COMPUTER_H
 #define cPLATFORM_COMPUTER_H
-
+#ifdef PLATFORM_COMPUTER
 
  /*----- PLATFORM DEFINITIONS FOR "COMPUTER" ------------------------------------------------------------------------*/
 
@@ -44,7 +44,7 @@
 
 
         /* warning : changing the indexes impacts the "top_graph_interface" of each graph.txt */
-#define IO_PLATFORM_data_sink        0 
+#define IO_PLATFORM_DATA_SINK        0 
 #define IO_PLATFORM_DATA_IN_1        1 
 #define IO_PLATFORM_SENSOR_0         2 
 #define IO_PLATFORM_MOTION_IN_0      3 
@@ -87,7 +87,7 @@
 #define CODE_SIGP_STREAM_RESAMPLER      /* asynchronous sample-rate converter */
 #define CODE_BITBANK_JPEGENC            /* bitbank_JPEGENC */
 #define CODE_TJPGDEC                    /* TjpgDec */
-#define CODE_KWS                        /* yes/no keyword spotting */
+#define CODE_SIGP_KWS                   /* yes/no keyword spotting */
 
 
 /*----- SERVICES ENABLED FOR "COMPUTER" ------------------------------------------------------------------------*/
@@ -193,5 +193,5 @@
 #define RD_BYTE_MP_(x,address) { DATA_MEMORY_BARRIER; (x) = *(volatile uint8_t *)(address);}
 #define CLEAR_BIT_MP(arg, bit) {((arg) = U(arg) & U(~(U(1) << U(bit)))); DATA_MEMORY_BARRIER; } 
 
-
+#endif
 #endif /* ifndef cPLATFORM_COMPUTER_H */

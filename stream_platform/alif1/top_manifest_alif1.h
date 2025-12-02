@@ -4,7 +4,7 @@
 
 #ifndef cPLATFORM_ALIF1_H
 #define cPLATFORM_ALIF1_H
-
+#ifdef PLATFORM_ALIF1
  /*----------------------------------------PLATFORM MANIFEST--------------------------------------------
                    +-----------------+
                    | static |working |
@@ -54,7 +54,7 @@
 #define CODE_ARM_STREAM_ROUTER          /* copy input arcs and subchannel and output arcs and subchannels   */     
 #define CODE_ARM_ANR                    /* SDS audio noise reduction */
 #define CODE_ARM_FIXEDBF                /* SDS audio fixed direction beamformer */
-#define CODE_ARM_KWS                    /* SDS keyword spotting */
+#define CODE_SIGP_KWS                   /* SDS keyword spotting */
 #define CODE_SIGP_STREAM_COMPRESSOR     /* raw data compression with adaptive prediction */
 #define CODE_SIGP_STREAM_DECOMPRESSOR   /* raw data decompression */
 #define CODE_ARM_STREAM_MODULATOR       /* signal generator with modulation */
@@ -195,5 +195,5 @@
 #define RD_BYTE_MP_(x,address) { DATA_MEMORY_BARRIER; (x) = *(volatile uint8_t *)(address);}
 #define CLEAR_BIT_MP(arg, bit) {((arg) = U(arg) & U(~(U(1) << U(bit)))); DATA_MEMORY_BARRIER; } 
 
-
+#endif
 #endif /* ifndef cPLATFORM_ALIF1_H */

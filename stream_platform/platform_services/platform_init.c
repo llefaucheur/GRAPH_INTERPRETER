@@ -185,12 +185,12 @@ void platform_init_stream_instance(arm_stream_instance_t *S)
   
     ST(S->link_offset, NODE_LINK_W32OFF, 0);      /* reset the read index in the linked list */
 
-    /* the iomask of each instance is used to know who initializes which IO, one processor per I/O */
-    platform_init_io (S, hwnio);   
-
     /* multiprocessing : wait the main scheduler to say go! */
-    if (STREAM_MAIN_INSTANCE != RD(S->scheduler_control, MAININST_SCTRL))
+    if (STREAM_MAIN_INSTANCE == RD(S->scheduler_control, MAININST_SCTRL))
     {
+        /* the iomask of each instance is used to know who initializes which IO, one processor per I/O */
+        platform_init_io(S, hwnio);
+
         //@@@ TODO for multiprocessing : check MAININST_SCTRL
         //} else /* wait until the graph is copied in private RAM */
         //    while platform_al (PLATFORM_MP_BOOT_WAIT, 0,0,0);
@@ -238,7 +238,7 @@ static uint32_t lin2pack (intptr_t buffer, uint8_t ** long_offset)
   @par          
   @remark
  */
-static uint32_t check_affinity_msb (uint32_t whoamI, uint32_t IO_affinity) 
+static uint32_t check_affinity (uint32_t whoamI, uint32_t IO_affinity) 
 {
     uint8_t match = 1;
 
@@ -302,7 +302,8 @@ void platform_init_io(arm_stream_instance_t *S, uint32_t hwnio)
         /* build iomask from IDX_TO_STREAM_IO_CONTROL */
         S->iomask |= ((uint64_t)1 << graph_idx); 
 
-        if (0 == check_affinity_msb (S->scheduler_control, read_hwio_control))
+        /* check processor affinity with this IO, and  STREAM_MAIN_INSTANCE */
+        if (0 == check_affinity (S->scheduler_control, read_hwio_control))
         {   continue;
         }
 

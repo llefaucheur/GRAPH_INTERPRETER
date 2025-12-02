@@ -172,5 +172,8 @@ void arm_stream_anr (uint32_t command, void *instance, void *data, uint32_t *sta
 #ifdef __cplusplus
 }
 #endif
-
+#else
+     void arm_stream_anr(uint32_t command, void* instance, void* data, uint32_t* status)
+     {
+     }
 #endif  // #if CODE_ARM_ANR

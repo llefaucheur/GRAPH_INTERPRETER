@@ -1,0 +1,29 @@
+;--------------------------------------------------------------------------
+;   Stream-based processing using a graph interpreter :                    
+;   
+;   +----------+     +------------------------+     +--------+
+;   | ADC      +-----> filter / one NODE      +-----> GPIO   | 
+;   +----------+     +------------------------+     +--------+
+;                
+;----------------------------------------------------------------------
+graph_locations -1 -1 -1 -1 0 0 0   ; script and linked-list stays in flash 
+;----------------------------------------------------------------------
+format_index            0
+format_frame_length     320         ; 
+;----------------------------------------------------------------------
+stream_io_graph         0   0       ; Platform index 1 = io_sds_demo_audio_in_0.txt 
+stream_io_graph         1   1       ; Platform index 1 = io_sds_demo_line_out_0.txt
+;----------------------------------------------------------------------
+node arm_anr            0 
+    node_preset         1                       
+
+;----------------------------------------------------------------------
+; arc_input   { io / set0copy1 / fmtProd } + { node / inst / arc / fmtCons }
+; arc_output  { io / set0copy1 / fmtCons } + { node / inst / arc / fmtProd }
+; arc_nodes   { inst / arc / fmtProd }     + { inst / arc / fmtCons }
+;
+arc_input   0 1 0 arm_anr  0 0 0  ; io0 set0copy1 fmt0     ; INPUT => NODE
+
+arc_output  1 1 0 arm_anr  0 1 0  ; io1 set0copy1 fmt0     ; NODE => OUTPUT 
+
+end

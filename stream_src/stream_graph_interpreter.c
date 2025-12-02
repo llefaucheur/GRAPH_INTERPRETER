@@ -31,8 +31,14 @@
 
 
 #include <stdint.h>
-#include "../stream_platform/stream_includes.h"  
 
+#include "presets.h"
+#include "stream_common_const.h"
+#include "stream_common_types.h"
+#include "stream_const.h"      
+
+#include "stream_types.h"
+#include "stream_extern.h"
 
 
 /*
@@ -92,6 +98,7 @@ void arm_graph_interpreter (uint32_t command,  arm_stream_instance_t *S, uintptr
         }
 
         default:
+            ptr2 = 0;
             break;
     }
 }

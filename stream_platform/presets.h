@@ -67,9 +67,9 @@
 
 
 /*----- PLATFORM SELECTION ------------------------------------------------------------------------------*/
-#define PLATFORM_ALIF1      
-//#define PLATFORM_COMPUTER               //Windows 
-//#define PLATFORM_RENESAS_RA8E1SDK       //M85 
+//#define PLATFORM_ALIF1      
+#define PLATFORM_COMPUTER               //Windows 
+//#define PLATFORM_RA8E1FPB               //M85 
 //#define PLATFORM_RENESAS_RA8P1EK        //M85+M33
 //#define PLATFORM_LPC55S69EVK            //Dual M33
 //#define PLATFORM_STM32C0116DK           //M0 2kB
@@ -84,6 +84,14 @@
 #include "alif1/top_manifest_alif1.h"
 #endif
 
+//------------------------------------------------------------------------------------
+#ifdef PLATFORM_RA8E1FPB
+#define PLATFORM_ARCHITECTURE 1         /* arbitrary index */
+#define PLATFORM_ARCH_32BIT             /* or PLATFORM_ARCH_64BIT */
+
+#define PLATFORM_PROCESSOR 1            /* HE=1 orocessor */
+#include "ra8e1/top_manifest_ra8e1.h"
+#endif
 //------------------------------------------------------------------------------------
 
 #ifdef PLATFORM_COMPUTER

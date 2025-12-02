@@ -1,0 +1,50 @@
+;--------------------------------------------------------------------------
+;   Stream-based processing using a graph interpreter :                    
+;   
+;   - The audio speech detection is used to toggle a GPIO
+; 							 
+;	+--------+     +--------+      +--------+     +--------+
+;	| MIC    +-----> FILTER +------> DETECT +-----> GPIO   |-----> 
+;	+--------+     +--------+      +--------+     +--------+
+;               
+;----------------------------------------------------------------------
+graph_locations -1 -1 -1 -1  0 0 0   ; script and linked-list stays in RAM 
+;----------------------------------------------------------------------
+format_index            0
+format_frame_length     320         ; 10ms mono 16b 16kHz
+format_index            1
+format_frame_length     4           ; io_ra8e1_gpio_out_1
+;----------------------------------------------------------------------
+stream_io_graph         0   4       ; Platform index 4 = io_ra8e1_audio_in_0 one microphone 
+stream_io_graph         1   8       ; Platform index 8 = io_ra8e1_gpio_out_1 audio out stereo 
+;----------------------------------------------------------------------
+node arm_stream_filter  0 
+    node_preset         1                       ; Q15 filter
+    node_parameters     0                       ; TAG = "all parameters"
+
+        1  u8;  0                               ; CMSIS format
+        1  u8;  1                               ; q15 format
+        1  u8;  2                               ; Two biquads
+        1  s8;  1                               ; postShift
+;        5 s16; 681   422   681 23853 -15161     ; INT16 elliptic band-pass 1450..1900/16kHz
+;        5 s16; 681 -1342   681 26261 -15331     ; 
+;        5 s16; 16019 -16019     0 15455     0   ; INT16 elliptic high-pass 150/16kHz
+;        5 s16; 16019 -32034 16019 32219 -15869  ; 
+        5 s16; 0 16383 0 0 0                    ; bypass
+        5 s16; 0 16383 0 0 0                    ;
+
+    end
+;----------------------------------------------------------------------
+node sigp_stream_detector 0     
+node_preset             5
+;----------------------------------------------------------------------
+; arc_input   { io / set0copy1 / fmtProd } + { node / inst / arc / fmtCons }
+; arc_output  { io / set0copy1 / fmtCons } + { node / inst / arc / fmtProd }
+; arc_nodes   { inst / arc / fmtProd }     + { inst / arc / fmtCons }
+;
+
+arc_input   0 0 0 arm_stream_filter  0 0 0                        ; set0copy1=0 buffer declared in the application
+arc_nodes   arm_stream_filter 0 1 0   sigp_stream_detector 0 0 0  ; IIR0(out1) format 0 => DET0(in0) format 0
+arc_output  1 1 1 sigp_stream_detector  0 1 1                     ; DETECT => OUTPUT (one int16 for the detector output)
+
+end

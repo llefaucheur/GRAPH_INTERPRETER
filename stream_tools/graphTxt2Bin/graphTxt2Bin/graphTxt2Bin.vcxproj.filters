@@ -151,5 +151,14 @@
     <Text Include="..\..\..\stream_platform\computer\top_manifest_computer.txt">
       <Filter>Manifests</Filter>
     </Text>
+    <Text Include="..\..\..\stream_platform\ra8e1\graphs\graph_ra8_audio_bin.txt">
+      <Filter>Graph</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_platform\ra8e1\graphs\graph_ra8_audio.txt">
+      <Filter>Graph</Filter>
+    </Text>
+    <Text Include="..\..\..\stream_platform\ra8e1\top_manifest_ra8e1.txt">
+      <Filter>Manifests</Filter>
+    </Text>
   </ItemGroup>
 </Project>

@@ -4,6 +4,7 @@
 
 #ifndef top_manifest_alif1Pc
 #define top_manifest_alif1Pc
+#ifdef PLATFORM_ALIF1
 
 #include <stdlib.h>
 #include <string.h>
@@ -279,5 +280,5 @@ void arm_memory_swap(arm_stream_instance_t* S)
 }
 
 /*==========================================================================================================================*/
-
+#endif
 #endif  //#ifndef top_manifest_alif1Pc

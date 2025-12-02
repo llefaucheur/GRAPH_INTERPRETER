@@ -1,0 +1,20 @@
+; ------------------------------------------------------------------------------------------------------------
+; SOFTWARE COMPONENT MANIFEST - "sigp_stream_detector2D"
+;   Tuning : zoom, light-adjust and focus in a specific region of the input image, (by quadrant+central)
+; ------------------------------------------------------------------------------------------------------------
+;
+node_developer_name      sigp                        ; developer name
+node_name                sigp_stream_detector2D      ; node name
+
+;----------------------------------------------------------------------------------------
+;   MEMORY ALLOCATIONS
+
+node_mem                0
+node_mem_alloc         32
+
+;--------------------------------------------------------------------------------------------
+;    ARC CONFIGURATION
+
+
+ 
+end

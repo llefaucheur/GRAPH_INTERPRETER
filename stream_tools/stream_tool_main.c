@@ -28,6 +28,17 @@
 #include "stream_tool_include.h"
 #include "presets.h"
 
+#ifdef PLATFORM_RA8E1FPB 
+#define GRAPH_TXT           "../../../stream_platform/ra8e1/graphs/graph_ra8_audio.txt"     
+#define GRAPH_BIN           "../../../stream_platform/ra8e1/graphs/graph_ra8_audio_bin.txt" 
+ //#define GRAPH_TXT           "../../../stream_platform/ra8e1/graphs/graph_ra8_1node.txt"       
+ //#define GRAPH_BIN           "../../../stream_platform/ra8e1/graphs/graph_ra8_1node_bin.txt"   
+
+#define GRAPH_TOP_MANIFEST  "../../../stream_platform/ra8e1/top_manifest_ra8e1.txt"
+#define GRAPH_HEADER        "../../../stream_platform/ra8e1/graphs/graph_ra8_header.h"         /* list of labels to do "set_parameter" from scripts */
+#define GRAPH_DEBUG         "../../../stream_platform/ra8e1/graphs/graph_ra8_debug.txt"        /* comments made during graph conversion  */
+#endif //PLATFORM_RA8E1FPB
+
 #ifdef PLATFORM_ALIF1 
 #define GRAPH_TXT           "../../../stream_platform/alif1/graphs/graph_alif_audio.txt"     
 #define GRAPH_BIN           "../../../stream_platform/alif1/graphs/graph_alif_audio_bin.txt" 

@@ -125,9 +125,6 @@ void sigp_stream_detector (unsigned int command, void *instance, void *data, uns
                 /* here COLD reset */
                 pinstance->z1 = F2Q31(0.00001);
                 pinstance->z6 = F2Q31(0.00001);
-                pinstance->backup->z8 = F2Q31(0.00001);
-                pinstance->backup->z7 = F2Q31(0.001);
-
             }
             else /* wsigp boot */
             {
@@ -142,11 +139,14 @@ void sigp_stream_detector (unsigned int command, void *instance, void *data, uns
                 //int32_t Flag;  /* accumulator 2 / estimation  */
                 //int32_t down_counter;    /* memory of the debouncing downcounter  */
                 //uint8_t previous_vad; 
-
             }
+
             pinstance->config = detector_preset[preset];    /* preset data move */
             pinstance->services = (stream_services *)data;
             pinstance->decf = decfMASK; 
+            pinstance->backup->z8 = F2Q31(0.00001);
+            pinstance->backup->z7 = F2Q31(0.001);
+            pinstance->backup->down_counter = 0;
 
             break;
         }  
@@ -187,7 +187,7 @@ void sigp_stream_detector (unsigned int command, void *instance, void *data, uns
             intptr_t nb_data, stream_xdmbuffer_size, bufferout_free;
             stream_xdmbuffer_t *pt_pt;
             #define SAMP_IN int16_t 
-            #define SAMP_OUT int16_t
+            #define SAMP_OUT int32_t
             SAMP_IN *inBuf;
             SAMP_OUT *outBuf;
 

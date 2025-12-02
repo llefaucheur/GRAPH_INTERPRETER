@@ -2,9 +2,10 @@
  * top_manifest_computer.c.c
  * -------------------------------------------------------------------- */
 
+#include "presets.h"
 #ifndef top_manifest_computerPc
 #define top_manifest_computerPc
-
+#ifdef PLATFORM_COMPUTER
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -283,5 +284,5 @@ void arm_memory_swap(arm_stream_instance_t* S)
 }
 
 /*==========================================================================================================================*/
-
+#endif
 #endif  //#ifndef top_manifest_computerPc

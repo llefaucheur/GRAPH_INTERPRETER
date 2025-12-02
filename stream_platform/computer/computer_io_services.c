@@ -40,6 +40,7 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
 
+
 #if DATA_FROM_FILES
 #include <stdio.h>
 #define CRT_SECURE_NO_WARNINGS
@@ -82,11 +83,20 @@ void arm_stream_null_task (int32_t c, stream_handle_t i, void *d, uint32_t *s)  
 */
 
 
+
+
+#ifdef _MSC_VER 
 FILE* ptf_data_sink;
 FILE* ptf_data_in_1;
-FILE *ptf_sensor_0;
-FILE *ptf_gpio_out_0;
-FILE *ptf_data_out_0;
+FILE* ptf_sensor_0;
+FILE* ptf_analog_0;
+FILE* ptf_audio_in_0;
+FILE* ptf_debug_detector;
+FILE* ptf_line_out_0;
+FILE* ptf_gpio_out_0;
+FILE* ptf_gpio_out_1;
+FILE* ptf_data_out_0;
+#endif
 
 
 #define size_data_sink 16
@@ -140,12 +150,12 @@ void data_sink (uint32_t command, stream_xdmbuffer_t *data)
         tmp = (int32_t)fread(buffer_data_sink, sizeof(int16_t), count, ptf_data_sink);
         if (tmp != count)
         {
-            arm_stream_io_ack(IO_PLATFORM_data_sink, buffer_data_sink, 0);
+            arm_stream_io_ack(IO_PLATFORM_DATA_SINK, buffer_data_sink, 0);
             fclose(ptf_data_sink);
         }
         else
         {
-            arm_stream_io_ack(IO_PLATFORM_data_sink, buffer_data_sink, size_data_sink);
+            arm_stream_io_ack(IO_PLATFORM_DATA_SINK, buffer_data_sink, size_data_sink);
         }
         break;
     case STREAM_STOP:

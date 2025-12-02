@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{1270be9e-dbef-4567-85e5-a0e6ff0eeda1}</ProjectGuid>
+    <RootNamespace>Computer</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_nodes;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform\computer\stream_libraries\CMSIS-DSP\Include;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_platform;C:\Work\GITHUB_LLF\GRAPH_INTERPRETER\stream_src;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>..\stream_nodes;..\..\..\stream_platform;..\..\..\stream_nodes;..\..\..\stream_src;..\..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Include\;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\arm_stream_anr.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\arm_rfft_fast_f32.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\arm_rfft_fast_init_f32.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\buffer.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\fftwrap.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\filterbank.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\mdf.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\preprocess.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\CommonTables\arm_common_tables.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\CommonTables\arm_const_structs.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_bitreversal.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_bitreversal2.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_cfft_f32.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_cfft_init_f32.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_cfft_radix2_init_f32.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_cfft_radix4_f32.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\anr\speexdsp\Source\TransformFunctions\arm_cfft_radix8_f32.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\demodulator\arm_stream_demodulator.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\demodulator\arm_stream_demodulator_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\filter2D\arm_stream_filter2D.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\filter\arm_stream_filter.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\fixedbf\arm_stream_fixedbf.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\router\arm_stream_router.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\router\arm_stream_router_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_script.c" />
+    <ClCompile Include="..\..\..\stream_nodes\arm\script\arm_stream_script_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\bitbank\JPEGENC\bitbank_JPEGENC.c" />
+    <ClCompile Include="..\..\..\stream_nodes\elm-lang\TJpgDec\TjpgDec.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor_imadpcm.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor_imadpcm.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector2D\sigp_stream_detector2D.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector2D\sigp_stream_detector2D_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector_process.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\kws\sigp_stream_kws.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler.c" />
+    <ClCompile Include="..\..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler_process.c" />
+    <ClCompile Include="..\..\..\stream_platform\alif1\alif1_io_services.c" />
+    <ClCompile Include="..\..\..\stream_platform\alif1\top_manifest_alif1.c" />
+    <ClCompile Include="..\..\..\stream_platform\computer\computer_io_services.c" />
+    <ClCompile Include="..\..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_fast_q15.c" />
+    <ClCompile Include="..\..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\Computer_arm_biquad_cascade_df1_init_q15.c" />
+    <ClCompile Include="..\..\..\stream_platform\computer\top_manifest_computer.c" />
+    <ClCompile Include="..\..\..\stream_platform\platform_services\all_services.c" />
+    <ClCompile Include="..\..\..\stream_platform\platform_services\platform_init.c" />
+    <ClCompile Include="..\..\..\stream_platform\platform_services\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\generic_biquad_cascade_df1_f32.c" />
+    <ClCompile Include="..\..\..\stream_platform\platform_services\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\generic_biquad_cascade_df1_fast_q15.c" />
+    <ClCompile Include="..\..\..\stream_platform\platform_services\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\generic_biquad_cascade_df1_init_f32.c" />
+    <ClCompile Include="..\..\..\stream_platform\platform_services\stream_libraries\CMSIS-DSP\Source\FilteringFunctions\generic_biquad_cascade_df1_init_q15.c" />
+    <ClCompile Include="..\..\..\stream_platform\ra8e1\ra8e1_io_services.c" />
+    <ClCompile Include="..\..\..\stream_platform\ra8e1\top_manifest_ra8e1.c" />
+    <ClCompile Include="..\..\..\stream_src\stream_graph_interpreter.c" />
+    <ClCompile Include="..\..\..\stream_src\stream_io.c" />
+    <ClCompile Include="..\..\..\stream_src\stream_scheduler.c" />
+    <ClCompile Include="..\..\main.c" />
+    <ClCompile Include="..\..\ra8e1\main_call_ra8e1.c" />
+    <ClCompile Include="..\main_call_computer.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\stream_nodes\arm\amplifier\arm_stream_amplifier.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\anr\arm_stream_anr.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\demodulator\arm_stream_demodulator.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\filter2D\arm_stream_filter2D.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\filter\arm_stream_filter.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\fixedbf\arm_stream_fixedbf.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\modulator\arm_stream_modulator.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\router\arm_stream_router.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_stream_script.h" />
+    <ClInclude Include="..\..\..\stream_nodes\arm\script\arm_stream_script_instructions.h" />
+    <ClInclude Include="..\..\..\stream_nodes\bitbank\JPEGENC\bitbank_JPEGENC.h" />
+    <ClInclude Include="..\..\..\stream_nodes\elm-lang\TJpgDec\TjpgDec.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\compressor\sigp_stream_compressor_imadpcm.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\decompressor\sigp_stream_decompressor_imadpcm.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\detector2D\sigp_stream_detector2D.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\detector\sigp_stream_detector.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\kws\sigp_stream_kws.h" />
+    <ClInclude Include="..\..\..\stream_nodes\signal-processingFR\resampler\sigp_stream_resampler.h" />
+    <ClInclude Include="..\..\..\stream_nodes\stream_common_const.h" />
+    <ClInclude Include="..\..\..\stream_nodes\stream_common_types.h" />
+    <ClInclude Include="..\..\..\stream_platform\alif1\top_manifest_alif1.h" />
+    <ClInclude Include="..\..\..\stream_platform\computer\platform_computer.h" />
+    <ClInclude Include="..\..\..\stream_platform\computer\presets_computer.h" />
+    <ClInclude Include="..\..\..\stream_platform\computer\stream_libraries\CMSIS-DSP\Include\dsp\computer_filtering_functions.h" />
+    <ClInclude Include="..\..\..\stream_platform\computer\top_manifest_computer.h" />
+    <ClInclude Include="..\..\..\stream_platform\platform_computer.h" />
+    <ClInclude Include="..\..\..\stream_platform\presets.h" />
+    <ClInclude Include="..\..\..\stream_platform\ra8e1\top_manifest_ra8e1.h" />
+    <ClInclude Include="..\..\..\stream_src\stream_const.h" />
+    <ClInclude Include="..\..\..\stream_src\stream_extern.h" />
+    <ClInclude Include="..\..\..\stream_src\stream_types.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\stream_nodes\arm\amplifier\node_manifest_amplifier.txt" />
+    <Text Include="..\..\..\stream_nodes\arm\anr\node_manifest_anr.txt" />
+    <Text Include="..\..\..\stream_nodes\arm\demodulator\node_manifest_demodulator.txt" />
+    <Text Include="..\..\..\stream_nodes\arm\echocan\node_manifest_echocan.txt" />
+    <Text Include="..\..\..\stream_nodes\arm\filter2D\node_manifest_filter2D.txt" />
+    <Text Include="..\..\..\stream_nodes\arm\filter\node_manifest_filter.txt" />
+    <Text Include="..\..\..\stream_nodes\arm\fixedbf\node_manifest_fixedbf.txt" />
+    <Text Include="..\..\..\stream_nodes\arm\kws\node_manifest_kws.txt" />
+    <Text Include="..\..\..\stream_nodes\arm\modulator\node_manifest_modulator.txt" />
+    <Text Include="..\..\..\stream_nodes\arm\router\node_manifest_router.txt" />
+    <Text Include="..\..\..\stream_nodes\arm\script\node_manifest_script.txt" />
+    <Text Include="..\..\..\stream_nodes\bitbank\JPEGENC\node_manifest_bitbank_JPEGENC.txt" />
+    <Text Include="..\..\..\stream_nodes\elm-lang\TJpgDec\node_manifest_TjpgDec.txt" />
+    <Text Include="..\..\..\stream_nodes\signal-processingFR\compressor\node_manifest_compressor.txt" />
+    <Text Include="..\..\..\stream_nodes\signal-processingFR\decompressor\node_manifest_decompressor.txt" />
+    <Text Include="..\..\..\stream_nodes\signal-processingFR\detector2D\node_manifest_detector2D.txt" />
+    <Text Include="..\..\..\stream_nodes\signal-processingFR\detector\node_manifest_detector.txt" />
+    <Text Include="..\..\..\stream_nodes\signal-processingFR\kws\node_manifest_kws.txt" />
+    <Text Include="..\..\..\stream_nodes\signal-processingFR\resampler\node_manifest_resampler.txt" />
+    <Text Include="..\..\..\stream_platform\alif1\top_manifest_alif1.txt" />
+    <Text Include="..\..\..\stream_platform\computer\graph_computer_filter.txt" />
+    <Text Include="..\..\..\stream_platform\computer\graph_computer_filter_bin.txt" />
+    <Text Include="..\..\..\stream_platform\computer\graph_computer_router.txt" />
+    <Text Include="..\..\..\stream_platform\computer\graph_computer_router_bin.txt" />
+    <Text Include="..\..\..\stream_platform\computer\top_manifest_computer.txt" />
+    <Text Include="..\..\..\stream_platform\ra8e1\top_manifest_ra8e1.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

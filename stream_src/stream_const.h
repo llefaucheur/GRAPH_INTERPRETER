@@ -145,7 +145,8 @@
 #define MAX_GRAPH_NB_HW_IO  300
 
 
-#define STREAM_MAIN_INSTANCE 1u
+#define STREAM_SECONDARY_INSTANCE 0
+#define STREAM_MAIN_INSTANCE 1u     /* Main instance of this processor */
 
 
 /* 
@@ -620,6 +621,8 @@
 #define data_swapped_with_arc           8u
 #define arc_data_realignment_to_base    9u
 
+#define PRODNODE_RESET_COMPLETED        1u      /* used in NODESTATE_ARCW2 */
+
 #define SIZEOF_ARCDESC_W32 8u
 
 #define       BUF_PTR_ARCW0    U( 0)  
@@ -639,10 +642,13 @@
 
 
 #define        RDFLOW_ARCW2    U( 2)  
-#define   unused__ARCW2_MSB U(31) 
-#define   unused__ARCW2_LSB U(30) /*  2 ____*/
-#define NEW_PARAM_ARCW2_MSB U(29)       
-#define NEW_PARAM_ARCW2_LSB U(29) /*  1  ____*/
+#define    unused_ARCW2_MSB U(31) 
+#define    unused_ARCW2_LSB U(31) /*  1  */
+#define NODESTATE_ARCW2_MSB U(30)
+#define NODESTATE_ARCW2_LSB U(30) /*  1  producer RESET completed = 1 */
+#define NODESTATE_ARCW2_BIT_LSB U(NODESTATE_ARCW2_LSB-24) /* bit-field access in a Byte */
+#define NEW_PARAM_ARCW2_LSB U(29) /*  1  Used to notify a pending parameter setting request  */
+#define NEW_PARAM_ARCW2_BIT_LSB U(NEW_PARAM_ARCW2_LSB-24) /* bit-field access in a Byte */
 #define   FLOW_WR_ARCW2_MSB U(28)   
 #define   FLOW_WR_ARCW2_LSB U(28) /*  1  overflow control on writes 0=nothing  1= best effort from domain */
 #define   FLOW_RD_ARCW2_MSB U(27)   
@@ -658,8 +664,8 @@
 
 
 #define      WRIOCOLL_ARCW3    U( 3) 
-#define  COLLISION_ARC_BYTE U( 3) 
-#define COLLISION_ARCW3_MSB U(31) /*  8 MSB byte used to lock the SWC, loaded with arch+proc+instance ID */ 
+#define  COLLISION_ARC_BYTE U( 3) /*     pt8b_collision_arc address */
+#define COLLISION_ARCW3_MSB U(31) /*  8  MSB byte used to lock the SWC, loaded with arch+proc+instance ID */ 
 #define COLLISION_ARCW3_LSB U(24) /*       to check node-access collision from an other processor */
 #define     WRITE_ARCW3_MSB SIZE_EXT_FMT0_MSB /*    write pointer is incremented by FRAMESIZE_FMT0 */
 #define     WRITE_ARCW3_LSB SIZE_EXT_FMT0_LSB /* 24 write read index  Byte-acurate up to 4MBytes starting from base address */
@@ -687,7 +693,7 @@
 #define  LOGTRACE_ARCW5_LSB U( 0) /* 16  */ 
 
 #define        LOGFMT_ARCW6    U( 6) 
-#define LOGTMESTP_ARCW6_MSB U(31) 
+#define LOGTMESTP_ARCW6_MSB U(31) /* 64 access time   */
 #define LOGTMESTP_ARCW6_LSB U( 0) 
 
 #define        LOGFMT_ARCW7    U( 7) 

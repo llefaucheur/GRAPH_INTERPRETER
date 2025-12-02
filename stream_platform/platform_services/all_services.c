@@ -25,8 +25,7 @@
  * 
  */
 
-
-#include "stream_common_const.h" 
+#include "stream_common_const.h"
 #include "presets.h"
 
 #ifdef __cplusplus

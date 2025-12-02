@@ -598,11 +598,11 @@ See file [Units](#Units) for the definition of time-stamp format inserted before
 
 - 0: no time stamp
 - 1: simple counter
-- 2: time difference in second (float format)
-- 3: time distance from Unix epoch in second (double format)
+- 2: time difference in float32 [seconds] 
+- 3: time distance from Unix epoch in float64 [seconds]
 
 ```
-io_time_stamp_format {1 39 41 } ; time-stamp format options
+io_time_stamp_format {1 2} ; time-stamp differences
 ```
 
 
@@ -3082,10 +3082,13 @@ end
 ## arm_stream_demodulator (TBD)
 
  Operation : decode a bit-stream from analog data. Use-case: IR decoder, CAN/UART on SPI/I2S audio.
+
+Next: sinewave frequency recognition for alarm detector.
+
  Parameters : clock and parity setting or let the algorithm discover the frame setting after some time. https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter and https://github.com/Arduino-IRremote/Arduino-IRremote https://www.arduinolibraries.info/categories/display https://www.arduinolibraries.info/categories/display
 
 presets control :
-#1 .. 10: provision for  demodulators
+#1 .. 10: provision for  demodulators 
 
 Metadata information can be extracted with the command "parameter-read":
 TAG_CMD = 1 read the signal amplitude

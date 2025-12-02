@@ -30,7 +30,11 @@
 #endif
     
 #include <stdint.h>
-#include "stream_includes.h"
+#include "stream_common_const.h"
+#include "stream_common_types.h"
+#include "stream_const.h"
+#include "stream_types.h"
+#include "stream_extern.h"
 
 
 static void read_header (arm_stream_instance_t *S);
@@ -136,11 +140,11 @@ static intptr_t arc_extract_info_int (uint32_t *arc, uint8_t tag)
 
     switch (tag)
     {
-    case arc_data_amount  : ret = write - read; 
+    case arc_data_amount  : ret = (intptr_t)write - (intptr_t)read;
         break;
-    case arc_free_area    : ret = size - write; 
+    case arc_free_area    : ret = (intptr_t)size - (intptr_t)write;
         break;
-    case arc_buffer_size  : ret = size; 
+    case arc_buffer_size  : ret = (intptr_t)size;
         break;
     default : ret = 0; 
     }
@@ -282,13 +286,12 @@ static uint8_t arc_ready_for_write(arm_stream_instance_t *S, uint32_t *arc, uint
 static uint8_t arc_ready_for_read(arm_stream_instance_t *S, uint32_t *arc, uint32_t *frame_size)
 {
     uint32_t consumer_frame_size, consumer_frame_format;   
-    uint32_t fifosize, read, write, *all_formats;
+    uint32_t read, write, *all_formats;
     uint8_t ret;
 
     all_formats = S->all_formats;
     read = RD(arc[2], READ_ARCW2);
     write = RD(arc[3], WRITE_ARCW3);
-    fifosize = RD(arc[1], BUFF_SIZE_ARCW1);
 
     consumer_frame_format = all_formats[STREAM_FORMAT_SIZE_W32 * RD(arc[4u],CONSUMFMT_ARCW4)];
     consumer_frame_size = RD(consumer_frame_format, FRAMESIZE_FMT0);
@@ -665,7 +668,6 @@ static void check_graph_boundaries(arm_stream_instance_t *S)
     uint8_t *ongoing;
     uint32_t *pio_control;
     const p_io_function_ctrl *io_func;
-static int dbgc;
 
     //nio = RD((S->graph)[1],NB_IOS_GR1);
 
@@ -718,15 +720,16 @@ static int dbgc;
         if (0u != need_data_move)
         {   stream_xdmbuffer_t pt_pt;
         
-            /*  TODO 
-                When the IO is slave and stream_io_domain=PLATFORM_ANALOG_SENSOR_XX 
-                 check the time interval from last frame (by a read of the time-stamp in 
-                 the FIFO) and current time, to deliver a data rate close to :
-                 "platform_io_control.stream_settings_default.SAMPLING_FMT1_"
-                Trigger the data request using script and delta-time read
-                MP(A+M) 
-                Tell data transfer on-going (REQMADE_IO_LSB)
+            /*  When the IO is slave check the time interval from last frame 
+                 and the current time, to deliver a data rate close to the desired sampling rate
             */
+            if (IO_IS_COMMANDER0 != TEST_BIT(*pio_control, RX0TX1_IOFMT0_LSB))       // TODO
+            {   // translate the sampling format in period (FS1D_FMT2)
+                // read the time difference from last ARC access absolute time (LOGTMESTP_ARCW6 & 7 
+                // trigger the io_func() if necessary
+            }
+
+
             SET_BIT(*ongoing, ONGOING_IO_LSB);
             
             /* fw function index is in the control field, while platform_io[] has all the possible functions */
@@ -743,7 +746,7 @@ static int dbgc;
             }
 
             /* io_func : data move + io_stream notification */
-            pt_pt.address = (intptr_t)buffer; pt_pt.size = 0;
+            pt_pt.address = (intptr_t)buffer; pt_pt.size = size;
             (*io_func)(STREAM_RUN, &pt_pt);
 
             /* if this is an input stream : check the buffer needs alignment by the consumer */
@@ -821,10 +824,12 @@ void graph_interpreter_process (arm_stream_instance_t *S, int8_t command, uintpt
     */
     if (command == STREAM_SET_PARAMETER)
     {   uint32_t *backup_linked_list_ptr;
+        uint8_t *pt8;
         backup_linked_list_ptr = S->linked_list_ptr;            // save position of the scheduler
         S->linked_list_ptr = &((S->linked_list)[data]);         // point to the node to update
         read_header(S);                                         // read the header of the node to update
-        SET_BIT((S->pt8b_collision_arc) [-7], NEW_PARAM_ARCW2_LSB); // point to the previous W32 "RDFLOW_ARCW2"
+        pt8 = S->pt8b_collision_arc - 4;                        // point to the previous W32 "RDFLOW_ARCW2"
+        *pt8 |= (1 << NEW_PARAM_ARCW2_BIT_LSB);                 // notify the arrival of new parameters
         S->linked_list_ptr = backup_linked_list_ptr;            // restore original position of the scheduler
         return;
     }
@@ -976,9 +981,9 @@ static void read_header (arm_stream_instance_t *S)
         {   if (ARC_RX0TX1_TEST & S->arcID[iarc])
             {   TX_found = 1;
                 /* the first TX arc holds the byte pointer for locking the node */
-                x = WRIOCOLL_ARCW3 + SIZEOF_ARCDESC_W32 * iarc;  
-                S->pt8b_collision_arc = (uint8_t *)&(S->all_arcs[x]);
-                S->pt8b_collision_arc = &(S->pt8b_collision_arc[COLLISION_ARC_BYTE]);
+                x = WRIOCOLL_ARCW3 + SIZEOF_ARCDESC_W32 * iarc;       /* point to the LSB of the  */
+                S->pt8b_collision_arc = (uint8_t *)&(S->all_arcs[x]); /*  3rd word of arc descriptor */
+                S->pt8b_collision_arc = &(S->pt8b_collision_arc[COLLISION_ARC_BYTE]); /* now the MSB */
             }
         }
         if (TX_found == 0)
@@ -1118,12 +1123,17 @@ static uint8_t unlock_this_component (arm_stream_instance_t *S)
 static void reset_component (arm_stream_instance_t *S)
 {
     uint8_t nbmem;
-    uint8_t imem, j, iformat, narc, imem_graph;
+    uint8_t imem, j, iformat, narc, imem_graph, *pt8;
     uint32_t *memreq, check, *key;
     
     #define MEMRESET (MAX_NB_MEM_REQ_PER_NODE + (STREAM_FORMAT_SIZE_W32*MAX_NB_STREAM_PER_NODE))
     intptr_t memreq_physical[MEMRESET];
-    
+
+    /* does the node was already RESET by another thread/processor ? */
+    pt8 = S->pt8b_collision_arc -4;
+    if (0 != (*pt8 & (1 << NODESTATE_ARCW2_BIT_LSB))) /* check NODESTATE_ARCW2_LSB */
+    {   return;
+    }
 
     /* reset the component with the parameter TraceID (6bits) */
     ST(S->pack_command, COMMAND_CMD, STREAM_RESET);
@@ -1216,6 +1226,9 @@ static void reset_component (arm_stream_instance_t *S)
         (void *) memreq_physical, 
         (void *) arm_stream_services, 
         &check);
+
+    /* notify Reset is done : (NODESTATE_ARCW2_LSB = 1) */
+    *pt8 |= (1 << NODESTATE_ARCW2_BIT_LSB);
 }
 
 
@@ -1276,12 +1289,13 @@ static void run_node (arm_stream_instance_t *S)
 {
     stream_xdmbuffer_t xdm_data[MAX_NB_STREAM_PER_NODE];
     uint32_t check;
-    uint8_t loop_counter;
+    uint8_t loop_counter, *pt8;
 
     /* is there a pending request to update the parameters of this node ? */  
-    if (TEST_BIT((S->pt8b_collision_arc)[-7], NEW_PARAM_ARCW2_LSB))
+    pt8 = S->pt8b_collision_arc - 4;
+    if (*pt8 & (1 << NEW_PARAM_ARCW2_BIT_LSB))
     {   upload_new_parameters (S);
-        CLEAR_BIT((S->pt8b_collision_arc)[-7], NEW_PARAM_ARCW2_LSB);
+        *pt8 &= (~(1 << NEW_PARAM_ARCW2_BIT_LSB));
     }
 
     /* push all the ARCs on the stack and check arcs buffer are ready */

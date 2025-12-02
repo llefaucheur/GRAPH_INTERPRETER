@@ -56,8 +56,6 @@ arm_stream_instance_t instance[STREAM_NB_INSTANCE];
  */
 void main_init(uint32_t *graph)
 { 
-    extern void platform_init_stream_instance(arm_stream_instance_t *instance);
-
     instance[STREAM_CURRENT_INSTANCE].scheduler_control = PACK_STREAM_PARAM(
             STREAM_INSTANCE_LOWLATENCYTASKS,    // low-latency priority
             STREAM_MAIN_INSTANCE,               // this interpreter instance is the main one (multi-thread)
